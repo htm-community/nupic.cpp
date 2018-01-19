@@ -738,7 +738,7 @@ Segment TemporalMemory::createSegment(CellIdx cell)
                          cell, iteration_, maxSegmentsPerCell_);
 }
 
-Int TemporalMemory::columnForCell(CellIdx cell)
+UInt TemporalMemory::columnForCell(const CellIdx cell) const
 {
   NTA_ASSERT(cell < numberOfCells());
   return cell / cellsPerColumn_;
@@ -758,7 +758,7 @@ vector<CellIdx> TemporalMemory::cellsForColumn(Int column)
   return cellsInColumn;
 }
 
-UInt TemporalMemory::numberOfCells(void)
+UInt TemporalMemory::numberOfCells(void) const
 {
   return connections.numCells();
 }
