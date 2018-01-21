@@ -28,11 +28,8 @@
 
 //----------------------------------------------------------------------
 
-#if defined(NTA_OS_WINDOWS)
-  #include <Windows.h>
-#else
-  #include <dlfcn.h>
-#endif
+// @todo
+#include <boost/dll.hpp>
 
 #include <string>
 #include <nupic/types/Types.hpp>
@@ -78,17 +75,10 @@ namespace nupic
   public:
     enum Mode
     {
-      #if defined(NTA_OS_WINDOWS)
       LAZY,
       GLOBAL,
       LOCAL,
       NOW
-      #else
-      LAZY = RTLD_LAZY,
-      GLOBAL = RTLD_GLOBAL,
-      LOCAL = RTLD_LOCAL,
-      NOW = RTLD_NOW
-      #endif
     };
     
     /**

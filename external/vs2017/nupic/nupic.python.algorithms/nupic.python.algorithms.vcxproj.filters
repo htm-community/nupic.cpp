@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\algorithm_module.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Algorithms.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Cells4.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_HTM.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SDRClassifier.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SpatialPooler.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SVM.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\py_utils.hpp" />
+  </ItemGroup>
+</Project>

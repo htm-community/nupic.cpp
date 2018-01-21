@@ -26,6 +26,9 @@
  */
 
 #include <cstring> // memset
+
+#include <nupic/types/ptr_types.hpp>
+
 #include <nupic/ntypes/Dimensions.hpp>
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/engine/Input.hpp>
@@ -46,7 +49,7 @@ Input::Input(Region& region, NTA_BasicType dataType, bool isRegionLevel) :
 Input::~Input()
 {
   uninitialize();
-  std::vector<Link*> linkscopy = links_;
+  std::vector<Link_Ptr_t> linkscopy = links_;
   for (auto & elem : linkscopy)
   {
     removeLink(elem);
@@ -55,7 +58,7 @@ Input::~Input()
 
 
 void
-Input::addLink(Link* link, Output* srcOutput)
+Input::addLink(Link_Ptr_t link, Output* srcOutput)
 {
   if (initialized_)
     NTA_THROW << "Attempt to add link to input " << name_
@@ -63,7 +66,7 @@ Input::addLink(Link* link, Output* srcOutput)
               << " when input is already initialized";
 
   // Make sure we don't already have a link to the same output
-  for (std::vector<Link*>::const_iterator link = links_.begin();
+  for (std::vector<Link_Ptr_t>::const_iterator link = links_.begin();
        link != links_.end(); link++)
   {
     if (srcOutput == &((*link)->getSrc()))
@@ -83,7 +86,7 @@ Input::addLink(Link* link, Output* srcOutput)
 
 
 void
-Input::removeLink(Link*& link)
+Input::removeLink(Link_Ptr_t& link)
 {
 
   // removeLink should only be called internally -- if it
@@ -107,14 +110,14 @@ Input::removeLink(Link*& link)
   uninitialize();
   link->getSrc().removeLink(link);
   links_.erase(linkiter);
-  delete link;
-  link = nullptr;
-}
 
-Link* Input::findLink(const std::string& srcRegionName,
+  link.reset();
+ }
+
+Link_Ptr_t Input::findLink(const std::string& srcRegionName,
                       const std::string& srcOutputName)
 {
-  std::vector<Link*>::const_iterator linkiter = links_.begin();
+  std::vector<Link_Ptr_t>::const_iterator linkiter = links_.begin();
   for (; linkiter != links_.end(); linkiter++)
   {
     Output& output = (*linkiter)->getSrc();
@@ -124,6 +127,7 @@ Link* Input::findLink(const std::string& srcRegionName,
       return *linkiter;
     }
   }
+
   // Link not found
   return nullptr;
 }
@@ -152,7 +156,7 @@ Input::getRegion()
   return region_;
 }
 
-const std::vector<Link*>&
+const std::vector<Link_Ptr_t>&
 Input::getLinks()
 {
   return links_;
@@ -180,7 +184,7 @@ Input::evaluateLinks()
     return 0;
 
   size_t nIncompleteLinks = 0;
-  std::vector<Link*>::iterator l;
+  std::vector<Link_Ptr_t>::iterator l;
   for (l = links_.begin(); l != links_.end(); l++)
   {
     Region& srcRegion = (*l)->getSrc().getRegion();
@@ -534,7 +538,7 @@ void Input::initialize()
 
   // Calculate our size and the offset of each link
   size_t count = 0;
-  for (std::vector<Link*>::const_iterator l = links_.begin(); l != links_.end(); l++)
+  for (std::vector<Link_Ptr_t>::const_iterator l = links_.begin(); l != links_.end(); l++)
   {
     linkOffsets_.push_back(count);
     // Setting the destination offset makes the link usable.
@@ -570,7 +574,7 @@ void Input::initialize()
   }
 
 
-  for (std::vector<Link *>::const_iterator link = links_.begin();
+  for (std::vector<Link_Ptr_t>::const_iterator link = links_.begin();
        link != links_.end(); link++)
   {
     (*link)->buildSplitterMap(splitterMap_);
@@ -618,7 +622,7 @@ const std::vector< std::vector<size_t> >& Input::getSplitterMap() const
   return splitterMap_;
 }
 
-
+/*
 template <typename T> void Input::getInputForNode(size_t nodeIndex, std::vector<T>& input) const
 {
   NTA_CHECK(initialized_);
@@ -641,6 +645,6 @@ template void Input::getInputForNode(size_t nodeIndex, std::vector<Int32>& input
 template void Input::getInputForNode(size_t nodeIndex, std::vector<UInt64>& input) const;
 template void Input::getInputForNode(size_t nodeIndex, std::vector<UInt32>& input) const;
 template void Input::getInputForNode(size_t nodeIndex, std::vector<Byte>& input) const;
-
+*/
 }
 

@@ -27,12 +27,12 @@
 #ifndef NTA_TIMER2_HPP
 #define NTA_TIMER2_HPP
 
+#include <chrono>
 #include <string>
 #include <nupic/types/Types.hpp>
 
 namespace nupic
 {
-
   /**
    * @Responsibility
    * Simple stopwatch services
@@ -101,12 +101,14 @@ namespace nupic
     toString() const;
 
   private:
-    // internally times are stored as ticks
+    typedef std::chrono::high_resolution_clock my_clock;
+    my_clock::time_point start_time_;
+      
     UInt64 prevElapsed_;   // total time as of last stop() (in ticks)
     UInt64 start_;         // time that start() was called (in ticks)
     UInt64 nstarts_;       // number of times start() was called
-    bool started_;         // true if was started
 
+    bool started_;         // true if was started
   }; // class Timer  
   
 } // namespace nupic

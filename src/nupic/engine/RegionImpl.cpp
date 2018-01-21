@@ -22,11 +22,6 @@
 
 #include <iostream>
 
-#include <capnp/any.h>
-#include <capnp/message.h>
-#include <capnp/serialize.h>
-#include <kj/std/iostream.h>
-
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/RegionImpl.hpp>
 #include <nupic/engine/Spec.hpp>
@@ -291,7 +286,7 @@ size_t RegionImpl::getParameterArrayCount(const std::string& name, Int64 index)
     NTA_THROW << "getParameterArrayCount -- no parameter named '"
               << name << "' in node of type " << getType();
   }
-  UInt32 count = region_->getSpec()->parameters.getByName(name).count;
+  size_t count = region_->getSpec()->parameters.getByName(name).count;
   if (count == 0)
   {
     NTA_THROW << "Internal Error -- unknown element count for "

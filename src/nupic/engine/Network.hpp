@@ -27,19 +27,17 @@
 #ifndef NTA_NETWORK_HPP
 #define NTA_NETWORK_HPP
 
-
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
 #include <nupic/ntypes/Collection.hpp>
 
-#include <nupic/proto/NetworkProto.capnp.h>
-#include <nupic/proto/RegionProto.capnp.h>
+#include <nupic/types/ptr_types.hpp>
 #include <nupic/types/Types.hpp>
-#include <nupic/types/Serializable.hpp>
 
 namespace nupic
 {
@@ -54,7 +52,7 @@ namespace nupic
    *
    * @nosubgrouping
    */
-  class Network : public Serializable<NetworkProto>
+  class Network
   {
   public:
 
@@ -142,7 +140,7 @@ namespace nupic
      *
      * @returns A pointer to the newly created Region
      */
-    Region*
+    Region_Ptr_t
     addRegion(const std::string& name,
               const std::string& nodeType,
               const std::string& nodeParams);
@@ -166,26 +164,12 @@ namespace nupic
      *
      * @returns A pointer to the newly created Region
      */
-    Region*
+    Region_Ptr_t
     addRegionFromBundle(const std::string& name,
                         const std::string& nodeType,
                         const Dimensions& dimensions,
                         const std::string& bundlePath,
                         const std::string& label);
-
-    /**
-     * Create a new region from saved Cap'n Proto state.
-     *
-     * @param name
-     *        Name of the region, Must be unique in the network
-     * @param proto
-     *        The capnp proto reader
-     *
-     * @returns A pointer to the newly created Region
-     */
-    Region*
-    addRegionFromProto(const std::string& name,
-                        RegionProto::Reader& proto);
 
     /**
      * Removes an existing region from the network.
@@ -252,7 +236,7 @@ namespace nupic
      *
      * @returns A Collection of Region objects in the network
      */
-    const Collection<Region*>&
+    const Collection<Region_Ptr_t>&
     getRegions() const;
 
     /**
@@ -260,7 +244,7 @@ namespace nupic
      *
      * @returns A Collection of Link objects in the network
      */
-    Collection<Link *>
+    Collection<Link_Ptr_t>
     getLinks();
 
     /**
@@ -290,14 +274,34 @@ namespace nupic
      *
      * @returns Minimum phase
      */
-    UInt32 getMinPhase() const;
+    auto getMinPhase() const
+    {
+        UInt32 i = 0;
+        for (; i < phaseInfo_.size(); i++)
+        {
+            if (!phaseInfo_[i].empty())
+                break;
+        }
+        return i;
+    }
 
     /**
      * Get maximum phase for regions in this network. If no regions, then max = 0.
      *
      * @returns Maximum phase
      */
-    UInt32 getMaxPhase() const;
+    auto getMaxPhase() const
+    {
+        /*
+        * phaseInfo_ is always trimmed, so the max phase is
+        * phaseInfo_.size()-1
+        */
+
+        if (phaseInfo_.empty())
+            return (std::uint64_t) 0;
+
+        return phaseInfo_.size() - 1;
+    }
 
     /**
      * Set the minimum enabled phase for this network.
@@ -400,12 +404,6 @@ namespace nupic
     void
     resetProfiling();
 
-    // Capnp serialization methods
-    using Serializable::write;
-    virtual void write(NetworkProto::Builder& proto) const override;
-    using Serializable::read;
-    virtual void read(NetworkProto::Reader& proto) override;
-
     /**
      * @}
      */
@@ -415,6 +413,9 @@ namespace nupic
      */
     static void registerPyRegion(const std::string module,
                                  const std::string className);
+
+    static void registerPyBindRegion(const std::string& module, const std::string& className);
+
 
     /*
      * Adds a c++ region to the RegionImplFactory's packages
@@ -426,6 +427,9 @@ namespace nupic
      * Removes a region from RegionImplFactory's packages
      */
     static void unregisterPyRegion(const std::string className);
+
+    static void unregisterPyBindRegion(const std::string& className);
+
 
     /*
      * Removes a c++ region from RegionImplFactory's packages
@@ -449,10 +453,10 @@ namespace nupic
 
     // internal method using region pointer instead of name
     void
-    setPhases_(Region *r, std::set<UInt32>& phases);
+    setPhases_(Region_Ptr_t r, std::set<UInt32>& phases);
 
     // default phase assignment for a new region
-    void setDefaultPhase_(Region* region);
+    void setDefaultPhase_(Region_Ptr_t region);
 
     // whenever we modify a network or change phase
     // information, we set enabled phases to min/max for
@@ -460,14 +464,14 @@ namespace nupic
     void resetEnabledPhases_();
 
     bool initialized_;
-    Collection<Region*> regions_;
+    Collection<Region_Ptr_t> regions_;
 
     UInt32 minEnabledPhase_;
     UInt32 maxEnabledPhase_;
 
     // This is main data structure used to choreograph
     // network computation
-    std::vector< std::set<Region*> > phaseInfo_;
+    std::vector< std::set<Region_Ptr_t> > phaseInfo_;
 
     // we invoke these callbacks at every iteration
     Collection<callbackItem> callbacks_;

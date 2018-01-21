@@ -32,6 +32,7 @@ Methods related to inputs and outputs are in Region_io.cpp
 #include <stdexcept>
 #include <set>
 #include <string>
+
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/RegionImpl.hpp>
 #include <nupic/engine/RegionImplFactory.hpp>
@@ -42,7 +43,7 @@ Methods related to inputs and outputs are in Region_io.cpp
 #include <nupic/engine/Link.hpp>
 #include <nupic/ntypes/NodeSet.hpp>
 #include <nupic/os/Timer.hpp>
-#include <nupic/proto/RegionProto.capnp.h>
+
 
 namespace nupic
 {
@@ -109,19 +110,6 @@ namespace nupic
     dims_ = dimensions;
 
     impl_ = factory.deserializeRegionImpl(nodeType, bundle, this);
-    createInputsAndOutputs_();
-  }
-
-  Region::Region(std::string name, RegionProto::Reader& proto,
-                 Network* network) :
-    name_(std::move(name)),
-    type_(proto.getNodeType().cStr()),
-    initialized_(false),
-    enabledNodes_(nullptr),
-    network_(network),
-    profilingEnabled_(false)
-  {
-    read(proto);
     createInputsAndOutputs_();
   }
 
@@ -245,6 +233,12 @@ namespace nupic
     RegionImplFactory::registerPyRegion(module, className);
   }
 
+  void Region::registerPyBindRegion(const std::string& module, const std::string& className)
+  {
+      RegionImplFactory::registerPyBindRegion(module, className);
+  }
+
+
   void
   Region::registerCPPRegion(const std::string name, GenericRegisteredRegionImpl* wrapper)
   {
@@ -255,6 +249,11 @@ namespace nupic
   Region::unregisterPyRegion(const std::string className)
   {
     RegionImplFactory::unregisterPyRegion(className);
+  }
+
+  void Region::unregisterPyBindRegion(const std::string& className)
+  {
+      RegionImplFactory::unregisterPyBindRegion(className);
   }
 
   void
@@ -330,7 +329,7 @@ namespace nupic
   size_t
   Region::evaluateLinks()
   {
-    int nIncompleteLinks = 0;
+    size_t nIncompleteLinks = 0;
     for (auto & elem : inputs_)
     {
       nIncompleteLinks += (elem.second)->evaluateLinks();
@@ -345,7 +344,7 @@ namespace nupic
     std::stringstream ss;
     for (const auto & elem : inputs_)
     {
-      const std::vector<Link*>& links = elem.second->getLinks();
+      const std::vector<Link_Ptr_t>& links = elem.second->getLinks();
       for (const auto & link : links)
       {
         if ( (link)->getSrcDimensions().isUnspecified() ||
@@ -488,7 +487,7 @@ namespace nupic
     InputMap::const_iterator i = inputs_.begin();
     for (; i != inputs_.end(); i++)
     {
-      std::vector<Link*> links = i->second->getLinks();
+      std::vector<Link_Ptr_t> links = i->second->getLinks();
       for (auto & links_link : links)
       {
         i->second->removeLink(links_link);
@@ -520,45 +519,6 @@ namespace nupic
   Region::serializeImpl(BundleIO& bundle)
   {
     impl_->serialize(bundle);
-  }
-
-  void Region::write(RegionProto::Builder& proto) const
-  {
-    auto dimensionsProto = proto.initDimensions(dims_.size());
-    for (UInt i = 0; i < dims_.size(); ++i)
-    {
-      dimensionsProto.set(i, dims_[i]);
-    }
-    auto phasesProto = proto.initPhases(phases_.size());
-    UInt i = 0;
-    for (auto elem : phases_)
-    {
-      phasesProto.set(i++, elem);
-    }
-    proto.setNodeType(type_.c_str());
-    auto implProto = proto.getRegionImpl();
-    impl_->write(implProto);
-  }
-
-  void Region::read(RegionProto::Reader& proto)
-  {
-    dims_.clear();
-    for (auto elem : proto.getDimensions())
-    {
-      dims_.push_back(elem);
-    }
-
-    phases_.clear();
-    for (auto elem : proto.getPhases())
-    {
-      phases_.insert(elem);
-    }
-
-    auto implProto = proto.getRegionImpl();
-    RegionImplFactory& factory = RegionImplFactory::getInstance();
-    spec_ = factory.getSpec(type_);
-    impl_ = factory.deserializeRegionImpl(
-        proto.getNodeType().cStr(), implProto, this);
   }
 
   void

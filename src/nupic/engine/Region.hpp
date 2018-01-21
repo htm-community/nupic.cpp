@@ -39,9 +39,8 @@
 // objects are returned by value.
 #include <nupic/ntypes/Dimensions.hpp>
 #include <nupic/os/Timer.hpp>
-#include <nupic/proto/RegionProto.capnp.h>
-#include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
+#include <nupic/types/ptr_types.hpp>
 
 namespace nupic
 {
@@ -69,7 +68,7 @@ namespace nupic
    * Internally regions are created and owned by Network.
    *
    */
-  class Region : public Serializable<RegionProto>
+  class Region
   {
   public:
 
@@ -155,6 +154,7 @@ namespace nupic
      * Adds a Python module and class to the RegionImplFactory's regions
      */
     static void registerPyRegion(const std::string module, const std::string className);
+    static void registerPyBindRegion(const std::string& module, const std::string& className);
 
     /*
      * Adds a cpp region to the RegionImplFactory's packages
@@ -165,6 +165,7 @@ namespace nupic
      * Removes a Python module and class from the RegionImplFactory's regions
      */
     static void unregisterPyRegion(const std::string className);
+    static void unregisterPyBindRegion(const std::string& className);
 
     /*
      * Removes a cpp region from the RegionImplFactory's packages
@@ -653,7 +654,6 @@ namespace nupic
      * @}
      */
 
-#ifdef NTA_INTERNAL
     // Internal methods.
 
     // New region from parameter spec
@@ -668,10 +668,6 @@ namespace nupic
            const Dimensions& dimensions,
            BundleIO& bundle,
            Network * network = nullptr);
-
-    // New region from capnp struct
-    Region(std::string name, RegionProto::Reader& proto,
-           Network* network=nullptr);
 
     virtual ~Region();
 
@@ -752,15 +748,6 @@ namespace nupic
     // Called by Network for serialization
     void
     serializeImpl(BundleIO& bundle);
-
-    using Serializable::write;
-    void write(RegionProto::Builder& proto) const;
-
-    using Serializable::read;
-    void read(RegionProto::Reader& proto);
-
-
-#endif // NTA_INTERNAL
 
   private:
     // verboten

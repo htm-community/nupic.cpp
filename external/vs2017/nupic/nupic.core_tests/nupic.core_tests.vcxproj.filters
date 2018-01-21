@@ -1,0 +1,153 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="types">
+      <UniqueIdentifier>{bd13db8c-922d-411e-a993-415661bafd07}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="utils">
+      <UniqueIdentifier>{d37461f5-a292-468a-9815-4e8acb1c9e7d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="math">
+      <UniqueIdentifier>{b3928e02-9c9a-45f8-ab01-17d67a18b38a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="engine">
+      <UniqueIdentifier>{db32cd9a-90c9-40c0-86a2-f913838fd29e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="encoders">
+      <UniqueIdentifier>{705b74e9-c9d6-49bd-a726-3842a5718b0d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="algorithms">
+      <UniqueIdentifier>{4b480934-1327-4c4a-962e-0f79267995c5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\types\BasicTypeTest.cpp">
+      <Filter>types</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\types\ExceptionTest.cpp">
+      <Filter>types</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\types\FractionTest.cpp">
+      <Filter>types</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\utils\GroupByTest.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\utils\MovingAverageTest.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\utils\RandomTest.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\utils\WatcherTest.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\utils\RandomPrivateOrig.c">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\DenseTensorUnitTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\DomainUnitTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\IndexUnitTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\MathsTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\SegmentMatrixAdapterTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\SparseBinaryMatrixTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\SparseMatrix01UnitTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\SparseMatrixTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\SparseMatrixUnitTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\SparseTensorUnitTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\math\TopologyTest.cpp">
+      <Filter>math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\engine\InputTest.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\engine\LinkTest.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\engine\NetworkTest.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\engine\UniformLinkPolicyTest.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\engine\YAMLUtilsTest.cpp">
+      <Filter>engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\encoders\ScalarEncoderTest.cpp">
+      <Filter>encoders</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\AnomalyTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\Cells4Test.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\CondProbTableTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\ConnectionsTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\NearestNeighborUnitTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\SDRClassifierTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\SegmentTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\SpatialPoolerTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\SvmTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\src\cpp\test\unit\algorithms\TemporalMemoryTest.cpp">
+      <Filter>algorithms</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\cpp\test\unit\math\DenseTensorUnitTest.hpp">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\cpp\test\unit\math\DomainUnitTest.hpp">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\cpp\test\unit\math\IndexUnitTest.hpp">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\cpp\test\unit\math\MathsTest.hpp">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\cpp\test\unit\math\SparseMatrix01UnitTest.hpp">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\cpp\test\unit\math\SparseMatrixUnitTest.hpp">
+      <Filter>math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\src\cpp\test\unit\math\SparseTensorUnitTest.hpp">
+      <Filter>math</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

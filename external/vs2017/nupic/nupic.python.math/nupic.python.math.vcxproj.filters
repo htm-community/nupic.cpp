@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\math_module.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Domain.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Math.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Random.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_reals.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SegmentSparseMatrix.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SparseTensor.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_NearestNeighbor.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SparseMatrix.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SparseMatrixConnections.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SparseBinaryMatrix.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_ArrayAlgo.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SparseMatrixAlgorithms.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_GraphAlgo.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SparseRLEMatrix.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Gaussian_2D.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Set.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\Matrix.hpp" />
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\py_utils.hpp" />
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\PyBindSparseTensor.hpp" />
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\SparseTensorIndex.hpp" />
+  </ItemGroup>
+</Project>

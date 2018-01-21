@@ -571,7 +571,6 @@ int adjustBox( // Inputs:
 
 // FUNCTION: extractAuxInfo()
 // PURPOSE: Extract auxiliary information
-NTA_EXPORT
 int extractAuxInfo(// Inputs:
                    //const NUMPY_ARRAY * psCtlBuf,
                    const char * pCtlBufAddr,

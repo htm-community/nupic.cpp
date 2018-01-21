@@ -38,10 +38,7 @@
 #include <string>
 #include <vector>
 
-#include <capnp/any.h>
-
 #include <nupic/ntypes/ObjectModel.hpp> // IWriteBuffer
-#include <nupic/types/Serializable.hpp>
 
 namespace nupic
 {
@@ -56,7 +53,7 @@ namespace nupic
   class NodeSet;
   class BundleIO;
 
-  class RegionImpl : public Serializable<capnp::AnyPointer>
+  class RegionImpl
   {
   public:
 
@@ -120,15 +117,6 @@ namespace nupic
 
     // De-serialize state. Must be called from deserializing constructor
     virtual void deserialize(BundleIO& bundle) = 0;
-
-    // Serialize state with capnp
-    using Serializable::write;
-    virtual void write(capnp::AnyPointer::Builder& anyProto) const = 0;
-
-    // Deserialize state from capnp. Must be called from deserializing
-    // constructor.
-    using Serializable::read;
-    virtual void read(capnp::AnyPointer::Reader& anyProto) = 0;
 
     /**
      * Inputs/Outputs are made available in initialize()

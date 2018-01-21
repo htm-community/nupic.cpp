@@ -24,8 +24,6 @@
 #define NTA_CELL_HPP
 
 #include <vector>
-#include <nupic/proto/Cell.capnp.h>
-#include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/algorithms/Segment.hpp>
 
@@ -46,7 +44,7 @@ namespace nupic {
        * mismatches in unit testing when comparing the Python TP to the C++ down to the
        * segment level.
        */
-      class Cell : Serializable<CellProto>
+      class Cell
       {
       private:
         std::vector< Segment >   _segments;     // both 'active' and 'inactive' segments
@@ -253,14 +251,6 @@ namespace nupic {
           this->save(buff);
           return buff.str().size();
         }
-
-        //----------------------------------------------------------------------
-        using Serializable::write;
-        virtual void write(CellProto::Builder& proto) const override;
-
-        //----------------------------------------------------------------------
-        using Serializable::read;
-        virtual void read(CellProto::Reader& proto) override;
 
         //----------------------------------------------------------------------
         void save(std::ostream& outStream) const;

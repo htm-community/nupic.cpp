@@ -28,122 +28,20 @@
 #include <nupic/os/Timer.hpp>
 #include <sstream>
 
-// Define a couple of platform-specific helper functions
-
-#if defined(NTA_OS_WINDOWS)
-
-#include <windows.h>
-static nupic::UInt64 ticksPerSec_ = 0;
-static nupic::UInt64 initialTicks_ = 0;
-
-// initTime is called by the constructor, so it will always
-// have been called by the time we call getTicksPerSec or getCurrentTime
-static inline void initTime()
-{
-  if (initialTicks_ == 0)
-  {
-    LARGE_INTEGER f;
-    QueryPerformanceCounter(&f);
-    initialTicks_ = (nupic::UInt64)(f.QuadPart);
-
-    QueryPerformanceFrequency(&f);
-    ticksPerSec_ = (nupic::UInt64)(f.QuadPart);
-  }
-}
-
-static inline nupic::UInt64 getTicksPerSec()
-{
-  return ticksPerSec_;
-}
-
-
-static nupic::UInt64 getCurrentTime()
-{
-  LARGE_INTEGER v;
-  QueryPerformanceCounter(&v);
-  return (nupic::UInt64)(v.QuadPart) - initialTicks_;
-}
-
-#elif defined(NTA_OS_DARWIN)
-
-// This include defines a UInt64 type that conflicts with the nupic::UInt64 type.
-// Because of this, all UInt64 is explicitly qualified in the interface. 
-#include <CoreServices/CoreServices.h>
-#include <mach/mach.h>
-#include <mach/mach_time.h>
-#include <unistd.h>
-
-// must be linked with -framework CoreServices
-
-static uint64_t initialTicks_ = 0;
-static nupic::UInt64 ticksPerSec_ = 0;
-
-static inline void initTime()
-{
-  if (initialTicks_ == 0)
-    initialTicks_ = mach_absolute_time();
-  if (ticksPerSec_ == 0)
-  {
-    mach_timebase_info_data_t sTimebaseInfo;
-    mach_timebase_info(&sTimebaseInfo);
-    ticksPerSec_ = (nupic::UInt64)(1e9 * (uint64_t)sTimebaseInfo.denom /
-        (uint64_t)sTimebaseInfo.numer);
-  }
-}
-
-static inline nupic::UInt64 getCurrentTime()
-{
-  return (nupic::UInt64)(mach_absolute_time() - initialTicks_);
-}
-
-static inline nupic::UInt64 getTicksPerSec()
-{
-  return ticksPerSec_;
-}
-
-
-#else
-// linux
-#include <sys/time.h>
-
-static nupic::UInt64 initialTicks_ = 0;
-
-static inline void initTime()
-{
-  if (initialTicks_ == 0)
-  {
-    struct timeval t;
-    ::gettimeofday(&t, nullptr);
-    initialTicks_ = nupic::UInt64((t.tv_sec * 1e6) + t.tv_usec);
-  }
-}
-
-static inline nupic::UInt64 getCurrentTime()
-{
-  struct timeval t;
-  ::gettimeofday(&t, nullptr);
-  nupic::UInt64 ticks = nupic::UInt64((t.tv_sec * 1e6) + t.tv_usec);
-  return ticks - initialTicks_;
-}
-
-
-
-static inline nupic::UInt64 getTicksPerSec()
-{
-  return (nupic::UInt64)(1e6);
-}
-
-#endif
-
 namespace nupic
 {
 
   Timer::Timer(bool startme)  
+      : nstarts_(0)
+      , start_(0)
+      , prevElapsed_(0)
   {
-    initTime();
-    reset();
-    if (startme)
-      start();
+      reset();
+
+      if (startme)
+      {
+          start();
+      }
   }
   
   
@@ -151,7 +49,7 @@ namespace nupic
   { 
     if (started_ == false) 
     {
-      start_ = getCurrentTime();
+      start_time_ = my_clock::now();
       nstarts_++;
       started_ = true;
     }
@@ -165,21 +63,29 @@ namespace nupic
   {  // stop the stopwatch
     if (started_ == true) 
     {
-      prevElapsed_ += (getCurrentTime() - start_);
-      start_ = 0;
-      started_ = false;
+        auto diff = my_clock::now() - start_time_;
+        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
+
+        prevElapsed_ += milliseconds.count();
+
+        //start_ = 0;
+        started_ = false;
     }
   }
   
+  // in seconds
   Real64 Timer::getElapsed() const
   {   
     nupic::UInt64 elapsed = prevElapsed_;
     if (started_) 
     {
-      elapsed += (getCurrentTime() - start_);
+        auto diff = my_clock::now() - start_time_;
+        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(diff);
+        
+        elapsed += milliseconds.count();
     }   
   
-    return (Real64)(elapsed) / (Real64)getTicksPerSec();
+    return static_cast<Real64>(elapsed) / 1000.0;
   }
   
   void Timer::reset() 

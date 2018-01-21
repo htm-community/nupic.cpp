@@ -29,12 +29,9 @@
 #ifndef NTA_INPUT_HPP
 #define NTA_INPUT_HPP
 
-#ifdef SWIG
-#error "Input class should not be wrapped"
-#endif
-
-
 #include <vector>
+
+#include <nupic/types/ptr_types.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/ntypes/Array.hpp>
 
@@ -105,7 +102,7 @@ namespace nupic
      *        The output of previous Region, which is also the source of the input
      */
     void
-    addLink(Link* link, Output* srcOutput);
+    addLink(Link_Ptr_t link, Output* srcOutput);
 
     /**
      * Locate an existing Link to the input.
@@ -120,7 +117,7 @@ namespace nupic
      * @returns
      *     The link if found or @c NULL if no such link exists
      */
-    Link*
+    Link_Ptr_t
     findLink(const std::string& srcRegionName,
              const std::string& srcOutputName);
 
@@ -145,7 +142,7 @@ namespace nupic
      *        it is a reference to the pointer, not the pointer itself.
      */
     void
-    removeLink(Link*& link);
+    removeLink(Link_Ptr_t& link);
 
     /**
      * Make input data available.
@@ -182,7 +179,7 @@ namespace nupic
      * @returns
      *         All the Link objects added to the input
      */
-    const std::vector<Link*>&
+    const std::vector<Link_Ptr_t>&
     getLinks();
 
     /**
@@ -250,7 +247,20 @@ namespace nupic
     const SplitterMap& getSplitterMap() const;
 
     /** explicitly instantiated for various types */
-    template <typename T> void getInputForNode(size_t nodeIndex, std::vector<T>& input) const;
+    template <typename T> void getInputForNode(size_t nodeIndex, std::vector<T>& input) const
+    {
+        NTA_CHECK(initialized_);
+        const SplitterMap& sm = getSplitterMap();
+        NTA_CHECK(nodeIndex < sm.size());
+
+        const std::vector<size_t>& map = sm[nodeIndex];
+        //NTA_CHECK(map.size() > 0);
+
+        input.resize(map.size());
+        T* fullInput = (T*)(data_.getBuffer());
+        for (size_t i = 0; i < map.size(); i++)
+            input[i] = fullInput[map[i]];
+    }
 
   private:
     Region& region_;
@@ -260,7 +270,7 @@ namespace nupic
 
 
     // Use a vector of links because order is important.
-    std::vector<Link*> links_;
+    std::vector<Link_Ptr_t> links_;
 
     // volatile (non-serialized) state
     bool initialized_;

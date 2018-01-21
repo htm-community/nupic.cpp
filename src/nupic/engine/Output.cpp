@@ -80,7 +80,7 @@ Output::initialize(size_t count)
 }
 
 void
-Output::addLink(Link* link)
+Output::addLink(Link_Ptr_t link)
 {
   // Make sure we don't add the same link twice
   // It is a logic error if we add the same link twice here, since
@@ -92,7 +92,7 @@ Output::addLink(Link* link)
 }
 
 void
-Output::removeLink(Link* link)
+Output::removeLink(Link_Ptr_t link)
 {
   auto linkIter = links_.find(link);
   // Should only be called internally. Logic error if link not found

@@ -25,7 +25,6 @@
  */
 #include <cstring> // memcpy,memset
 #include <nupic/engine/Link.hpp>
-#include <nupic/utils/ArrayProtoUtils.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/engine/LinkPolicyFactory.hpp>
 #include <nupic/engine/LinkPolicy.hpp>
@@ -467,57 +466,6 @@ void Link::shiftBufferedData()
               << "; circular buffer head after append is: "
               << srcBuffer_[0].getCount() << " elements="
               << srcBuffer_[0];
-  }
-}
-
-
-void Link::write(LinkProto::Builder& proto) const
-{
-  proto.setType(linkType_.c_str());
-  proto.setParams(linkParams_.c_str());
-  proto.setSrcRegion(srcRegionName_.c_str());
-  proto.setSrcOutput(srcOutputName_.c_str());
-  proto.setDestRegion(destRegionName_.c_str());
-  proto.setDestInput(destInputName_.c_str());
-
-  // Save delayed outputs
-  auto delayedOutputsBuilder = proto.initDelayedOutputs(propagationDelay_);
-  for (size_t i=0; i < propagationDelay_; ++i)
-  {
-    ArrayProtoUtils::copyArrayToArrayProto(srcBuffer_[i],
-                                           delayedOutputsBuilder[i]);
-  }
-}
-
-
-void Link::read(LinkProto::Reader& proto)
-{
-  const auto delayedOutputsReader = proto.getDelayedOutputs();
-
-  commonConstructorInit_(
-      proto.getType().cStr(), proto.getParams().cStr(),
-      proto.getSrcRegion().cStr(), proto.getDestRegion().cStr(),
-      proto.getSrcOutput().cStr(), proto.getDestInput().cStr(),
-      delayedOutputsReader.size()/*propagationDelay*/);
-
-  if (delayedOutputsReader.size())
-  {
-    // Initialize the propagation delay buffer with delay arrays having 0
-    // elements that deserialization logic will replace with appropriately-sized
-    // buffers.
-    initPropagationDelayBuffer_(
-      propagationDelay_,
-      ArrayProtoUtils::getArrayTypeFromArrayProtoReader(delayedOutputsReader[0]),
-      0);
-
-    // Populate delayed outputs
-
-    for (size_t i=0; i < propagationDelay_; ++i)
-    {
-      ArrayProtoUtils::copyArrayProtoToArray(delayedOutputsReader[i],
-                                             srcBuffer_[i],
-                                             true/*allocArrayBuffer*/);
-    }
   }
 }
 

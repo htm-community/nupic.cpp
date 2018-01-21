@@ -134,8 +134,6 @@ namespace nupic
     Collection<CommandSpec> commands;
     Collection<ParameterSpec> parameters;
 
-#ifdef NTA_INTERNAL
-
     Spec();
 
     // TODO: decide whether/how to wrap these
@@ -145,8 +143,6 @@ namespace nupic
     // TODO: need Spec validation, to make sure 
     // that default input/output are defined
     // Currently this is checked in getDefault*, above
-
-#endif // NTA_INTERNAL
 
   };
 

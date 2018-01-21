@@ -315,7 +315,7 @@ myinitstate(unsigned long seed, char *arg_state, int n)
 	if (n < BREAK_0) {
 		(void)fprintf(stderr,
 		    "random: not enough state (%d bytes); ignored.\n", n);
-		return(nullptr);
+		return(NULL);
 	}
 	if (n < BREAK_1) {
 		rand_type = TYPE_0;

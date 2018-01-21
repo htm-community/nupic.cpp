@@ -31,10 +31,8 @@
 #include <utility>
 #include <vector>
 
-#include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/math/Math.hpp>
-#include <nupic/proto/ConnectionsProto.capnp.h>
 
 namespace nupic
 {
@@ -191,7 +189,7 @@ namespace nupic
        * iterate over segments and update the vector at index `segment`.
        *
        */
-      class Connections : public Serializable<ConnectionsProto>
+      class Connections
       {
       public:
         static const UInt16 VERSION = 2;
@@ -437,29 +435,9 @@ namespace nupic
         virtual void save(std::ostream& outStream) const;
 
         /**
-         * Writes serialized data to output stream.
-         */
-        using Serializable::write;
-
-        /**
-         * Writes serialized data to proto object.
-         */
-        virtual void write(ConnectionsProto::Builder& proto) const override;
-
-        /**
          * Loads serialized data from input stream.
          */
         virtual void load(std::istream& inStream);
-
-        /**
-         * Reads serialized data from input stream.
-         */
-        using Serializable::read;
-
-        /**
-         * Reads serialized data from proto object.
-         */
-        virtual void read(ConnectionsProto::Reader& proto) override;
 
         // Debugging
 

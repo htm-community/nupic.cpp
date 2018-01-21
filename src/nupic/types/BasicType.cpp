@@ -20,7 +20,6 @@
  * ---------------------------------------------------------------------
  */
 
-
 #include <nupic/types/BasicType.hpp>
 #include <nupic/types/Exception.hpp>
 

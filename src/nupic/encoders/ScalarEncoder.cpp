@@ -78,7 +78,7 @@ namespace nupic
         NTA_THROW << "One of n/radius/resolution must be nonzero.";
       }
 
-      const int neededBands = ceil(extentWidth / bucketWidth_);
+      const int neededBands = static_cast<int>(ceil(extentWidth / bucketWidth_));
       const int neededBuckets =  neededBands + 1;
       n_ = neededBuckets + (w - 1);
     }
@@ -113,7 +113,7 @@ namespace nupic
       }
     }
 
-    const int iBucket = round((input - minValue_) / bucketWidth_);
+    const int iBucket = static_cast<int>(round((input - minValue_) / bucketWidth_));
 
     const int firstBit = iBucket;
 
@@ -169,7 +169,7 @@ namespace nupic
         NTA_THROW << "One of n/radius/resolution must be nonzero.";
       }
 
-      const int neededBuckets = ceil((maxValue - minValue) / bucketWidth_);
+      const int neededBuckets = static_cast<int>(ceil((maxValue - minValue) / bucketWidth_));
       n_ = (neededBuckets > w_) ? neededBuckets : w_ + 1;
     }
   }
@@ -190,8 +190,8 @@ namespace nupic
 
     const int middleBit = iBucket;
     const double reach = (w_ - 1) / 2.0;
-    const int left = floor(reach);
-    const int right = ceil(reach);
+    const int left = static_cast<int>(floor(reach));
+    const int right = static_cast<int>(ceil(reach));
 
     memset(output, 0, n_*sizeof(output[0]));
     output[middleBit] = 1;

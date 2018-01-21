@@ -52,9 +52,6 @@ namespace nupic
       virtual RegionImpl* deserializeRegionImpl(
           BundleIO& params, Region *region) = 0;
 
-      virtual RegionImpl* deserializeRegionImpl(
-          capnp::AnyPointer::Reader& proto, Region *region) = 0;
-
       virtual Spec* createSpec() = 0;
   };
 
@@ -75,12 +72,6 @@ namespace nupic
           BundleIO& params, Region *region) override
       {
         return new T(params, region);
-      }
-
-      virtual RegionImpl* deserializeRegionImpl(
-          capnp::AnyPointer::Reader& proto, Region *region) override
-      {
-        return new T(proto, region);
       }
 
       virtual Spec* createSpec() override

@@ -30,13 +30,8 @@
 #include <vector>
 #include <stdio.h>
 
-#include <capnp/message.h>
-#include <capnp/serialize.h>
-#include <kj/std/iostream.h>
-
 #include <nupic/algorithms/ClassifierResult.hpp>
 #include <nupic/algorithms/SDRClassifier.hpp>
-#include <nupic/proto/SdrClassifier.capnp.h>
 #include <nupic/math/ArrayAlgo.hpp>
 #include <nupic/utils/Log.hpp>
 
@@ -192,7 +187,7 @@ namespace nupic
 
       }
 
-      UInt SDRClassifier::persistentSize() const
+      auto SDRClassifier::persistentSize() const
       {
         stringstream s;
         s.flags(ios::scientific);
@@ -208,7 +203,7 @@ namespace nupic
         // been seen yet, the actual value doesn't matter since it will have
         // zero likelihood.
         vector<Real64>* actValueVector = result->createVector(-1,
-          actualValues_.size(), 0.0);
+          static_cast<UInt>(actualValues_.size()), 0.0);
         for (UInt i = 0; i < actualValues_.size(); ++i)
         {
           if (actualValuesSet_[i])
@@ -284,7 +279,7 @@ namespace nupic
         verbosity_ = verbosity;
       }
 
-      UInt SDRClassifier::getAlpha() const
+      auto SDRClassifier::getAlpha() const
       {
         return alpha_;
       }
@@ -457,260 +452,114 @@ namespace nupic
         version_ = sdrClassifierVersion;
       }
 
-      void SDRClassifier::write(SdrClassifierProto::Builder& proto) const 
-      {
-        auto stepsProto = proto.initSteps(steps_.size());
-        for (UInt i = 0; i < steps_.size(); i++)
-        {
-          stepsProto.set(i, steps_[i]);
-        }
-
-        proto.setAlpha(alpha_);
-        proto.setActValueAlpha(actValueAlpha_);
-        proto.setMaxSteps(maxSteps_);
-
-        auto patternNZHistoryProto =
-          proto.initPatternNZHistory(patternNZHistory_.size());
-        for (UInt i = 0; i < patternNZHistory_.size(); i++)
-        {
-          const auto& pattern = patternNZHistory_[i];
-          auto patternProto = patternNZHistoryProto.init(i, pattern.size());
-          for (UInt j = 0; j < pattern.size(); j++)
-          {
-            patternProto.set(j, pattern[j]);
-          }
-        }
-
-        auto recordNumHistoryProto =
-          proto.initRecordNumHistory(recordNumHistory_.size());
-        for (UInt i = 0; i < recordNumHistory_.size(); i++)
-        {
-          recordNumHistoryProto.set(i, recordNumHistory_[i]);
-        }
-
-        proto.setMaxBucketIdx(maxBucketIdx_);
-        proto.setMaxInputIdx(maxInputIdx_);
-
-        auto weightMatrixProtos =
-          proto.initWeightMatrix(weightMatrix_.size());
-        UInt k = 0;
-        for (const auto& stepWeightMatrix : weightMatrix_)
-        {
-          auto stepWeightMatrixProto = weightMatrixProtos[k];
-          stepWeightMatrixProto.setSteps(stepWeightMatrix.first);
-          auto weightProto = stepWeightMatrixProto.initWeight(
-            (maxInputIdx_ + 1) * (maxBucketIdx_ + 1)
-            );
-          // flatten weight matrix, serialized as a list of floats
-          UInt idx = 0;
-          for (UInt i = 0; i <= maxInputIdx_; ++i)
-          {
-            for (UInt j = 0; j <= maxBucketIdx_; ++j)
-            {
-              weightProto.set(idx, stepWeightMatrix.second.at(i, j));
-              idx++;
-            }
-          }
-          k++;
-        }
-
-        auto actualValuesProto = proto.initActualValues(actualValues_.size());
-        for (UInt i = 0; i < actualValues_.size(); i++)
-        {
-          actualValuesProto.set(i, actualValues_[i]);
-        }
-
-        auto actualValuesSetProto =
-          proto.initActualValuesSet(actualValuesSet_.size());
-        for (UInt i = 0; i < actualValuesSet_.size(); i++)
-        {
-          actualValuesSetProto.set(i, actualValuesSet_[i]);
-        }
-
-        proto.setVersion(version_);
-        proto.setVerbosity(verbosity_);
-      }
-
-      void SDRClassifier::read(SdrClassifierProto::Reader& proto)
-      {
-        // Clean up the existing data structures before loading
-        steps_.clear();
-        recordNumHistory_.clear();
-        patternNZHistory_.clear();
-        actualValues_.clear();
-        actualValuesSet_.clear();
-        weightMatrix_.clear();
-
-        for (auto step : proto.getSteps())
-        {
-          steps_.push_back(step);
-        }
-
-        alpha_ = proto.getAlpha();
-        actValueAlpha_ = proto.getActValueAlpha();
-        maxSteps_ = proto.getMaxSteps();
-
-        auto patternNZHistoryProto = proto.getPatternNZHistory();
-        for (UInt i = 0; i < patternNZHistoryProto.size(); i++)
-        {
-          patternNZHistory_.emplace_back(patternNZHistoryProto[i].size());
-          for (UInt j = 0; j < patternNZHistoryProto[i].size(); j++)
-          {
-            patternNZHistory_[i][j] = patternNZHistoryProto[i][j];
-          }
-        }
-
-        auto recordNumHistoryProto = proto.getRecordNumHistory();
-        for (UInt i = 0; i < recordNumHistoryProto.size(); i++)
-        {
-          recordNumHistory_.push_back(recordNumHistoryProto[i]);
-        }
-
-        maxBucketIdx_ = proto.getMaxBucketIdx();
-        maxInputIdx_ = proto.getMaxInputIdx();
-
-        auto weightMatrixProto = proto.getWeightMatrix();
-        for (UInt i = 0; i < weightMatrixProto.size(); ++i)
-        {
-          auto stepWeightMatrix = weightMatrixProto[i];
-          UInt steps = stepWeightMatrix.getSteps();
-          weightMatrix_[steps] = Matrix(maxInputIdx_ + 1, maxBucketIdx_ + 1);
-          auto weights = stepWeightMatrix.getWeight();
-          UInt j = 0;
-          // un-flatten weight matrix, serialized as a list of floats
-          for (UInt row = 0; row <= maxInputIdx_; ++row)
-          {
-            for (UInt col = 0; col <= maxBucketIdx_; ++col)
-            {
-              weightMatrix_[steps].at(row, col) = weights[j];
-              j++;
-            }
-          }
-        }
-
-        for (auto actValue : proto.getActualValues())
-        {
-          actualValues_.push_back(actValue);
-        }
-
-        for (auto actValueSet : proto.getActualValuesSet())
-        {
-          actualValuesSet_.push_back(actValueSet);
-        }
-
-        version_ = proto.getVersion();
-        verbosity_ = proto.getVerbosity();
-      }
-
       bool SDRClassifier::operator==(const SDRClassifier& other) const
       {
-        if (steps_.size() != other.steps_.size())
-        {
-          return false;
-        }
-        for (UInt i = 0; i < steps_.size(); i++)
-        {
-          if (steps_.at(i) != other.steps_.at(i))
+          if (steps_.size() != other.steps_.size())
           {
-            return false;
-          }
-        }
-
-        if (fabs(alpha_ - other.alpha_) > 0.000001 ||
-            fabs(actValueAlpha_ - other.actValueAlpha_) > 0.000001 ||
-            maxSteps_ != other.maxSteps_)
-        {
-          return false;
-        }
-
-        if (patternNZHistory_.size() != other.patternNZHistory_.size())
-        {
-          return false;
-        }
-        for (UInt i = 0; i < patternNZHistory_.size(); i++)
-        {
-          if (patternNZHistory_.at(i).size() !=
-              other.patternNZHistory_.at(i).size())
-          {
-            return false;
-          }
-          for (UInt j = 0; j < patternNZHistory_.at(i).size(); j++)
-          {
-            if (patternNZHistory_.at(i).at(j) !=
-                other.patternNZHistory_.at(i).at(j))
-            {
               return false;
-            }
           }
-        }
-
-        if (recordNumHistory_.size() !=
-            other.recordNumHistory_.size())
-        {
-          return false;
-        }
-        for (UInt i = 0; i < recordNumHistory_.size(); i++)
-        {
-          if (recordNumHistory_.at(i) !=
-              other.recordNumHistory_.at(i))
+          for (UInt i = 0; i < steps_.size(); i++)
           {
-            return false;
-          }
-        }
-
-        if (maxBucketIdx_ != other.maxBucketIdx_)
-        {
-          return false;
-        }
-
-        if (maxInputIdx_ != other.maxInputIdx_)
-        {
-          return false;
-        }
-
-        if (weightMatrix_.size() != other.weightMatrix_.size())
-        {
-          return false;
-        }
-        for (auto it = weightMatrix_.begin(); it != weightMatrix_.end(); it++)
-        {
-          Matrix thisWeights = it->second;
-          Matrix otherWeights = other.weightMatrix_.at(it->first);
-          for (UInt i = 0; i <= maxInputIdx_; ++i)
-          {
-            for (UInt j = 0; j <= maxBucketIdx_; ++j)
-            {
-              if (thisWeights.at(i, j) != otherWeights.at(i, j))
+              if (steps_.at(i) != other.steps_.at(i))
               {
-                return false;
+                  return false;
               }
-            }
           }
-        }
 
-        if (actualValues_.size() != other.actualValues_.size() ||
-            actualValuesSet_.size() != other.actualValuesSet_.size())
-        {
-          return false;
-        }
-        for (UInt i = 0; i < actualValues_.size(); i++)
-        {
-          if (fabs(actualValues_[i] - other.actualValues_[i]) > 0.000001 ||
-              actualValuesSet_[i] != other.actualValuesSet_[i])
+          if (fabs(alpha_ - other.alpha_) > 0.000001 ||
+              fabs(actValueAlpha_ - other.actValueAlpha_) > 0.000001 ||
+              maxSteps_ != other.maxSteps_)
           {
-            return false;
+              return false;
           }
-        }
 
-        if (version_ != other.version_ ||
-            verbosity_ != other.verbosity_)
-        {
-          return false;
-        }
+          if (patternNZHistory_.size() != other.patternNZHistory_.size())
+          {
+              return false;
+          }
+          for (UInt i = 0; i < patternNZHistory_.size(); i++)
+          {
+              if (patternNZHistory_.at(i).size() !=
+                  other.patternNZHistory_.at(i).size())
+              {
+                  return false;
+              }
+              for (UInt j = 0; j < patternNZHistory_.at(i).size(); j++)
+              {
+                  if (patternNZHistory_.at(i).at(j) !=
+                      other.patternNZHistory_.at(i).at(j))
+                  {
+                      return false;
+                  }
+              }
+          }
 
-        return true;
+          if (recordNumHistory_.size() !=
+              other.recordNumHistory_.size())
+          {
+              return false;
+          }
+          for (UInt i = 0; i < recordNumHistory_.size(); i++)
+          {
+              if (recordNumHistory_.at(i) !=
+                  other.recordNumHistory_.at(i))
+              {
+                  return false;
+              }
+          }
+
+          if (maxBucketIdx_ != other.maxBucketIdx_)
+          {
+              return false;
+          }
+
+          if (maxInputIdx_ != other.maxInputIdx_)
+          {
+              return false;
+          }
+
+          if (weightMatrix_.size() != other.weightMatrix_.size())
+          {
+              return false;
+          }
+          for (auto it = weightMatrix_.begin(); it != weightMatrix_.end(); it++)
+          {
+              Matrix thisWeights = it->second;
+              Matrix otherWeights = other.weightMatrix_.at(it->first);
+              for (UInt i = 0; i <= maxInputIdx_; ++i)
+              {
+                  for (UInt j = 0; j <= maxBucketIdx_; ++j)
+                  {
+                      if (thisWeights.at(i, j) != otherWeights.at(i, j))
+                      {
+                          return false;
+                      }
+                  }
+              }
+          }
+
+          if (actualValues_.size() != other.actualValues_.size() ||
+              actualValuesSet_.size() != other.actualValuesSet_.size())
+          {
+              return false;
+          }
+          for (UInt i = 0; i < actualValues_.size(); i++)
+          {
+              if (fabs(actualValues_[i] - other.actualValues_[i]) > 0.000001 ||
+                  actualValuesSet_[i] != other.actualValuesSet_[i])
+              {
+                  return false;
+              }
+          }
+
+          if (version_ != other.version_ ||
+              verbosity_ != other.verbosity_)
+          {
+              return false;
+          }
+
+          return true;
       }
-
-    }    
+    }
   }
 }

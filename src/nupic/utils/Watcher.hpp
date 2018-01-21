@@ -30,6 +30,7 @@
 #include <string>
 #include <vector>
 
+#include <nupic/types/ptr_types.hpp>
 #include <nupic/engine/Output.hpp>
 
 namespace nupic
@@ -49,14 +50,14 @@ namespace nupic
   //to be watched.
   struct watchData
   {
-    unsigned int watchID; //starts at 1
+    std::size_t watchID; //starts at 1
     std::string varName;
     watcherType wType;
     Output* output;
     //Need regionName because we create data structure before
     //we have the actual Network to attach it to.
     std::string regionName;
-    Region* region;
+    Region_Ptr_t region;
     Int64 nodeIndex;
     NTA_BasicType varType;
     std::string nodeName;
@@ -68,7 +69,7 @@ namespace nupic
   //Contains all data needed by the callback function.
   struct allData
   {
-    OFStream* outStream;
+    std::ofstream outStream;
     std::string fileName;
     std::vector<watchData> watches;
   };
@@ -102,17 +103,40 @@ namespace nupic
     ~Watcher();
 
     //returns watchID
-    unsigned int
-    watchParam(std::string regionName, 
-               std::string varName, 
-               int nodeIndex = -1,
-               bool sparseOutput = true);
+    auto
+        watchParam(std::string regionName,
+            std::string varName,
+            int nodeIndex = -1,
+            bool sparseOutput = true)
+    {
+        watchData watch;
+        watch.varName = varName;
+        watch.wType = parameter;
+        watch.regionName = regionName;
+        watch.nodeIndex = nodeIndex;
+        watch.sparseOutput = sparseOutput;
+        watch.watchID = data_.watches.size() + 1;
+        data_.watches.push_back(watch);
+        return watch.watchID;
+    }
 
     //returns watchID
-    unsigned int
-    watchOutput(std::string regionName,
-                std::string varName,
-                bool sparseOutput = true);
+    auto
+        watchOutput(std::string regionName,
+            std::string varName,
+            bool sparseOutput = true)
+    {
+        watchData watch;
+        watch.varName = varName;
+        watch.wType = output;
+        watch.regionName = regionName;
+        watch.nodeIndex = -1;
+        watch.isArray = false;
+        watch.sparseOutput = sparseOutput;
+        watch.watchID = data_.watches.size() + 1;
+        data_.watches.push_back(watch);
+        return watch.watchID;
+    }
 
     //callback function that will be called every time network is run
     static void

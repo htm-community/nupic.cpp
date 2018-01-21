@@ -60,9 +60,7 @@ namespace nupic
     void remove(const std::string& name);
 
 
-#ifdef NTA_INTERNAL
     std::pair<std::string, T>& getByIndex(size_t index);
-#endif
 
   private:
     typedef std::vector<std::pair<std::string, T> > CollectionStorage;

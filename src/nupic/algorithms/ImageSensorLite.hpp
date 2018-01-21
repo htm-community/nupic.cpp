@@ -134,7 +134,6 @@ typedef struct _TARGETSIZES {
 
 // FUNCTION: adjustBox()
 // PURPOSE: Implements efficient adjustment of tracking box
-NTA_EXPORT
 int adjustBox( // Inputs:
                const NUMPY_ARRAY * psSrcImage,
                const BBOX * psBox,
@@ -147,7 +146,6 @@ int adjustBox( // Inputs:
 
 // FUNCTION: accessPixels()
 // PURPOSE: Access pixels of a numpy array
-NTA_EXPORT
 int accessPixels(// Inputs:
                  const NUMPY_ARRAY * psSrcImage,
                  // Outputs:
@@ -156,7 +154,6 @@ int accessPixels(// Inputs:
 
 // FUNCTION: extractAuxInfo()
 // PURPOSE: Extract auxiliary information
-NTA_EXPORT
 int extractAuxInfo(// Inputs:
                    const char * pCtlBufAddr,
                    //const NUMPY_ARRAY * psCtlBuf,

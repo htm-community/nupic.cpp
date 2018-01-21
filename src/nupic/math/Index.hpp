@@ -512,8 +512,9 @@ namespace nupic {
     /**
      * Streaming operator (for debugging).
      */
-    //template <typename I, UInt n>
-    //NTA_HIDDEN friend std::ostream& operator<<(std::ostream&, const Index<I, n>&);
+    template <typename I, UInt n>
+    friend std::ostream& operator<<(std::ostream&, const Index<I, n>&);
+
     UInt i_[NDims];
   private:
 

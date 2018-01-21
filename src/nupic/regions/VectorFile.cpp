@@ -23,20 +23,22 @@
 /** @file
 * Implementation for VectorFile class
 */
+#include <zlib.h>
 
 #include <cstring> // memset
+#include <cmath>
 #include <stdexcept>
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <math.h>
+#include <stdexcept>
+
+
 #include <nupic/regions/VectorFile.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/math/Utils.hpp> // For isSystemLittleEndian and utils::swapBytesInPlace.
 #include <nupic/os/FStream.hpp>
 #include <nupic/os/Path.hpp>
-#include <stdexcept>
-#include <zlib.h>
 
 using namespace std;
 using namespace nupic;
@@ -201,7 +203,7 @@ void VectorFile::appendFile(const string &fileName,
 static bool dosEndings(IFStream &inFile)
 {
   bool unixLines = true;
-  int pos = inFile.tellg();
+  auto pos = inFile.tellg();
   while (!inFile.eof())
   {
     int c = inFile.get();
