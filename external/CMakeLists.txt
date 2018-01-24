@@ -75,7 +75,7 @@ list(APPEND EXTERNAL_INCLUDE_DIRS ${Z_STATIC_LIB_INC_DIR})
 
 # Add vendored prebuilt library include paths.
 list(APPEND EXTERNAL_INCLUDE_DIRS
-     "${PROJECT_SOURCE_DIR}/common/include")
+     "${PROJECT_SOURCE_DIR}/common/include ")
 
 # Convenience variable that wraps all external include directories.
 list(APPEND EXTERNAL_INCLUDE_DIRS ${CAPNP_INCLUDE_DIRS})

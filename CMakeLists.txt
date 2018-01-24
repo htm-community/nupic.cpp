@@ -81,6 +81,7 @@ include(CommonCompilerConfig)
 # (see individual external/*.cmake modules for exported settings and functions)
 add_subdirectory(external)
 include_directories(SYSTEM ${EXTERNAL_INCLUDE_DIRS})
+include_directories(SYSTEM ${REPOSITORY_DIR}/include/) #all headers reside here (boost,...) 
 
 # Now build nupic_core project.
 add_subdirectory(src)
