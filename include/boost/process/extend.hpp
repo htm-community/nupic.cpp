@@ -33,7 +33,7 @@ namespace boost {
 namespace process {
 namespace detail {
 template<typename Tuple>
-inline asio::io_service& get_io_service(const Tuple & tup);
+inline asio::io_context& get_io_context(const Tuple & tup);
 }
 
 
@@ -57,9 +57,9 @@ struct windows_executor;
 #endif
 
 using ::boost::process::detail::handler;
-using ::boost::process::detail::api::require_io_service;
+using ::boost::process::detail::api::require_io_context;
 using ::boost::process::detail::api::async_handler;
-using ::boost::process::detail::get_io_service;
+using ::boost::process::detail::get_io_context;
 using ::boost::process::detail::get_last_error;
 using ::boost::process::detail::throw_last_error;
 
@@ -91,13 +91,13 @@ inline void throw_last_error(const std::string & msg);
 inline void throw_last_error();
 
 
-/** This function gets the io_service from the initializer sequence.
+/** This function gets the io_context from the initializer sequence.
  *
- * \attention Yields a compile-time error if no `io_service` is provided.
+ * \attention Yields a compile-time error if no `io_context` is provided.
  * \param seq The Sequence of the initializer.
  */
 template<typename Sequence>
-inline asio::io_service& get_io_service(const Sequence & seq);
+inline asio::io_context& get_io_context(const Sequence & seq);
 
 /** This class is the base for every initializer, to be used for extensions.
  *
@@ -149,14 +149,14 @@ struct handler
 };
 
 
-/** Inheriting the class will tell the launching process that an `io_service` is
- * needed. This should always be used when \ref get_io_service is used.
+/** Inheriting the class will tell the launching process that an `io_context` is
+ * needed. This should always be used when \ref get_io_context is used.
  *
  */
-struct require_io_service {};
+struct require_io_context {};
 /** Inheriting this class will tell the launching function, that an event handler
  * shall be invoked when the process exits. This automatically does also inherit
- * \ref require_io_service.
+ * \ref require_io_context.
  *
  * You must add the following function to your implementation:
  *
@@ -179,7 +179,7 @@ std::function<void(int, const std::error_code&)> on_exit_handler(Executor & exec
  *
  * \warning Cannot be used with \ref boost::process::spawn
  */
-struct async_handler : handler, require_io_service
+struct async_handler : handler, require_io_context
 {
 
 };
@@ -241,7 +241,7 @@ struct posix_executor
      char **env      = ::environ;
      ///The pid of the process - it will be -1 before invoking [fork](http://pubs.opengroup.org/onlinepubs/009695399/functions/fork.html), and after forking either 0 for the new process or a positive value if in the current process. */
      pid_t pid = -1;
-     ///This shared-pointer holds the exit code. It's done this way, so it can be shared between an `asio::io_service` and \ref child.
+     ///This shared-pointer holds the exit code. It's done this way, so it can be shared between an `asio::io_context` and \ref child.
      std::shared_ptr<std::atomic<int>> exit_status = std::make_shared<std::atomic<int>>(still_active);
 
      ///This function returns a const reference to the error state of the executor.
@@ -302,7 +302,7 @@ struct windows_executor
      ::boost::detail::winapi::PROCESS_INFORMATION_ proc_info{nullptr, nullptr, 0,0};
 
 
-     ///This shared-pointer holds the exit code. It's done this way, so it can be shared between an `asio::io_service` and \ref child.
+     ///This shared-pointer holds the exit code. It's done this way, so it can be shared between an `asio::io_context` and \ref child.
      std::shared_ptr<std::atomic<int>> exit_status = std::make_shared<std::atomic<int>>(still_active);
 
      ///This function returns a const reference to the error state of the executor.

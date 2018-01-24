@@ -38,19 +38,19 @@ namespace boost { namespace process {
 namespace windows {
 
 ///Hides the window and activates another window.
-constexpr ::boost::process::detail::windows::show_window<::boost::detail::winapi::SW_HIDE_           > hide;
+constexpr ::boost::process::detail::windows::show_window<::boost::winapi::SW_HIDE_           > hide;
 ///Activates the window and displays it as a maximized window.
-constexpr ::boost::process::detail::windows::show_window<::boost::detail::winapi::SW_SHOWMAXIMIZED_  > maximized;
+constexpr ::boost::process::detail::windows::show_window<::boost::winapi::SW_SHOWMAXIMIZED_  > maximized;
 ///Activates the window and displays it as a minimized window.
-constexpr ::boost::process::detail::windows::show_window<::boost::detail::winapi::SW_SHOWMINIMIZED_  > minimized;
+constexpr ::boost::process::detail::windows::show_window<::boost::winapi::SW_SHOWMINIMIZED_  > minimized;
 ///Displays the window as a minimized window. This value is similar to `minimized`, except the window is not activated.
-constexpr ::boost::process::detail::windows::show_window<::boost::detail::winapi::SW_SHOWMINNOACTIVE_> minimized_not_active;
+constexpr ::boost::process::detail::windows::show_window<::boost::winapi::SW_SHOWMINNOACTIVE_> minimized_not_active;
 ///Displays a window in its most recent size and position. This value is similar to show_normal`, except that the window is not activated.
-constexpr ::boost::process::detail::windows::show_window<::boost::detail::winapi::SW_SHOWNOACTIVATE_ > not_active;
+constexpr ::boost::process::detail::windows::show_window<::boost::winapi::SW_SHOWNOACTIVATE_ > not_active;
 ///Activates and displays a window. If the window is minimized or maximized, the system restores it to its original size and position. An application should specify this flag when displaying the window for the first time.
-constexpr ::boost::process::detail::windows::show_window<::boost::detail::winapi::SW_SHOWNORMAL_     > show;
+constexpr ::boost::process::detail::windows::show_window<::boost::winapi::SW_SHOWNORMAL_     > show;
 ///Activates and displays a window. If the window is minimized or maximized, the system restores it to its original size and position. An application should specify this flag when displaying the window for the first time.
-constexpr ::boost::process::detail::windows::show_window<::boost::detail::winapi::SW_SHOWNORMAL_     > show_normal;
+constexpr ::boost::process::detail::windows::show_window<::boost::winapi::SW_SHOWNORMAL_     > show_normal;
 
 
 }}}

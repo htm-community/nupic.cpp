@@ -1,7 +1,7 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
 // Copyright (c) 2007-2012 Barend Gehrels, Amsterdam, the Netherlands.
-// Copyright (c) 2014 Adam Wulkiewicz, Lodz, Poland.
+// Copyright (c) 2014-2017 Adam Wulkiewicz, Lodz, Poland.
 
 // This file was modified by Oracle on 2014, 2016, 2017.
 // Modifications copyright (c) 2014-2017 Oracle and/or its affiliates.
@@ -90,6 +90,9 @@ struct no_interrupt_policy
 {
     static bool const enabled = false;
 
+    // variable required by self_get_turn_points::get_turns
+    static bool const has_intersections = false;
+
     template <typename Range>
     static inline bool apply(Range const&)
     {
@@ -141,7 +144,7 @@ class get_turns_in_sections
 
 
     template <typename Geometry, typename Section>
-    static inline bool neighbouring(Section const& section,
+    static inline bool adjacent(Section const& section,
             signed_size_type index1, signed_size_type index2)
     {
         // About n-2:
@@ -149,7 +152,7 @@ class get_turns_in_sections
         //    -> 0-3 are adjacent, don't check on intersections)
         // Also tested for open polygons, and/or duplicates
         // About first condition: will be optimized by compiler (static)
-        // It checks if it is areal (box,ring,(multi)polygon
+        // It checks if it is areal (box, ring, (multi)polygon)
         signed_size_type const n = static_cast<signed_size_type>(section.range_count);
 
         boost::ignore_unused_variable_warning(n);
@@ -177,7 +180,7 @@ public :
     static inline bool apply(
             int source_id1, Geometry1 const& geometry1, Section1 const& sec1,
             int source_id2, Geometry2 const& geometry2, Section2 const& sec2,
-            bool skip_larger,
+            bool skip_larger, bool skip_adjacent,
             IntersectionStrategy const& intersection_strategy,
             RobustPolicy const& robust_policy,
             Turns& turns,
@@ -211,11 +214,6 @@ public :
         signed_size_type index1 = sec1.begin_index;
         signed_size_type ndi1 = sec1.non_duplicate_index;
 
-        bool const same_source =
-            source_id1 == source_id2
-                    && sec1.ring_id.multi_index == sec2.ring_id.multi_index
-                    && sec1.ring_id.ring_index == sec2.ring_id.ring_index;
-
         range1_iterator prev1, it1, end1;
 
         get_start_point_iterator(sec1, view1, prev1, it1, end1,
@@ -230,7 +228,7 @@ public :
         // section 2:    [--------------]
         // section 1: |----|---|---|---|---|
         for (prev1 = it1++, next1++;
-            it1 != end1 && ! detail::section::exceeding<0>(dir1, *prev1, sec2.bounding_box, robust_policy);
+            it1 != end1 && ! detail::section::exceeding<0>(dir1, *prev1, sec1.bounding_box, sec2.bounding_box, robust_policy);
             ++prev1, ++it1, ++index1, ++next1, ++ndi1)
         {
             ever_circling_iterator<range1_iterator> nd_next1(
@@ -248,25 +246,35 @@ public :
             next2++;
 
             for (prev2 = it2++, next2++;
-                it2 != end2 && ! detail::section::exceeding<0>(dir2, *prev2, sec1.bounding_box, robust_policy);
+                it2 != end2 && ! detail::section::exceeding<0>(dir2, *prev2, sec2.bounding_box, sec1.bounding_box, robust_policy);
                 ++prev2, ++it2, ++index2, ++next2, ++ndi2)
             {
-                bool skip = same_source;
-                if (skip)
+                bool skip = false;
+
+                if (source_id1 == source_id2
+                        && sec1.ring_id.multi_index == sec2.ring_id.multi_index
+                        && sec1.ring_id.ring_index == sec2.ring_id.ring_index)
                 {
-                    // If sources are the same (possibly self-intersecting):
-                    // skip if it is a neighbouring segment.
-                    // (including first-last segment
-                    //  and two segments with one or more degenerate/duplicate
-                    //  (zero-length) segments in between)
+                    // Sources and rings are the same
 
-                    // Also skip if index1 < index2 to avoid getting all
-                    // intersections twice (only do this on same source!)
+                    if (skip_larger && index1 >= index2)
+                    {
+                        // Skip to avoid getting all intersections twice
+                        skip = true;
+                    }
+                    else if (skip_adjacent)
+                    {
+                        // In some cases (dissolve, has_self_intersections)
+                        // neighbouring segments should be checked
+                        // (for example to detect spikes properly)
 
-                    skip = (skip_larger && index1 >= index2)
-                        || ndi2 == ndi1 + 1
-                        || neighbouring<Geometry1>(sec1, index1, index2)
-                        ;
+                        // skip if it is a neighbouring segment.
+                        // (including, for areas, first-last segment
+                        //  and two segments with one or more degenerate/duplicate
+                        //  (zero-length) segments in between)
+                        skip = ndi2 == ndi1 + 1
+                            || adjacent<Geometry1>(sec1, index1, index2);
+                    }
                 }
 
                 if (! skip)
@@ -356,7 +364,7 @@ private :
     // skips to the begin-point, we loose the index or have to recalculate it)
     // So we mimic it here
     template <typename Range, typename Section, typename Box, typename RobustPolicy>
-    static inline void get_start_point_iterator(Section & section,
+    static inline void get_start_point_iterator(Section const& section,
             Range const& range,
             typename boost::range_iterator<Range const>::type& it,
             typename boost::range_iterator<Range const>::type& prev,
@@ -370,7 +378,7 @@ private :
         // Mimic section-iterator:
         // Skip to point such that section interects other box
         prev = it++;
-        for(; it != end && detail::section::preceding<0>(dir, *it, other_bounding_box, robust_policy);
+        for(; it != end && detail::section::preceding<0>(dir, *it, section.bounding_box, other_bounding_box, robust_policy);
             prev = it++, index++, ndi++)
         {}
         // Go back one step because we want to start completely preceding
@@ -418,6 +426,7 @@ struct section_visitor
     {
         if (! detail::disjoint::disjoint_box_box(sec1.bounding_box, sec2.bounding_box))
         {
+            // false if interrupted
             return get_turns_in_sections
                     <
                         Geometry1,
@@ -425,13 +434,12 @@ struct section_visitor
                         Reverse1, Reverse2,
                         Section, Section,
                         TurnPolicy
-                    >::apply(
-                            m_source_id1, m_geometry1, sec1,
-                            m_source_id2, m_geometry2, sec2,
-                            false,
-                            m_intersection_strategy,
-                            m_rescale_policy,
-                            m_turns, m_interrupt_policy);
+                    >::apply(m_source_id1, m_geometry1, sec1,
+                             m_source_id2, m_geometry2, sec2,
+                             false, false,
+                             m_intersection_strategy,
+                             m_rescale_policy,
+                             m_turns, m_interrupt_policy);
         }
         return true;
     }
@@ -473,10 +481,13 @@ public:
         sections_type sec1, sec2;
         typedef boost::mpl::vector_c<std::size_t, 0, 1> dimensions;
 
+        typename IntersectionStrategy::envelope_strategy_type const
+            envelope_strategy = intersection_strategy.get_envelope_strategy();
+
         geometry::sectionalize<Reverse1, dimensions>(geometry1, robust_policy,
-                sec1, 0);
+                sec1, envelope_strategy, 0);
         geometry::sectionalize<Reverse2, dimensions>(geometry2, robust_policy,
-                sec2, 1);
+                sec2, envelope_strategy, 1);
 
         // ... and then partition them, intersecting overlapping sections in visitor method
         section_visitor

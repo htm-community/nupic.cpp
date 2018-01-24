@@ -11,6 +11,10 @@
 
 #include <typeinfo>
 #include <cstring>
+#include <boost/config.hpp>
+#if defined(BOOST_MSVC) || defined(BOOST_MSVC_VER)
+#include <boost/winapi/basic_types.hpp>
+#endif
 
 namespace boost { namespace dll { namespace detail {
 
@@ -23,11 +27,11 @@ const std::type_info& load_type_info(Lib & lib, Storage & storage)
 {
     struct RTTICompleteObjectLocator
     {
-        boost::detail::winapi::DWORD_ signature; //always zero ?
-        boost::detail::winapi::DWORD_ offset;    //offset of this vtable in the complete class
-        boost::detail::winapi::DWORD_ cdOffset;  //constructor displacement offset
-        boost::detail::winapi::DWORD_ pTypeDescriptorOffset; //TypeDescriptor of the complete class
-        boost::detail::winapi::DWORD_ pClassDescriptorOffset; //describes inheritance hierarchy (ignored)
+        boost::winapi::DWORD_ signature; //always zero ?
+        boost::winapi::DWORD_ offset;    //offset of this vtable in the complete class
+        boost::winapi::DWORD_ cdOffset;  //constructor displacement offset
+        boost::winapi::DWORD_ pTypeDescriptorOffset; //TypeDescriptor of the complete class
+        boost::winapi::DWORD_ pClassDescriptorOffset; //describes inheritance hierarchy (ignored)
     };
 
     RTTICompleteObjectLocator** vtable_p = &lib.template get<RTTICompleteObjectLocator*>(storage.template get_vtable<Class>());
@@ -50,9 +54,9 @@ const std::type_info& load_type_info(Lib & lib, Storage & storage)
 {
     struct RTTICompleteObjectLocator
     {
-        boost::detail::winapi::DWORD_ signature; //always zero ?
-        boost::detail::winapi::DWORD_ offset;    //offset of this vtable in the complete class
-        boost::detail::winapi::DWORD_ cdOffset;  //constructor displacement offset
+        boost::winapi::DWORD_ signature; //always zero ?
+        boost::winapi::DWORD_ offset;    //offset of this vtable in the complete class
+        boost::winapi::DWORD_ cdOffset;  //constructor displacement offset
         const std::type_info* pTypeDescriptor; //TypeDescriptor of the complete class
         void* pClassDescriptor; //describes inheritance hierarchy (ignored)
     };

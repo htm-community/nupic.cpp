@@ -45,7 +45,7 @@ inline int apply_out_handles(int handle, std::integral_constant<int, 1>, std::in
 
 template<int p1, int p2, typename Buffer>
 struct async_out_buffer : ::boost::process::detail::posix::handler_base_ext,
-                          ::boost::process::detail::posix::require_io_service
+                          ::boost::process::detail::posix::require_io_context
 {
     Buffer & buf;
 
@@ -76,7 +76,7 @@ struct async_out_buffer : ::boost::process::detail::posix::handler_base_ext,
     template<typename Executor>
     void on_setup(Executor & exec)
     {
-        pipe = std::make_shared<boost::process::async_pipe>(get_io_service(exec.seq));
+        pipe = std::make_shared<boost::process::async_pipe>(get_io_context(exec.seq));
     }
 
 
@@ -97,7 +97,7 @@ struct async_out_buffer : ::boost::process::detail::posix::handler_base_ext,
 
 template<int p1, int p2, typename Type>
 struct async_out_future : ::boost::process::detail::posix::handler_base_ext,
-                          ::boost::process::detail::posix::require_io_service
+                          ::boost::process::detail::posix::require_io_context
 {
     std::shared_ptr<std::promise<Type>> promise = std::make_shared<std::promise<Type>>();
 
@@ -148,7 +148,7 @@ struct async_out_future : ::boost::process::detail::posix::handler_base_ext,
     template<typename Executor>
     void on_setup(Executor & exec)
     {
-        pipe = std::make_shared<boost::process::async_pipe>(get_io_service(exec.seq));
+        pipe = std::make_shared<boost::process::async_pipe>(get_io_context(exec.seq));
     }
 
     template <typename Executor>

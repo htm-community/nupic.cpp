@@ -10,13 +10,13 @@
 #ifndef BOOST_PROCESS_WINDOWS_INITIALIZERS_ASYNC_OUT_HPP
 #define BOOST_PROCESS_WINDOWS_INITIALIZERS_ASYNC_OUT_HPP
 
-#include <boost/detail/winapi/process.hpp>
-#include <boost/detail/winapi/handles.hpp>
-#include <boost/detail/winapi/handle_info.hpp>
+#include <boost/winapi/process.hpp>
+#include <boost/winapi/handles.hpp>
+#include <boost/winapi/handle_info.hpp>
+#include <boost/winapi/error_codes.hpp>
 #include <boost/asio/read.hpp>
 #include <boost/process/detail/handler_base.hpp>
 #include <boost/process/detail/windows/asio_fwd.hpp>
-#include <boost/detail/winapi/error_codes.hpp>
 
 #include <istream>
 #include <memory>
@@ -30,44 +30,44 @@ namespace boost { namespace process { namespace detail { namespace windows {
 template <typename Executor>
 inline void apply_out_handles(Executor &e, void* handle, std::integral_constant<int, 1>, std::integral_constant<int, -1>)
 {
-    boost::detail::winapi::SetHandleInformation(handle,
-            boost::detail::winapi::HANDLE_FLAG_INHERIT_,
-            boost::detail::winapi::HANDLE_FLAG_INHERIT_);
+    boost::winapi::SetHandleInformation(handle,
+            boost::winapi::HANDLE_FLAG_INHERIT_,
+            boost::winapi::HANDLE_FLAG_INHERIT_);
 
     e.startup_info.hStdOutput = handle;
-    e.startup_info.dwFlags   |= ::boost::detail::winapi::STARTF_USESTDHANDLES_;
+    e.startup_info.dwFlags   |= ::boost::winapi::STARTF_USESTDHANDLES_;
     e.inherit_handles = true;
 }
 
 template <typename Executor>
 inline void apply_out_handles(Executor &e, void* handle, std::integral_constant<int, 2>, std::integral_constant<int, -1>)
 {
-    boost::detail::winapi::SetHandleInformation(handle,
-            boost::detail::winapi::HANDLE_FLAG_INHERIT_,
-            boost::detail::winapi::HANDLE_FLAG_INHERIT_);
+    boost::winapi::SetHandleInformation(handle,
+            boost::winapi::HANDLE_FLAG_INHERIT_,
+            boost::winapi::HANDLE_FLAG_INHERIT_);
 
 
     e.startup_info.hStdError = handle;
-    e.startup_info.dwFlags  |= ::boost::detail::winapi::STARTF_USESTDHANDLES_;
+    e.startup_info.dwFlags  |= ::boost::winapi::STARTF_USESTDHANDLES_;
     e.inherit_handles = true;
 }
 
 template <typename Executor>
 inline void apply_out_handles(Executor &e, void* handle, std::integral_constant<int, 1>, std::integral_constant<int, 2>)
 {
-    boost::detail::winapi::SetHandleInformation(handle,
-            boost::detail::winapi::HANDLE_FLAG_INHERIT_,
-            boost::detail::winapi::HANDLE_FLAG_INHERIT_);
+    boost::winapi::SetHandleInformation(handle,
+            boost::winapi::HANDLE_FLAG_INHERIT_,
+            boost::winapi::HANDLE_FLAG_INHERIT_);
 
     e.startup_info.hStdOutput = handle;
     e.startup_info.hStdError  = handle;
-    e.startup_info.dwFlags   |= ::boost::detail::winapi::STARTF_USESTDHANDLES_;
+    e.startup_info.dwFlags   |= ::boost::winapi::STARTF_USESTDHANDLES_;
     e.inherit_handles = true;
 }
 
 template<int p1, int p2, typename Buffer>
 struct async_out_buffer : ::boost::process::detail::windows::handler_base_ext,
-                          ::boost::process::detail::windows::require_io_service
+                          ::boost::process::detail::windows::require_io_context
 {
     Buffer & buf;
 
@@ -98,7 +98,7 @@ struct async_out_buffer : ::boost::process::detail::windows::handler_base_ext,
     void on_setup(WindowsExecutor &exec)
     {
         if (!pipe)
-            pipe = std::make_shared<boost::process::async_pipe>(get_io_service(exec.seq));
+            pipe = std::make_shared<boost::process::async_pipe>(get_io_context(exec.seq));
         apply_out_handles(exec, std::move(*pipe).sink().native_handle(),
                 std::integral_constant<int, p1>(), std::integral_constant<int, p2>());
     }
@@ -108,7 +108,7 @@ struct async_out_buffer : ::boost::process::detail::windows::handler_base_ext,
 
 template<int p1, int p2, typename Type>
 struct async_out_future : ::boost::process::detail::windows::handler_base_ext,
-                          ::boost::process::detail::windows::require_io_service
+                          ::boost::process::detail::windows::require_io_context
 {
     std::shared_ptr<boost::process::async_pipe> pipe;
     std::shared_ptr<std::promise<Type>> promise = std::make_shared<std::promise<Type>>();
@@ -129,7 +129,7 @@ struct async_out_future : ::boost::process::detail::windows::handler_base_ext,
         boost::asio::async_read(*pipe, *buffer,
                 [pipe, buffer, promise](const boost::system::error_code& ec, std::size_t)
                 {
-                    if (ec && (ec.value() != ::boost::detail::winapi::ERROR_BROKEN_PIPE_))
+                    if (ec && (ec.value() != ::boost::winapi::ERROR_BROKEN_PIPE_))
                     {
                         std::error_code e(ec.value(), std::system_category());
                         promise->set_exception(std::make_exception_ptr(process_error(e)));
@@ -138,8 +138,11 @@ struct async_out_future : ::boost::process::detail::windows::handler_base_ext,
                     {
                         std::istream is (buffer.get());
                         Type arg;
-                        arg.resize(buffer->size());
-                        is.read(&*arg.begin(), buffer->size());
+                        if (buffer->size() > 0)
+                        {
+                        	arg.resize(buffer->size());
+                        	is.read(&*arg.begin(), buffer->size());
+                        }
 
                         promise->set_value(std::move(arg));
 
@@ -163,7 +166,7 @@ struct async_out_future : ::boost::process::detail::windows::handler_base_ext,
     void on_setup(WindowsExecutor &exec)
     {
         if (!pipe)
-            pipe = std::make_shared<boost::process::async_pipe>(get_io_service(exec.seq));
+            pipe = std::make_shared<boost::process::async_pipe>(get_io_context(exec.seq));
 
         apply_out_handles(exec, std::move(*pipe).sink().native_handle(),
                 std::integral_constant<int, p1>(), std::integral_constant<int, p2>());

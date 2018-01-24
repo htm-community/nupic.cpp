@@ -43,7 +43,7 @@ public:
     explicit push_coroutine( Fn &&);
 
     template< typename StackAllocator, typename Fn >
-    push_coroutine( StackAllocator, Fn &&);
+    push_coroutine( StackAllocator &&, Fn &&);
 
     ~push_coroutine();
 
@@ -123,7 +123,7 @@ public:
     explicit push_coroutine( Fn &&);
 
     template< typename StackAllocator, typename Fn >
-    push_coroutine( StackAllocator, Fn &&);
+    push_coroutine( StackAllocator &&, Fn &&);
 
     ~push_coroutine();
 
@@ -201,7 +201,7 @@ public:
     explicit push_coroutine( Fn &&);
 
     template< typename StackAllocator, typename Fn >
-    push_coroutine( StackAllocator, Fn &&);
+    push_coroutine( StackAllocator &&, Fn &&);
 
     ~push_coroutine();
 

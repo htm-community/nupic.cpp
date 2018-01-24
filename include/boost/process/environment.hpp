@@ -472,17 +472,17 @@ public:
 
         ///Assign a string to the value
         void assign(const string_type &value);
-        ///Assign a set of strings to the entry; they will be seperated by ';' or ':'.
+        ///Assign a set of strings to the entry; they will be separated by ';' or ':'.
         void assign(const std::vector<string_type> &value);
-        ///Append a string to the end of the entry, it will seperated by ';' or ':'.
+        ///Append a string to the end of the entry, it will separated by ';' or ':'.
         void append(const string_type &value);
         ///Reset the value
         void clear();
         ///Assign a string to the entry.
         entry &operator=(const string_type & value);
-        ///Assign a set of strings to the entry; they will be seperated by ';' or ':'.
+        ///Assign a set of strings to the entry; they will be separated by ';' or ':'.
         entry &operator=(const std::vector<string_type> & value);
-        ///Append a string to the end of the entry, it will seperated by ';' or ':'.
+        ///Append a string to the end of the entry, it will separated by ';' or ':'.
         entry &operator+=(const string_type & value);
     };
 
@@ -592,17 +592,17 @@ public:
 
         ///Assign a string to the value
         void assign(const string_type &value);
-        ///Assign a set of strings to the entry; they will be seperated by ';' or ':'.
+        ///Assign a set of strings to the entry; they will be separated by ';' or ':'.
         void assign(const std::vector<string_type> &value);
-        ///Append a string to the end of the entry, it will seperated by ';'  or ':'.
+        ///Append a string to the end of the entry, it will separated by ';'  or ':'.
         void append(const string_type &value);
         ///Reset the value
         void clear();
         ///Assign a string to the entry.
         entry &operator=(const string_type & value);
-        ///Assign a set of strings to the entry; they will be seperated by ';' or ':'.
+        ///Assign a set of strings to the entry; they will be separated by ';' or ':'.
         entry &operator=(const std::vector<string_type> & value);
-        ///Append a string to the end of the entry, it will seperated by ';' or ':'.
+        ///Append a string to the end of the entry, it will separated by ';' or ':'.
         entry &operator+=(const string_type & value);
     };
 

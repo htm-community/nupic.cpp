@@ -47,19 +47,20 @@
 # error "futex not supported on this platform"
 #endif
 
-#if !defined(BOOST_FIBERS_SPIN_MAX_COLLISIONS)
-# define BOOST_FIBERS_SPIN_MAX_COLLISIONS 16
+#if !defined(BOOST_FIBERS_CONTENTION_WINDOW_THRESHOLD)
+# define BOOST_FIBERS_CONTENTION_WINDOW_THRESHOLD 16
 #endif
 
-#if !defined(BOOST_FIBERS_SPIN_MAX_TESTS)
-# define BOOST_FIBERS_SPIN_MAX_TESTS 500
+#if !defined(BOOST_FIBERS_RETRY_THRESHOLD)
+# define BOOST_FIBERS_RETRY_THRESHOLD 64
 #endif
 
-// modern architectures have cachelines with 64byte length
-// ARM Cortex-A15 32/64byte, Cortex-A9 16/32/64bytes
-// MIPS 74K: 32byte, 4KEc: 16byte
-// ist shoudl be safe to use 64byte for all
-static constexpr std::size_t cache_alignment{ 64 };
-static constexpr std::size_t cacheline_length{ 64 };
+#if !defined(BOOST_FIBERS_SPIN_BEFORE_SLEEP0)
+# define BOOST_FIBERS_SPIN_BEFORE_SLEEP0 32
+#endif
+
+#if !defined(BOOST_FIBERS_SPIN_BEFORE_YIELD)
+# define BOOST_FIBERS_SPIN_BEFORE_YIELD 64
+#endif
 
 #endif // BOOST_FIBERS_DETAIL_CONFIG_H

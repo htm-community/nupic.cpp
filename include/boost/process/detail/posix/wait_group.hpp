@@ -25,9 +25,11 @@ inline void wait(const group_handle &p)
     do
     {
         ret = ::waitpid(-p.grp, &status, 0);
-    } while (((ret == -1) && (errno == EINTR)) || (ret != -1 && !WIFEXITED(status)));
+    } while (((ret == -1) && (errno == EINTR)) || (ret != -1 && !WIFEXITED(status) && !WIFSIGNALED(status)));
     if (ret == -1)
         boost::process::detail::throw_last_error("waitpid(2) failed");
+    if (WIFSIGNALED(status))
+        throw process_error(std::error_code(), "process group terminated due to receipt of a signal");
 }
 
 inline void wait(const group_handle &p, std::error_code &ec) noexcept
@@ -39,10 +41,12 @@ inline void wait(const group_handle &p, std::error_code &ec) noexcept
     {
         ret = ::waitpid(-p.grp, &status, 0);
     } 
-    while (((ret == -1) && (errno == EINTR)) || (ret != -1 && !WIFEXITED(status)));
+    while (((ret == -1) && (errno == EINTR)) || (ret != -1 && !WIFEXITED(status) && !WIFSIGNALED(status)));
     
     if (ret == -1)
         ec = boost::process::detail::get_last_error();
+    else if (WIFSIGNALED(status))
+        ec = std::make_error_code(std::errc::no_such_process);
     else
         ec.clear();
 
@@ -70,13 +74,14 @@ inline bool wait_for(
             break;
         }
     } 
-    while (((ret == -1) && errno == EINTR)       || 
-           ((ret != -1) && !WIFEXITED(status)));
+    while (((ret == -1) && errno == EINTR)                               ||
+           ((ret != -1) && !WIFEXITED(status) && !WIFSIGNALED(status)));
 
 
     if (ret == -1)
         boost::process::detail::throw_last_error("waitpid(2) failed");
-     
+    if (WIFSIGNALED(status))
+        throw process_error(std::error_code(), "process group terminated due to receipt of a signal");
 
     return !time_out_occured;
 }
@@ -105,12 +110,14 @@ inline bool wait_for(
             break;
         }
     } 
-    while (((ret == -1) && errno == EINTR)       || 
-           ((ret != -1) && !WIFEXITED(status)));
+    while (((ret == -1) && errno == EINTR)                       ||
+           ((ret != -1) && !WIFEXITED(status) && !WIFSIGNALED(status)));
 
 
     if (ret == -1)
         ec = boost::process::detail::get_last_error();
+    else if (WIFSIGNALED(status))
+        ec = std::make_error_code(std::errc::no_such_process);
     else
         ec.clear();
 
@@ -128,8 +135,6 @@ inline bool wait_until(
     pid_t ret;
     int status;
 
-    auto start = std::chrono::system_clock::now();
-
     bool time_out_occured = false;
     do
     {
@@ -140,12 +145,14 @@ inline bool wait_until(
             break;
         }
     } 
-    while (((ret == -1) && errno == EINTR)       || 
-           ((ret != -1) && !WIFEXITED(status)));
+    while (((ret == -1) && errno == EINTR)                               ||
+           ((ret != -1) && !WIFEXITED(status) && !WIFSIGNALED(status)));
 
 
     if (ret == -1)
         boost::process::detail::throw_last_error("waitpid(2) failed");
+    if (WIFSIGNALED(status))
+        throw process_error(std::error_code(), "process group terminated due to receipt of a signal");
 
 
     return !time_out_occured;
@@ -162,8 +169,6 @@ inline bool wait_until(
     pid_t ret;
     int status;
 
-    auto start = std::chrono::system_clock::now();
-
     bool time_out_occured = false;
     do
     {
@@ -174,12 +179,14 @@ inline bool wait_until(
             break;
         }
     } 
-    while (((ret == -1) && errno == EINTR)       || 
-           ((ret != -1) && !WIFEXITED(status)));
+    while (((ret == -1) && errno == EINTR)                               ||
+           ((ret != -1) && !WIFEXITED(status) && !WIFSIGNALED(status)));
 
 
     if (ret == -1)
         ec = boost::process::detail::get_last_error();
+    else if (WIFSIGNALED(status))
+        ec = std::make_error_code(std::errc::no_such_process);
     else
         ec.clear();
 

@@ -15,7 +15,7 @@
 #include <system_error>
 #include <sys/types.h>
 #include <sys/wait.h>
-
+#include <unistd.h>
 
 namespace boost { namespace process { namespace detail { namespace posix {
 
@@ -26,9 +26,11 @@ inline void wait(const child_handle &p, int & exit_code)
     do
     {
         ret = ::waitpid(p.pid, &status, 0);
-    } while (((ret == -1) && (errno == EINTR)) || (ret != -1 && !WIFEXITED(status)));
+    } while (((ret == -1) && (errno == EINTR)) || (ret != -1 && !WIFEXITED(status) && !WIFSIGNALED(status)));
     if (ret == -1)
         boost::process::detail::throw_last_error("waitpid(2) failed");
+    if (WIFSIGNALED(status))
+        throw process_error(std::error_code(), "process terminated due to receipt of a signal");
      exit_code = status;
 }
 
@@ -41,7 +43,7 @@ inline void wait(const child_handle &p, int & exit_code, std::error_code &ec) no
     {
         ret = ::waitpid(p.pid, &status, 0);
     } 
-    while (((ret == -1) && (errno == EINTR)) || (ret != -1 && !WIFEXITED(status)));
+    while (((ret == -1) && (errno == EINTR)) || (ret != -1 && !WIFEXITED(status) && !WIFSIGNALED(status)));
     
     if (ret == -1)
         ec = boost::process::detail::get_last_error();
@@ -67,26 +69,27 @@ inline bool wait_for(
     auto start = std::chrono::system_clock::now();
     auto time_out = start + rel_time;
 
-    bool time_out_occured = false;
+    bool timed_out;
     do
     {
-        ret = ::waitpid(p.pid, &status, WUNTRACED | WNOHANG);
-        if (std::chrono::system_clock::now() >= time_out)
+        ret = ::waitpid(p.pid, &status, WNOHANG);
+        if (ret == 0)
         {
-            time_out_occured = true;
-            break;
+            timed_out = std::chrono::system_clock::now() >= time_out;    
+            if (timed_out)
+                return false;
         }
     } 
-    while (((ret == -1) && errno == EINTR)       || 
-           ((ret != -1) && !WIFEXITED(status)));
-
+    while ((ret == 0) ||
+           ((ret == -1) && errno == EINTR) ||
+           ((ret != -1) && !WIFEXITED(status) && !WIFSIGNALED(status)));
 
     if (ret == -1)
         boost::process::detail::throw_last_error("waitpid(2) failed");
-     
+
     exit_code = status;
 
-    return !time_out_occured;
+    return true;
 }
 
 
@@ -103,20 +106,25 @@ inline bool wait_for(
 
     auto start = std::chrono::system_clock::now();
     auto time_out = start + rel_time;
+    bool timed_out;
 
-    bool time_out_occured = false;
     do
     {
-        ret = ::waitpid(p.pid, &status, WUNTRACED | WNOHANG);
-        if (std::chrono::system_clock::now() >= time_out)
+        ret = ::waitpid(p.pid, &status, WNOHANG);
+        if (ret == 0)
         {
-            time_out_occured = true;
-            break;
+            timed_out = std::chrono::system_clock::now() >= time_out;    
+            if (timed_out)
+                return false;
         }
     } 
-    while (((ret == -1) && errno == EINTR)       || 
-           ((ret != -1) && !WIFEXITED(status)));
+    while ((ret == 0) ||
+          (((ret == -1) && errno == EINTR) ||
+           ((ret != -1) && !WIFEXITED(status) && !WIFSIGNALED(status))));
 
+
+    if (timed_out && (ret == -1))
+    	return false;
 
     if (ret == -1)
         ec = boost::process::detail::get_last_error();
@@ -126,68 +134,79 @@ inline bool wait_for(
         exit_code = status;
     }
 
-    return !time_out_occured;
+    return true;
 }
 
 
 
-template< class Rep, class Period >
+template< class Clock, class Duration >
 inline bool wait_until(
         const child_handle &p,
         int & exit_code,
-        const std::chrono::duration<Rep, Period>& time_out)
+        const std::chrono::time_point<Clock, Duration>& time_out)
 {
 
     pid_t ret;
     int status;
 
-    bool time_out_occured = false;
+    bool timed_out;
     do
     {
-        ret = ::waitpid(p.pid, &status, WUNTRACED | WNOHANG);
-        if (std::chrono::system_clock::now() >= time_out)
+        ret = ::waitpid(p.pid, &status, WNOHANG);
+        if (ret == 0)
         {
-            time_out_occured = true;
-            break;
+            timed_out = std::chrono::system_clock::now() >= time_out;    
+            if (timed_out)
+                return false;
         }
-    } 
-    while (((ret == -1) && errno == EINTR)       || 
-           ((ret != -1) && !WIFEXITED(status)));
+    }
+    while ((ret == 0) ||
+          (((ret == -1) && errno == EINTR) ||
+           ((ret != -1) && !WIFEXITED(status) && !WIFSIGNALED(status))));
 
+
+    if (timed_out && !WIFEXITED(status))
+    	return false;
 
     if (ret == -1)
         boost::process::detail::throw_last_error("waitpid(2) failed");
-
     exit_code = status;
 
-    return !time_out_occured;
+    return true;
 }
 
 
-template< class Rep, class Period >
+template< class Clock, class Duration >
 inline bool wait_until(
         const child_handle &p,
         int & exit_code,
-        const std::chrono::duration<Rep, Period>& time_out,
+        const std::chrono::time_point<Clock, Duration>& time_out,
         std::error_code & ec) noexcept
 {
 
     pid_t ret;
     int status;
 
-    bool time_out_occured = false;
+    bool timed_out;
+
     do
     {
-        ret = ::waitpid(p.pid, &status, WUNTRACED | WNOHANG);
-        if (std::chrono::system_clock::now() >= time_out)
+        ret = ::waitpid(p.pid, &status, WNOHANG);
+        if (ret == 0)
         {
-            time_out_occured = true;
-            break;
+            timed_out = std::chrono::system_clock::now() >= time_out;    
+            if (timed_out)
+                return false;
         }
     } 
-    while (((ret == -1) && errno == EINTR)       || 
-           ((ret != -1) && !WIFEXITED(status)));
+    while ((ret == 0) ||
+          (((ret == -1) && errno == EINTR) ||
+           ((ret != -1) && !WIFEXITED(status) && !WIFSIGNALED(status))));
 
+
+
+    if (timed_out && !WIFEXITED(status))
+    	return false;
 
     if (ret == -1)
         ec = boost::process::detail::get_last_error();
@@ -197,7 +216,7 @@ inline bool wait_until(
         exit_code = status;
     }
 
-    return !time_out_occured;
+    return true;
 }
 
 }}}}

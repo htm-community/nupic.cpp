@@ -32,7 +32,7 @@ struct push_coroutine< T >::control_block {
     static void destroy( control_block * cb) noexcept;
 
     template< typename StackAllocator, typename Fn >
-    control_block( context::preallocated, StackAllocator, Fn &&);
+    control_block( context::preallocated, StackAllocator &&, Fn &&);
 
     control_block( typename pull_coroutine< T >::control_block *, boost::context::continuation &) noexcept;
 
@@ -58,7 +58,7 @@ struct push_coroutine< T & >::control_block {
     static void destroy( control_block * cb) noexcept;
 
     template< typename StackAllocator, typename Fn >
-    control_block( context::preallocated, StackAllocator, Fn &&);
+    control_block( context::preallocated, StackAllocator &&, Fn &&);
 
     control_block( typename pull_coroutine< T & >::control_block *, boost::context::continuation &) noexcept;
 
@@ -81,7 +81,7 @@ struct push_coroutine< void >::control_block {
     static void destroy( control_block * cb) noexcept;
 
     template< typename StackAllocator, typename Fn >
-    control_block( context::preallocated, StackAllocator, Fn &&);
+    control_block( context::preallocated, StackAllocator &&, Fn &&);
 
     control_block( pull_coroutine< void >::control_block *, boost::context::continuation &) noexcept;
 

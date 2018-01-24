@@ -6,7 +6,7 @@
 #define BOOST_CONVERT_SPIRIT_BASED_CONVERTER_HPP
 
 #include <boost/convert/base.hpp>
-#include <boost/convert/detail/forward.hpp>
+#include <boost/convert/detail/config.hpp>
 #include <boost/spirit/include/qi.hpp>
 #include <boost/spirit/include/karma.hpp>
 

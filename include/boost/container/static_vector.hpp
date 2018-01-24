@@ -113,6 +113,8 @@ class static_vector
    template<class U, std::size_t OtherCapacity>
    friend class static_vector;
 
+   public:
+   typedef container_detail::static_storage_allocator<Value, Capacity> allocator_type;
    #endif   //#ifndef BOOST_CONTAINER_DOXYGEN_INVOKED
 
 public:
@@ -250,6 +252,19 @@ public:
     //!   Linear O(N).
     BOOST_CONTAINER_FORCEINLINE static_vector(static_vector const& other)
         : base_t(other)
+    {}
+
+    BOOST_CONTAINER_FORCEINLINE static_vector(static_vector const& other, const allocator_type &)
+       : base_t(other)
+    {}
+
+    BOOST_CONTAINER_FORCEINLINE static_vector(BOOST_RV_REF(static_vector) other,  const allocator_type &)
+       BOOST_NOEXCEPT_IF(boost::container::container_detail::is_nothrow_move_constructible<value_type>::value)
+       : base_t(BOOST_MOVE_BASE(base_t, other))
+    {}
+
+    BOOST_CONTAINER_FORCEINLINE explicit static_vector(const allocator_type &)
+       : base_t()
     {}
 
     //! @pre <tt>other.size() <= capacity()</tt>.

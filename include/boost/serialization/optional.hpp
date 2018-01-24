@@ -29,6 +29,7 @@
 #include <boost/type_traits/is_pointer.hpp>
 #include <boost/serialization/detail/stack_constructor.hpp>
 #include <boost/serialization/detail/is_default_constructible.hpp>
+#include <boost/serialization/force_include.hpp>
 
 // function specializations must be defined in the appropriate
 // namespace - boost::serialization
@@ -46,24 +47,15 @@ void save(
     // default constructor.  It's possible that this could change sometime
     // in the future, but for now, one will have to work around it.  This can
     // be done by serialization the optional<T> as optional<T *>
-    BOOST_STATIC_ASSERT(
-        boost::serialization::detail::is_default_constructible<T>::value
-        || boost::is_pointer<T>::value
-    );
+    #if ! defined(BOOST_NO_CXX11_HDR_TYPE_TRAITS)
+        BOOST_STATIC_ASSERT(
+            boost::serialization::detail::is_default_constructible<T>::value
+            || boost::is_pointer<T>::value
+        );
+    #endif
     const bool tflag = t.is_initialized();
     ar << boost::serialization::make_nvp("initialized", tflag);
     if (tflag){
-        const boost::serialization::item_version_type item_version(version< T >::value);
-        #if 0
-        const boost::archive::library_version_type library_version(
-            ar.get_library_version()
-        };
-        if(boost::archive::library_version_type(3) < library_version){
-            ar << BOOST_SERIALIZATION_NVP(item_version);
-        }
-        #else
-            ar << BOOST_SERIALIZATION_NVP(item_version);
-        #endif
         ar << boost::serialization::make_nvp("value", *t);
     }
 }
@@ -72,7 +64,7 @@ template<class Archive, class T>
 void load(
     Archive & ar, 
     boost::optional< T > & t, 
-    const unsigned int /*version*/
+    const unsigned int version
 ){
     bool tflag;
     ar >> boost::serialization::make_nvp("initialized", tflag);
@@ -81,20 +73,18 @@ void load(
         return;
     }
 
-    boost::serialization::item_version_type item_version(0);
-    boost::archive::library_version_type library_version(
-        ar.get_library_version()
-    );
-    if(boost::archive::library_version_type(3) < library_version){
-        ar >> BOOST_SERIALIZATION_NVP(item_version);
+    if(0 == version){
+        boost::serialization::item_version_type item_version(0);
+        boost::archive::library_version_type library_version(
+            ar.get_library_version()
+        );
+        if(boost::archive::library_version_type(3) < library_version){
+            ar >> BOOST_SERIALIZATION_NVP(item_version);
+        }
     }
-    detail::stack_allocate<T> tp;
-    ar >> boost::serialization::make_nvp("value", tp.reference());
-    t.reset(boost::move(tp.reference()));
-    ar.reset_object_address(
-        t.get_ptr(),
-        & tp.reference()
-    );
+    if(! t.is_initialized())
+        t = T();
+    ar >> boost::serialization::make_nvp("value", *t);
 }
 
 template<class Archive, class T>
@@ -106,7 +96,12 @@ void serialize(
     boost::serialization::split_free(ar, t, version);
 }
 
+template<class T>
+struct version<boost::optional<T> > {
+    BOOST_STATIC_CONSTANT(int, value = 1);
+};
+
 } // serialization
-} // namespace boost
+} // boost
 
 #endif // BOOST_SERIALIZATION_OPTIONAL_HPP_

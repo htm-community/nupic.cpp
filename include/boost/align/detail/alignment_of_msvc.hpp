@@ -23,8 +23,7 @@ struct offset_value {
 
 template<class T>
 struct alignment_of
-    : min_size<sizeof(T),
-        sizeof(offset_value<T>) - (sizeof(T) << 1)> { };
+    : min_size<sizeof(T), sizeof(offset_value<T>) - (sizeof(T) << 1)> { };
 
 } /* detail */
 } /* alignment */

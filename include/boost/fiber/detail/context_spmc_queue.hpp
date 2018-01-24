@@ -44,9 +44,7 @@ private:
     class array {
     private:
         typedef std::atomic< context * >                atomic_type;
-        typedef std::aligned_storage<
-            sizeof( atomic_type), cache_alignment
-        >::type                                         storage_type; 
+        typedef atomic_type                             storage_type; 
 
         std::size_t         capacity_;
         storage_type    *   storage_;
@@ -92,9 +90,9 @@ private:
         }
     };
 
-    alignas(cache_alignment) std::atomic< std::size_t >     top_{ 0 };
-    alignas(cache_alignment) std::atomic< std::size_t >     bottom_{ 0 };
-    alignas(cache_alignment) std::atomic< array * >         array_;
+    std::atomic< std::size_t >     top_{ 0 };
+    std::atomic< std::size_t >     bottom_{ 0 };
+    std::atomic< array * >         array_;
     std::vector< array * >                                  old_arrays_{};
     char                                                    padding_[cacheline_length];
 

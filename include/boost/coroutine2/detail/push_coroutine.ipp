@@ -43,8 +43,8 @@ push_coroutine< T >::push_coroutine( Fn && fn) :
 
 template< typename T >
 template< typename StackAllocator, typename Fn >
-push_coroutine< T >::push_coroutine( StackAllocator salloc, Fn && fn) :
-    cb_{ create_control_block< control_block >( salloc, std::forward< Fn >( fn) ) } {
+push_coroutine< T >::push_coroutine( StackAllocator && salloc, Fn && fn) :
+    cb_{ create_control_block< control_block >( std::forward< StackAllocator >( salloc), std::forward< Fn >( fn) ) } {
 }
 
 template< typename T >
@@ -103,8 +103,8 @@ push_coroutine< T & >::push_coroutine( Fn && fn) :
 
 template< typename T >
 template< typename StackAllocator, typename Fn >
-push_coroutine< T & >::push_coroutine( StackAllocator salloc, Fn && fn) :
-    cb_{ create_control_block< control_block >( salloc, std::forward< Fn >( fn) ) } {
+push_coroutine< T & >::push_coroutine( StackAllocator && salloc, Fn && fn) :
+    cb_{ create_control_block< control_block >( std::forward< StackAllocator >( salloc), std::forward< Fn >( fn) ) } {
 }
 
 template< typename T >
@@ -154,8 +154,8 @@ push_coroutine< void >::push_coroutine( Fn && fn) :
 }
 
 template< typename StackAllocator, typename Fn >
-push_coroutine< void >::push_coroutine( StackAllocator salloc, Fn && fn) :
-    cb_{ create_control_block< control_block >( salloc, std::forward< Fn >( fn) ) } {
+push_coroutine< void >::push_coroutine( StackAllocator && salloc, Fn && fn) :
+    cb_{ create_control_block< control_block >( std::forward< StackAllocator >( salloc), std::forward< Fn >( fn) ) } {
 }
 
 inline

@@ -45,7 +45,7 @@ public:
     explicit pull_coroutine( Fn &&);
 
     template< typename StackAllocator, typename Fn >
-    pull_coroutine( StackAllocator, Fn &&);
+    pull_coroutine( StackAllocator &&, Fn &&);
 
     ~pull_coroutine();
 
@@ -157,7 +157,7 @@ public:
     explicit pull_coroutine( Fn &&);
 
     template< typename StackAllocator, typename Fn >
-    pull_coroutine( StackAllocator, Fn &&);
+    pull_coroutine( StackAllocator &&, Fn &&);
 
     ~pull_coroutine();
 
@@ -267,7 +267,7 @@ public:
     explicit pull_coroutine( Fn &&);
 
     template< typename StackAllocator, typename Fn >
-    pull_coroutine( StackAllocator, Fn &&);
+    pull_coroutine( StackAllocator &&, Fn &&);
 
     ~pull_coroutine();
 

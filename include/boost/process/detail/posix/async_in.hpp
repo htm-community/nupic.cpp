@@ -22,7 +22,7 @@ namespace boost { namespace process { namespace detail { namespace posix {
 
 template<typename Buffer>
 struct async_in_buffer : ::boost::process::detail::posix::handler_base_ext,
-                         ::boost::process::detail::posix::require_io_service
+                         ::boost::process::detail::posix::require_io_context
 {
     Buffer & buf;
 
@@ -76,7 +76,7 @@ struct async_in_buffer : ::boost::process::detail::posix::handler_base_ext,
     template<typename Executor>
     void on_setup(Executor & exec)
     {
-        pipe = std::make_shared<boost::process::async_pipe>(get_io_service(exec.seq));
+        pipe = std::make_shared<boost::process::async_pipe>(get_io_context(exec.seq));
     }
 
     template <typename Executor>

@@ -24,7 +24,6 @@ inline boost::filesystem::path search_path(
         const boost::filesystem::path &filename,
         const std::vector<boost::filesystem::path> &path)
 {
-    std::string result;
     for (const boost::filesystem::path & pp : path)
     {
         auto p = pp / filename;

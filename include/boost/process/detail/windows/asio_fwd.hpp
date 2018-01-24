@@ -19,27 +19,35 @@ template<typename Allocator>
 class basic_streambuf;
 
 typedef basic_streambuf<std::allocator<char>> streambuf;
-class io_service;
+class io_context;
 
 template <typename Handler>
 class basic_yield_context;
 
 namespace windows {
 
+#if defined(BOOST_ASIO_ENABLE_OLD_SERVICES)
 class stream_handle_service;
 
 template <typename StreamHandleService>
 class basic_stream_handle;
 
 typedef basic_stream_handle<stream_handle_service> stream_handle;
+#else /* defined(BOOST_ASIO_ENABLE_OLD_SERVICES) */
+class stream_handle;
+#endif /* defined(BOOST_ASIO_ENABLE_OLD_SERVICES) */
 
 
+#if defined(BOOST_ASIO_ENABLE_OLD_SERVICES)
 class object_handle_service;
 
 template <typename ObjectHandleService>
 class basic_object_handle;
 
 typedef basic_object_handle<object_handle_service> object_handle;
+#else /* defined(BOOST_ASIO_ENABLE_OLD_SERVICES) */
+class object_handle;
+#endif /* defined(BOOST_ASIO_ENABLE_OLD_SERVICES) */
 
 } //windows
 } //asio

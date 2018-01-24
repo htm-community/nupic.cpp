@@ -13,7 +13,7 @@
 #include <boost/predef/compiler/visualc.h>
 #include <boost/dll/detail/aggressive_ptr_cast.hpp>
 #if BOOST_OS_WINDOWS
-#   include <boost/detail/winapi/dll.hpp>
+#   include <boost/winapi/dll.hpp>
 #   include <boost/dll/detail/windows/path_from_handle.hpp>
 #else
 #   include <dlfcn.h>
@@ -69,13 +69,13 @@ namespace detail {
         const void* ptr = boost::dll::detail::aggressive_ptr_cast<const void*>(ptr_to_symbol);
 
 #if BOOST_OS_WINDOWS
-        boost::detail::winapi::MEMORY_BASIC_INFORMATION_ mbi;
-        if (!boost::detail::winapi::VirtualQuery(ptr, &mbi, sizeof(mbi))) {
+        boost::winapi::MEMORY_BASIC_INFORMATION_ mbi;
+        if (!boost::winapi::VirtualQuery(ptr, &mbi, sizeof(mbi))) {
             ec = boost::dll::detail::last_error_code();
             return ret;
         }
 
-        return boost::dll::detail::path_from_handle(reinterpret_cast<boost::detail::winapi::HMODULE_>(mbi.AllocationBase), ec);
+        return boost::dll::detail::path_from_handle(reinterpret_cast<boost::winapi::HMODULE_>(mbi.AllocationBase), ec);
 #else
         Dl_info info;
 

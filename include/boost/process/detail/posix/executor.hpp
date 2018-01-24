@@ -180,7 +180,7 @@ template<typename Sequence>
 class executor
 {
     template<typename HasHandler, typename UseVFork>
-    void internal_error_handle(const std::error_code &ec, const char* msg, HasHandler, boost::mpl::true_, UseVFork) {}
+    void internal_error_handle(const std::error_code&, const char*, HasHandler, boost::mpl::true_, UseVFork) {}
 
     int _pipe_sink = -1;
 
@@ -233,7 +233,8 @@ class executor
     void check_error(boost::mpl::true_) {};
     void check_error(boost::mpl::false_)
     {
-        throw process_error(_ec, _msg);
+        if (_ec)
+            throw process_error(_ec, _msg);
     }
 
     typedef typename ::boost::process::detail::has_error_handler<Sequence>::type has_error_handler;

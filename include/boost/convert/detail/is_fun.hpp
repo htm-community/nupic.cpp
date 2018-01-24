@@ -5,7 +5,7 @@
 #ifndef BOOST_CONVERT_IS_FUNCTION_HPP
 #define BOOST_CONVERT_IS_FUNCTION_HPP
 
-#include <boost/convert/detail/forward.hpp>
+#include <boost/convert/detail/config.hpp>
 #include <boost/convert/detail/has_member.hpp>
 #include <boost/utility/enable_if.hpp>
 #include <boost/type_traits.hpp>

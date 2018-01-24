@@ -6,9 +6,9 @@
 #ifndef BOOST_PROCESS_DETAIL_WINDOWS_FILE_DESCRIPTOR_HPP_
 #define BOOST_PROCESS_DETAIL_WINDOWS_FILE_DESCRIPTOR_HPP_
 
-#include <boost/detail/winapi/basic_types.hpp>
-#include <boost/detail/winapi/handles.hpp>
-#include <boost/detail/winapi/file_management.hpp>
+#include <boost/winapi/basic_types.hpp>
+#include <boost/winapi/handles.hpp>
+#include <boost/winapi/file_management.hpp>
 #include <string>
 #include <boost/filesystem/path.hpp>
 
@@ -22,17 +22,17 @@ struct file_descriptor
         write = 2,
         read_write = 3
     };
-    static ::boost::detail::winapi::DWORD_ desired_access(mode_t mode)
+    static ::boost::winapi::DWORD_ desired_access(mode_t mode)
     {
         switch(mode)
         {
         case read:
-            return ::boost::detail::winapi::GENERIC_READ_;
+            return ::boost::winapi::GENERIC_READ_;
         case write:
-            return ::boost::detail::winapi::GENERIC_WRITE_;
+            return ::boost::winapi::GENERIC_WRITE_;
         case read_write:
-            return ::boost::detail::winapi::GENERIC_READ_
-                 | ::boost::detail::winapi::GENERIC_WRITE_;
+            return ::boost::winapi::GENERIC_READ_
+                 | ::boost::winapi::GENERIC_WRITE_;
         default:
             return 0u;
         }
@@ -51,15 +51,15 @@ struct file_descriptor
 
     file_descriptor(const char*    path, mode_t mode = read_write)
         : _handle(
-                ::boost::detail::winapi::create_file(
+                ::boost::winapi::create_file(
                         path,
                         desired_access(mode),
-                        ::boost::detail::winapi::FILE_SHARE_READ_ |
-                        ::boost::detail::winapi::FILE_SHARE_WRITE_,
+                        ::boost::winapi::FILE_SHARE_READ_ |
+                        ::boost::winapi::FILE_SHARE_WRITE_,
                         nullptr,
-                        ::boost::detail::winapi::OPEN_ALWAYS_,
+                        ::boost::winapi::OPEN_ALWAYS_,
 
-                        ::boost::detail::winapi::FILE_ATTRIBUTE_NORMAL_,
+                        ::boost::winapi::FILE_ATTRIBUTE_NORMAL_,
                         nullptr
                 ))
     {
@@ -67,15 +67,15 @@ struct file_descriptor
     }
     file_descriptor(const wchar_t * path, mode_t mode = read_write)
         : _handle(
-            ::boost::detail::winapi::create_file(
+            ::boost::winapi::create_file(
                     path,
                     desired_access(mode),
-                    ::boost::detail::winapi::FILE_SHARE_READ_ |
-                    ::boost::detail::winapi::FILE_SHARE_WRITE_,
+                    ::boost::winapi::FILE_SHARE_READ_ |
+                    ::boost::winapi::FILE_SHARE_WRITE_,
                     nullptr,
-                    ::boost::detail::winapi::OPEN_ALWAYS_,
+                    ::boost::winapi::OPEN_ALWAYS_,
 
-                    ::boost::detail::winapi::FILE_ATTRIBUTE_NORMAL_,
+                    ::boost::winapi::FILE_ATTRIBUTE_NORMAL_,
                     nullptr
             ))
 {
@@ -89,14 +89,14 @@ struct file_descriptor
 
     ~file_descriptor()
     {
-        if (_handle != ::boost::detail::winapi::INVALID_HANDLE_VALUE_)
-            ::boost::detail::winapi::CloseHandle(_handle);
+        if (_handle != ::boost::winapi::INVALID_HANDLE_VALUE_)
+            ::boost::winapi::CloseHandle(_handle);
     }
 
-    ::boost::detail::winapi::HANDLE_ handle() const { return _handle;}
+    ::boost::winapi::HANDLE_ handle() const { return _handle;}
 
 private:
-    ::boost::detail::winapi::HANDLE_ _handle = ::boost::detail::winapi::INVALID_HANDLE_VALUE_;
+    ::boost::winapi::HANDLE_ _handle = ::boost::winapi::INVALID_HANDLE_VALUE_;
 };
 
 }}}}

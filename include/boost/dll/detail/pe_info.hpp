@@ -14,6 +14,7 @@
 # pragma once
 #endif
 
+#include <boost/cstdint.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/dll/detail/x_info_interface.hpp>
 
@@ -25,13 +26,13 @@ namespace boost { namespace dll { namespace detail {
 // http://msdn.microsoft.com/en-us/magazine/cc301808.aspx
 //
 
-// Basic Windows typedefs. We can not use <boost/detail/winapi/basic_types.hpp> header
+// Basic Windows typedefs. We can not use <boost/winapi/basic_types.hpp> header
 // because that header must be included only on Windows platform
 typedef unsigned char BYTE_;
 typedef unsigned short WORD_;
-typedef unsigned long DWORD_;
-typedef long LONG_;
-typedef unsigned long ULONG_;
+typedef boost::uint32_t DWORD_;
+typedef boost::int32_t LONG_;
+typedef boost::uint32_t ULONG_;
 typedef boost::int64_t LONGLONG_;
 typedef boost::uint64_t ULONGLONG_;
 

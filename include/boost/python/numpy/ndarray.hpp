@@ -13,7 +13,7 @@
 
 #include <boost/python.hpp>
 #include <boost/utility/enable_if.hpp>
-#include <boost/type_traits/is_integral.hpp>
+#include <boost/python/detail/type_traits.hpp>
 #include <boost/python/numpy/numpy_object_mgr_traits.hpp>
 #include <boost/python/numpy/dtype.hpp>
 #include <boost/python/numpy/config.hpp>
@@ -86,11 +86,11 @@ public:
   /// @brief Copy the scalar (deep for all non-object fields).
   ndarray copy() const;
 
-  /// @brief Return the size of the nth dimension.
-  Py_intptr_t shape(int n) const { return get_shape()[n]; }
+  /// @brief Return the size of the nth dimension. raises IndexError if k not in [-get_nd() : get_nd()-1 ]
+  Py_intptr_t shape(int n) const;
 
-  /// @brief Return the stride of the nth dimension.
-  Py_intptr_t strides(int n) const { return get_strides()[n]; }
+  /// @brief Return the stride of the nth dimension. raises IndexError if k not in [-get_nd() : get_nd()-1]
+  Py_intptr_t strides(int n) const;
     
   /**
    *  @brief Return the array's raw data pointer.
@@ -176,7 +176,7 @@ ndarray from_data_impl(void * data,
 		       Container strides,
 		       object const & owner,
 		       bool writeable,
-		       typename boost::enable_if< boost::is_integral<typename Container::value_type> >::type * enabled = NULL)
+		       typename boost::enable_if< boost::python::detail::is_integral<typename Container::value_type> >::type * enabled = NULL)
 {
   std::vector<Py_intptr_t> shape_(shape.begin(),shape.end());
   std::vector<Py_intptr_t> strides_(strides.begin(), strides.end());

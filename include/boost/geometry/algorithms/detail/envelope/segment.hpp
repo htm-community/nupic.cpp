@@ -80,6 +80,35 @@ struct envelope_segment_call_vertex_latitude<CalculationType, geographic_tag>
     }
 };
 
+template <typename Units, typename CS_Tag>
+struct envelope_segment_convert_polar
+{
+    template <typename T>
+    static inline void pre(T & , T & ) {}
+
+    template <typename T>
+    static inline void post(T & , T & ) {}
+};
+
+template <typename Units>
+struct envelope_segment_convert_polar<Units, spherical_polar_tag>
+{
+    template <typename T>
+    static inline void pre(T & lat1, T & lat2)
+    {
+        lat1 = math::latitude_convert_ep<Units>(lat1);
+        lat2 = math::latitude_convert_ep<Units>(lat2);
+    }
+
+    template <typename T>
+    static inline void post(T & lat1, T & lat2)
+    {
+        lat1 = math::latitude_convert_ep<Units>(lat1);
+        lat2 = math::latitude_convert_ep<Units>(lat2);
+        std::swap(lat1, lat2);
+    }
+};
+
 template <typename CS_Tag>
 class envelope_segment_impl
 {
@@ -130,18 +159,15 @@ private:
                                            CalculationType& lat1,
                                            CalculationType& lon2,
                                            CalculationType& lat2,
+                                           CalculationType a1,
+                                           CalculationType a2,
                                            Strategy const& strategy)
     {
         // coordinates are assumed to be in radians
         BOOST_GEOMETRY_ASSERT(lon1 <= lon2);
 
-        CalculationType lon1_rad = math::as_radian<Units>(lon1);
         CalculationType lat1_rad = math::as_radian<Units>(lat1);
-        CalculationType lon2_rad = math::as_radian<Units>(lon2);
         CalculationType lat2_rad = math::as_radian<Units>(lat2);
-
-        CalculationType a1, a2;
-        strategy.apply(lon1_rad, lat1_rad, lon2_rad, lat2_rad, a1, a2);
 
         if (lat1 > lat2)
         {
@@ -174,7 +200,7 @@ private:
                     lat1 = lat_min;
                 }
             }
-            else if (mid_lat > 0)
+            else
             {
                 // update using max latitude
                 CalculationType const lat_max_rad = p_max;
@@ -189,12 +215,11 @@ private:
         }
     }
 
-    template <typename Units, typename CalculationType, typename Strategy>
-    static inline void apply(CalculationType& lon1,
-                             CalculationType& lat1,
-                             CalculationType& lon2,
-                             CalculationType& lat2,
-                             Strategy const& strategy)
+    template <typename Units, typename CalculationType>
+    static inline void special_cases(CalculationType& lon1,
+                                     CalculationType& lat1,
+                                     CalculationType& lon2,
+                                     CalculationType& lat2)
     {
         typedef math::detail::constants_on_spheroid
             <
@@ -249,23 +274,19 @@ private:
             lon1 += constants::period();
             swap(lon1, lat1, lon2, lat2);
         }
-
-        compute_box_corners<Units>(lon1, lat1, lon2, lat2, strategy);
     }
 
-public:
-    template <
-            typename Units,
-            typename CalculationType,
-            typename Box,
-            typename Strategy
-            >
-    static inline void apply(CalculationType lon1,
-                             CalculationType lat1,
-                             CalculationType lon2,
-                             CalculationType lat2,
-                             Box& mbr,
-                             Strategy const& strategy)
+    template
+    <
+        typename Units,
+        typename CalculationType,
+        typename Box
+    >
+    static inline void create_box(CalculationType lon1,
+                                  CalculationType lat1,
+                                  CalculationType lon2,
+                                  CalculationType lat2,
+                                  Box& mbr)
     {
         typedef typename coordinate_type<Box>::type box_coordinate_type;
 
@@ -274,31 +295,122 @@ public:
                 Box, box_coordinate_type, Units
             >::type helper_box_type;
 
-        helper_box_type radian_mbr;
-
-        apply<Units>(lon1, lat1, lon2, lat2, strategy);
+        helper_box_type helper_mbr;
 
         geometry::set
             <
                 min_corner, 0
-            >(radian_mbr, boost::numeric_cast<box_coordinate_type>(lon1));
+            >(helper_mbr, boost::numeric_cast<box_coordinate_type>(lon1));
 
         geometry::set
             <
                 min_corner, 1
-            >(radian_mbr, boost::numeric_cast<box_coordinate_type>(lat1));
+            >(helper_mbr, boost::numeric_cast<box_coordinate_type>(lat1));
 
         geometry::set
             <
                 max_corner, 0
-            >(radian_mbr, boost::numeric_cast<box_coordinate_type>(lon2));
+            >(helper_mbr, boost::numeric_cast<box_coordinate_type>(lon2));
 
         geometry::set
             <
                 max_corner, 1
-            >(radian_mbr, boost::numeric_cast<box_coordinate_type>(lat2));
+            >(helper_mbr, boost::numeric_cast<box_coordinate_type>(lat2));
 
-        transform_units(radian_mbr, mbr);
+        transform_units(helper_mbr, mbr);
+    }
+
+
+    template <typename Units, typename CalculationType, typename Strategy>
+    static inline void apply(CalculationType& lon1,
+                             CalculationType& lat1,
+                             CalculationType& lon2,
+                             CalculationType& lat2,
+                             Strategy const& strategy)
+    {
+        special_cases<Units>(lon1, lat1, lon2, lat2);
+
+        CalculationType lon1_rad = math::as_radian<Units>(lon1);
+        CalculationType lat1_rad = math::as_radian<Units>(lat1);
+        CalculationType lon2_rad = math::as_radian<Units>(lon2);
+        CalculationType lat2_rad = math::as_radian<Units>(lat2);
+        CalculationType alp1, alp2;
+        strategy.apply(lon1_rad, lat1_rad, lon2_rad, lat2_rad, alp1, alp2);
+
+        compute_box_corners<Units>(lon1, lat1, lon2, lat2, alp1, alp2, strategy);
+    }
+
+    template <typename Units, typename CalculationType, typename Strategy>
+    static inline void apply(CalculationType& lon1,
+                             CalculationType& lat1,
+                             CalculationType& lon2,
+                             CalculationType& lat2,
+                             Strategy const& strategy,
+                             CalculationType alp1)
+    {
+        special_cases<Units>(lon1, lat1, lon2, lat2);
+
+        CalculationType lon1_rad = math::as_radian<Units>(lon1);
+        CalculationType lat1_rad = math::as_radian<Units>(lat1);
+        CalculationType lon2_rad = math::as_radian<Units>(lon2);
+        CalculationType lat2_rad = math::as_radian<Units>(lat2);
+        CalculationType alp2;
+        strategy.apply(lon2_rad, lat2_rad, lon1_rad, lat1_rad, alp2);
+        alp2 += math::pi<CalculationType>();
+
+        compute_box_corners<Units>(lon1, lat1, lon2, lat2, alp1, alp2, strategy);
+    }
+
+public:
+    template
+    <
+        typename Units,
+        typename CalculationType,
+        typename Box,
+        typename Strategy
+    >
+    static inline void apply(CalculationType lon1,
+                             CalculationType lat1,
+                             CalculationType lon2,
+                             CalculationType lat2,
+                             Box& mbr,
+                             Strategy const& strategy)
+    {
+        typedef envelope_segment_convert_polar<Units, typename cs_tag<Box>::type> convert_polar;
+
+        convert_polar::pre(lat1, lat2);
+
+        apply<Units>(lon1, lat1, lon2, lat2, strategy);
+
+        convert_polar::post(lat1, lat2);
+
+        create_box<Units>(lon1, lat1, lon2, lat2, mbr);
+    }
+
+    template
+    <
+        typename Units,
+        typename CalculationType,
+        typename Box,
+        typename Strategy
+    >
+    static inline void apply(CalculationType lon1,
+                             CalculationType lat1,
+                             CalculationType lon2,
+                             CalculationType lat2,
+                             Box& mbr,
+                             Strategy const& strategy,
+                             CalculationType alp1)
+    {
+        typedef envelope_segment_convert_polar<Units, typename cs_tag<Box>::type> convert_polar;
+
+        convert_polar::pre(lat1, lat2);
+
+        apply<Units>(lon1, lat1, lon2, lat2, strategy, alp1);
+
+        convert_polar::post(lat1, lat2);
+
+        create_box<Units>(lon1, lat1, lon2, lat2, mbr);
     }
 };
 
@@ -314,8 +426,6 @@ struct envelope_one_segment
         envelope_one_point<Dimension, DimensionCount>::apply(p1, mbr, strategy);
         detail::expand::point_loop
             <
-                strategy::compare::default_strategy,
-                strategy::compare::default_strategy,
                 Dimension,
                 DimensionCount
             >::apply(mbr, p2, strategy);
@@ -340,13 +450,14 @@ struct envelope_segment
         envelope_one_segment<2, DimensionCount>::apply(p1, p2, mbr, strategy);
     }
 
-    template <typename Segment, typename Box>
-    static inline void apply(Segment const& segment, Box& mbr)
+    template <typename Segment, typename Box, typename Strategy>
+    static inline void apply(Segment const& segment, Box& mbr,
+                             Strategy const& strategy)
     {
         typename point_type<Segment>::type p[2];
         detail::assign_point_from_index<0>(segment, p[0]);
         detail::assign_point_from_index<1>(segment, p[1]);
-        apply(p[0], p[1], mbr);
+        apply(p[0], p[1], mbr, strategy);
     }
 };
 

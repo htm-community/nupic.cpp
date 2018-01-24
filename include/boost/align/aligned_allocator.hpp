@@ -28,8 +28,7 @@ namespace alignment {
 
 template<class T, std::size_t Alignment>
 class aligned_allocator {
-    BOOST_STATIC_ASSERT(detail::
-        is_alignment_constant<Alignment>::value);
+    BOOST_STATIC_ASSERT(detail::is_alignment_constant<Alignment>::value);
 
 public:
     typedef T value_type;
@@ -124,8 +123,7 @@ public:
 
 template<std::size_t Alignment>
 class aligned_allocator<void, Alignment> {
-    BOOST_STATIC_ASSERT(detail::
-        is_alignment_constant<Alignment>::value);
+    BOOST_STATIC_ASSERT(detail::is_alignment_constant<Alignment>::value);
 
 public:
     typedef void value_type;

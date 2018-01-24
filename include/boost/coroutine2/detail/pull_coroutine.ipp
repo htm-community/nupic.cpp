@@ -50,8 +50,8 @@ pull_coroutine< T >::pull_coroutine( Fn && fn) :
 
 template< typename T >
 template< typename StackAllocator, typename Fn >
-pull_coroutine< T >::pull_coroutine( StackAllocator salloc, Fn && fn) :
-    cb_{ create_control_block< control_block >( salloc, std::forward< Fn >( fn) ) } {
+pull_coroutine< T >::pull_coroutine( StackAllocator && salloc, Fn && fn) :
+    cb_{ create_control_block< control_block >( std::forward< StackAllocator >( salloc), std::forward< Fn >( fn) ) } {
     if ( ! cb_->valid() ) {
         cb_->deallocate();
         cb_ = nullptr;
@@ -119,8 +119,8 @@ pull_coroutine< T & >::pull_coroutine( Fn && fn) :
 
 template< typename T >
 template< typename StackAllocator, typename Fn >
-pull_coroutine< T & >::pull_coroutine( StackAllocator salloc, Fn && fn) :
-    cb_{ create_control_block< control_block >( salloc, std::forward< Fn >( fn) ) } {
+pull_coroutine< T & >::pull_coroutine( StackAllocator && salloc, Fn && fn) :
+    cb_{ create_control_block< control_block >( std::forward< StackAllocator >( salloc), std::forward< Fn >( fn) ) } {
     if ( ! cb_->valid() ) {
         cb_->deallocate();
         cb_ = nullptr;
@@ -180,8 +180,8 @@ pull_coroutine< void >::pull_coroutine( Fn && fn) :
 }
 
 template< typename StackAllocator, typename Fn >
-pull_coroutine< void >::pull_coroutine( StackAllocator salloc, Fn && fn) :
-    cb_{ create_control_block< control_block >( salloc, std::forward< Fn >( fn) ) } {
+pull_coroutine< void >::pull_coroutine( StackAllocator && salloc, Fn && fn) :
+    cb_{ create_control_block< control_block >( std::forward< StackAllocator >( salloc), std::forward< Fn >( fn) ) } {
     if ( ! cb_->valid() ) {
         cb_->deallocate();
         cb_ = nullptr;

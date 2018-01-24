@@ -671,7 +671,7 @@ basic_gzip_compressor<Alloc>::basic_gzip_compressor
               0 );
     header_.reserve(length);
     header_ += gzip::magic::id1;                         // ID1.
-    header_ += gzip::magic::id2;                         // ID2.
+    header_ += static_cast<char>(gzip::magic::id2);      // ID2.
     header_ += gzip::method::deflate;                    // CM.
     header_ += static_cast<char>(flags);                 // FLG.
     header_ += static_cast<char>(0xFF & p.mtime);        // MTIME.

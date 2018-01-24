@@ -262,7 +262,7 @@ public:
     typedef  typename Traits::off_type off_type   ;
 
     ///Get access to the underlying stream_buf
-    basic_pipebuf<CharT, Traits>* rdbuf() const {return _buf;};
+    basic_pipebuf<CharT, Traits>* rdbuf() {return &_buf;};
 
     ///Default constructor.
     basic_ipstream() : std::basic_istream<CharT, Traits>(nullptr)

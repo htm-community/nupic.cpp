@@ -65,7 +65,8 @@ public:
     child(child && lhs) noexcept
         : _child_handle(std::move(lhs._child_handle)),
           _exit_status(std::move(lhs._exit_status)),
-          _attached (lhs._attached)
+          _attached (lhs._attached),
+          _terminated (lhs._terminated)
     {
         lhs._attached = false;
     }
@@ -79,6 +80,7 @@ public:
         _child_handle= std::move(lhs._child_handle);
         _exit_status = std::move(lhs._exit_status);
         _attached    = lhs._attached;
+        _terminated  = lhs._terminated;
         lhs._attached = false;
         return *this;
     };
@@ -103,7 +105,7 @@ public:
     {
         if (valid() && !_exited())
         {
-            int code; 
+            int code = -1;
             auto res = boost::process::detail::api::is_running(_child_handle, code);
             if (!res && !_exited())
                 _exit_status->store(code);

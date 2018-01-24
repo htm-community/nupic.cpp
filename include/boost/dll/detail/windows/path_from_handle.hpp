@@ -10,8 +10,8 @@
 
 #include <boost/config.hpp>
 #include <boost/dll/detail/system_error.hpp>
-#include <boost/detail/winapi/dll.hpp>
-#include <boost/detail/winapi/get_last_error.hpp>
+#include <boost/winapi/dll.hpp>
+#include <boost/winapi/get_last_error.hpp>
 #include <boost/filesystem/path.hpp>
 
 #ifdef BOOST_HAS_PRAGMA_ONCE
@@ -21,29 +21,29 @@
 namespace boost { namespace dll { namespace detail {
 
     static inline boost::system::error_code last_error_code() BOOST_NOEXCEPT {
-        boost::detail::winapi::DWORD_ err = boost::detail::winapi::GetLastError();
+        boost::winapi::DWORD_ err = boost::winapi::GetLastError();
         return boost::system::error_code(
             err,
             boost::system::system_category()
         );
     }
 
-    inline boost::filesystem::path path_from_handle(boost::detail::winapi::HMODULE_ handle, boost::system::error_code &ec) {
-        BOOST_STATIC_CONSTANT(boost::detail::winapi::DWORD_, ERROR_INSUFFICIENT_BUFFER_ = 0x7A);
-        BOOST_STATIC_CONSTANT(boost::detail::winapi::DWORD_, DEFAULT_PATH_SIZE_ = 260);
+    inline boost::filesystem::path path_from_handle(boost::winapi::HMODULE_ handle, boost::system::error_code &ec) {
+        BOOST_STATIC_CONSTANT(boost::winapi::DWORD_, ERROR_INSUFFICIENT_BUFFER_ = 0x7A);
+        BOOST_STATIC_CONSTANT(boost::winapi::DWORD_, DEFAULT_PATH_SIZE_ = 260);
 
         // If `handle` parameter is NULL, GetModuleFileName retrieves the path of the
         // executable file of the current process.
-        boost::detail::winapi::WCHAR_ path_hldr[DEFAULT_PATH_SIZE_];
-        boost::detail::winapi::GetModuleFileNameW(handle, path_hldr, DEFAULT_PATH_SIZE_);
+        boost::winapi::WCHAR_ path_hldr[DEFAULT_PATH_SIZE_];
+        boost::winapi::GetModuleFileNameW(handle, path_hldr, DEFAULT_PATH_SIZE_);
         ec = last_error_code();
         if (!ec) {
             return boost::filesystem::path(path_hldr);
         }
 
-        for (unsigned i = 2; i < 1025 && static_cast<boost::detail::winapi::DWORD_>(ec.value()) == ERROR_INSUFFICIENT_BUFFER_; i *= 2) {
+        for (unsigned i = 2; i < 1025 && static_cast<boost::winapi::DWORD_>(ec.value()) == ERROR_INSUFFICIENT_BUFFER_; i *= 2) {
             std::wstring p(DEFAULT_PATH_SIZE_ * i, L'\0');
-            const std::size_t size = boost::detail::winapi::GetModuleFileNameW(handle, &p[0], DEFAULT_PATH_SIZE_ * i);
+            const std::size_t size = boost::winapi::GetModuleFileNameW(handle, &p[0], DEFAULT_PATH_SIZE_ * i);
             ec = last_error_code();
 
             if (!ec) {

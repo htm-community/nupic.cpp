@@ -10,9 +10,9 @@
 #ifndef BOOST_PROCESS_WINDOWS_INITIALIZERS_NULL_IN_HPP
 #define BOOST_PROCESS_WINDOWS_INITIALIZERS_NULL_IN_HPP
 
-#include <boost/detail/winapi/process.hpp>
-#include <boost/detail/winapi/handles.hpp>
-#include <boost/detail/winapi/handle_info.hpp>
+#include <boost/winapi/process.hpp>
+#include <boost/winapi/handles.hpp>
+#include <boost/winapi/handle_info.hpp>
 #include <boost/process/detail/handler_base.hpp>
 #include <boost/process/detail/windows/file_descriptor.hpp>
 
@@ -26,12 +26,12 @@ public:
     template <class WindowsExecutor>
     void on_setup(WindowsExecutor &e) const
     {
-        boost::detail::winapi::SetHandleInformation(source.handle(),
-                boost::detail::winapi::HANDLE_FLAG_INHERIT_,
-                boost::detail::winapi::HANDLE_FLAG_INHERIT_);
+        boost::winapi::SetHandleInformation(source.handle(),
+                boost::winapi::HANDLE_FLAG_INHERIT_,
+                boost::winapi::HANDLE_FLAG_INHERIT_);
 
         e.startup_info.hStdInput = source.handle();
-        e.startup_info.dwFlags  |= boost::detail::winapi::STARTF_USESTDHANDLES_;
+        e.startup_info.dwFlags  |= boost::winapi::STARTF_USESTDHANDLES_;
         e.inherit_handles = true;
     }
 };

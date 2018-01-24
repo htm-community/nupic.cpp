@@ -27,12 +27,4 @@
 # define BOOST_COROUTINES2_DECL
 #endif
 
-#if ! defined(BOOST_COROUTINES2_SOURCE) && ! defined(BOOST_ALL_NO_LIB) && ! defined(BOOST_COROUTINES2_NO_LIB)
-# define BOOST_LIB_NAME boost_coroutine2
-# if defined(BOOST_ALL_DYN_LINK) || defined(BOOST_COROUTINES2_DYN_LINK)
-#  define BOOST_DYN_LINK
-# endif
-# include <boost/config/auto_link.hpp>
-#endif
-
 #endif // BOOST_COROUTINES2_DETAIL_CONFIG_H

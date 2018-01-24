@@ -91,14 +91,14 @@ child c2("c++filt", std_in<p);
 Utilizing `boost.asio` asynchronous I/O is provided.
 
 \code
-boost::asio::io_service ios;
+boost::asio::io_context ios;
 std::future<std::string> output;
 system("ls", std_out > output, ios);
 
 auto res = fut.get();
 \endcode
 
-\note `boost/process/asnyc.hpp` must also be included for this to work.
+\note `boost/process/async.hpp` must also be included for this to work.
 
 \par Closing
 
@@ -371,7 +371,7 @@ std_err = buffer;
 so you can wait for the input to be completed. It looks like this:
 \code{.cpp}
 std::future<void> fut;
-boost::asio::io_service ios;
+boost::asio::io_context ios;
 std::string data;
 child c("prog", std_in < buffer(data) >  fut, ios);
 fut.get();
@@ -380,7 +380,7 @@ fut.get();
 
 \note `boost::asio::buffer` is also available in the `boost::process` namespace.
 
-\warning This feature requires `boost/process/async.hpp` to be included and a reference to `boost::asio::io_service` to be passed to the launching function.
+\warning This feature requires `boost/process/async.hpp` to be included and a reference to `boost::asio::io_context` to be passed to the launching function.
 
 
 \subsection stdin_close Close
@@ -510,7 +510,7 @@ std_err = buffer;
 
 \note `boost::asio::buffer` is also available in the `boost::process` namespace.
 
-\warning This feature requires `boost/process/async.hpp` to be included and a reference to `boost::asio::io_service` to be passed to the launching function.
+\warning This feature requires `boost/process/async.hpp` to be included and a reference to `boost::asio::io_context` to be passed to the launching function.
 
 
 \subsection stdout_close Close

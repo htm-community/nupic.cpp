@@ -6,9 +6,9 @@
 #ifndef BOOST_PROCESS_DETAIL_WINDOWS_JOB_WORKAROUND_HPP_
 #define BOOST_PROCESS_DETAIL_WINDOWS_JOB_WORKAROUND_HPP_
 
-#include <boost/detail/winapi/config.hpp>
-#include <boost/detail/winapi/basic_types.hpp>
-#include <boost/detail/winapi/dll.hpp>
+#include <boost/winapi/config.hpp>
+#include <boost/winapi/basic_types.hpp>
+#include <boost/winapi/dll.hpp>
 
 namespace boost { namespace process { namespace detail { namespace windows { namespace workaround {
 
@@ -42,35 +42,35 @@ typedef enum _JOBOBJECTINFOCLASS_ {
     } JOBOBJECTINFOCLASS_;
 
 typedef struct _JOBOBJECT_BASIC_LIMIT_INFORMATION_ {
-  ::boost::detail::winapi::LARGE_INTEGER_ PerProcessUserTimeLimit;
-  ::boost::detail::winapi::LARGE_INTEGER_ PerJobUserTimeLimit;
-  ::boost::detail::winapi::DWORD_         LimitFlags;
-  ::boost::detail::winapi::SIZE_T_        MinimumWorkingSetSize;
-  ::boost::detail::winapi::SIZE_T_        MaximumWorkingSetSize;
-  ::boost::detail::winapi::DWORD_         ActiveProcessLimit;
-  ::boost::detail::winapi::ULONG_PTR_     Affinity;
-  ::boost::detail::winapi::DWORD_         PriorityClass;
-  ::boost::detail::winapi::DWORD_         SchedulingClass;
+  ::boost::winapi::LARGE_INTEGER_ PerProcessUserTimeLimit;
+  ::boost::winapi::LARGE_INTEGER_ PerJobUserTimeLimit;
+  ::boost::winapi::DWORD_         LimitFlags;
+  ::boost::winapi::SIZE_T_        MinimumWorkingSetSize;
+  ::boost::winapi::SIZE_T_        MaximumWorkingSetSize;
+  ::boost::winapi::DWORD_         ActiveProcessLimit;
+  ::boost::winapi::ULONG_PTR_     Affinity;
+  ::boost::winapi::DWORD_         PriorityClass;
+  ::boost::winapi::DWORD_         SchedulingClass;
 } JOBOBJECT_BASIC_LIMIT_INFORMATION_;
 
 
 typedef struct _IO_COUNTERS_ {
-  ::boost::detail::winapi::ULONGLONG_ ReadOperationCount;
-  ::boost::detail::winapi::ULONGLONG_ WriteOperationCount;
-  ::boost::detail::winapi::ULONGLONG_ OtherOperationCount;
-  ::boost::detail::winapi::ULONGLONG_ ReadTransferCount;
-  ::boost::detail::winapi::ULONGLONG_ WriteTransferCount;
-  ::boost::detail::winapi::ULONGLONG_ OtherTransferCount;
+  ::boost::winapi::ULONGLONG_ ReadOperationCount;
+  ::boost::winapi::ULONGLONG_ WriteOperationCount;
+  ::boost::winapi::ULONGLONG_ OtherOperationCount;
+  ::boost::winapi::ULONGLONG_ ReadTransferCount;
+  ::boost::winapi::ULONGLONG_ WriteTransferCount;
+  ::boost::winapi::ULONGLONG_ OtherTransferCount;
 } IO_COUNTERS_;
 
 
 typedef struct _JOBOBJECT_EXTENDED_LIMIT_INFORMATION_ {
   JOBOBJECT_BASIC_LIMIT_INFORMATION_ BasicLimitInformation;
   IO_COUNTERS_                       IoInfo;
-  ::boost::detail::winapi::SIZE_T_   ProcessMemoryLimit;
-  ::boost::detail::winapi::SIZE_T_   JobMemoryLimit;
-  ::boost::detail::winapi::SIZE_T_   PeakProcessMemoryUsed;
-  ::boost::detail::winapi::SIZE_T_   PeakJobMemoryUsed;
+  ::boost::winapi::SIZE_T_   ProcessMemoryLimit;
+  ::boost::winapi::SIZE_T_   JobMemoryLimit;
+  ::boost::winapi::SIZE_T_   PeakProcessMemoryUsed;
+  ::boost::winapi::SIZE_T_   PeakJobMemoryUsed;
 } JOBOBJECT_EXTENDED_LIMIT_INFORMATION_;
 
 
@@ -82,23 +82,23 @@ typedef struct _JOBOBJECT_EXTENDED_LIMIT_INFORMATION_ {
   _Out_opt_ LPDWORD            lpReturnLength
 );
  */
-typedef ::boost::detail::winapi::BOOL_  ( WINAPI *query_information_job_object_p)(
-        ::boost::detail::winapi::HANDLE_,
+typedef ::boost::winapi::BOOL_  ( WINAPI *query_information_job_object_p)(
+        ::boost::winapi::HANDLE_,
         JOBOBJECTINFOCLASS_,
         void *,
-        ::boost::detail::winapi::DWORD_,
-        ::boost::detail::winapi::DWORD_ *);
+        ::boost::winapi::DWORD_,
+        ::boost::winapi::DWORD_ *);
 
 
-inline ::boost::detail::winapi::BOOL_ WINAPI query_information_job_object(
-        ::boost::detail::winapi::HANDLE_ hJob,
+inline ::boost::winapi::BOOL_ WINAPI query_information_job_object(
+        ::boost::winapi::HANDLE_ hJob,
         JOBOBJECTINFOCLASS_ JobObjectInfoClass,
         void * lpJobObjectInfo,
-        ::boost::detail::winapi::DWORD_ cbJobObjectInfoLength,
-        ::boost::detail::winapi::DWORD_ *lpReturnLength)
+        ::boost::winapi::DWORD_ cbJobObjectInfoLength,
+        ::boost::winapi::DWORD_ *lpReturnLength)
 {
-    static ::boost::detail::winapi::HMODULE_ h = ::boost::detail::winapi::get_module_handle("Kernel32.dll");
-    static query_information_job_object_p f = reinterpret_cast<query_information_job_object_p>(::boost::detail::winapi::get_proc_address(h, "QueryInformationJobObject"));
+    static ::boost::winapi::HMODULE_ h = ::boost::winapi::get_module_handle("Kernel32.dll");
+    static query_information_job_object_p f = reinterpret_cast<query_information_job_object_p>(::boost::winapi::get_proc_address(h, "QueryInformationJobObject"));
 
     return (*f)(hJob, JobObjectInfoClass, lpJobObjectInfo, cbJobObjectInfoLength, lpReturnLength);
 }
@@ -110,27 +110,27 @@ inline ::boost::detail::winapi::BOOL_ WINAPI query_information_job_object(
   _In_ DWORD              cbJobObjectInfoLength
 );*/
 
-typedef ::boost::detail::winapi::BOOL_  ( WINAPI *set_information_job_object_p)(
-        ::boost::detail::winapi::HANDLE_,
+typedef ::boost::winapi::BOOL_  ( WINAPI *set_information_job_object_p)(
+        ::boost::winapi::HANDLE_,
         JOBOBJECTINFOCLASS_,
         void *,
-        ::boost::detail::winapi::DWORD_);
+        ::boost::winapi::DWORD_);
 
 }
 
-inline ::boost::detail::winapi::BOOL_ WINAPI set_information_job_object(
-        ::boost::detail::winapi::HANDLE_ hJob,
+inline ::boost::winapi::BOOL_ WINAPI set_information_job_object(
+        ::boost::winapi::HANDLE_ hJob,
         JOBOBJECTINFOCLASS_ JobObjectInfoClass,
         void * lpJobObjectInfo,
-        ::boost::detail::winapi::DWORD_ cbJobObjectInfoLength)
+        ::boost::winapi::DWORD_ cbJobObjectInfoLength)
 {
-    static ::boost::detail::winapi::HMODULE_ h = ::boost::detail::winapi::get_module_handle("Kernel32.dll");
-    static set_information_job_object_p f = reinterpret_cast<set_information_job_object_p>(::boost::detail::winapi::get_proc_address(h, "SetInformationJobObject"));
+    static ::boost::winapi::HMODULE_ h = ::boost::winapi::get_module_handle("Kernel32.dll");
+    static set_information_job_object_p f = reinterpret_cast<set_information_job_object_p>(::boost::winapi::get_proc_address(h, "SetInformationJobObject"));
 
     return (*f)(hJob, JobObjectInfoClass, lpJobObjectInfo, cbJobObjectInfoLength);
 }
 
-constexpr static ::boost::detail::winapi::DWORD_ JOB_OBJECT_LIMIT_BREAKAWAY_OK_ = 0x00000800;
+constexpr static ::boost::winapi::DWORD_ JOB_OBJECT_LIMIT_BREAKAWAY_OK_ = 0x00000800;
 
 }}}}}
 

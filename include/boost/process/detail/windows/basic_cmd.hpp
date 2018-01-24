@@ -67,11 +67,25 @@ inline std::string build_args(const std::string & exe, std::vector<std::string> 
 inline std::wstring build_args(const std::wstring & exe, std::vector<std::wstring> && data)
 {
     std::wstring st = exe;
+
+    //put in quotes if it has spaces
+    {
+        boost::replace_all(st, L"\"", L"\\\"");
+
+        auto it = std::find(st.begin(), st.end(), L' ');
+
+        if (it != st.end())//contains spaces.
+        {
+            st.insert(st.begin(), L'"');
+            st += L'"';
+        }
+    }
+
     for (auto & arg : data)
     {
         boost::replace_all(arg, L"\"", L"\\\"");
 
-        auto it = std::find(arg.begin(), arg.end(), ' ');//contains space?
+        auto it = std::find(arg.begin(), arg.end(), L' ');//contains space?
         if (it != arg.end())//ok, contains spaces.
         {
             //the first one is put directly onto the output,
