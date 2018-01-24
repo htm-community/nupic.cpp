@@ -23,7 +23,7 @@
 /** @file 
  * Implementation of the Watcher class
  */
-
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -48,7 +48,7 @@ namespace nupic
     data_.fileName = fileName;
     try 
     {
-      data_.outStream = new OFStream(fileName.c_str());
+      data_.outStream = std::ofstream(fileName.c_str());
     }
     catch (std::exception &)
     {
@@ -60,39 +60,6 @@ namespace nupic
   {
     this->flushFile();
     this->closeFile();
-    delete data_.outStream;
-  }
-
-  unsigned int Watcher::watchParam(std::string regionName,
-                                   std::string varName,
-                                   int nodeIndex,
-                                   bool sparseOutput)
-  {
-    watchData watch;
-    watch.varName = varName;
-    watch.wType = parameter;
-    watch.regionName = regionName;
-    watch.nodeIndex = nodeIndex;
-    watch.sparseOutput = sparseOutput;
-    watch.watchID = data_.watches.size()+1;
-    data_.watches.push_back(watch);
-    return watch.watchID;
-  }
-
-  unsigned int Watcher::watchOutput(std::string regionName,
-                                    std::string varName,
-                                    bool sparseOutput)
-  {
-    watchData watch;
-    watch.varName = varName;
-    watch.wType = output;
-    watch.regionName = regionName;
-    watch.nodeIndex = -1;
-    watch.isArray = false;
-    watch.sparseOutput = sparseOutput;
-    watch.watchID = data_.watches.size()+1;
-    data_.watches.push_back(watch);
-    return watch.watchID;
   }
 
   //TODO: clean up, add support for uncloned arrays,
@@ -385,7 +352,7 @@ namespace nupic
         case NTA_BasicType_Real32:
         {
           Real32* outputData = (Real32*)(watch.array->getBuffer());
-          unsigned int numOuts = watch.array->getCount();
+          auto numOuts = watch.array->getCount();
           out << numOuts;
           
           if (watch.sparseOutput)
@@ -410,7 +377,7 @@ namespace nupic
         case NTA_BasicType_Real64:
         {
           Real64* outputData = (Real64*)(watch.array->getBuffer());
-          unsigned int numOuts = watch.array->getCount();
+          auto numOuts = watch.array->getCount();
           out << numOuts;
           
           if (watch.sparseOutput)
@@ -443,25 +410,25 @@ namespace nupic
       
       value = out.str();
 
-      (*data.outStream) << watch.watchID << ", " << iteration << ", " << value << "\n";
+      data.outStream << watch.watchID << ", " << iteration << ", " << value << std::endl;
     }
-    data.outStream->flush();
+    data.outStream.flush();
   }
 
   void Watcher::closeFile()
   {
-    data_.outStream->close();
+    data_.outStream.close();
   }
 
   void Watcher::flushFile()
   {
-    data_.outStream->flush();
+    data_.outStream.flush();
   }
 
   //attach Watcher to a network and do initial writing to files
   void Watcher::attachToNetwork(Network& net)
   {
-    (*data_.outStream) << "Info: watchID, regionName, nodeType, nodeIndex, varName" << "\n";
+    data_.outStream << "Info: watchID, regionName, nodeType, nodeIndex, varName" << std::endl;
 
     //go through each watch
     watchData watch;
@@ -469,14 +436,14 @@ namespace nupic
     for (UInt i = 0; i < data_.watches.size(); i++)
     {
       watch = data_.watches.at(i);
-      const Collection<Region*>& regions = net.getRegions();
+      const Collection<Region_Ptr_t>& regions = net.getRegions();
       watch.region = regions.getByName(watch.regionName);
 
       //output general information for each watch
-      (*data_.outStream) << watch.watchID << ", ";
-      (*data_.outStream) << watch.regionName << ", ";
-      (*data_.outStream) << watch.region->getType() << ", ";
-      (*data_.outStream) << watch.nodeIndex  << ", ";
+      data_.outStream << watch.watchID << ", ";
+      data_.outStream << watch.regionName << ", ";
+      data_.outStream << watch.region->getType() << ", ";
+      data_.outStream << watch.nodeIndex  << ", ";
 
       if (watch.wType == parameter)
       {
@@ -501,12 +468,12 @@ namespace nupic
         watch.isArray = ((p.count == 0 || p.count > 1)
                          && watch.varType != NTA_BasicType_Byte);
 
-        (*data_.outStream) << watch.varName << "\n";
+        data_.outStream << watch.varName << "\n";
       }
       else if (watch.wType == output)
       {
         watch.output = watch.region->getOutput(watch.varName);
-        (*data_.outStream) << watch.varName << "\n";
+        data_.outStream << watch.varName << "\n";
 
         watch.array = &(watch.output->getData());
 
@@ -525,7 +492,7 @@ namespace nupic
       data_.watches.erase(data_.watches.begin() + i + 1);
     }
 
-    (*data_.outStream) << "Data: watchID, iteration, paramValue" << "\n";
+    data_.outStream << "Data: watchID, iteration, paramValue" << std::endl;
     
     //actually attach to the network
     Collection<Network::callbackItem>& callbacks = net.getCallbacks();

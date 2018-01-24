@@ -30,9 +30,6 @@
 #include <nupic/os/Directory.hpp>
 #include <nupic/os/Env.hpp>
 #include <nupic/utils/Log.hpp>
-#include <apr-1/apr_errno.h>
-#include <apr-1/apr_time.h>
-#include <apr-1/apr_network_io.h>
 
 
 #if defined(NTA_OS_DARWIN)
@@ -44,6 +41,7 @@ extern "C" {
 //We only run on XP/2003 and above
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
+#include <Windows.h>
 #include <psapi.h>
 #endif
 
@@ -98,7 +96,7 @@ void OS::getProcessMemoryUsage(size_t& realMem, size_t& virtualMem)
       NTA_THROW << "getProcessMemoryUsage -- unable to get memory usage";
     }
 
-    pageCount = (pWSI->NumberOfEntries + 1);
+    pageCount = static_cast<unsigned int>((pWSI->NumberOfEntries + 1));
     pageCount += pageCount >> 2;
   }
 
@@ -109,14 +107,14 @@ void OS::getProcessMemoryUsage(size_t& realMem, size_t& virtualMem)
     NTA_THROW << "getProcessMemoryUsage -- unable to get memory usage";
   }
 
-  unsigned int actualPages;
+  std::uint64_t actualPages;
 
   pWSI->NumberOfEntries > pageCount ? (actualPages = pageCount) :
                                       (actualPages = pWSI->NumberOfEntries);
 
   unsigned int privateWorkingSet = 0;
 
-  for(unsigned int i = 0; i < actualPages; i++)
+  for(auto i = 0; i < actualPages; i++)
   {
     if(!pWSI->WorkingSetInfo[i].Shared)
     {

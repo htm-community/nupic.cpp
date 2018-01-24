@@ -33,8 +33,6 @@
 #include <string>
 #include <vector>
 
-#include <nupic/proto/SdrClassifier.capnp.h>
-#include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/math/DenseMatrix.hpp>
 
@@ -52,7 +50,7 @@ namespace nupic
 
       typedef Dense<UInt, Real64> Matrix;
 
-      class SDRClassifier : public Serializable<SdrClassifierProto>
+      class SDRClassifier
       {
         public:
           /**
@@ -114,12 +112,12 @@ namespace nupic
           /**
            * Gets the learning rate
            */
-          UInt getAlpha() const;
+          auto getAlpha() const;
 
           /**
            * Get the size of the string needed for the serialized state.
            */
-          UInt persistentSize() const;
+          auto persistentSize() const;
 
           /**
            * Save the state to the ostream.
@@ -130,26 +128,6 @@ namespace nupic
            * Load state from istream.
            */
           void load(std::istream& inStream);
-
-          /**
-           * Save the state to the builder.
-           */
-          void write(SdrClassifierProto::Builder& proto) const override;
-
-          /**
-           * Save the state to the stream.
-           */
-          using Serializable::write;
-
-          /**
-           * Load state from reader.
-           */
-          void read(SdrClassifierProto::Reader& proto) override;
-
-          /**
-           * Load state from stream.
-           */
-          using Serializable::read;
 
           /**
            * Compare the other instance to this one.

@@ -31,8 +31,6 @@
 
 //----------------------------------------------------------------------
 
-#include <capnp/any.h>
-
 #include <nupic/types/Types.h>
 #include <nupic/os/FStream.hpp>
 #include <nupic/engine/RegionImpl.hpp>
@@ -82,8 +80,6 @@ namespace nupic
 
     VectorFileEffector(BundleIO& bundle, Region* region);
 
-    VectorFileEffector(capnp::AnyPointer::Reader& proto, Region* region);
-
     virtual ~VectorFileEffector();
 
 
@@ -96,12 +92,6 @@ namespace nupic
     /// De-serialize state from bundle
     // ---
     virtual void deserialize(BundleIO& bundle) override;
-
-    using RegionImpl::write;
-    virtual void write(capnp::AnyPointer::Builder& anyProto) const override;
-
-    using RegionImpl::read;
-    virtual void read(capnp::AnyPointer::Reader& anyProto) override;
 
     void compute() override;
 

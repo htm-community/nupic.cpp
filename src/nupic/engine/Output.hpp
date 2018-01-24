@@ -28,6 +28,9 @@
 #define NTA_OUTPUT_HPP
 
 #include <set>
+
+#include <nupic/types/ptr_types.hpp>
+
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp> // temporary, while impl is in this file
 namespace nupic
@@ -104,7 +107,7 @@ namespace nupic
      *        The Link to add
      */
     void
-    addLink(Link* link);
+    addLink(Link_Ptr_t link);
 
     /**
      * Removing an existing link from the output.
@@ -116,7 +119,7 @@ namespace nupic
      *        The Link to remove
      */
     void
-    removeLink(Link* link);
+    removeLink(Link_Ptr_t link);
 
     /**
      * Tells whether the output has outgoing links.
@@ -178,7 +181,7 @@ namespace nupic
     bool isRegionLevel_;
     // order of links never matters, so store as a set
     // this is different from Input, where they do matter
-    std::set<Link*> links_;
+    std::set<Link_Ptr_t> links_;
     std::string name_;
     size_t nodeOutputElementCount_;
   };

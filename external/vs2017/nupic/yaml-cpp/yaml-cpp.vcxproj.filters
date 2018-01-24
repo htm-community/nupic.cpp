@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\aliasmanager.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\binary.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\conversion.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\directives.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\emitfromevents.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\emitter.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\emitterstate.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\emitterutils.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\exp.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\iterator.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\node.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\nodebuilder.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\nodeownership.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\null.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\ostream.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\parser.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\regex.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\scanner.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\scanscalar.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\scantag.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\scantoken.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\simplekey.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\singledocparser.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\stream.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\yaml-cpp\tag.cpp" />
+  </ItemGroup>
+</Project>

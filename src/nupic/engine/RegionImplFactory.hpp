@@ -34,10 +34,8 @@
 #define NTA_REGION_IMPL_FACTORY_HPP
 
 #include <map>
+#include <memory>
 #include <string>
-
-#include <boost/shared_ptr.hpp>
-#include <capnp/any.h>
 
 namespace nupic
 {
@@ -68,11 +66,6 @@ namespace nupic
                                       BundleIO& bundle,
                                       Region* region);
 
-    // Create a RegionImpl from capnp proto; caller gets ownership.
-    RegionImpl* deserializeRegionImpl(const std::string nodeType,
-                                      capnp::AnyPointer::Reader& proto,
-                                      Region* region);
-
     // Returns nodespec for a specific node type; Factory retains ownership.
     Spec* getSpec(const std::string nodeType);
 
@@ -86,12 +79,14 @@ namespace nupic
 
     // Allows the user to load custom Python regions
     static void registerPyRegion(const std::string module, const std::string className);
+    static void registerPyBindRegion(const std::string& module, const std::string& className);
 
     // Allows the user to load custom C++ regions
     static void registerCPPRegion(const std::string name, GenericRegisteredRegionImpl * wrapper);
 
     // Allows the user to unregister Python regions
     static void unregisterPyRegion(const std::string className);
+    static void unregisterPyBindRegion(const std::string& className);
 
     // Allows the user to unregister C++ regions
     static void unregisterCPPRegion(const std::string name);
@@ -110,7 +105,7 @@ namespace nupic
     // Using shared_ptr here to ensure the dynamic python library object
     // is deleted when the factory goes away. Can't use scoped_ptr
     // because it is not initialized in the constructor.
-    boost::shared_ptr<DynamicPythonLibrary> pyLib_;
+    std::shared_ptr<DynamicPythonLibrary> pyLib_;
   };
 }
 

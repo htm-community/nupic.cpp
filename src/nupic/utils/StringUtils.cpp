@@ -26,7 +26,8 @@
 
 #include <nupic/utils/StringUtils.hpp>
 #include <nupic/utils/Log.hpp>
-#include <apr-1/apr_base64.h>
+
+
 
 using namespace nupic;
 
@@ -193,38 +194,49 @@ std::string StringUtils::fromInt(long long i)
 
 std::string StringUtils::base64Encode(const void* buf, Size inLen)
 {
-  Size len = apr_base64_encode_len((int)inLen); // int-casting for win.
-  std::string outS(len, '\0');
-  apr_base64_encode((char*)outS.data(), (const char*)buf, (int) inLen); // int-casting for win.
-  outS.resize(len-1); // len includes the NULL at the end
-  return outS;
+    //@todo 
+    throw std::runtime_error("Not implemented");
+  //Size len = apr_base64_encode_len((int)inLen); // int-casting for win.
+  //std::string outS(len, '\0');
+  //apr_base64_encode((char*)outS.data(), (const char*)buf, (int) inLen); // int-casting for win.
+  //outS.resize(len-1); // len includes the NULL at the end
+  //return outS;
 }
 
 
 std::string StringUtils::base64Encode(const std::string& s)
 {
-  Size len = apr_base64_encode_len ( (int) s.size() );
-  std::string outS(len, '\0');
-  apr_base64_encode((char*)outS.data(), s.data(), (int) s.size());
-  outS.resize(len-1); // len includes the NULL at the end
-  return outS;
+    //@todo 
+    throw std::runtime_error("Not implemented");
+
+  //Size len = apr_base64_encode_len ( (int) s.size() );
+  //std::string outS(len, '\0');
+  //apr_base64_encode((char*)outS.data(), s.data(), (int) s.size());
+  //outS.resize(len-1); // len includes the NULL at the end
+  //return outS;
 }
 
 std::string StringUtils::base64Decode(const void* buf, Size inLen)
 {
-  std::string outS(inLen+1, '\0');
-  size_t decodedLen = apr_base64_decode_binary ((unsigned char*)outS.data(), (const char*)buf);
-  outS.resize(decodedLen);
-  return outS;
+    //@todo 
+    throw std::runtime_error("Not implemented");
+    
+  //std::string outS(inLen+1, '\0');
+  //size_t decodedLen = apr_base64_decode_binary ((unsigned char*)outS.data(), (const char*)buf);
+  //outS.resize(decodedLen);
+  //return outS;
 }
 
 
 std::string StringUtils::base64Decode(const std::string& s)
 {
-  std::string outS(s.size()+1, '\0');
-  size_t decodedLen = apr_base64_decode_binary ((unsigned char*)outS.data(), s.c_str());
-  outS.resize(decodedLen);
-  return outS;
+    //@todo 
+    throw std::runtime_error("Not implemented");
+
+  //std::string outS(s.size()+1, '\0');
+  //size_t decodedLen = apr_base64_decode_binary ((unsigned char*)outS.data(), s.c_str());
+  //outS.resize(decodedLen);
+  //return outS;
 }
 
 #define HEXIFY(val) ((val) > 9 ? ('a' + (val) - 10) : ('0' + (val)))

@@ -28,8 +28,6 @@
 #include <fstream>
 #include <nupic/algorithms/Segment.hpp>
 #include <nupic/algorithms/OutSynapse.hpp>
-#include <nupic/proto/Cells4.capnp.h>
-#include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
 #include <queue>
 #include <cstring>
@@ -264,7 +262,7 @@ namespace nupic {
         CBasicActivity<It> _seg;
       };
 
-      class Cells4 : public Serializable<Cells4Proto>
+      class Cells4
       {
       public:
 
@@ -595,7 +593,9 @@ namespace nupic {
 
 
         //-----------------------------------------------------------------------
-        Cell* getCell(UInt colIdx, UInt cellIdxInCol);
+
+        Cell& getCell(UInt colIdx, UInt cellIdxInCol);
+        
 
         //-----------------------------------------------------------------------
         UInt getCellIdx(UInt colIdx, UInt cellIdxInCol);
@@ -605,8 +605,8 @@ namespace nupic {
          * Can return a previously freed segment (segment size == 0) if called with a segIdx
          * which is in the "free" list of the cell.
          */
-        Segment*
-        getSegment(UInt colIdx, UInt cellIdxInCol, UInt segIdx);
+        Segment&
+            getSegment(UInt colIdx, UInt cellIdxInCol, UInt segIdx);
 
         //-----------------------------------------------------------------------
         /**
@@ -1077,20 +1077,6 @@ namespace nupic {
 
         //----------------------------------------------------------------------
         /**
-         * Write the state to a proto or file
-         */
-        using Serializable::write;
-        virtual void write(Cells4Proto::Builder& proto) const override;
-
-        //----------------------------------------------------------------------
-        /**
-         * Read the state into a proto or file
-         */
-        using Serializable::read;
-        virtual void read(Cells4Proto::Reader& proto) override;
-
-        //----------------------------------------------------------------------
-        /**
          * Save the state to the given file
          */
         void saveToFile(std::string filePath) const;
@@ -1196,9 +1182,7 @@ namespace nupic {
       };
 
       //-----------------------------------------------------------------------
-#ifndef SWIG
       std::ostream& operator<<(std::ostream& outStream, const Cells4& cells);
-#endif
 
       //-----------------------------------------------------------------------
     } // end namespace Cells4

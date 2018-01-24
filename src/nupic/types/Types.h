@@ -305,21 +305,6 @@ typedef uintptr_t      NTA_UIntPtr;
  * @}
  */
 
-#ifndef SWIG
-#if defined(NTA_OS_WINDOWS)
-#define NTA_EXPORT __declspec(dllexport)
-#define NTA_HIDDEN
-#else
-#define NTA_EXPORT __attribute__ ((visibility ("default")))
-#define NTA_HIDDEN __attribute__ ((visibility ("hidden")))
-#endif
-
-
-#else
-#define NTA_HIDDEN
-#define NTA_EXPORT
-#endif
-
 /** 
  * This enum represents the documented logging level of the debug logger. 
  * 

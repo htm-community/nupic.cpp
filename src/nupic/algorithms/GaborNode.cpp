@@ -2697,7 +2697,6 @@ void initFromPython(unsigned long long refP) {
 
 // FUNCTION: gaborCompute()
 // PURPOSE: GaborNode implementation
-NTA_EXPORT
 int  gaborCompute(const NUMPY_ARRAY * psGaborBank,
                   const NUMPY_ARRAY * psInput,
                   const NUMPY_ARRAY * psAlpha,

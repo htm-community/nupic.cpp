@@ -42,7 +42,7 @@ MovingAverage::MovingAverage(UInt wSize, const vector<Real32>& historicalValues)
       historicalValues.end(),
       back_inserter(slidingWindow_));
   }
-  total_ = Real32(accumulate(slidingWindow_.begin(), slidingWindow_.end(), 0));
+  total_ = Real32(accumulate(slidingWindow_.begin(), slidingWindow_.end(), 0.0));
 }
 
 

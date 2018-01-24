@@ -28,8 +28,6 @@
 
 //----------------------------------------------------------------------
 
-#include <apr-1/apr.h>
-#include <apr-1/apr_file_info.h>
 #include <string>
 
 //----------------------------------------------------------------------
@@ -70,7 +68,8 @@ namespace nupic
 
     std::string createTemporary(const std::string &templatePath);
 
-    struct Entry : public apr_finfo_t
+    // @todo
+    struct Entry/* : public apr_finfo_t*/
     {
       enum Type { FILE, DIRECTORY, LINK };
 			
@@ -99,8 +98,9 @@ namespace nupic
       void init(const std::string & path);
     private:
       std::string path_;
-      apr_dir_t * handle_;
-      apr_pool_t * pool_;
+
+      //apr_dir_t * handle_;
+      //apr_pool_t * pool_;
     };
   }
 }

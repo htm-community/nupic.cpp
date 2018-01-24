@@ -27,15 +27,11 @@
 #include <set>
 #include <vector>
 
-#include <capnp/message.h>
-#include <capnp/serialize.h>
-#include <kj/std/iostream.h>
 #include <gtest/gtest.h>
 
 #include <nupic/algorithms/Cells4.hpp>
 #include <nupic/algorithms/Segment.hpp>
 #include <nupic/math/ArrayAlgo.hpp> // is_in
-#include <nupic/proto/Cells4.capnp.h>
 
 
 using namespace nupic::algorithms::Cells4;
@@ -149,31 +145,32 @@ TEST(Cells4Test, capnpSerialization)
     cells.reset();
   }
 
-  Cells4 secondCells;
-  {
-    capnp::MallocMessageBuilder message1;
-    Cells4Proto::Builder cells4Builder = message1.initRoot<Cells4Proto>();
-    cells.write(cells4Builder);
-    std::stringstream ss;
-    kj::std::StdOutputStream out(ss);
-    capnp::writeMessage(out, message1);
+  //@todo
+  //Cells4 secondCells;
+  //{
+  //  capnp::MallocMessageBuilder message1;
+  //  Cells4Proto::Builder cells4Builder = message1.initRoot<Cells4Proto>();
+  //  cells.write(cells4Builder);
+  //  std::stringstream ss;
+  //  kj::std::StdOutputStream out(ss);
+  //  capnp::writeMessage(out, message1);
 
-    kj::std::StdInputStream in(ss);
-    capnp::InputStreamMessageReader message2(in);
-    Cells4Proto::Reader cells4Reader = message2.getRoot<Cells4Proto>();
-    secondCells.read(cells4Reader);
-  }
+  //  kj::std::StdInputStream in(ss);
+  //  capnp::InputStreamMessageReader message2(in);
+  //  Cells4Proto::Reader cells4Reader = message2.getRoot<Cells4Proto>();
+  //  secondCells.read(cells4Reader);
+  //}
 
-  NTA_CHECK(checkCells4Attributes(cells, secondCells));
+  //NTA_CHECK(checkCells4Attributes(cells, secondCells));
 
-  std::vector<Real> secondOutput(10*2);
-  cells.compute(&input1.front(), &output.front(), true, true);
-  secondCells.compute(&input1.front(), &secondOutput.front(), true, true);
-  for (UInt i = 0; i < 10; ++i)
-  {
-    ASSERT_EQ(output[i], secondOutput[i]) << "Outputs differ at index " << i;
-  }
-  NTA_CHECK(checkCells4Attributes(cells, secondCells));
+  //std::vector<Real> secondOutput(10*2);
+  //cells.compute(&input1.front(), &output.front(), true, true);
+  //secondCells.compute(&input1.front(), &secondOutput.front(), true, true);
+  //for (UInt i = 0; i < 10; ++i)
+  //{
+  //  ASSERT_EQ(output[i], secondOutput[i]) << "Outputs differ at index " << i;
+  //}
+  //NTA_CHECK(checkCells4Attributes(cells, secondCells));
 }
 
 

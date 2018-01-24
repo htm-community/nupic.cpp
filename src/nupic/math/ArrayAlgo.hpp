@@ -3762,7 +3762,7 @@ namespace nupic {
    *
    * Doesn't work on win32.
    */
-  inline nupic::UInt32
+  inline auto
   count_gt(nupic::Real32* begin, nupic::Real32* end, nupic::Real32 threshold)
   {
     NTA_ASSERT(begin <= end);
@@ -3784,7 +3784,7 @@ namespace nupic {
       NTA_UIntPtr x_addr = (NTA_UIntPtr) begin; // 8 bytes on 64 bits platforms
       nupic::Real32* start = (x_addr % 16 == 0) ? begin : (nupic::Real32*) (16*(x_addr/16+1));
       int n0 = (int)(start - begin);
-      int n1 = 4 * ((end - start) / 4);
+      auto n1 = 4 * ((end - start) / 4);
       int n2 = (int)(end - start - n1);
 
 
@@ -3920,7 +3920,7 @@ namespace nupic {
    * that are .astype(float32).
    *
    */
-  inline nupic::UInt32
+  inline auto
   count_gte(nupic::Real32* begin, nupic::Real32* end, nupic::Real32 threshold)
   {
     NTA_ASSERT(begin <= end);

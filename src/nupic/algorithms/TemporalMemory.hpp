@@ -28,12 +28,9 @@
 #define NTA_TEMPORAL_MEMORY_HPP
 
 #include <vector>
-#include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Random.hpp>
 #include <nupic/algorithms/Connections.hpp>
-
-#include <nupic/proto/TemporalMemoryProto.capnp.h>
 
 using namespace std;
 using namespace nupic;
@@ -65,7 +62,7 @@ namespace nupic {
        * convert a numpy array into a std::vector is to copy it, but you can
        * access a numpy array's internal C array directly.
        */
-      class TemporalMemory : public Serializable<TemporalMemoryProto> {
+      class TemporalMemory {
       public:
         TemporalMemory();
 
@@ -415,9 +412,6 @@ namespace nupic {
          */
         virtual void save(ostream& outStream) const;
 
-        using Serializable::write;
-        virtual void write(TemporalMemoryProto::Builder& proto) const override;
-
         /**
          * Load (deserialize) and initialize the spatial pooler from the
          * specified input stream.
@@ -425,9 +419,6 @@ namespace nupic {
          * @param inStream A valid istream.
          */
         virtual void load(istream& inStream);
-
-        using Serializable::read;
-        virtual void read(TemporalMemoryProto::Reader& proto) override;
 
         /**
          * Returns the number of bytes that a save operation would result in.

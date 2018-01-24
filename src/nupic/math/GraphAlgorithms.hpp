@@ -90,7 +90,7 @@ namespace nupic {
     while (!front.empty()) {
       Sequence ss = front.front();
       bool more = false;
-      size_type l = ss.size(), p = ss[l-1];
+      size_type l = static_cast<size_type>(ss.size()), p = ss[l-1];
       size_type n = 0;
       if (rowsOrCols == 1)
         n = g.getColToSparse(p, ind.begin(), nz.begin());
@@ -171,7 +171,7 @@ namespace nupic {
 
     typedef typename SM::size_type size_type;
     typedef typename SM::value_type value_type;
-    typedef unordered_set<size_type> Set;
+    typedef std::unordered_set<size_type> Set;
 
     const size_type N = g.nRows();
     

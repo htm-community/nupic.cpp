@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\module.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Random.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Algorithms.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Cells4.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Domain.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Engine.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_HTM.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Math.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_NearestNeighbor.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_reals.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_Region.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SDRClassifier.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SegmentSparseMatrix.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SM_01_32_32.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SM32.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SMC.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SparseTensor.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SpatialPooler.cpp" />
+    <ClCompile Include="..\..\..\..\src\cpp\nupic\python\py_SVM.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\Matrix.hpp" />
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\py_utils.hpp" />
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\PyBindSparseTensor.hpp" />
+    <ClInclude Include="..\..\..\..\src\cpp\nupic\python\SparseTensorIndex.hpp" />
+  </ItemGroup>
+</Project>

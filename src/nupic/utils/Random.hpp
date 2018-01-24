@@ -33,8 +33,6 @@
 #include <vector>
 #include <utility>
 
-#include <nupic/proto/RandomProto.capnp.h>
-#include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>
 
@@ -78,7 +76,7 @@ namespace nupic {
    */
   class RandomImpl;
 
-  class Random : public Serializable<RandomProto>
+  class Random
   {
   public:
     /**
@@ -96,14 +94,6 @@ namespace nupic {
     Random(const Random&);
     Random& operator=(const Random&);
     ~Random();
-
-    // write serialized data
-    using Serializable::write;
-    void write(RandomProto::Builder& proto) const override;
-
-    // read and deserialize data
-    using Serializable::read;
-    void read(RandomProto::Reader& proto) override;
 
     // return a value uniformly distributed between 0 and max-1
     UInt32 getUInt32(UInt32 max = MAX32);

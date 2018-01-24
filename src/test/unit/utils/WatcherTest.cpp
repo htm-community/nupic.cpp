@@ -28,6 +28,8 @@
 #include <sstream>
 #include <exception>
 
+#include <boost/filesystem.hpp>
+
 #include <nupic/engine/Network.hpp>
 #include <nupic/engine/NuPIC.hpp>
 #include <nupic/engine/Region.hpp>
@@ -42,7 +44,7 @@
 #include <gtest/gtest.h>
 
 using namespace nupic;
-
+namespace fs = boost::filesystem;
 
 TEST(WatcherTest, SampleNetwork)
 {
@@ -59,19 +61,22 @@ TEST(WatcherTest, SampleNetwork)
   n.link("level2", "level3", "TestFanIn2", "");
   n.initialize();
 
-  //erase any previous contents of testfile
-  OFStream o("testfile");
-  o.close();
-  
+  auto file_name = fs::path("testfile");
+  if (fs::exists(file_name))
+  {
+      fs::remove(file_name);
+  }
+
+ 
   //test creation
   Watcher w("testfile");
 
   //test uint32Params
-  unsigned int id1 = w.watchParam("level1", "uint32Param");
-  ASSERT_EQ(id1, (unsigned int)1);
+  auto id1 = w.watchParam("level1", "uint32Param");
+  ASSERT_EQ(id1, (size_t)1);
   //test uint64Params
-  unsigned int id2 = w.watchParam("level1", "uint64Param");
-  ASSERT_EQ(id2, (unsigned int)2);
+  auto id2 = w.watchParam("level1", "uint64Param");
+  ASSERT_EQ(id2, (size_t)2);
   //test int32Params
   w.watchParam("level1", "int32Param");
   //test int64Params
@@ -123,7 +128,8 @@ TEST(WatcherTest, SampleNetwork)
 TEST(WatcherTest, FileTest1)
 {
   //test file output
-  IFStream inStream("testfile");
+  std::ifstream inStream("testfile");
+
   std::string tempString;
   if (inStream.is_open())
   {
@@ -206,12 +212,12 @@ TEST(WatcherTest, FileTest1)
     inStream.close();
   }
 
-  Path::remove("testfile");
+  fs::remove("testfile");
 }
   
 TEST(WatcherTest, FileTest2)
 {
-  IFStream inStream2("testfile2");
+  std::ifstream inStream2("testfile2");
   std::string tempString;
   if (inStream2.is_open())
   {
@@ -276,5 +282,5 @@ TEST(WatcherTest, FileTest2)
   }
   inStream2.close();
         
-  Path::remove("testfile2");
+  fs::remove("testfile2");
 }

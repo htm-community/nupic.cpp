@@ -24,6 +24,8 @@
  * Topology helpers
  */
 
+#include <algorithm> //std::max
+
 #include <nupic/math/Topology.hpp>
 #include <nupic/utils/Log.hpp>
 
@@ -92,7 +94,7 @@ Neighborhood::Neighborhood(UInt centerIndex, UInt radius,
 
 Neighborhood::Iterator::Iterator(const Neighborhood& neighborhood, bool end)
   : neighborhood_(neighborhood),
-    offset_(neighborhood.dimensions_.size(), -neighborhood.radius_),
+    offset_(neighborhood.dimensions_.size(), -((Int)neighborhood.radius_)),
     finished_(end)
 {
   // Choose the first offset that has positive resulting coordinates.
@@ -136,7 +138,7 @@ void Neighborhood::Iterator::advance_()
   // When it overflows, we need to "carry the 1" to the next dimension.
   bool overflowed = true;
 
-  for (Int i = offset_.size() - 1; i >= 0; i--)
+  for (int i = static_cast<int>(offset_.size()) - 1; i >= 0; i--)
   {
     offset_[i]++;
 
@@ -193,7 +195,7 @@ WrappingNeighborhood::WrappingNeighborhood(
 WrappingNeighborhood::Iterator::Iterator(
   const WrappingNeighborhood& neighborhood, bool end)
   : neighborhood_(neighborhood),
-    offset_(neighborhood.dimensions_.size(), -neighborhood.radius_),
+    offset_(neighborhood.dimensions_.size(), -((Int)neighborhood.radius_)),
     finished_(end)
 {
 }
@@ -241,7 +243,7 @@ void WrappingNeighborhood::Iterator::advance_()
   // When it overflows, we need to "carry the 1" to the next dimension.
   bool overflowed = true;
 
-  for (Int i = offset_.size() - 1; i >= 0; i--)
+  for (Int i = static_cast<Int>(offset_.size()) - 1; i >= 0; i--)
   {
     offset_[i]++;
 
@@ -255,7 +257,7 @@ void WrappingNeighborhood::Iterator::advance_()
 
     if (overflowed)
     {
-      offset_[i] = -neighborhood_.radius_;
+      offset_[i] = -((Int)neighborhood_.radius_);
     }
     else
     {

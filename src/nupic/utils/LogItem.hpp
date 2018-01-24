@@ -30,6 +30,8 @@
 #include <sstream>
 #include <iostream>
 
+#include <nupic/types/ptr_types.hpp>
+
 namespace nupic {
 
   /**

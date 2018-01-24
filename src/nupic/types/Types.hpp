@@ -165,10 +165,6 @@ namespace nupic
 
 } // end namespace nupic
 
-#ifdef SWIG
-#undef NTA_INTERNAL
-#endif // SWIG
-
 #endif // NTA_TYPES_HPP
 
 

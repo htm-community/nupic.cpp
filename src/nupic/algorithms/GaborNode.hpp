@@ -102,7 +102,6 @@ typedef enum _POSTPROC_METHOD {
 
 // FUNCTION: gaborCompute()
 // PURPOSE: Implements efficient Gabor filtering.
-NTA_EXPORT
 int  gaborCompute(const NUMPY_ARRAY * psGaborBank,
                   const NUMPY_ARRAY * psInput,
                   const NUMPY_ARRAY * psAlpha,

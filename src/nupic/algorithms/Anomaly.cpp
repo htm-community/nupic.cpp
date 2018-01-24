@@ -108,7 +108,7 @@ Real32 Anomaly::compute(
 
   if (binaryThreshold_)
   {
-    score = (score >= binaryThreshold_) ? 1.0 : 0.0;
+    score = (score >= binaryThreshold_) ? 1.f : 0.f;
   }
 
   return score;

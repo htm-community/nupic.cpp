@@ -33,8 +33,6 @@
 
 #include <vector>
 
-#include <capnp/any.h>
-
 #include <nupic/types/Types.h>
 #include <nupic/os/FStream.hpp>
 #include <nupic/engine/RegionImpl.hpp>
@@ -285,9 +283,6 @@ namespace nupic
 
     VectorFileSensor(BundleIO& bundle, Region* region);
 
-    VectorFileSensor(capnp::AnyPointer::Reader& proto, Region* region);
-
-
     virtual ~VectorFileSensor();
 
 
@@ -300,12 +295,6 @@ namespace nupic
     /// De-serialize state from bundle
     // ---
     virtual void deserialize(BundleIO& bundle) override;
-
-    using RegionImpl::write;
-    virtual void write(capnp::AnyPointer::Builder& anyProto) const override;
-
-    using RegionImpl::read;
-    virtual void read(capnp::AnyPointer::Reader& anyProto) override;
 
     void compute() override;
     virtual std::string executeCommand(const std::vector<std::string>& args, Int64 index) override;
