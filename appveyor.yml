@@ -85,7 +85,7 @@ matrix:
 #---------------------------------#
 
 # configuration values must be compatible with CMAKE_BUILD_TYPE: Debug or Release
-configuration: Release
+configuration: Debug
 
 
 install:

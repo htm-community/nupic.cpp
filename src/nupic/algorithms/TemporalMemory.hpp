@@ -268,7 +268,7 @@ namespace nupic {
          *
          * @return (int) Number of cells
          */
-        UInt numberOfCells(void);
+        UInt numberOfCells(void) const;
 
         /**
         * Returns the indices of the active cells.
@@ -401,13 +401,6 @@ namespace nupic {
         UInt getMaxSynapsesPerSegment() const;
 
         /**
-         * Raises an error if cell index is invalid.
-         *
-         * @param cell Cell index
-         */
-        bool _validateCell(CellIdx cell);
-
-        /**
          * Save (serialize) the current state of the spatial pooler to the
          * specified file.
          *
@@ -454,10 +447,12 @@ namespace nupic {
          * Returns the index of the column that a cell belongs to.
          *
          * @param cell Cell index
+         * O(1), this function does not modify TM state
+         * @throws there is NTA_ASSERT for debug builds, checks cell's within range
          *
          * @return (int) Column index
          */
-        Int columnForCell(CellIdx cell);
+        UInt columnForCell(const CellIdx cell) const;
 
         /**
          * Print the given UInt array in a nice format
