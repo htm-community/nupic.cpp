@@ -38,6 +38,8 @@
   #include <intrin.h>
 #endif
 
+#include <Eigen/Dense>
+
 #include <nupic/utils/Random.hpp> // For the official Numenta RNG
 #include <nupic/math/Math.hpp>
 #include <nupic/math/Types.hpp>
@@ -215,10 +217,9 @@ namespace nupic {
   template <typename T>
   inline bool is_zero(const std::vector<T>& x)
   {
-    for (size_t i = 0; i != x.size(); ++i)
-      if (!is_zero(x[i]))
-        return false;
-    return true;
+   size_t vector_size = x.size();
+   Eigen::Map<const Eigen::RowVectorXf> mx(x, vector_size);
+   return (mx.maxCoeff() == 0);
   }
 
   //--------------------------------------------------------------------------------
@@ -242,7 +243,6 @@ namespace nupic {
     {
       NTA_ASSERT(x <= x_end);
     }
-
 
     // This test can be moved to compile time using a template with an int
     // parameter, and partial specializations that will match the static
@@ -383,18 +383,16 @@ namespace nupic {
       return true;
 
 #else
-    for (; x != x_end; ++x)
-      if (*x > 0)
-        return false;
-    return true;
+    size_t vector_size = (x_end - x) + 1;
+    Eigen::Map<const Eigen::RowVectorXf> mx(x, vector_size);
+    return (mx.maxCoeff() == 0);
 #endif
 
     } else { // not SSE4.2
-
-      for (; x != x_end; ++x)
-        if (*x > 0)
-          return false;
-      return true;
+        size_t vector_size = (x_end - x) + 1;
+        Eigen::Map<const Eigen::RowVectorXf> mx(x, vector_size);
+        return (mx.maxCoeff() == 0);
+ 
     }
   } //end method
 
@@ -757,20 +755,6 @@ namespace nupic {
         this->insert(std::make_pair(key, v));
       return true;
     }
-
-    /*
-    // Returns an existing value for the key, if it is in the dict already,
-    // or creates one and returns it. (operator[] on std::map does that?)
-    inline V& operator(const K& key)
-    {
-      iterator it = this->find(key);
-      if (key == end) {
-        (*this)[key] = V();
-        return (*this)[key];
-      } else
-        return *it;
-    }
-    */
   };
 
   //--------------------------------------------------------------------------------
@@ -1054,8 +1038,11 @@ namespace nupic {
   inline float dot(const float* x, const float* x_end, const float* y)
   {
     float result = 0;
-    for (; x != x_end; ++x, ++y)
-      result += *x * *y;
+    size_t vector_size = (x_end - x) + 1;
+    Eigen::Map<const Eigen::RowVectorXf> mx(x, vector_size);
+    Eigen::Map<const Eigen::RowVectorXf> my(y, vector_size);
+    result = mx.dot(my);
+
     return result;
   }
 
