@@ -42,23 +42,23 @@ namespace nupic
   ScalarSensor::ScalarSensor(const ValueMap& params, Region *region)
     : RegionImpl(region)
   {
-    const UInt32 n = params.getScalarT<UInt32>("n");
-    const UInt32 w = params.getScalarT<UInt32>("w");
-    const Real64 resolution = params.getScalarT<Real64>("resolution");
-    const Real64 radius = params.getScalarT<Real64>("radius");
-    const Real64 minValue = params.getScalarT<Real64>("minValue");
-    const Real64 maxValue = params.getScalarT<Real64>("maxValue");
-    const bool periodic = params.getScalarT<bool>("periodic");
-    const bool clipInput = params.getScalarT<bool>("clipInput");
-    if (periodic)
+    n_ = params.getScalarT<UInt32>("n");
+    w_ = params.getScalarT<UInt32>("w");
+    resolution_ = params.getScalarT<Real64>("resolution");
+    radius_ = params.getScalarT<Real64>("radius");
+    minValue_ = params.getScalarT<Real64>("minValue");
+    maxValue_ = params.getScalarT<Real64>("maxValue");
+    periodic_ = params.getScalarT<bool>("periodic");
+    clipInput_ = params.getScalarT<bool>("clipInput");
+    if (periodic_)
     {
-      encoder_ = new PeriodicScalarEncoder(w, minValue, maxValue, n, radius,
-                                           resolution);
+      encoder_ = new PeriodicScalarEncoder(w_, minValue_, maxValue_, n_, radius_,
+                                           resolution_);
     }
     else
     {
-      encoder_ = new ScalarEncoder(w, minValue, maxValue, n, radius, resolution,
-                                   clipInput);
+      encoder_ = new ScalarEncoder(w_, minValue_, maxValue_, n_, radius_, resolution_,
+                                   clipInput_);
     }
 
     sensedValue_ = params.getScalarT<Real64>("sensedValue");
@@ -271,12 +271,47 @@ namespace nupic
 
   void ScalarSensor::serialize(BundleIO& bundle)
   {
-    NTA_THROW << "ScalarSensor::serialize -- Not implemented";
+    std::ofstream &f = bundle.getOutputStream("scaler");
+    f << "ScalarSensor" << " " 
+      << n_ << " " << w_ << " " << resolution_ << " " << radius_ << " "
+      << minValue_ << " " << maxValue_ << " " << clipInput_ << " " << periodic_ << " "
+      << sensedValue_ << " ";
+    f.close();
   }
 
 
   void ScalarSensor::deserialize(BundleIO& bundle)
   {
-    NTA_THROW << "ScalarSensor::deserialize -- Not implemented";
+    std::ifstream &f = bundle.getInputStream("scaler");
+    std::string signatureString;
+    f >> signatureString;
+    if (signatureString != "ScalarSensor") {
+      NTA_THROW << "Bad serialization for region '" << region_->getName()
+                << "' of type ScalarSensor. Serialization file must start "
+                << "with \"ScalarSensor\" but instead it starts with '"
+                << signatureString << "'";
+    }
+
+    f >> n_;
+    f >> w_; 
+    f >> resolution_;
+    f >> radius_; 
+    f >> minValue_;
+    f >> maxValue_;
+    f >> clipInput_;
+    f >> periodic_;
+    f >> sensedValue_;
+    f.close();
+
+    if (periodic_) {
+      encoder_ = new PeriodicScalarEncoder(w_, minValue_, maxValue_, n_,
+                                           radius_, resolution_);
+    } else {
+      encoder_ = new ScalarEncoder(w_, minValue_, maxValue_, n_, radius_,
+                                   resolution_, clipInput_);
+    }
+    initialize();
+
   }
-}
+
+} // namespace

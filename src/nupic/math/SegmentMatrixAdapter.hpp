@@ -119,7 +119,7 @@ namespace nupic {
       OutputIterator out = segments_begin;
 
       const size_type reclaimCount =
-        std::min(destroyedSegments_.size(),
+        (size_type)std::min(destroyedSegments_.size(),
                  (size_t)std::distance(cell, cells_end));
       if (reclaimCount > 0)
       {
@@ -135,7 +135,7 @@ namespace nupic {
         destroyedSegments_.resize(destroyedSegments_.size() - reclaimCount);
       }
 
-      const size_type newCount = std::distance(cell, cells_end);
+      const size_type newCount = (size_type)std::distance(cell, cells_end);
       if (newCount > 0)
       {
         const size_type firstNewRow = matrix.nRows();

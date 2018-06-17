@@ -65,7 +65,7 @@ namespace nupic
   public:
     Value(boost::shared_ptr<Scalar>& s);
     Value(boost::shared_ptr<Array>& a);
-    Value(boost::shared_ptr<std::string>& s);
+    Value(const std::string& s);
 
     enum Category {scalarCategory, arrayCategory, stringCategory};
 
@@ -80,7 +80,7 @@ namespace nupic
 
     boost::shared_ptr<Array> getArray() const;
 
-    boost::shared_ptr<std::string> getString() const;
+    std::string getString() const;
 
     template <typename T> T getScalarT() const;
     
@@ -92,7 +92,7 @@ namespace nupic
     Category category_;
     boost::shared_ptr<Scalar> scalar_;
     boost::shared_ptr<Array> array_;
-    boost::shared_ptr<std::string> string_;
+    std::string string_;
   };
 
 
@@ -113,7 +113,9 @@ namespace nupic
     // Method below are for convenience, bypassing the Value
     boost::shared_ptr<Array> getArray(const std::string& key) const;
     boost::shared_ptr<Scalar> getScalar(const std::string& key) const;
-    boost::shared_ptr<std::string> getString(const std::string& key) const;
+    std::string getString(const std::string& key) const;
+    std::string getString(const std::string &key,  const std::string defaultValue) const;
+
 
     // More convenience methods, bypassing the Value and the contained Scalar
 

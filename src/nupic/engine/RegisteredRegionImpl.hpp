@@ -46,38 +46,45 @@ namespace nupic
 
       virtual ~GenericRegisteredRegionImpl() {}
 
-      virtual RegionImpl* createRegionImpl(
-          const ValueMap& params, Region *region) = 0;
+      virtual RegionImpl* createRegionImpl( ValueMap& params, Region *region) = 0;
 
-      virtual RegionImpl* deserializeRegionImpl(
-          BundleIO& params, Region *region) = 0;
+      virtual RegionImpl* deserializeRegionImpl( BundleIO& params, Region *region) = 0;
 
       virtual Spec* createSpec() = 0;
+
   };
 
   template <class T>
   class RegisteredRegionImpl: public GenericRegisteredRegionImpl {
     public:
-      RegisteredRegionImpl() {}
+      RegisteredRegionImpl() {
+        cachedSpec_ = nullptr;
+      }
 
-      ~RegisteredRegionImpl() {}
+      ~RegisteredRegionImpl() {
+        if (cachedSpec_)
+          delete cachedSpec_;
+      }
 
-      virtual RegionImpl* createRegionImpl(
-          const ValueMap& params, Region *region) override
+      virtual RegionImpl* createRegionImpl( ValueMap& params, Region *region) override
       {
         return new T(params, region);
       }
 
-      virtual RegionImpl* deserializeRegionImpl(
-          BundleIO& params, Region *region) override
+      virtual RegionImpl* deserializeRegionImpl( BundleIO& bundle, Region *region) override
       {
-        return new T(params, region);
+        return new T(bundle, region);
       }
 
       virtual Spec* createSpec() override
       {
-        return T::createSpec();
+        if (!cachedSpec_) {
+          cachedSpec_ = T::createSpec();
+        }
+        return cachedSpec_;
       }
+  private:
+    Spec * cachedSpec_;
   };
 
 }

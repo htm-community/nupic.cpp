@@ -49,30 +49,19 @@ namespace nupic
 VectorFileSensor::VectorFileSensor(const ValueMap& params, Region* region) :
   RegionImpl(region),
 
-  repeatCount_(1),
   iterations_(0),
   curVector_(0),
-  activeOutputCount_(0),
-  hasCategoryOut_(false),
-  hasResetOut_(false),
   dataOut_(NTA_BasicType_Real32),
   categoryOut_(NTA_BasicType_Real32),
   resetOut_(NTA_BasicType_Real32),
-  filename_(""),
   scalingMode_("none"),
   recentFile_("")
 {
-  activeOutputCount_ = params.getScalar("activeOutputCount")->getValue<NTA_UInt32>();
-  if (params.contains("hasCategoryOut"))
-    hasCategoryOut_ =
-      params.getScalar("hasCategoryOut")->getValue<NTA_UInt32>() == 1;
-  if (params.contains("hasResetOut"))
-    hasResetOut_ =
-      params.getScalar("hasResetOut")->getValue<NTA_UInt32>() == 1;
-  if (params.contains("inputFile"))
-    filename_ = *params.getString("inputFile");
-  if (params.contains("repeatCount"))
-    repeatCount_ = params.getScalar("repeatCount")->getValue<NTA_UInt32>();
+  activeOutputCount_ = params.getScalarT<NTA_UInt32>("activeOutputCount", 0);
+  hasCategoryOut_ = (params.getScalarT<NTA_UInt32>("hasCategoryOut", 0) == 1);
+  hasResetOut_ = (params.getScalarT<NTA_UInt32>("hasResetOut", 0) == 1);
+  filename_ = params.getString("inputFile","");
+  repeatCount_ = params.getScalarT<NTA_UInt32>("repeatCount", 1);
 }
 
 VectorFileSensor::VectorFileSensor(BundleIO& bundle, Region* region) :

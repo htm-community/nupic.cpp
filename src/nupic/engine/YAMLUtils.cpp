@@ -145,7 +145,7 @@ static Value toValue(const YAML::Node& node, NTA_BasicType dataType)
 {
   if (node.Type() == YAML::NodeType::Map || node.Type() == YAML::NodeType::Null)
   {
-    NTA_THROW << "YAML string does not not represent a value.";
+    NTA_THROW << "YAML string does not represent a value.";
   }
   if (node.Type() == YAML::NodeType::Scalar)
   {
@@ -153,8 +153,7 @@ static Value toValue(const YAML::Node& node, NTA_BasicType dataType)
     {
       // node >> *str;
       const std::string val = node.as<std::string>();
-      boost::shared_ptr<std::string> str(new std::string(val));
-      Value v(str);
+      Value v(val);
       return v;
     } else {
       boost::shared_ptr<Scalar> s(new Scalar(dataType));
@@ -211,7 +210,7 @@ ValueMap toValueMap(const char* yamlstring,
       }
       NTA_THROW << "YAML string '" << ys 
                 << "' does not not specify a dictionary of key-value pairs. "
-                << "Region and Link parameters must be specified at a dictionary";
+                << "Region and Link parameters must be specified as a yaml dictionary";
     }
   }
   // Grab each value out of the YAML dictionary and put into the ValueMap
@@ -244,11 +243,11 @@ ValueMap toValueMap(const char* yamlstring,
       Value v = toValue(i->second, spec.dataType);
       if (v.isScalar() && spec.count != 1)
       {
-        throw std::runtime_error("Expected array value but got scalar value");
+        NTA_THROW << "Parameter '" << key << "'. Bad value in runtime parameters. Expected array value but got scalar value";
       }
       if (!v.isScalar() && spec.count == 1)
       {
-        throw std::runtime_error("Expected scalar value but got array value");
+        NTA_THROW << "Parameter '" << key << "'. Bad value in runtime parameters. Expected scalar value but got array value";
       }
       vm.add(key, v);
     } catch (std::runtime_error& e) {
@@ -270,21 +269,32 @@ ValueMap toValueMap(const char* yamlstring,
         // {
         //   NTA_THROW << "Default value for non-create parameter: " << item.first;
         // }
-        
         try {
 #ifdef YAMLDEBUG
-          NTA_DEBUG << "Adding default value '" << ps.defaultValue 
-                    << "' to parameter " << item.first
-                    << " of type " << BasicType::getName(ps.dataType) 
-                    << " count " << ps.count;
+          NTA_DEBUG << "Adding default value '" << ps.defaultValue
+            << "' to parameter " << item.first
+            << " of type " << BasicType::getName(ps.dataType)
+            << " count " << ps.count;
 #endif
+          // NOTE: this can handle both scalers and arrays
+          //       Arrays MUST be in Yaml sequence format even if one element.
+          //       i.e.  [1,2,3]
           Value v = toValue(ps.defaultValue, ps.dataType);
+          if (v.isScalar() && ps.count != 1)
+          {
+            NTA_THROW << "Parameter '" << item.first << "'. Bad default value in spec. Expected array value but got scalar value";
+          }
+          if (!v.isScalar() && ps.count == 1)
+          {
+            NTA_THROW << "Parameter '" << item.first << "'. Bad default value in spec. Expected scalar value but got array value";
+          }
           vm.add(item.first, v);
-        } catch (...) {
-          NTA_THROW << "Unable to set default value for item '" 
-                    << item.first << "' of datatype " 
-                    << BasicType::getName(ps.dataType) 
-                    <<" with value '" << ps.defaultValue << "'";
+        }
+        catch (...) {
+          NTA_THROW << "Unable to set default value for item '"
+            << item.first << "' of datatype "
+            << BasicType::getName(ps.dataType)
+            << " with value '" << ps.defaultValue << "'";
         }
       }
     }

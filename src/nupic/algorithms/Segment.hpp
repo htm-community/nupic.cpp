@@ -314,9 +314,9 @@ namespace nupic {
 
       // This is the alpha used in each tier. dutyCycleAlphas[n] is used when
       /// iterationIdx > dutyCycleTiers[n]
-      const Real _dutyCycleAlphas[]  = {0.0,     0.0032,   0.0010,   0.00032,
-                                        0.00010, 0.000032, 0.000010, 0.0000032,
-                                        0.0000010};
+      const Real _dutyCycleAlphas[]  = {0.0f,     0.0032f,   0.0010f,   0.00032f,
+                                        0.00010f, 0.000032f, 0.000010f, 0.0000032f,
+                                        0.0000010f};
 
       //-----------------------------------------------------------------------
       // Forward declarations
@@ -395,14 +395,14 @@ namespace nupic {
         inline bool invariants() const
         {
           static std::vector<UInt> indices;
-          static UInt highWaterSize = 0;
+          static size_t highWaterSize = 0;
           if (highWaterSize < _synapses.size()) {
             highWaterSize = _synapses.size();
             indices.reserve(highWaterSize);
           }
           indices.clear();                  // purge residual data
 
-          for (UInt i = 0; i != _synapses.size(); ++i)
+          for (size_t i = 0; i != _synapses.size(); ++i)
             indices.push_back(_synapses[i].srcCellIdx());
 
 
@@ -428,7 +428,7 @@ namespace nupic {
         inline bool checkConnected(Real permConnected) const {
           //
           UInt nc = 0;
-          for (UInt i = 0; i != _synapses.size(); ++i)
+          for (size_t i = 0; i != _synapses.size(); ++i)
             nc += (_synapses[i].permanence() >= permConnected);
 
           if (nc != _nConnected) {
@@ -444,7 +444,7 @@ namespace nupic {
          * Various accessors
          */
         inline bool empty() const { return _synapses.empty(); }
-        inline UInt size() const { return _synapses.size(); }
+        inline size_t size() const { return _synapses.size(); }
         inline bool isSequenceSegment() const { return _seqSegFlag; }
         inline Real& frequency() { return _frequency; }
         inline Real getFrequency() const { return _frequency; }
@@ -466,10 +466,10 @@ namespace nupic {
         {
           NTA_ASSERT(srcCellIdx != (UInt) -1);
 
-          UInt lo = 0;
-          UInt hi = _synapses.size();
+          size_t lo = 0;
+          size_t hi = _synapses.size();
           while (lo < hi) {
-            const UInt test = (lo + hi)/2;
+            const size_t test = (lo + hi)/2;
             if (_synapses[test].srcCellIdx() < srcCellIdx)
               lo = test + 1;
             else if (_synapses[test].srcCellIdx() > srcCellIdx)
@@ -489,7 +489,7 @@ namespace nupic {
          */
         inline void setPermanence(UInt idx, Real val)
         {
-          NTA_ASSERT(idx < _synapses.size());
+          NTA_ASSERT(idx < (UInt)_synapses.size());
 
           _synapses[idx].permanence() = val;
         }
@@ -500,7 +500,7 @@ namespace nupic {
          */
         inline Real getPermanence(UInt idx) const
         {
-          NTA_ASSERT(idx < _synapses.size());
+          NTA_ASSERT(idx < (UInt)_synapses.size());
           NTA_ASSERT(0 <= _synapses[idx].permanence());
 
           return _synapses[idx].permanence();
@@ -512,7 +512,7 @@ namespace nupic {
          */
         inline UInt getSrcCellIdx(UInt idx) const
         {
-          NTA_ASSERT(idx < _synapses.size());
+          NTA_ASSERT(idx < (UInt)_synapses.size());
           return _synapses[idx].srcCellIdx();
         }
 
@@ -550,7 +550,7 @@ namespace nupic {
         //-----------------------------------------------------------------------
         inline const InSynapse& operator[](UInt idx) const
         {
-          NTA_ASSERT(idx < size());
+          NTA_ASSERT(idx < (UInt)size());
           return _synapses[idx];
         }
 
@@ -581,7 +581,7 @@ namespace nupic {
          */
         void recomputeConnected(Real permConnected) {
           _nConnected = 0;
-          for (UInt i = 0; i != _synapses.size(); ++i)
+          for (size_t i = 0; i != _synapses.size(); ++i)
             if (_synapses[i].permanence() >= permConnected)
               ++ _nConnected;
         }
@@ -602,7 +602,7 @@ namespace nupic {
           // because of decay
           UInt i = 0, idel = 0, j = 0;
 
-          while (i < _synapses.size() && idel < del.size()) {
+          while (i < (UInt)_synapses.size() && idel < (UInt)del.size()) {
             if (i == del[idel]) {
               ++i; ++idel;
             } else if (i < del[idel]) {
@@ -612,7 +612,7 @@ namespace nupic {
             }
           }
 
-          while (i < _synapses.size())
+          while (i < (UInt)_synapses.size())
             _synapses[j++] = _synapses[i++];
 
           _synapses.resize(j);
@@ -648,21 +648,21 @@ namespace nupic {
 
           std::vector<UInt> del;
 
-          UInt i1 = 0, i2 = 0;
+          size_t i1 = 0, i2 = 0;
 
           while (i1 < size() && i2 < synapses.size()) {
 
             if (_synapses[i1].srcCellIdx() == synapses[i2]) {
 
-              Real oldPerm = getPermanence(i1);
+              Real oldPerm = getPermanence((UInt)i1);
               Real newPerm = std::min(oldPerm + delta, permMax);
 
               if (newPerm <= 0) {
                 removed.push_back(_synapses[i1].srcCellIdx());
-                del.push_back(i1);
+                del.push_back((UInt)i1);
               }
 
-              setPermanence(i1, newPerm);
+              setPermanence((UInt)i1, newPerm);
 
               int wasConnected = (int) (oldPerm >= permConnected);
               int isConnected = (int) (newPerm >= permConnected);
@@ -809,7 +809,7 @@ namespace nupic {
         {
           std::stringstream buff;
           this->save(buff);
-          return buff.str().size();
+          return (UInt)buff.str().size();
         }
 
         //----------------------------------------------------------------------

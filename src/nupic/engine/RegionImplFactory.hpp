@@ -54,7 +54,10 @@ namespace nupic
     static RegionImplFactory & getInstance();
 
     // RegionImplFactory is a lightweight object
-    ~RegionImplFactory() {};
+    ~RegionImplFactory() 
+    {
+      cleanup();
+    };
 
     // Create a RegionImpl of a specific type; caller gets ownership.
     RegionImpl* createRegionImpl(const std::string nodeType,
@@ -69,43 +72,22 @@ namespace nupic
     // Returns nodespec for a specific node type; Factory retains ownership.
     Spec* getSpec(const std::string nodeType);
 
-    // RegionImplFactory caches nodespecs and the dynamic library reference
+    // RegionImplFactory caches nodespecs and the dynamic library reference in the registered RegionImpl wrapper
     // This frees up the cached information.
     // Should be called only if there are no outstanding
     // nodespec references (e.g. in NuPIC shutdown) or pynodes.
     void cleanup();
 
-    static void registerPyRegionPackage(const char * path);
-
-    // Allows the user to load custom Python regions
-    static void registerPyRegion(const std::string module, const std::string className);
-    static void registerPyBindRegion(const std::string& module, const std::string& className);
-
     // Allows the user to load custom C++ regions
-    static void registerCPPRegion(const std::string name, GenericRegisteredRegionImpl * wrapper);
-
-    // Allows the user to unregister Python regions
-    static void unregisterPyRegion(const std::string className);
-    static void unregisterPyBindRegion(const std::string& className);
-
+    static void registerCPPRegion(const std::string nodetype, GenericRegisteredRegionImpl * wrapper);
     // Allows the user to unregister C++ regions
-    static void unregisterCPPRegion(const std::string name);
+    static void unregisterCPPRegion(const std::string nodetype);
 
   private:
     RegionImplFactory() {};
     RegionImplFactory(const RegionImplFactory &);
 
-    // TODO: implement locking for thread safety for this global data structure
-    // TODO: implement cleanup
 
-    // getSpec returns references to nodespecs in this cache.
-    // should not be cleaned up until those references have disappeared.
-    std::map<std::string, Spec*> nodespecCache_;
-
-    // Using shared_ptr here to ensure the dynamic python library object
-    // is deleted when the factory goes away. Can't use scoped_ptr
-    // because it is not initialized in the constructor.
-    std::shared_ptr<DynamicPythonLibrary> pyLib_;
   };
 }
 

@@ -76,7 +76,7 @@ void svm_parameter::print() const {
 }
 
 //------------------------------------------------------------------------------
-int svm_parameter::persistent_size() const {
+size_t svm_parameter::persistent_size() const {
   stringstream b;
   b << kernel << ' ' << probability << ' ' << gamma << ' ' << C << ' ' << eps
     << ' ' << cache_size << ' ' << shrinking << ' ' << weight_label << ' '
@@ -100,7 +100,7 @@ void svm_parameter::load(std::istream &inStream) {
 
 
 //------------------------------------------------------------------------------
-int svm_problem::persistent_size() const {
+size_t svm_problem::persistent_size() const {
   stringstream b;
 
   b << size() << " " << n_dims() << " ";
@@ -144,15 +144,15 @@ void svm_problem::load(std::istream &inStream) {
 }
 
 //------------------------------------------------------------------------------
-int svm_problem01::persistent_size() const {
+size_t svm_problem01::persistent_size() const {
   stringstream b;
   b << size() << " " << n_dims() << " " << threshold_ << " ";
-  int n = b.str().size();
+  size_t n = b.str().size();
 
   n += y_.size() * sizeof(float);
   n += nnz_.size() * sizeof(int);
 
-  for (int i = 0; i != size(); ++i)
+  for (size_t i = 0; i != size(); ++i)
     n += nnz_[i] * sizeof(feature_type);
 
   return n + 1;
@@ -250,18 +250,18 @@ void svm_model::print() const {
 }
 
 //------------------------------------------------------------------------------
-int svm_model::persistent_size() const {
+size_t svm_model::persistent_size() const {
   stringstream b;
   b << n_class() << " " << size() << " " << n_dims() << " ";
 
-  int n = b.str().size();
+  size_t n = b.str().size();
 
   n += sv.size() * n_dims() * sizeof(float) + 1;
 
   {
     stringstream b2;
     for (auto &elem : sv_coef) {
-      for (int j = 0; j < size(); ++j)
+      for (size_t j = 0; j < size(); ++j)
         b2 << elem[j] << " ";
     }
     n += b2.str().size();
@@ -342,7 +342,7 @@ void svm_model::load(std::istream &inStream) {
 
   sv.resize(l, nullptr);
   inStream.ignore(1);
-  for (int i = 0; i < l; ++i) {
+  for (size_t i = 0; i < l; ++i) {
     sv[i] = sv_mem + i * n_dims();
     nupic::binary_load(inStream, sv[i], sv[i] + n_dims());
   }
@@ -351,9 +351,9 @@ void svm_model::load(std::istream &inStream) {
     delete[] elem;
 
   sv_coef.resize(n_class - 1, nullptr);
-  for (int i = 0; i < n_class - 1; ++i) {
+  for (size_t i = 0; i < n_class - 1; ++i) {
     sv_coef[i] = new float[l];
-    for (int j = 0; j < l; ++j)
+    for (size_t j = 0; j < l; ++j)
       inStream >> sv_coef[i][j];
   }
 

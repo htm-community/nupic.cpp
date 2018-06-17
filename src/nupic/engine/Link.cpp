@@ -24,65 +24,54 @@
  * Implementation of the Link class
  */
 #include <cstring> // memcpy,memset
-#include <nupic/engine/Link.hpp>
-#include <nupic/utils/Log.hpp>
-#include <nupic/engine/LinkPolicyFactory.hpp>
-#include <nupic/engine/LinkPolicy.hpp>
-#include <nupic/engine/Region.hpp>
 #include <nupic/engine/Input.hpp>
+#include <nupic/engine/Link.hpp>
 #include <nupic/engine/Output.hpp>
+#include <nupic/engine/Region.hpp>
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/types/BasicType.hpp>
-
+#include <nupic/utils/Log.hpp>
 
 // Set this to true when debugging to enable handy debug-level logging of data
 // moving through the links, including the delayed link transitions.
 #define _LINK_DEBUG false
 
+namespace nupic {
 
-namespace nupic
-{
-
-Link::Link(const std::string& linkType, const std::string& linkParams,
-           const std::string& srcRegionName, const std::string& destRegionName,
-           const std::string& srcOutputName, const std::string& destInputName,
-           const size_t propagationDelay):
-             srcBuffer_(0)
-{
-  commonConstructorInit_(linkType, linkParams,
-        srcRegionName, destRegionName,
-        srcOutputName, destInputName,
-        propagationDelay);
-
+Link::Link(const std::string &linkType, const std::string &linkParams,
+           const std::string &srcRegionName, const std::string &destRegionName,
+           const std::string &srcOutputName, const std::string &destInputName,
+           const size_t propagationDelay) {
+  commonConstructorInit_(linkType, linkParams, srcRegionName, destRegionName,
+                         srcOutputName, destInputName, propagationDelay);
 }
 
-Link::Link(const std::string& linkType, const std::string& linkParams,
-           Output* srcOutput, Input* destInput, const size_t propagationDelay):
-             srcBuffer_(0)
-{
-  commonConstructorInit_(linkType, linkParams,
-        srcOutput->getRegion().getName(),
-        destInput->getRegion().getName(),
-        srcOutput->getName(),
-        destInput->getName(),
-        propagationDelay);
+Link::Link(const std::string &linkType, const std::string &linkParams,
+           Output *srcOutput, Input *destInput, const size_t propagationDelay) {
+  commonConstructorInit_(linkType, linkParams, srcOutput->getRegion().getName(),
+                         destInput->getRegion().getName(), srcOutput->getName(),
+                         destInput->getName(), propagationDelay);
 
   connectToNetwork(srcOutput, destInput);
-  // Note -- link is not usable until we set the destOffset, which happens at initialization time
+  // Note -- link is not usable until we set the destOffset, which happens at
+  // initialization time
 }
 
-
-Link::Link():
-            srcBuffer_(0)
-{
+Link::Link() {  // needed for deserialization
+  destOffset_ = 0;
+  src_ = nullptr;
+  dest_ = nullptr;
+  zeroCopy_ = false;
+  initialized_ = false;
 }
 
-
-void Link::commonConstructorInit_(const std::string& linkType, const std::string& linkParams,
-                 const std::string& srcRegionName, const std::string& destRegionName,
-                 const std::string& srcOutputName,  const std::string& destInputName,
-                 const size_t propagationDelay)
-{
+void Link::commonConstructorInit_(const std::string &linkType,
+                                  const std::string &linkParams,
+                                  const std::string &srcRegionName,
+                                  const std::string &destRegionName,
+                                  const std::string &srcOutputName,
+                                  const std::string &destInputName,
+                                  const size_t propagationDelay) {
   linkType_ = linkType;
   linkParams_ = linkParams;
   srcRegionName_ = srcRegionName;
@@ -91,55 +80,17 @@ void Link::commonConstructorInit_(const std::string& linkType, const std::string
   destInputName_ = destInputName;
   propagationDelay_ = propagationDelay;
   destOffset_ = 0;
-  srcOffset_ = 0;
-  srcSize_ = 0;
   src_ = nullptr;
   dest_ = nullptr;
   initialized_ = false;
+  zeroCopy_ = false;
 
-
-  impl_ = LinkPolicyFactory().createLinkPolicy(linkType, linkParams, this);
 }
 
-Link::~Link()
-{
-  delete impl_;
-}
+Link::~Link() {}
 
 
-void Link::initPropagationDelayBuffer_(size_t propagationDelay,
-                                       NTA_BasicType dataElementType,
-                                       size_t dataElementCount)
-{
-  if (srcBuffer_.capacity() != 0 || !propagationDelay)
-  {
-    // Already initialized(e.g., as result of deserialization); or a 0-delay
-    // link, which doesn't use buffering.
-    return;
-  }
-
-  // Establish capacity for the requested delay data elements
-  srcBuffer_.set_capacity(propagationDelay);
-
-  // Initialize delay data elements
-  size_t dataBufferSize = dataElementCount *
-                          BasicType::getSize(dataElementType);
-
-  for(size_t i=0; i < propagationDelay; i++)
-  {
-    Array arrayTemplate(dataElementType);
-
-    srcBuffer_.push_back(arrayTemplate);
-
-    // Allocate 0-initialized data for current element
-    srcBuffer_[i].allocateBuffer(dataElementCount);
-    ::memset(srcBuffer_[i].getBuffer(), 0, dataBufferSize);
-  }
-}
-
-
-void Link::initialize(size_t destinationOffset)
-{
+void Link::initialize(size_t destinationOffset, bool zeroCopy) {
   // Make sure all information is specified and
   // consistent. Unless there is a NuPIC implementation
   // error, all these checks are guaranteed to pass
@@ -147,181 +98,118 @@ void Link::initialize(size_t destinationOffset)
   // and initialized.
 
   // Make sure we have been attached to a real network
-  NTA_CHECK(src_ != nullptr);
-  NTA_CHECK(dest_ != nullptr);
+  NTA_CHECK(src_ != nullptr)
+      << "Link::initialize() and src_ Output object not set.";
+  NTA_CHECK(dest_ != nullptr)
+      << "Link::initialize() and dest_ Input object not set.";
 
-  // Confirm that our dimensions are consistent with the
-  // dimensions of the regions we're connecting.
-  const Dimensions& srcD = getSrcDimensions();
-  const Dimensions& destD = getDestDimensions();
-  NTA_CHECK(! srcD.isUnspecified());
-  NTA_CHECK(! destD.isUnspecified());
-
-  Dimensions oneD;
-  oneD.push_back(1);
-
-  if(src_->isRegionLevel())
-  {
-    Dimensions d;
-    for(size_t i = 0; i < src_->getRegion().getDimensions().size(); i++)
-    {
-      d.push_back(1);
-    }
-
-    NTA_CHECK(srcD.isDontcare() || srcD == d);
-  }
-  else if(src_->getRegion().getDimensions() == oneD)
-  {
-    Dimensions d;
-    for(size_t i = 0; i < srcD.size(); i++)
-    {
-      d.push_back(1);
-    }
-    NTA_CHECK(srcD.isDontcare() || srcD == d);
-  }
-  else
-  {
-    NTA_CHECK(srcD.isDontcare() || srcD == src_->getRegion().getDimensions());
-  }
-
-  if(dest_->isRegionLevel())
-  {
-    Dimensions d;
-    for(size_t i = 0; i < dest_->getRegion().getDimensions().size(); i++)
-    {
-      d.push_back(1);
-    }
-
-    NTA_CHECK(destD.isDontcare() || destD.isOnes());
-  }
-  else if(dest_->getRegion().getDimensions() == oneD)
-  {
-    Dimensions d;
-    for(size_t i = 0; i < destD.size(); i++)
-    {
-      d.push_back(1);
-    }
-    NTA_CHECK(destD.isDontcare() || destD == d);
-  }
-  else
-  {
-    NTA_CHECK(destD.isDontcare() || destD == dest_->getRegion().getDimensions());
-  }
-
+  // We do not need to copy the buffer during propogation if:
+  //  1) There is no fanIn (no more than one link into the same Input buffer)
+  //  2) A data conversion is not required (Output and Input data types same)
+  // Note that if there is propagation delay, the buffer is copied to the queue
+  //      but a copy from the queue to the destination Input buffer can be avoided
+  //      if there is no fanIn or conversion.
+  zeroCopy_ = zeroCopy;
   destOffset_ = destinationOffset;
-  impl_->initialize();
 
   // ---
   // Initialize the propagation delay buffer
+  // But skip it if it already has something in it from deserialize().
   // ---
-  initPropagationDelayBuffer_(propagationDelay_,
-                              src_->getData().getType(),
-                              src_->getData().getCount());
+  if (propagationDelay_ > 0 && propagationDelayBuffer_.empty()) {
+    // Initialize delay data elements.  This must be done during initialize()
+    // because the buffer size is not known prior to then.
+    // front of queue will be the next value to be copied to the dest Input buffer.
+    // back of queue will be the same as the current contents of source Output.
+    NTA_BasicType dataElementType = src_->getData().getType();
+    size_t dataElementCount = src_->getData().getCount();
+    for (size_t i = 0; i < (propagationDelay_); i++) {
+      Array arrayTemplate(dataElementType);
+      arrayTemplate.allocateBuffer(dataElementCount);
+      arrayTemplate.zeroBuffer();
+      propagationDelayBuffer_.push_back(arrayTemplate);
+    }
+  }
 
   initialized_ = true;
-
 }
 
-void Link::setSrcDimensions(Dimensions& dims)
-{
-  NTA_CHECK(src_ != nullptr && dest_ != nullptr)
-    << "Link::setSrcDimensions() can only be called on a connected link";
+void Link::compute() {
+  NTA_CHECK(initialized_);
+  Array* from = &src_->getData();
+  Array* to = &dest_->getData();
 
-  size_t nodeElementCount = src_->getNodeOutputElementCount();
-  if(nodeElementCount == 0)
-  {
-    nodeElementCount =
-      src_->getRegion().getNodeOutputElementCount(src_->getName());
+
+  if (propagationDelay_) {
+    // A delayed link's queue buffer size should always be number of delays.
+    NTA_CHECK(propagationDelayBuffer_.size() == (propagationDelay_));
+    from = &propagationDelayBuffer_.front();
   }
-  impl_->setNodeOutputElementCount(nodeElementCount);
-
-  impl_->setSrcDimensions(dims);
-}
-
-void Link::setDestDimensions(Dimensions& dims)
-{
-  NTA_CHECK(src_ != nullptr && dest_ != nullptr)
-    << "Link::setDestDimensions() can only be called on a connected link";
-
-  size_t nodeElementCount = src_->getNodeOutputElementCount();
-  if(nodeElementCount == 0)
-  {
-    nodeElementCount =
-      src_->getRegion().getNodeOutputElementCount(src_->getName());
+  if (zeroCopy_) {
+    // This does a shallow copy so that the buffer does NOT get copied
+    // but the type, count, capacity, and shared_ptr are copied.
+    // The buffer is a smart shared pointer so its contents will be deleted 
+    // when the last reference is deleted.
+    from->zeroCopy(*to);
+  } else {
+    NTA_CHECK(from->getCount() + destOffset_ <= to->getCapacity())
+        << "Not enough room in buffer to propogate to " << destRegionName_
+        << " " << destInputName_ << ". ";
+    // This does a deep copy of the buffer, and if needed it also does a type
+    // conversion at the same time. It is copied into the destination Input
+    // buffer at the specified offset so an Input with multiple incoming links
+    // has the Output buffers appended into a single large Input buffer.
+    from->convertInto(*to, destOffset_);
   }
-  impl_->setNodeOutputElementCount(nodeElementCount);
-
-  impl_->setDestDimensions(dims);
 }
 
-const Dimensions& Link::getSrcDimensions() const
+void Link::shiftBufferedData() 
 {
-  return impl_->getSrcDimensions();
-};
+  if (propagationDelay_) {
+    Array *from = &src_->getData();
+    NTA_CHECK(propagationDelayBuffer_.size() == (propagationDelay_));
 
-const Dimensions& Link::getDestDimensions() const
-{
-  return impl_->getDestDimensions();
-};
+    // push a copy of the source Output buffer on the back of the queue.
+    // This must be a deep copy.
+    Array a = from->copy();
+    propagationDelayBuffer_.push_back(a);
+
+    // Pop the head of the queue
+    // The top of the queue now becomes the value to copy to destination.
+    propagationDelayBuffer_.pop_front();
+  }
+}
+
 
 // Return constructor params
-const std::string& Link::getLinkType() const
-{
-  return linkType_;
-}
+const std::string &Link::getLinkType() const { return linkType_; }
 
-const std::string& Link::getLinkParams() const
-{
-  return linkParams_;
-}
+const std::string &Link::getLinkParams() const { return linkParams_; }
 
-const std::string& Link::getSrcRegionName() const
-{
-  return srcRegionName_;
-}
+const std::string &Link::getSrcRegionName() const { return srcRegionName_; }
 
-const std::string& Link::getSrcOutputName() const
-{
-  return srcOutputName_;
-}
+const std::string &Link::getSrcOutputName() const { return srcOutputName_; }
 
-const std::string& Link::getDestRegionName() const
-{
-  return destRegionName_;
-}
+const std::string &Link::getDestRegionName() const { return destRegionName_; }
 
-const std::string& Link::getDestInputName() const
-{
-  return destInputName_;
-}
+const std::string &Link::getDestInputName() const { return destInputName_; }
 
-std::string Link::getMoniker() const
-{
+std::string Link::getMoniker() const {
   std::stringstream ss;
   ss << getSrcRegionName() << "." << getSrcOutputName() << "-->"
      << getDestRegionName() << "." << getDestInputName();
   return ss.str();
 }
 
-const std::string Link::toString() const
-{
+const std::string Link::toString() const {
   std::stringstream ss;
   ss << "[" << getSrcRegionName() << "." << getSrcOutputName();
-  if (src_)
-  {
-    ss << " (region dims: " << src_->getRegion().getDimensions().toString() << ") ";
-  }
-  ss << " to " << getDestRegionName() << "." << getDestInputName() ;
-  if (dest_)
-  {
-    ss << " (region dims: " << dest_->getRegion().getDimensions().toString() << ") ";
-  }
-  ss << " type: " << linkType_ << "]";
+  ss << " to " << getDestRegionName() << "." << getDestInputName();
+  ss << "]";
   return ss.str();
 }
 
-void Link::connectToNetwork(Output *src, Input *dest)
-{
+void Link::connectToNetwork(Output *src, Input *dest) {
   NTA_CHECK(src != nullptr);
   NTA_CHECK(dest != nullptr);
 
@@ -329,161 +217,152 @@ void Link::connectToNetwork(Output *src, Input *dest)
   dest_ = dest;
 }
 
-
 // The methods below only work on connected links.
-Output& Link::getSrc() const
+Output &Link::getSrc() const
 
 {
   NTA_CHECK(src_ != nullptr)
-    << "Link::getSrc() can only be called on a connected link";
+      << "Link::getSrc() can only be called on a connected link";
   return *src_;
 }
 
-Input& Link::getDest() const
-{
+Input &Link::getDest() const {
   NTA_CHECK(dest_ != nullptr)
-    << "Link::getDest() can only be called on a connected link";
+      << "Link::getDest() can only be called on a connected link";
   return *dest_;
 }
 
-void
-Link::buildSplitterMap(Input::SplitterMap& splitter)
-{
-  // The link policy generates a splitter map
-  // at the element level.  Here we convert it
-  // to a full splitter map
-  //
-  // if protoSplitter[destNode][x] == srcElement for some x
-  // means that the output srcElement is sent to destNode
+void Link::serialize(YAML::Emitter &out) {
+  size_t srcCount = ((!src_) ? (size_t)0 : src_->getData().getCount());
+  NTA_BasicType srcType =
+      ((!src_) ? BasicType::parse(getLinkType()) : src_->getData().getType());
+  out << YAML::BeginMap;
+  out << YAML::Key << "linkType" << YAML::Value << getLinkType();
+  out << YAML::Key << "params" << YAML::Value << getLinkParams();
+  out << YAML::Key << "srcRegion" << YAML::Value << getSrcRegionName();
+  out << YAML::Key << "srcOutput" << YAML::Value << getSrcOutputName();
+  out << YAML::Key << "destRegion" << YAML::Value << getDestRegionName();
+  out << YAML::Key << "destInput" << YAML::Value << getDestInputName();
+  out << YAML::Key << "propagationDelay" << YAML::Value << propagationDelay_;
+  out << YAML::Key << "propagationDelayBuffer" << YAML::Value << YAML::BeginSeq;
+  if (propagationDelay_ > 0) {
+    // we need to capture the propagationDelayBuffer_ used for propagationDelay
+    // Do not copy the last entry.  It is the same as the output buffer.
 
-  Input::SplitterMap protoSplitter;
-  protoSplitter.resize(splitter.size());
-  size_t nodeElementCount = src_->getNodeOutputElementCount();
-  impl_->setNodeOutputElementCount(nodeElementCount);
-  impl_->buildProtoSplitterMap(protoSplitter);
+    // The current contents of the Destination Input buffer also needs
+    // to be captured as if it were the top value of the propagationDelayBuffer.
+    // When restored, it will be copied to the dest input buffer and popped off
+    // before the next execution. If there is an offset, we only
+    // want to capture the amount of the input buffer contributed by
+    // this link.
+    Array a = dest_->getData().subset(destOffset_, srcCount); 
+    a.serialize(out); // our part of the current Dest Input buffer.
 
-  for (size_t destNode = 0; destNode < splitter.size(); destNode++)
-  {
-    // convert proto-splitter values into real
-    // splitter values;
-    for (auto & elem : protoSplitter[destNode])
-    {
-      size_t srcElement = elem;
-      size_t elementOffset = srcElement + destOffset_;
-      splitter[destNode].push_back(elementOffset);
-    }
-
+    std::deque<Array>::iterator itr;
+    for (auto itr = propagationDelayBuffer_.begin();
+         itr != propagationDelayBuffer_.end(); itr++) {
+      if (itr + 1 == propagationDelayBuffer_.end())
+        break; // skip the last buffer. Its the current output.
+      Array &buf = *itr;
+      buf.serialize(out);
+    } // end for
   }
+  out << YAML::EndSeq;
+
+  out << YAML::EndMap;
 }
 
-void
-Link::compute()
-{
-  NTA_CHECK(initialized_);
+void Link::deserialize(const YAML::Node &link) {
+  // Each link is a map -- extract the 9 values in the map
+  // The "circularBuffer" element is a two dimentional array only present if
+  // propogationDelay > 0.
+  NTA_CHECK(link.Type() == YAML::NodeType::Map)
+      << "Invalid network structure file -- bad link (not a map)";
+  NTA_CHECK(link.size() == 8)
+      << "Invalid network structure file -- bad link (wrong size)";
 
-  if (propagationDelay_)
-  {
-    NTA_CHECK(!srcBuffer_.empty());
+  YAML::Node node;
+
+  // 1. type
+  node = link["linkType"];
+  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
+                                "not have a 'linkType' field.";
+  std::string linkType = node.as<std::string>();
+
+  // 2. params
+  node = link["params"];
+  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
+                                "not have a 'params' field.";
+  std::string linkParams = node.as<std::string>();
+
+  // 3. srcRegion (name)
+  node = link["srcRegion"];
+  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
+                                "not have a 'srcRegion' field.";
+  std::string srcRegionName = node.as<std::string>();
+
+  // 4. srcOutput
+  node = link["srcOutput"];
+  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
+                                "not have a 'srcOutput' field";
+  std::string srcOutputName = node.as<std::string>();
+
+  // 5. destRegion
+  node = link["destRegion"];
+  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
+                                "not have a 'destRegion' field.";
+  std::string destRegionName = node.as<std::string>();
+
+  // 6. destInput
+  node = link["destInput"];
+  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
+                                "not have a 'destInput' field.";
+  std::string destInputName = node.as<std::string>();
+
+  // 7. propagationDelay (number of cycles to delay propagation)
+  node = link["propagationDelay"];
+  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
+                                "not have a 'propagationDelay' field.";
+  size_t propagationDelay = node.as<size_t>();
+
+  // fill in the data for the Link object
+  commonConstructorInit_(linkType, linkParams, srcRegionName, destRegionName,
+                         srcOutputName, destInputName, propagationDelay);
+
+  // 8. propagationDelayBuffer
+  node = link["propagationDelayBuffer"];
+  NTA_CHECK(node.IsSequence()) << " Invalid network structure file-- link does "
+                                  "not have a 'propagationDelayBuffer' field.";
+  // if no propagationDelay (value = 0) then there should be an empty sequence.
+  size_t idx = 0;
+  for (const auto &valiter : node) {
+    NTA_CHECK(idx < propagationDelay_) << "Invalid network structure file -- "
+                                          "link has too many buffers in "
+                                          "'propagationDelayBuffer'.";
+    Array a;
+    propagationDelayBuffer_.push_back(a);
+    propagationDelayBuffer_.back().deserialize(valiter);
+    idx++;
   }
-
-  // Copy data from source to destination. For delayed links, will copy from
-  // head of circular queue; otherwise directly from source.
-  const Array & src = propagationDelay_ ? srcBuffer_[0] : src_->getData();
-
-  const Array & dest = dest_->getData();
-
-  size_t typeSize = BasicType::getSize(src.getType());
-  size_t srcSize = src.getCount() * typeSize;
-  size_t destByteOffset = destOffset_ * typeSize;
-
-  if (_LINK_DEBUG)
-  {
-    NTA_DEBUG << "Link::compute: " << getMoniker()
-              << "; copying to dest input"
-              << "; delay=" << propagationDelay_ << "; "
-              << src.getCount() << " elements=" << src;
-  }
-
-  ::memcpy((char*)(dest.getBuffer()) + destByteOffset, src.getBuffer(), srcSize);
+  NTA_CHECK(idx == propagationDelay_) << "Invalid network structure file -- "
+                                         "link has too few buffers in "
+                                         "'propagationDelayBuffer'.";
+  // To complete the restore, call r->prepareInputs()
+  // and then shiftBufferedData();
 }
 
-
-void Link::shiftBufferedData()
-{
-  if (!propagationDelay_)
-  {
-    // Source buffering is not used in 0-delay links
-    return;
-  }
-
-  // A delayed link's circular buffer should always be at capacity, because
-  // it starts out full in link initialization and we always append the new
-  // source value after shifting out the head.
-  NTA_CHECK(srcBuffer_.full());
-
-  // Pop head of circular queue
-
-  if (_LINK_DEBUG)
-  {
-    NTA_DEBUG << "Link::shiftBufferedData: " << getMoniker()
-              << "; popping head; "
-              << srcBuffer_[0].getCount() << " elements="
-              << srcBuffer_[0];
-  }
-
-  srcBuffer_.pop_front();
-
-
-  // Append the current src value to circular queue
-
-  const Array & srcArray = src_->getData();
-  size_t elementCount = srcArray.getCount();
-  auto elementType = srcArray.getType();
-
-  if (_LINK_DEBUG)
-  {
-    NTA_DEBUG << "Link::shiftBufferedData: " << getMoniker()
-              << "; appending src to circular buffer; "
-              << elementCount << " elements="
-              << srcArray;
-
-    NTA_DEBUG << "Link::shiftBufferedData: " << getMoniker()
-              << "; num arrays in circular buffer before append; "
-              << srcBuffer_.size() << "; capacity=" << srcBuffer_.capacity();
-  }
-
-  Array array(elementType);
-  srcBuffer_.push_back(array);
-
-  auto & lastElement = srcBuffer_.back();
-  lastElement.allocateBuffer(elementCount);
-  ::memcpy(lastElement.getBuffer(), srcArray.getBuffer(),
-           elementCount * BasicType::getSize(elementType));
-
-  if (_LINK_DEBUG)
-  {
-    NTA_DEBUG << "Link::shiftBufferedData: " << getMoniker()
-              << "; circular buffer head after append is: "
-              << srcBuffer_[0].getCount() << " elements="
-              << srcBuffer_[0];
-  }
+std::ostream &operator<<(std::ostream &f, const Link &link) {
+  f << "<Link>\n";
+  f << "  <type>" << link.getLinkType() << "</type>\n";
+  f << "  <params>" << link.getLinkParams() << "</params>\n";
+  f << "  <srcRegion>" << link.getSrcRegionName() << "</srcRegion>\n";
+  f << "  <destRegion>" << link.getDestRegionName() << "</destRegion>\n";
+  f << "  <srcOutput>" << link.getSrcOutputName() << "</srcOutput>\n";
+  f << "  <destInput>" << link.getDestInputName() << "</destInput>\n";
+  f << "  <propagationDelay>" << link.getPropagationDelay()
+    << "</propagationDelay>\n";
+  f << "</Link>\n";
+  return f;
 }
 
-
-namespace nupic
-{
-  std::ostream& operator<<(std::ostream& f, const Link& link)
-  {
-    f << "<Link>\n";
-    f << "  <type>" << link.getLinkType() << "</type>\n";
-    f << "  <params>" << link.getLinkParams() << "</params>\n";
-    f << "  <srcRegion>" << link.getSrcRegionName() << "</srcRegion>\n";
-    f << "  <destRegion>" << link.getDestRegionName() << "</destRegion>\n";
-    f << "  <srcOutput>" << link.getSrcOutputName() << "</srcOutput>\n";
-    f << "  <destInput>" << link.getDestInputName() << "</destInput>\n";
-    f << "</Link>\n";
-    return f;
-  }
-}
-
-}
+} // namespace nupic

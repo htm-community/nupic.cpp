@@ -35,9 +35,10 @@
 #include <map>
 #include <set>
 
+#include <yaml-cpp/yaml.h>
+
 // We need the full definitions because these
 // objects are returned by value.
-#include <nupic/ntypes/Dimensions.hpp>
 #include <nupic/os/Timer.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/types/ptr_types.hpp>
@@ -96,34 +97,6 @@ namespace nupic
 
 
     /**
-     * Get the dimensions of the region.
-     *
-     * @returns The region's dimensions
-     */
-    const Dimensions&
-    getDimensions() const;
-
-    /**
-     * Assign width and height to the region.
-     *
-     * @param dimensions
-     *        A Dimensions object that describes the width and height
-     */
-    void
-    setDimensions(Dimensions & dimensions);
-
-    /**
-     * @}
-     *
-     * @name Element interface methods
-     *
-     * @todo What does "Element interface methods" mean here?
-     *
-     * @{
-     *
-     */
-
-    /**
      * Get the type of the region.
      *
      * @returns The node type as a string
@@ -150,22 +123,11 @@ namespace nupic
     static const Spec*
     getSpecFromType(const std::string& nodeType);
 
-    /*
-     * Adds a Python module and class to the RegionImplFactory's regions
-     */
-    static void registerPyRegion(const std::string module, const std::string className);
-    static void registerPyBindRegion(const std::string& module, const std::string& className);
 
     /*
      * Adds a cpp region to the RegionImplFactory's packages
      */
     static void registerCPPRegion(const std::string name, GenericRegisteredRegionImpl* wrapper);
-
-    /*
-     * Removes a Python module and class from the RegionImplFactory's regions
-     */
-    static void unregisterPyRegion(const std::string className);
-    static void unregisterPyBindRegion(const std::string& className);
 
     /*
      * Removes a cpp region from the RegionImplFactory's packages
@@ -256,11 +218,9 @@ namespace nupic
      *
      * @returns The value of the parameter
      */
-
-    /* CHH Python
-    pybind11::object
-    getParameterHandle(const std::string& name) const;
-    */
+    // Cannot pass this.  dek
+    // Handle
+    // getParameterHandle(const std::string& name) const;
 
     /**
      * Get a bool parameter.
@@ -487,6 +447,7 @@ namespace nupic
      */
 
     /**
+     * Called by Network:: on each iteration just before calling Region::compute()
      * Copies data into the inputs of this region, using
      * the links that are attached to each input.
      */
@@ -500,17 +461,10 @@ namespace nupic
      * @param inputName
      *        The name of the target input
      *
-     * @returns An @c ArrayRef that contains the input data.
+     * @returns An @c ArrayRef that references the Input object's buffer.
+     *          This is shared with the Input object so when it changes the ArrayRef's buffer also changes.
+     *          Note that this is read-only.
      *
-     * @internal
-     *
-     * @note The data is either stored in the
-     * the @c ArrayRef or point to the internal stored data,
-     * the actual behavior is controlled by the 'copy' argument (see below).
-     *
-     * @todo what's the copy' argument mentioned here?
-     *
-     * @endinternal
      *
      */
     virtual ArrayRef
@@ -523,20 +477,12 @@ namespace nupic
      *        The name of the target output
      *
      * @returns
-     *        An @c ArrayRef that contains the output data.
-     *
-     * @internal
-     *
-     * @note The data is either stored in the
-     * the @c ArrayRef or point to the internal stored data,
-     * the actual behavior is controlled by the 'copy' argument (see below).
-     *
-     * @todo what's the copy' argument mentioned here?
-     *
-     * @endinternal
+     *        An @c Array that references the output data buffer.
+     *        This buffer is shared with the Output object.
+     *        Putting data into this buffer will be changing the Output's buffer.
      *
      */
-    virtual ArrayRef
+    virtual const Array&
     getOutputData(const std::string& outputName) const;
 
     /**
@@ -653,6 +599,8 @@ namespace nupic
      */
     const Timer& getExecuteTimer() const;
 
+
+    ////////////////////////////////////////////////////////////////////////
     /**
      * @}
      */
@@ -668,11 +616,13 @@ namespace nupic
     // New region from serialized state
     Region(std::string name,
            const std::string& type,
-           const Dimensions& dimensions,
            BundleIO& bundle,
            Network * network = nullptr);
 
     virtual ~Region();
+
+    void serializeOutput(YAML::Emitter &out);
+    void deserializeOutput(const YAML::Node& node);
 
     void
     initialize();
@@ -698,13 +648,6 @@ namespace nupic
 
     // The following methods are called by Network in initialization
 
-    // Returns number of links that could not be fully evaluated
-    size_t
-    evaluateLinks();
-
-    std::string
-    getLinkErrors() const;
-
     size_t
     getNodeOutputElementCount(const std::string& name);
 
@@ -717,12 +660,6 @@ namespace nupic
     void
     intialize();
 
-    // Internal -- for link debugging
-    void
-    setDimensionInfo(const std::string& info);
-
-    const std::string&
-    getDimensionInfo() const;
 
     bool
     hasOutgoingLinks() const;
@@ -737,8 +674,6 @@ namespace nupic
     void
     removeAllIncomingLinks();
 
-    const NodeSet&
-    getEnabledNodes() const;
 
     // TODO: sort our phases api. Users should never call Region::setPhases
     // and it is here for serialization only.
@@ -775,24 +710,13 @@ namespace nupic
     InputMap inputs_;
     // used for serialization only
     std::set<UInt32> phases_;
-    Dimensions dims_; // topology of nodes; starts as []
     bool initialized_;
 
-    NodeSet* enabledNodes_;
 
     // Region contains a backpointer to network_ only to be able
     // to retrieve the containing network via getNetwork() for inspectors.
     // The implementation should not use network_ in any other methods.
     Network* network_;
-
-    // Figuring out how a region's dimensions were set
-    // can be difficult because any link can induce
-    // dimensions. This field says how a region's dimensions
-    // were set.
-    std::string dimensionInfo_;
-
-    // private helper methods
-    void setupEnabledNodeSet();
 
 
     // Profiling related methods and variables.

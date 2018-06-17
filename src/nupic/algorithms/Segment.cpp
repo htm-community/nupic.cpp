@@ -58,7 +58,7 @@ Segment::Segment(InSynapses  _s, Real frequency, bool seqSegFlag,
   : _totalActivations(1),
     _positiveActivations(1),
     _lastActiveIteration(0),
-    _lastPosDutyCycle(1.0 / iteration),
+    _lastPosDutyCycle((Real)(1.0 / iteration)),
     _lastPosDutyCycleIteration(iteration),
     _seqSegFlag(seqSegFlag),
     _frequency(frequency),
@@ -173,7 +173,7 @@ Real Segment::dutyCycle(UInt iteration, bool active, bool readOnly)
   }
 
   // Update duty cycle
-  dutyCycle = pow((Real64) (1.0 - alpha), (Real64)age) * _lastPosDutyCycle;
+  dutyCycle = (Real)pow((Real64) (1.0 - alpha), (Real64)age) * _lastPosDutyCycle;
   if (active)
     dutyCycle += alpha;
 

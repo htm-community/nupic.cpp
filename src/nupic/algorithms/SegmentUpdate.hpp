@@ -97,7 +97,7 @@ namespace nupic {
          UInt operator[](UInt idx) const { return _synapses[idx]; }
          const_iterator begin() const            { return _synapses.begin(); }
          const_iterator end() const              { return _synapses.end(); }
-         UInt size() const                  { return _synapses.size(); }
+         UInt size() const                  { return (UInt)_synapses.size(); }
          bool empty() const                      { return _synapses.empty(); }
          bool isNewSegment() const               { return _segIdx == (UInt) -1; }
          bool isPhase1Segment() const            {return _phase1Flag;}

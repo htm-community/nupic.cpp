@@ -427,7 +427,7 @@ namespace nupic {
          *
          * @returns Integer number of bytes
          */
-        virtual UInt persistentSize() const;
+        virtual size_t persistentSize() const;
 
         bool operator==(const TemporalMemory& other);
         bool operator!=(const TemporalMemory& other);

@@ -34,6 +34,7 @@
 #include <nupic/engine/Output.hpp>
 #include <nupic/engine/Network.hpp>
 #include <nupic/os/FStream.hpp>
+#include <nupic/os/Directory.hpp>
 #include <nupic/engine/Spec.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/types/BasicType.hpp>
@@ -45,6 +46,10 @@ namespace nupic
 
   Watcher::Watcher(std::string fileName)
   {
+    std::string d = Path::getParent(fileName);
+    if (!d.empty())
+      Directory::create(d);
+
     data_.fileName = fileName;
     try 
     {

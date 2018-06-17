@@ -61,10 +61,8 @@ namespace nupic
      *        The region that the input belongs to.
      * @param type
      *        The type of the input, i.e. TODO
-     * @param isRegionLevel
-     *        Whether the input is region level, i.e. TODO
      */
-    Input(Region& region, NTA_BasicType type, bool isRegionLevel);
+    Input(Region& region, NTA_BasicType type);
 
     /**
      *
@@ -157,10 +155,10 @@ namespace nupic
      * Get the data of the input.
      *
      * @returns
-     *         A mutable reference to the data of the input as an @c Array
+     *         A reference to the data of the input as an @c Array
      */
-    const Array &
-    getData() const;
+    Array &
+    getData();
 
     /**
      *
@@ -182,33 +180,8 @@ namespace nupic
     const std::vector<Link_Ptr_t>&
     getLinks();
 
-    /**
-     *
-     * Tells whether the input is region level.
-     *
-     * @returns
-     *     Whether the input is region level, i.e. TODO
-     */
-    bool
-    isRegionLevel();
 
-    /**
-     * Called by Region.evaluateLinks() as part
-     * of network initialization.
-     *
-     * 1. Tries to make sure that dimensions at both ends
-     *    of a link are specified by calling setSourceDimensions()
-     *    if possible, and then calling getDestDimensions()
-     * 2. Ensures that region dimensions are consistent with
-     *    either by setting destination region dimensions (this is
-     *    where links "induce" dimensions) or by raising an exception
-     *    if they are inconsistent.
-     *
-     * @returns
-     *         Number of links that could not be fully evaluated, i.e. incomplete
-     */
-    size_t
-    evaluateLinks();
+
 
     /**
      * Initialize the Input .
@@ -228,39 +201,7 @@ namespace nupic
     bool
     isInitialized();
 
-    /* ------------ Methods normally called by the RegionImpl ------------- */
 
-    /**
-     *
-     * @see Link.buildSplitterMap()
-     *
-     */
-    typedef std::vector< std::vector<size_t> > SplitterMap;
-
-    /**
-     *
-     * Get splitter map from an initialized input
-     *
-     * @returns
-     *         The splitter map
-     */
-    const SplitterMap& getSplitterMap() const;
-
-    /** explicitly instantiated for various types */
-    template <typename T> void getInputForNode(size_t nodeIndex, std::vector<T>& input) const
-    {
-        NTA_CHECK(initialized_);
-        const SplitterMap& sm = getSplitterMap();
-        NTA_CHECK(nodeIndex < sm.size());
-
-        const std::vector<size_t>& map = sm[nodeIndex];
-        //NTA_CHECK(map.size() > 0);
-
-        input.resize(map.size());
-        T* fullInput = (T*)(data_.getBuffer());
-        for (size_t i = 0; i < map.size(); i++)
-            input[i] = fullInput[map[i]];
-    }
 
   private:
     Region& region_;
@@ -275,22 +216,6 @@ namespace nupic
     // volatile (non-serialized) state
     bool initialized_;
     Array data_;
-
-    /*
-     * cached splitter map -- only created if requested
-     * mutable because getSplitterMap() is const and logically
-     * getting the splitter map doesn't change the Input
-     */
-    mutable SplitterMap splitterMap_;
-
-
-    /*
-     * Cache of information about link offsets so we can
-     * easily copy data from each link.
-     * the first link starts at offset 0
-     * the next link starts at offset 0 + size(link[0])
-     */
-    std::vector<size_t> linkOffsets_;
 
     // Useful for us to know our own name
     std::string name_;

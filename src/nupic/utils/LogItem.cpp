@@ -32,6 +32,8 @@
 
 using namespace nupic;
 
+
+
 std::ostream* LogItem::ostream_ = nullptr;
 
 void LogItem::setOutputFile(std::ostream& ostream)

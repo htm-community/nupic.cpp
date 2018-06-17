@@ -179,7 +179,7 @@ public:
     std::copy(x_[i], x_[i] + n_dims(), sv);
   }
 
-  int persistent_size() const;
+  size_t persistent_size() const;
   void save(std::ostream &outStream) const;
   void load(std::istream &inStream);
 
@@ -232,11 +232,11 @@ struct svm_problem01 {
 
   inline ~svm_problem01() {
     if (recover_)
-      for (int i = 0; i != size(); ++i)
+      for (size_t i = 0; i != size(); ++i)
         delete[] x_[i];
   }
 
-  inline int size() const { return (int)x_.size(); }
+  inline size_t size() const { return x_.size(); }
   inline int n_dims() const { return n_dims_; }
   inline int nnz(int i) const { return nnz_[i]; }
 
@@ -259,7 +259,7 @@ struct svm_problem01 {
     while (x_it != x_end) {
       float val = *x_it;
       if (!nearlyZero(val, threshold_)) {
-        buf_[nnz] = x_it - x;
+        buf_[nnz] = (int)(x_it - x);
         ++nnz;
       }
       ++x_it;
@@ -289,7 +289,7 @@ struct svm_problem01 {
       sv[x_[i][k]] = 1;
   }
 
-  int persistent_size() const;
+  size_t persistent_size() const;
   void save(std::ostream &outStream) const;
   void load(std::istream &inStream);
 
@@ -345,7 +345,7 @@ public:
 
   ~svm_model();
 
-  int persistent_size() const;
+  size_t persistent_size() const;
   void save(std::ostream &outStream) const;
   void load(std::istream &inStream);
   void print() const;
@@ -668,7 +668,7 @@ private:
 
 public:
   QMatrix01(const svm_problem01 &prob, float g, int kernel, int cache_size)
-      : l(prob.size()), n(prob.n_dims()), kernel_function(nullptr), gamma(g),
+      : l((int)prob.size()), n(prob.n_dims()), kernel_function(nullptr), gamma(g),
         nnz(prob.nnz_), x(prob.x_.begin(), prob.x_.end()),
         x_square(new float[l]), y(new signed char[l]),
         cache(new Cache<float>(l, (long int)(cache_size * (1 << 20)))),
@@ -757,7 +757,7 @@ struct svm_parameter {
   std::vector<int> weight_label;
   std::vector<float> weight;
 
-  int persistent_size() const;
+  size_t persistent_size() const;
   void save(std::ostream &outStream) const;
   void load(std::istream &inStream);
 
@@ -869,7 +869,7 @@ public:
 
   float cross_validation(int);
 
-  int persistent_size() const;
+  size_t persistent_size() const;
   void save(std::ostream &outStream) const;
   void load(std::istream &inStream);
 
@@ -945,7 +945,7 @@ public:
     return svm_.cross_validation(n_fold);
   }
 
-  inline int persistent_size() const { return svm_.persistent_size(); }
+  inline size_t persistent_size() const { return svm_.persistent_size(); }
 
   inline void save(std::ostream &outStream) const { svm_.save(outStream); }
 
@@ -1004,7 +1004,7 @@ public:
     return svm_.cross_validation(n_fold);
   }
 
-  inline int persistent_size() const { return svm_.persistent_size(); }
+  inline size_t persistent_size() const { return svm_.persistent_size(); }
 
   inline void save(std::ostream &outStream) const { svm_.save(outStream); }
 

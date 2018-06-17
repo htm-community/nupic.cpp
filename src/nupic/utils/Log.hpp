@@ -53,12 +53,17 @@
 // build. Both throw an exception on error. 
 
 #define NTA_CHECK(condition) if (condition)  {} \
-else NTA_THROW << "CHECK FAILED: \"" << #condition << "\" "
+else NTA_THROW << "CHECK FAIL: \"" << #condition << "\" "
+
+
+#ifdef _DEBUG
+#define NTA_ASSERTIONS_ON
+#endif
 
 #ifdef NTA_ASSERTIONS_ON
 
 #define NTA_ASSERT(condition) if (condition)  {} \
-else NTA_THROW << "ASSERTION FAILED: \"" << #condition << "\" "
+else NTA_THROW << "ASSERTION FAIL: \"" << #condition << "\" "
 
 #else
 

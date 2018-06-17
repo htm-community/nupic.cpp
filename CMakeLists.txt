@@ -1,51 +1,88 @@
-# Minimal CMake configuration for nupic.base
+# -----------------------------------------------------------------------------
+# Numenta Platform for Intelligent Computing (NuPIC)
+# Copyright (C) 2015-2018, Numenta, Inc.  Unless you have purchased from
+# Numenta, Inc. a separate commercial license for this software code, the
+# following terms and conditions apply:
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero Public License version 3 as
+# published by the Free Software Foundation.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU Affero Public License for more details.
+#
+# You should have received a copy of the GNU Affero Public License
+# along with this program.  If not, see http://www.gnu.org/licenses.
+#
+# http://numenta.org/licenses/
+# -----------------------------------------------------------------------------
+# Minimal CMake configuration for nupic.base 
 #
 
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+set(CMAKE_VERBOSE_MAKEFILE ON)
+
+include("cmake/HunterGate.cmake")
+option(HUNTER_ENABLED "Enable Hunter package manager. If OFF no installs will occur." ON)
+option(HUNTER_STATUS_DEBUG "Print info to help debug cmake scrips." ON)
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.20.24.tar.gz"
+    SHA1 "3e2037a462bcf2ec3440f60298d933e74ffd4df3"
+)
+
+
 
 set(project_name nupic.base)
 
 project(${project_name} LANGUAGES CXX)
 
-set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake" ${CMAKE_MODULE_PATH})
-
-set(_include_directories ${CMAKE_SOURCE_DIR}/src)
-
-# Common compile definitions
-set(_compile_definitions)
-if (MSVC)
-    add_definitions(-D_CRT_NONSTDC_NO_DEPRECATE)
-    add_definitions(-D_SCL_SECURE_NO_DEPRECATE)
-    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
-    add_definitions(-D_SCL_SECURE_NO_WARNINGS)
-    add_definitions(-DVC_EXTRALEAN)
-    add_definitions(-DWIN32_LEAN_AND_MEAN)
-    add_definitions(-DNOMINMAX)
-    add_definitions(-DNOMINMAX)
-    add_definitions(-DNOGDI)
-
-    add_definitions(-DBOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE)
-
-    add_definitions(-DNTA_OS_WINDOWS)
-    add_definitions(-DNTA_COMPILER_MSVC)
+# if install directory was not specified on the command line, default it to build/bin
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/bin" CACHE PATH "default install path" FORCE )
 endif()
 
+if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
+	set(HAS_GIT ON)
+endif()
+
+
+##########################################
+# Download and install the dependencies
+##########################################
 # Boost 
-set(boost_components filesystem)
-find_package(Boost REQUIRED COMPONENTS ${boost_components})
+hunter_add_package(Boost COMPONENTS system filesystem)
+find_package(Boost CONFIG REQUIRED system filesystem)
 include_directories(${Boost_INCLUDE_DIRS})
+message(STATUS "Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}")
 
 # zlib
-find_package(ZLIB REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIR})
+hunter_add_package(ZLIB)
+find_package(ZLIB CONFIG REQUIRED)
+include_directories(${ZLIB_INCLUDE_DIRS})
 
 # yaml-cpps
-find_package(yaml-cpp REQUIRED)
-include_directories(${YAML_CPP_INCLUDE_DIR})
+hunter_add_package(yaml-cpp)
+find_package(yaml-cpp CONFIG REQUIRED)
 
-# gtest
-enable_testing()
-find_package(GTest REQUIRED)
+
+# Library: link with GTest::main and GTest::gtest will be linked automatically
+hunter_add_package(GTest)
+find_package(GTest CONFIG REQUIRED)
+include_directories(${GTEST_ROOT}/include)
+message(STATUS "GTest_INCLUDE_DIRS = ${GTEST_ROOT}/include")
+
+
+##########################################
+# Determine common toolchain settings, compiler and link flags
+##########################################
+include(CommonCompilerConfig.cmake)
+
+
+message(STATUS "PROJECT_BINARY_DIR          = ${PROJECT_BINARY_DIR}")
+message(STATUS "CMAKE_INSTALL_PREFIX        = ${CMAKE_INSTALL_PREFIX}")
+
 
 
 ###################
@@ -54,7 +91,6 @@ find_package(GTest REQUIRED)
 message(STATUS "Configuring library")
 
 set(lib_name ${project_name})
-
 set(nupic_src ${CMAKE_SOURCE_DIR}/src/nupic)
 
 set(algorithm_files
@@ -110,17 +146,12 @@ set(engine_files
     ${nupic_src}/engine/Input.hpp
     ${nupic_src}/engine/Link.cpp
     ${nupic_src}/engine/Link.hpp
-    ${nupic_src}/engine/LinkPolicy.hpp
-    ${nupic_src}/engine/LinkPolicyFactory.cpp
-    ${nupic_src}/engine/LinkPolicyFactory.hpp
     ${nupic_src}/engine/Network.cpp
     ${nupic_src}/engine/Network.hpp
     ${nupic_src}/engine/NuPIC.cpp
     ${nupic_src}/engine/NuPIC.hpp
     ${nupic_src}/engine/Output.cpp
     ${nupic_src}/engine/Output.hpp
-    # ${nupic_src}/engine/PyBindRegion.cpp
-    # ${nupic_src}/engine/PyBindRegion.hpp
     ${nupic_src}/engine/Region.cpp
     ${nupic_src}/engine/Region.hpp
     ${nupic_src}/engine/RegionImpl.cpp
@@ -132,12 +163,8 @@ set(engine_files
     ${nupic_src}/engine/RegisteredRegionImpl.hpp
     ${nupic_src}/engine/Spec.cpp
     ${nupic_src}/engine/Spec.hpp
-    ${nupic_src}/engine/TestFanIn2LinkPolicy.cpp
-    ${nupic_src}/engine/TestFanIn2LinkPolicy.hpp
     ${nupic_src}/engine/TestNode.cpp
     ${nupic_src}/engine/TestNode.hpp
-    ${nupic_src}/engine/UniformLinkPolicy.cpp
-    ${nupic_src}/engine/UniformLinkPolicy.hpp
     ${nupic_src}/engine/YAMLUtils.cpp
     ${nupic_src}/engine/YAMLUtils.hpp
 )
@@ -185,12 +212,9 @@ set(ntypes_files
     ${nupic_src}/ntypes/BundleIO.hpp
     ${nupic_src}/ntypes/Collection.cpp
     ${nupic_src}/ntypes/Collection.hpp
-    ${nupic_src}/ntypes/Dimensions.cpp
-    ${nupic_src}/ntypes/Dimensions.hpp
     ${nupic_src}/ntypes/MemParser.cpp
     ${nupic_src}/ntypes/MemParser.hpp
     ${nupic_src}/ntypes/MemStream.hpp
-    ${nupic_src}/ntypes/NodeSet.hpp
     ${nupic_src}/ntypes/ObjectModel.h
     ${nupic_src}/ntypes/ObjectModel.hpp
     ${nupic_src}/ntypes/Scalar.cpp
@@ -226,7 +250,11 @@ set(regions_files
     ${nupic_src}/regions/VectorFileEffector.cpp
     ${nupic_src}/regions/VectorFileEffector.hpp
     ${nupic_src}/regions/VectorFileSensor.cpp
-    ${nupic_src}/regions/VectorFileSensor.hpp    
+    ${nupic_src}/regions/VectorFileSensor.hpp   
+    ${nupic_src}/regions/SPRegion.cpp 
+    ${nupic_src}/regions/SPRegion.hpp 
+   # ${nupic_src}/regions/TMRegion.cpp 
+   # ${nupic_src}/regions/TMRegion.hpp 
 )
 
 set(types_files
@@ -259,8 +287,19 @@ set(utils_files
     ${nupic_src}/utils/Watcher.hpp
 )
 
-# Lib
+#set up file tabs in Visual Studio
+source_group("algorithm" FILES ${algorithm_files})
+source_group("encoders" FILES ${encoders_files})
+source_group("engine" FILES ${engine_files})
+source_group("math" FILES ${math_files})
+source_group("ntypes" FILES ${ntypes_files})
+source_group("os" FILES ${os_files})
+source_group("regions" FILES ${regions_files})
+source_group("types" FILES ${types_files})
+source_group("utils" FILES ${utils_files})
 
+########################################################
+# Lib
 add_library(${lib_name} STATIC 
     ${algorithm_files} 
     ${encoders_files} 
@@ -272,43 +311,43 @@ add_library(${lib_name} STATIC
     ${types_files} 
     ${utils_files} 
 )
-
-target_include_directories(${lib_name} PRIVATE ${_include_directories})
-target_compile_definitions(${lib_name} PRIVATE ${_compile_definitions})
-
-source_group("algorithm" FILES ${algorithm_files})
-source_group("encoders" FILES ${encoders_files})
-source_group("engine" FILES ${engine_files})
-source_group("math" FILES ${math_files})
-source_group("ntypes" FILES ${ntypes_files})
-source_group("os" FILES ${os_files})
-source_group("regions" FILES ${regions_files})
-source_group("types" FILES ${types_files})
-source_group("utils" FILES ${utils_files})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_compile_definitions(${lib_name} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+target_compile_options(${lib_name} PUBLIC ${INTERNAL_CXX_FLAGS})
 
 
+#########################################################
 # Test
-set(test_src ${CMAKE_SOURCE_DIR}/src/test)
+# The tests were placed in a separate file to avoid clutting up this file.
+include(NupicCoreTests.cmake)
 
-set(unit_test_files
-    ${test_src}/main.cpp
-)
 
-set(test_app unit_test)
+##########################################################
+#
+# Install core library into CMAKE_INSTALL_PREFIX
+#
+install(TARGETS
+        ${lib_name} ${test_app}
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
 
-add_executable( ${test_app}
-    ${unit_test_files}
-)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/nupic DESTINATION include
+	  MESSAGE_NEVER
+	  FILES_MATCHING PATTERN "*.h*"
+	  PATTERN "*.hpp.in" EXCLUDE)
+	  
+        
+#
+# `make package` results in
+# nupic_core-${NUPIC_CORE_VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}.tar.gz binary release
+#
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_PACKAGE_FILE_NAME "${project_name}-${NUPIC_CORE_VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}")
+include(CPack)
 
-target_include_directories( ${test_app} PRIVATE 
-    ${_include_directories}
-)
-
-target_link_libraries(${test_app} PRIVATE 
-    yaml-cpp
-    GTest::GTest 
-    GTest::Main
-    ZLIB::ZLIB
-)
-
-# add_test(AllTestsInMain main)
+##########################################################
+#  Interfaces
+#
+# add_subdirectory(src/python)        #Runs python interface build
+# add_subdirectory(src/csharp)        #Runs CSharp interface build

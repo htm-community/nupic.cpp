@@ -45,7 +45,7 @@ Value::Value(boost::shared_ptr<Array>& a)
   array_ = a;
 }
 
-Value::Value(boost::shared_ptr<std::string>& s)
+Value::Value(const std::string& s)
 {
   category_ = stringCategory;
   string_ = s;
@@ -95,7 +95,7 @@ boost::shared_ptr<Array> Value::getArray() const
   return array_;
 }
 
-boost::shared_ptr<std::string> Value::getString() const
+std::string Value::getString() const
 {
   NTA_CHECK(category_ == stringCategory);
   return string_;
@@ -118,7 +118,7 @@ const std::string Value::getDescription() const
   switch(category_)
   {
   case stringCategory:
-    return std::string("string") + " (" + *string_ + ")";
+    return std::string("string") + " (" + string_ + ")";
     break;
   case scalarCategory:
     return std::string("Scalar of type ") + BasicType::getName(scalar_->getType());
@@ -178,7 +178,7 @@ namespace nupic
   template Real64 Value::getScalarT<Real64>() const;
   template Handle Value::getScalarT<Handle>() const;
   template bool Value::getScalarT<bool>() const;
-}
+  }
 
 ValueMap::ValueMap() 
 {
@@ -295,7 +295,7 @@ boost::shared_ptr<Scalar> ValueMap::getScalar(const std::string& key) const
   return v.getScalar();
 }
 
-boost::shared_ptr<std::string> ValueMap::getString(const std::string& key) const
+std::string ValueMap::getString(const std::string& key) const
 {
   Value& v = getValue(key);
   if (! v.isString())
@@ -306,6 +306,21 @@ boost::shared_ptr<std::string> ValueMap::getString(const std::string& key) const
   }
   return v.getString();
 }
+std::string ValueMap::getString(const std::string &key, const std::string defaultValue) const {
+  auto item = map_.find(key);
+  if (item == map_.end()) {
+    return defaultValue;
+  } else {
+    Value &v = getValue(key);
+    if (!v.isString()) {
+      NTA_THROW << "Attempt to access element '" << key
+                << "' of value map as a string but it is a '"
+                << v.getDescription();
+    }
+    return v.getString();
+  }
+}
+
 
 // explicit instantiations of getScalarT
 namespace nupic
@@ -333,4 +348,4 @@ namespace nupic
   template Real64 ValueMap::getScalarT(const std::string& key) const;
   template Handle ValueMap::getScalarT(const std::string& key) const;
   template bool ValueMap::getScalarT(const std::string& key) const;
-}
+  } // namespace nupic

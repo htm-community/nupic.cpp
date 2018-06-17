@@ -25,23 +25,27 @@
 
 #include <string>
 #include <algorithm>
-
+#include <chrono>   // for sleep_for()
+#include <thread>
 #include <boost/filesystem.hpp>
 
+#include <nupic/utils/Log.hpp>
 #include <nupic/os/Directory.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/os/OS.hpp>
 #include <nupic/utils/Log.hpp>
-
+using namespace boost::system;
 namespace fs = boost::filesystem;
+using namespace std::literals::chrono_literals;
+
 
 namespace nupic
 {
   namespace Directory
   {
-    bool exists(const std::string & path)
+    bool exists(const std::string & fpath)
     {
-      return Path::exists(path);
+      return fs::exists(fpath);
     }
     
     std::string getCWD()
@@ -53,266 +57,108 @@ namespace nupic
     {
         return fs::is_empty(path);
     }
+
+    Size free_space(const std::string & path) {
+      fs::space_info si = fs::space(path);
+      return si.available;  // disk space available to non-privalaged pocesses.
+    }
     
     void setCWD(const std::string & path)
     {
-        fs::current_path(path);
+       fs::current_path(path);
+        //std::this_thread::sleep_for(100ms);  // give it time to propogate
+        //std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     static bool removeEmptyDir(const std::string & path, bool noThrow)
     {
-        // @todo
-        throw std::runtime_error("Not implemented");
-
-        //int res = 0;
-        //#if defined(NTA_OS_WINDOWS)
-        //  std::wstring wpath(Path::utf8ToUnicode(path));
-        //  res = ::RemoveDirectoryW(wpath.c_str()) != FALSE ? 0 : -1;
-        //#else
-        //  res = ::rmdir(path.c_str());
-        //#endif
-        //  if(!noThrow) {
-        //    NTA_CHECK(res == 0) << "removeEmptyDir: " << OS::getErrorMessage();
-        //  }
-        //  return (res == 0);
+        error_code ec;
+        fs::remove(path, ec);
+        if(!noThrow) {
+            NTA_CHECK(!ec) << "removeEmptyDir: " << ec.message();
+        }
+        return(!ec);
     }
 
+    // copy a directory recursively.
+    // It does not copy links.  It tries to retain permissions.
+    // If a file already exists in the destination it is overwritten.
     void copyTree(const std::string & source, const std::string & destination)
     {
-    //  NTA_CHECK(Path::isDirectory(source));
-    //  std::string baseSource(Path::getBasename(source));
-    //  std::string dest(destination);
-    //  dest = Path::join(dest, baseSource);
-    //  if (!Path::exists(dest))
-    //    Directory::create(dest, false, true);
-    //  NTA_CHECK(Path::isDirectory(dest));
-    //  
-    //  Iterator i(source);
-    //  Entry e;
-    //  while (i.next(e))
-    //  {
-    //    std::string fullSource(source);
-    //    fullSource = Path::join(fullSource, e.path);
-    //    Path::copy(fullSource, dest);
+      error_code ec;
+
+      NTA_CHECK(Path::isDirectory(source)) << "copyTree() source is not a directory. " << source;
+      if (Path::exists(destination)) {
+        NTA_CHECK(Path::isDirectory(destination)) << "copyTree() destination exists '" << destination << "' and it is not a directory.";
+      }
+      else {
+        fs::copy_directory(source, destination, ec); // creates directory, copying permissions
+        NTA_CHECK(!ec) << "copyTree: Could not create destination directory. '" << destination << "' " << ec.message();
+      }
+      Directory::Iterator it(source);
+      Directory::Entry entry;
+      while (it.next(entry) != nullptr) {
+        // Note: this does not copy links.
+        std::string to = destination + Path::sep + entry.filename;
+        if (entry.type == Entry::FILE) {
+          fs::copy_file(entry.path, to, fs::copy_option::overwrite_if_exists, ec);
+        }
+        else if (entry.type == Entry::DIRECTORY) {
+          copyTree(entry.path, to);
+        }
+      }
+
     }
 
-    
     bool removeTree(const std::string & path, bool noThrow)
     {
-        // @todo
-        throw std::runtime_error("Not implemented");
-      //  bool success = true;
-      //NTA_CHECK(!path.empty()) << "Can't remove directory with no name";
-      //{
-      //  // The scope is necessary to make sure the destructor
-      //  // of the Iterator releases the directory so that 
-      //  // removeEmptyDir() will succeed.
-      //  Iterator i(path);
-      //  Entry e;
-      //  while (i.next(e))
-      //  {
-      //    Path fullPath = Path(path) + Path(e.path);
-      //    if (e.type == Entry::DIRECTORY) {
-      //      bool subResult = removeTree(std::string(fullPath), noThrow);
-      //      success = success && subResult;
-      //    }
-      //    else
-      //    {
-      //      apr_status_t st = ::apr_file_remove(fullPath, nullptr);
-      //      if(st != APR_SUCCESS) {
-      //        if(noThrow) success = false;
-      //        else {
-      //          NTA_THROW
-      //            << "Directory::removeTree() failed. "
-      //            << "Unable to remove the file'" << fullPath << "'. "
-      //            << "OS msg: " << OS::getErrorMessage();
-      //        }
-      //      }
-      //    }
-      //  }
-      //}
-      //
-      //bool subResult = removeEmptyDir(path, noThrow);
-      //success = success && subResult;
-      //// Check 3 times the directory is really gone
-      //// (needed for unreliable file systems)
-      //for (int i = 0; i < 3; ++i)
-      //{
-      //  if (!Directory::exists(path))
-      //    return success;
-      //  // sleep for a second
-      //  if (i < 2)
-      //    ::apr_sleep(1000 * 1000);
-      //}
-      //if(!noThrow) {
-      //  NTA_THROW << "Directory::removeTree() failed. "
-      //            << "Unable to remove empty dir: "
-      //            << "\"" << path << "\"";
-      //}
-      //return false;
-    }
-  
-    // Create directory recursively (creates parent if doesn't exist)
-    // Helper function for create(.., recursive=true)
-    static std::string createRecursive(const std::string & path, bool otherAccess)
-    {
-        // @todo
-        throw std::runtime_error("Not implemented");
-      ///// TODO: When the directory exists, confirm or update its permissions.
-      //      
-      //NTA_CHECK(!path.empty()) << "Can't create directory with no name";
-      //std::string p = Path::makeAbsolute(path);
-      //
-      //if (Path::exists(p))
-      //{
-      //  if (! Path::isDirectory(p))
-      //  {
-      //    NTA_THROW << "Directory::create -- path " << path << " already exists but is not a directory";
-      //  }
-      //  // Empty string return terminates the recursive call because "" has no parent
-      //  return "";
-      //}
-
-      //std::string result(p);
-      //std::string parent = Path::getParent(p);
-      //if (!Directory::exists(parent))
-      //{
-      //  result = createRecursive(parent, otherAccess);
-      //}
-      //  
-      //create(p, otherAccess, false);
-      //return result;
+      error_code ec;
+      if (fs::is_directory(path, ec)) {
+        fs::remove_all(path, ec);
+      }
+      if (!noThrow) {
+        NTA_CHECK(!ec) << "removeTree: " << ec.message();
+      }
+      return(!ec);
     }
 
+    // create directory
     void create(const std::string& path, bool otherAccess, bool recursive)
     {
-        // @todo
-        throw std::runtime_error("Not implemented");
-        //  /// TODO: When the directory exists, confirm or update its permissions.
-
-    //  if (recursive)
-    //  {
-    //    createRecursive(path, otherAccess);
-    //    return;
-    //  }
-
-    //  // non-recursive case
-    //  bool success = true;
-    //#if defined(NTA_OS_WINDOWS)
-    //  std::wstring wPath = Path::utf8ToUnicode(path);
-    //  success = ::CreateDirectoryW(wPath.c_str(), NULL) != FALSE;
-    //  if (!success)
-    //  {
-    //    if (GetLastError() == ERROR_ALREADY_EXISTS) {
-    //      // Not a hard error, due to potential race conditions.
-    //      std::cerr << "Path '" << path << "' exists. "
-    //                   "Possible race condition."
-    //                << std::endl;
-    //      success = Path::isDirectory(path);
-    //    }
-    //  }
-
-    //#else
-    //  int permissions = S_IRWXU;
-    //  if(otherAccess) {
-    //    permissions |= (S_IRWXG | S_IROTH | S_IXOTH);
-    //  }
-    //  int res = ::mkdir(path.c_str(), permissions);
-    //  if(res != 0) {
-    //    if(errno == EEXIST) {
-    //      // Not a hard error, due to potential race conditions.
-    //      std::cerr << "Path '" << path << "' exists. "
-    //                   "Possible race condition." 
-    //                << std::endl;
-    //      success = Path::isDirectory(path);
-    //    }
-    //    else {
-    //      success = false;
-    //    }
-    //  }
-    //  else success = true;
-    //#endif
-
-    //  if (!success) 
-    //  {
-    //    NTA_THROW << "Directory::create -- failed to create directory \"" << path << "\".\n"
-    //              << "OS msg: " << OS::getErrorMessage();
-    //  }
+      NTA_CHECK(!path.empty()) << "Directory::create -- Can't create directory with no name";
+      fs::path p = fs::absolute(path);
+      if (fs::exists(p)) {
+        if (!fs::is_directory(p)) {
+          NTA_THROW << "Directory::create -- path " << path << " already exists but is not a directory";
+        }
+        return;
+      }
+      else {
+        if (recursive) {
+          error_code ec;
+          if (!fs::create_directories(p, ec)) {
+            NTA_CHECK(!ec) << "Directory::createRecursive: " << ec.message();
+          }
+        } 
+        else {
+          // non-recursive case
+          NTA_CHECK(fs::exists(p.parent_path())) << "Directory::create -- path " << path << " Parent directory does not exist.";
+          error_code ec;
+          fs::create_directory(p, ec);
+          NTA_CHECK(!ec) << "Directory::create " << ec.message();
+        }
+      }
+      // Set permissions on directory.
+#if !defined(NTA_OS_WINDOWS)
+      fs::perms prms(fs::perms::owner_all
+        | (otherAccess ? (fs::perms::group_all | fs::perms::others_read | fs::perms::others_exe) : fs::perms::no_perms));
+      fs::permissions(p, prms);
+#endif
     }
     
 
-    Iterator::Iterator(const Path & path)
-    {
-      init(std::string(path));
-    }
-        
-    Iterator::Iterator(const std::string & path)
-    {
-      init(path);
-    }
 
-    void Iterator::init(const std::string & path)
-    {
-        // @todo
-        throw std::runtime_error("Not implemented");
-      //  apr_status_t res = ::apr_pool_create(&pool_, nullptr);
-      //NTA_CHECK(res == 0) << "Can't create pool";
-      //std::string absolutePath = Path::makeAbsolute(path);
-      //res = ::apr_dir_open(&handle_, absolutePath.c_str(), pool_);
-      //NTA_CHECK(res == 0) << "Can't open directory " << path
-      //                    << ". OS num: " << APR_TO_OS_ERROR(res);
-    }
-    
-    Iterator::~Iterator()
-    {
-        // @todo
-      //  apr_status_t res = ::apr_dir_close(handle_);
-      //::apr_pool_destroy(pool_);
-      //NTA_CHECK(res == 0) << "Couldn't close directory." 
-      //                    << " OS num: " << APR_TO_OS_ERROR(res);
-    }
-    
-    void Iterator::reset()
-    {
-        // @todo
-        throw std::runtime_error("Not implemented");
-      //  apr_status_t res = ::apr_dir_rewind(handle_);
-      //NTA_CHECK(res == 0) 
-      //  << "Couldn't reset directory iterator." 
-      //  << " OS num: " << APR_TO_OS_ERROR(res);
-    }
-    
-    Entry * Iterator::next(Entry & e)
-    {
-        // @todo
-        throw std::runtime_error("Not implemented");
-      //  apr_int32_t wanted = APR_FINFO_LINK | APR_FINFO_NAME | APR_FINFO_TYPE;
-      //apr_status_t res = ::apr_dir_read(&e, wanted, handle_);
-      //
-      //// No more entries
-      //if (APR_STATUS_IS_ENOENT(res))
-      //  return nullptr;
-      //  
-      //if (res != 0)
-      //{
-      //  NTA_CHECK(res == APR_INCOMPLETE) 
-      //    << "Couldn't read next dir entry." 
-      //    << " OS num: " << APR_TO_OS_ERROR(res);
-      //  NTA_CHECK(((e.valid & wanted) | APR_FINFO_LINK) == wanted) 
-      //    << "Couldn't retrieve all fields. Valid mask=" << e.valid; 
-      //} 
 
-      //
-      //e.type = (e.filetype == APR_DIR) ? Directory::Entry::DIRECTORY 
-      //                                   : Directory::Entry::FILE;
-      //e.path = e.name;                               
-
-      //// Skip '.' and '..' directories
-      //if (e.type == Directory::Entry::DIRECTORY && 
-      //   (e.name == std::string(".") || e.name == std::string("..")))
-      //  return next(e);
-      //else
-      //  return &e;
-    }
+    
   }
 }

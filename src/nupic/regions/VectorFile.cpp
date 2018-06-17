@@ -190,7 +190,8 @@ void VectorFile::appendFile(const string &fileName,
   // Reset scaling only if the vector lengths changed
   if (scaleVector_.size() != expectedElementCount)
   {
-    NTA_INFO << "appendFile - need to reset scale and offset vectors.";
+    if (scaleVector_.size() > 0)
+    NTA_INFO << "appendFile - Vectors read: " << scaleVector_.size() << ". Expected " << expectedElementCount << ". Needed to reset scale and offset vectors.";
     resetScaling((UInt)expectedElementCount);
   }
 }

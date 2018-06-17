@@ -38,9 +38,10 @@ extern "C" {
 #include <mach/mach_init.h>
 }
 #elif defined(NTA_OS_WINDOWS)
-//We only run on XP/2003 and above
+//We only run on Win 7 and above
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
+#define PSAPI_VERSION 2  // so that Win 7 can use the new function names K32QueryWorkingSet 
 #include <Windows.h>
 #include <psapi.h>
 #endif

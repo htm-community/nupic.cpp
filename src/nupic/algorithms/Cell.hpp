@@ -61,8 +61,8 @@ namespace nupic {
         UInt nSynapses() const
         {
           UInt n = 0;
-          for (UInt i = 0; i != _segments.size(); ++i)
-            n += _segments[i].size();
+          for (size_t i = 0; i != _segments.size(); ++i)
+            n += (UInt)_segments[i].size();
           return n;
         }
 
@@ -71,7 +71,7 @@ namespace nupic {
          * Returns size of _segments (see nSegments below). If using this to iterate,
          * indices less than size() might contain indices of empty segments.
          */
-        UInt size() const { return _segments.size(); }
+        UInt size() const { return (UInt)_segments.size(); }
 
         //--------------------------------------------------------------------------------
         /**
@@ -81,7 +81,7 @@ namespace nupic {
         UInt nSegments() const
         {
           NTA_ASSERT(_freeSegments.size() <= _segments.size());
-          return _segments.size() - _freeSegments.size();
+          return (UInt)(_segments.size() - _freeSegments.size());
         }
 
         //--------------------------------------------------------------------------------
@@ -249,7 +249,7 @@ namespace nupic {
         {
           std::stringstream buff;
           this->save(buff);
-          return buff.str().size();
+          return (UInt)buff.str().size();
         }
 
         //----------------------------------------------------------------------

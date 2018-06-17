@@ -1,60 +1,64 @@
 @echo off
-rem Runs CMake to configure nupic.core for Visual Studio 2017.
-rem taken mostly from https://github.com/nanodbc/nanodbc/blob/master/utility/build.bat
-rem !! Please make sure to use unix '/' folder seperator 
-rem Usage:
-rem 1. Boost root folder, e.g. c:/boost
-rem 2. Boost libs folder, e.g. c:/boost/stage/libs
-rem 3. VCPKG tool chain file, e.g. c:/vcpkg/scripts/buildsystems/vcpkg.cmake
-rem 4. VCPKG target triplet, x64-windows-static
+rem Runs CMake to configure Nupic for Visual Studio 2015 or 2017.
+rem
+rem Run this from the "Developer Command Prompt for VS" provided by Visual Studio
+rem   so that vsvars32.bat gets executed to set the tool chain.
 
-if not defined VS150COMNTOOLS goto :NoVS
 
-if [%1]==[] goto :Usage
-if [%2]==[] goto :Usage
-if [%3]==[] goto :Usage
-if [%4]==[] goto :Usage
+
+:CheckCMake
+rem  make sure CMake is installed.
+cmake -version > NUL 2> NUL 
+if %errorlevel% neq 0 (
+  @echo build.bat;  CMake was not found. 
+  @echo Make sure its path is in the system PATH environment variable.
+  exit /B 1
+)
 
 
 :Build
 set BUILDDIR=build
-set BOOST_ROOT_FOLDER=%1
-set BOOST_LIBS_FOLDER=%2
-set VCPKG_TOOLCHAIN_CMAKE_FILE=%3
-set VCPKG_TARGET_TRIPLET=%4
 
 pushd ..\..
-
 rem remove build folder
-if exist ".\build\" (
-    rd /s /q "build\"
+if exist ".\%BUILDDIR%\" (
+    rd /s /q "%BUILDDIR%\"
 )
-
 mkdir %BUILDDIR%
 pushd %BUILDDIR%
 
-"C:/Program Files/CMake/bin/cmake.exe" ^
-    -A x64 ^
-    -DBOOST_ROOT:PATH=%BOOST_ROOT_FOLDER% ^
-    -DBOOST_LIBRARYDIR:PATH=%BOOST_LIBS_FOLDER% ^
-    -DCMAKE_TOOLCHAIN_FILE=%VCPKG_TOOLCHAIN_CMAKE_FILE% ^
-    -DVCPKG_TARGET_TRIPLET=%VCPKG_TARGET_TRIPLET% ^
-    ..
 
-rem Building
-rem msbuild.exe nupic.base.sln /p:Configuration=Release /p:Platform=x64
+:CheckVS
+rem  make sure Visual studio is installed
+if defined VS150COMNTOOLS (
 
-popd
-popd
-goto :EOF
+  rem Run CMake using the Visual Studio generator for VS 2017
+  cmake -G "Visual Studio 15 2017 Win64"  ..
+  if exist "nupic.base.sln" (
+  	@echo You can now start Visual Studio using solution file %BUILDDIR%/nupic.base.sln
+	exit /B 0
+  )    
+  popd
+  popd
+) else (
+  if defined VS140COMNTOOLS (
 
-:NoVS
-@echo build.bat
-@echo  Visual Studio 2017 not found
-@echo  "%%VS150COMNTOOLS%%" environment variable not defined
-exit /B 1
+    rem Run CMake using the Visual Studio generator for VS 2015
+    cmake -G "Visual Studio 14 2015 Win64"  ..
+    if exist "nupic.base.sln" (
+  	@echo You can now start Visual Studio using solution file %BUILDDIR%/nupic.base.sln
+	exit /B 0
+    )    
+    popd
+    popd
+  ) else (
+    @echo build.bat
+    @echo  Visual Studio 2017 or 2015 not found
+    @echo  "%%VS150COMNTOOLS%%" or "%%VS140COMNTOOLS%%" environment variable not defined
+    @echo  You must execute this command using "Developer Command Prompt for VS2015" to set the tool chain.
+    exit /B 1
+  )
+)
 
-:Usage
-@echo build.bat
-@echo Usage: build.bat BOOST_ROOT_Folder
-exit /B 1
+
+

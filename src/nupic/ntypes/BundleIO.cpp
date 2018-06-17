@@ -38,7 +38,7 @@ namespace nupic
     if (! Path::exists(bundlePath_))
       NTA_THROW << "Network bundle " << bundlePath << " does not exist";
     
-    filePrefix_ = Path::join(bundlePath, label + "-");
+    filePrefix_ = bundlePath + Path::sep + label + "-";
   }
   
   BundleIO::~BundleIO()

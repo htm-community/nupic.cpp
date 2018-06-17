@@ -100,6 +100,8 @@ namespace nupic
      * before Network.run(). However, if you don't call it, Network.run() will
      * call it for you. Also sets up various memory buffers etc. once the Network
      *  structure has been finalized.
+     *
+     * @note After Deserializing, it is assumed that net.initialize() will be called.
      */
     void
     initialize();
@@ -152,8 +154,6 @@ namespace nupic
      *        Name of the region, Must be unique in the network
      * @param nodeType
      *        Type of node in the region, e.g. "FDRNode"
-     * @param dimensions
-     *        Dimensions of the region
      * @param bundlePath
      *        The path to the bundle
      * @param label
@@ -167,7 +167,6 @@ namespace nupic
     Region_Ptr_t
     addRegionFromBundle(const std::string& name,
                         const std::string& nodeType,
-                        const Dimensions& dimensions,
                         const std::string& bundlePath,
                         const std::string& label);
 
@@ -202,7 +201,7 @@ namespace nupic
      */
     void
     link(const std::string& srcName, const std::string& destName,
-         const std::string& linkType, const std::string& linkParams,
+         const std::string& linkType="", const std::string& linkParams="",
          const std::string& srcOutput="", const std::string& destInput="",
          const size_t propagationDelay=0);
 
@@ -276,13 +275,13 @@ namespace nupic
      */
     auto getMinPhase() const
     {
-        UInt32 i = 0;
+        size_t i = 0;
         for (; i < phaseInfo_.size(); i++)
         {
             if (!phaseInfo_[i].empty())
                 break;
         }
-        return i;
+        return (UInt32)i;
     }
 
     /**
@@ -298,9 +297,9 @@ namespace nupic
         */
 
         if (phaseInfo_.empty())
-            return (std::uint64_t) 0;
+            return (UInt32) 0;
 
-        return phaseInfo_.size() - 1;
+        return (UInt32)(phaseInfo_.size() - 1);
     }
 
     /**
@@ -408,13 +407,6 @@ namespace nupic
      * @}
      */
 
-    /*
-     * Adds user built region to list of regions
-     */
-    static void registerPyRegion(const std::string module,
-                                 const std::string className);
-
-    static void registerPyBindRegion(const std::string& module, const std::string& className);
 
 
     /*
@@ -422,14 +414,6 @@ namespace nupic
      */
     static void registerCPPRegion(const std::string name,
                                   GenericRegisteredRegionImpl* wrapper);
-
-    /*
-     * Removes a region from RegionImplFactory's packages
-     */
-    static void unregisterPyRegion(const std::string className);
-
-    static void unregisterPyBindRegion(const std::string& className);
-
 
     /*
      * Removes a c++ region from RegionImplFactory's packages

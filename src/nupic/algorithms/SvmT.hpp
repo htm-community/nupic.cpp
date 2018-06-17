@@ -907,7 +907,7 @@ template <typename traits>
 void 
 svm<traits>::binary_probability(const problem_type& prob, float& probA, float& probB)
 {
-  int nr_fold = 5, l = prob.size(), n_dims = prob.n_dims();
+  int nr_fold = 5, l = (int)prob.size(), n_dims = prob.n_dims();
   std::vector<int> perm(l);
   Vector dec_values(l);
 
@@ -1006,7 +1006,7 @@ void svm<traits>::group_classes(const problem_type& prob,
 				std::vector<int>& count,
 				std::vector<int>& perm)
 {
-  int l = prob.size(), n_class = 0;
+  int l = (int)prob.size(), n_class = 0;
   std::vector<int> data_label(l);
 
   // group training data of the same class
@@ -1049,7 +1049,7 @@ void svm<traits>::group_classes(const problem_type& prob,
 template <typename traits>
 svm_model* svm<traits>::train(const problem_type& prob, const svm_parameter& param)
 {
-  int l = prob.size(), n_dims = prob.n_dims();
+  int l = (int)prob.size(), n_dims = prob.n_dims();
   std::vector<int> label, count, start, perm(l);
 
   // svm_train
@@ -1383,7 +1383,7 @@ float svm<traits>::predict_probability(const svm_model& model, InIter x, OutIter
 template <typename traits> 
 float svm<traits>::cross_validation(int nr_fold)
 {
-  int l = problem_->size();
+  int l = (int)problem_->size();
   std::vector<int> fold_start(nr_fold+1), perm(l);
 
   // stratified cv may not give leave-one-out rate
@@ -1503,9 +1503,9 @@ float svm<traits>::cross_validation(int nr_fold)
 
 //--------------------------------------------------------------------------------
 template <typename traits>
-int svm<traits>::persistent_size() const
+size_t svm<traits>::persistent_size() const
 {
-  int n = 6 + param_.persistent_size();
+  size_t n = 6 + param_.persistent_size();
 
   if (problem_)
     n += problem_->persistent_size();

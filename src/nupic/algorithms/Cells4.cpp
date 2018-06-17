@@ -184,7 +184,7 @@ bool Cells4::computeUpdate(UInt cellIdx, UInt segIdx, CStateIndexed& activeState
 
     static UInt highWaterSize = 0;
     if (highWaterSize < segment.size()) {
-      highWaterSize = segment.size();
+      highWaterSize = (UInt)segment.size();
       newSynapses.reserve(highWaterSize);
     }
     for (UInt i = 0; i < segment.size(); ++i)
@@ -298,7 +298,7 @@ void Cells4::inferBacktrack(const std::vector<UInt> & activeColumns)
   TIMER(infBacktrackTimer.start());
 
   // This is an easy to use label for the current time step
-  UInt currentTimeStepsOffset = _prevInfPatterns.size() - 1;
+  UInt currentTimeStepsOffset = (UInt)_prevInfPatterns.size() - 1;
 
   //---------------------------------------------------------------------------
   // Save our current active state in case we fail to find a place to restart
@@ -424,7 +424,7 @@ void Cells4::inferBacktrack(const std::vector<UInt> & activeColumns)
   //---------------------------------------------------------------------------
   // Remove any useless patterns at the head of the previous input pattern
   // queue.
-  UInt numPrevPatterns = _prevInfPatterns.size();
+  UInt numPrevPatterns = (UInt)_prevInfPatterns.size();
   for (UInt i = 0; i < numPrevPatterns; i++)
   {
     std::vector<UInt>::iterator result;
@@ -462,7 +462,7 @@ bool Cells4::learnBacktrackFrom(UInt startOffset, bool readOnly)
   // index -1), but it is also evaluated as a potential starting point by
   // turning on it's start cells and seeing if it generates sufficient
   // predictions going forward.
-  UInt numPrevPatterns = _prevLrnPatterns.size();
+  UInt numPrevPatterns = (UInt)_prevLrnPatterns.size();
 
   // This is an easy to use label for the current time step
   NTA_CHECK(numPrevPatterns >= 2);
@@ -554,7 +554,7 @@ UInt Cells4::learnBacktrack()
   // How much input history have we accumulated?
   // The current input is always at the end of self._prevInfPatterns (at
   // index -1), and is not a valid startingOffset to evaluate.
-  UInt numPrevPatterns = (_prevLrnPatterns.size() == 0 ? 0 : _prevLrnPatterns.size() - 1);
+  UInt numPrevPatterns = (UInt)(_prevLrnPatterns.size() == 0 ? 0 : _prevLrnPatterns.size() - 1);
   if (numPrevPatterns <= 0) {
     if (_verbosity >= 3) {
       std::cout << "lrnBacktrack: No available history to backtrack from\n";
@@ -687,7 +687,7 @@ UInt Cells4::getCellForNewSegment(UInt colIdx)
   if (!candidateCellIdxs.empty())
   {
     candidateCellIdx =
-                candidateCellIdxs[_rng.getUInt32(candidateCellIdxs.size())];
+                candidateCellIdxs[_rng.getUInt32((UInt)candidateCellIdxs.size())];
     if (_verbosity >= 5) {
       std::cout << "Cell [" << colIdx
                 << "," << candidateCellIdx - getCellIdx(colIdx,0)
@@ -1416,15 +1416,15 @@ void Cells4::compute(Real* input, Real* output, bool doInference, bool doLearnin
  */
 void Cells4::_updateAvgLearnedSeqLength(UInt prevSeqLength)
 {
-  Real alpha = 0.1;
-  if (_nLrnIterations < 100) alpha = 0.5;
+  Real alpha = 0.1f;
+  if (_nLrnIterations < 100) alpha = 0.5f;
   if (_verbosity >= 5) {
     std::cout << "_updateAvgLearnedSeqLength before = "
               << _avgLearnedSeqLength << " prevSeqLength = "
               << prevSeqLength << "\n";
   }
-  _avgLearnedSeqLength = (1.0 - alpha)*_avgLearnedSeqLength +
-                         alpha * (Real) prevSeqLength;
+  _avgLearnedSeqLength = (1.0f - alpha)*_avgLearnedSeqLength +
+                         alpha * prevSeqLength;
   if (_verbosity >= 5) {
     std::cout << "   after = "
     << _avgLearnedSeqLength << "\n";
@@ -1548,7 +1548,7 @@ void Cells4::applyGlobalDecay()
           nSegmentsDecayed++;
 
           seg.decaySynapses2(_globalDecay, removedSynapses, _permConnected);
-          nSynapsesRemoved += removedSynapses.size();
+          nSynapsesRemoved += (UInt)removedSynapses.size();
           if (!removedSynapses.empty()) {
             eraseOutSynapses(cellIdx, segIdx, removedSynapses);
           }
@@ -1713,7 +1713,7 @@ void Cells4::adaptSegment(const SegmentUpdate& update)
     }
 
     // Increment permanences of active synapses
-    const UInt numRemovedBeforePermInc = removed.size();
+    const size_t numRemovedBeforePermInc = removed.size();
     segment.updateSynapses(synToInc, _permInc, _permMax, _permConnected, removed);
     // Incrementing of permanences shouldn't remove synapses
     NTA_CHECK(removed.size() == numRemovedBeforePermInc);
@@ -1724,7 +1724,7 @@ void Cells4::adaptSegment(const SegmentUpdate& update)
       // TODO: What's preventing numToFree from exceeding segment.size()? If you
       // know, add a comment explaining it. If it exceeds, it will cause memory
       // corruption in Segment::freeNSynapses.
-      UInt numToFree = synapsesSet.size() + segment.size() - _maxSynapsesPerSegment;
+      UInt numToFree = (UInt)synapsesSet.size() + (UInt)segment.size() - (UInt)_maxSynapsesPerSegment;
       segment.freeNSynapses(numToFree,
                             synToDec, inactiveSegmentIndices,
                             synToInc, activeSegmentIndices,
@@ -2645,7 +2645,7 @@ Cells4::chooseCellsToLearnFrom(UInt cellIdx, UInt segIdx,
   else {
     vecPruned = vecCellBuffer;
   }
-  const UInt nbrCells = vecPruned.size();
+  const UInt nbrCells = (UInt)vecPruned.size();
 
   // bail out if there are no cells left to process
   if (nbrCells == 0) {
@@ -2672,9 +2672,9 @@ Cells4::chooseCellsToLearnFrom(UInt cellIdx, UInt segIdx,
   else {
     // choose a random subset of the cells found, and append them to the
     // caller's array
-    UInt start = srcCells.size();
+    UInt start = (UInt)srcCells.size();
     srcCells.resize(srcCells.size() + nSynToAdd);
-    _rng.sample(&vecPruned.front(), vecPruned.size(),
+    _rng.sample(&vecPruned.front(), (UInt)vecPruned.size(),
                 &srcCells[start], nSynToAdd);
 
     fSortNeeded = true;
@@ -2726,7 +2726,7 @@ std::pair<UInt, UInt> Cells4::trimSegments(Real minPermanence,
         eraseOutSynapses(cellIdx, segIdx, removedSynapses);
       }
 
-      nSynsRemoved += removedSynapses.size();
+      nSynsRemoved += (UInt)removedSynapses.size();
     }
   }
 

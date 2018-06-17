@@ -46,11 +46,7 @@ VectorFileEffector::VectorFileEffector(const ValueMap& params, Region* region) :
   filename_(""),
   outFile_(nullptr)
 {
-  if (params.contains("outputFile"))
-    filename_ = *params.getString("outputFile");
-  else
-    filename_ = "";
-
+    filename_ = params.getString("outputFile", "");
 }
 
 VectorFileEffector::VectorFileEffector(BundleIO& bundle, Region* region) :
@@ -78,6 +74,10 @@ void VectorFileEffector::initialize()
   {
     NTA_THROW << "VectorFileEffector::init - no input found\n";
   }
+
+  if (!filename_.empty())
+    openFile(filename_);
+
 }
 
 
@@ -87,6 +87,8 @@ void VectorFileEffector::compute()
   // It's not necessarily an error to have no inputs. In this case we just return
   if (dataIn_.getCount() == 0)
     return;
+
+
 
   // Don't write if there is no open file.
   if (outFile_ == nullptr)

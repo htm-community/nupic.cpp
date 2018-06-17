@@ -134,18 +134,13 @@ Region::getParameterArray(const std::string& name, Array & array) const
 {
   size_t count = impl_->getParameterArrayCount(name, (Int64)(-1));
   // Make sure we have a buffer to put the data in
-  if (array.getBuffer() != nullptr) 
+  if (array.getBuffer() == nullptr || array.getCount() != count) 
   {
-    // Buffer has already been allocated. Make sure it is big enough
-    if (array.getCount() > count)
-      NTA_THROW << "getParameterArray -- supplied buffer for parameter " << name
-                << " can hold " << array.getCount() 
-                << " elements but parameter count is "
-                << count;
-  } else {
     array.allocateBuffer(count);
   }
-
+  // Some implementations of regions just copy the array rather than 
+  // assign the entire Array object.  So that is why we had to make sure the buffer was allocated.
+  // The implementation must check the type.
   impl_->getParameterArray(name, (Int64)-1, array);
 
 }
@@ -158,6 +153,7 @@ Region::setParameterArray(const std::string& name, const Array & array)
   // expensive -- involving a check against the nodespec, 
   // and only usable in the rare case that the nodespec specified
   // a fixed size. Instead, the implementation can check the size. 
+  // The implementation must also check the type.
   impl_->setParameterArray(name, (Int64)-1, array);
 }
 

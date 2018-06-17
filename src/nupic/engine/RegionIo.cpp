@@ -92,17 +92,15 @@ Region::getInputCount(const std::string& inputName) const
 }
 
 
-ArrayRef
+const Array&
 Region::getOutputData(const std::string& outputName) const
 {
   auto oi = outputs_.find(outputName);
   if (oi == outputs_.end())
     NTA_THROW << "getOutputData -- unknown output '" << outputName << "' on region " << getName();
 
-  const Array & data = oi->second->getData();
-  ArrayRef a(data.getType());
-  a.setBuffer(data.getBuffer(), data.getCount());
-  return a;
+  const Array& data = oi->second->getData();
+  return data;
 }
 
 ArrayRef
@@ -113,9 +111,7 @@ Region::getInputData(const std::string& inputName) const
     NTA_THROW << "getInput -- unknown input '" << inputName << "' on region " << getName();
 
   const Array & data = ii->second->getData();
-  ArrayRef a(data.getType());
-  a.setBuffer(data.getBuffer(), data.getCount());
-  return a;
+  return data.ref();
 }
 
 void

@@ -29,25 +29,29 @@
 //----------------------------------------------------------------------
 
 #include <string>
+#include <boost/filesystem.hpp>
+#include <nupic/os/Path.hpp>
+
 
 //----------------------------------------------------------------------
 
 namespace nupic
 {
-  class Path;
   
   namespace Directory
   {
     // check if a directory exists
     bool exists(const std::string & path);
 
-    bool empty(const std::string & path);
+    // true if the directory is empty
+    bool empty(const std::string & path);  
+
+    // return the amount of available space on this path's device.
+    Size free_space(const std::string & path);
     
-    // get current working directory
+    // get/set current working directory
     std::string getCWD();
-		
-    // set current working directories
-    void setCWD(const std::string & path);
+    void setCWD(const std::string & path); //  be careful about using this.
 
     // Copy directory tree rooted in 'source' to 'destination'
     void copyTree(const std::string & source, const std::string & destination);
@@ -55,52 +59,69 @@ namespace nupic
     // Remove directory tree rooted in 'path'
     bool removeTree(const std::string & path, bool noThrow=false);
 		
-    // Create directory 'path' including all parent directories if missing
-    // returns the first directory that was actually created.
-    //
-    // For example if path is /A/B/C/D 
-    //    if /A/B/C/D exists it returns ""
-    //    if /A/B exists it returns /A/B/C
-    //    if /A doesn't exist it returns /A/B/C/D
-    // 
+    // Create directory 'path' including all parent directories if missing (and if recursive is true)
+    // sets permissions read, write, execute for owner (0700). 
+    // if otherAccess = true, sets read,write,execute for group and read,execute for others (0775).
     // Failures will throw an exception
     void create(const std::string & path, bool otherAccess=false, bool recursive=false);
 
-    std::string createTemporary(const std::string &templatePath);
+    //std::string createTemporary(const std::string &templatePath);  Not implemented
 
-    // @todo
-    struct Entry/* : public apr_finfo_t*/
+    struct Entry
     {
-      enum Type { FILE, DIRECTORY, LINK };
+      enum Type { FILE, DIRECTORY, LINK, OTHER };
 			
       Type type;
-      std::string path;
+      std::string path;         // full absolute path
+      std::string filename;     // just the filename and extension or directory name
     };
 
     class Iterator
     {
     public:
-
-      Iterator(const Path & path);		
-      Iterator(const std::string & path);
-      ~Iterator();
+      Iterator(const nupic::Path & path) {
+        std::string pstr = path.c_str();
+        p_ = boost::filesystem::absolute(pstr);
+        current_ = boost::filesystem::directory_iterator(p_);
+      }
+      Iterator(const std::string & path) {
+        p_ = boost::filesystem::absolute(path);
+        current_ = boost::filesystem::directory_iterator(p_);
+      }
+      ~Iterator() {}
 		
       // Resets directory to start. Subsequent call to next() 
       // will retrieve the first entry
-      void reset();
-      // get next directory entry
-      Entry * next(Entry & e);
-		
-    private:
-      Iterator();
-      Iterator(const Iterator &);
-		
-      void init(const std::string & path);
-    private:
-      std::string path_;
+      void reset() { 
+        current_ = boost::filesystem::directory_iterator(p_);
+      }
 
-      //apr_dir_t * handle_;
-      //apr_pool_t * pool_;
+      // get next directory entry
+      Entry * next(Entry & e) {
+        boost::system::error_code ec;
+        if (current_ == end_)  return nullptr;
+        while (current_->path().filename_is_dot() || current_->path().filename_is_dot_dot()) {
+          current_++;
+          if (current_ == end_)  return nullptr;
+        }
+        e.type = (boost::filesystem::is_directory(current_->path(), ec)) ? Entry::DIRECTORY : 
+                 (boost::filesystem::is_regular_file(current_->path(), ec)) ? Entry::FILE :
+                 (boost::filesystem::is_symlink(current_->path(), ec))? Entry::LINK : Entry::OTHER;
+        e.path = current_->path().string();
+        e.filename = current_->path().filename().string();
+        current_++;
+        return &e;
+      }
+		
+    private:
+      Iterator() {}    
+      Iterator(const Iterator &) {}
+		
+    private:
+      boost::filesystem::path p_;
+      boost::filesystem::directory_iterator current_;
+      boost::filesystem::directory_iterator end_;
+
     };
   }
 }

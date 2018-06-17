@@ -144,7 +144,7 @@ public:
       return std::string("sm_01_1.0");
   }
 
-  inline size_type nRows() const { return ind_.size(); }
+  inline size_type nRows() const { return (size_type)ind_.size(); }
 
   inline nz_index_type nCols() const { return ncols_; }
 
@@ -283,7 +283,7 @@ public:
           << " - Should be 0 <= and < n rows = " << nRows();
     } // End pre-conditions
 
-    return ind_[row].size();
+    return (size_type)ind_[row].size();
   }
 
   inline size_type nNonZeros() const {

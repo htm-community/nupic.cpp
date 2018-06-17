@@ -80,7 +80,7 @@ Segment Connections::createSegment(CellIdx cell)
   }
   else
   {
-    segment = segments_.size();
+    segment = (Segment)segments_.size();
     segments_.push_back(SegmentData());
     segmentOrdinals_.push_back(0);
   }
@@ -114,7 +114,7 @@ Synapse Connections::createSynapse(Segment segment,
   }
   else
   {
-    synapse.flatIdx = synapses_.size();
+    synapse.flatIdx = (UInt)synapses_.size();
     synapses_.push_back(SynapseData());
     synapseOrdinals_.push_back(0);
   }
@@ -269,7 +269,7 @@ SegmentIdx Connections::idxOnCellForSegment(Segment segment) const
   const vector<Segment>& segments = segmentsForCell(cellForSegment(segment));
   const auto it = std::find(segments.begin(), segments.end(), segment);
   NTA_ASSERT(it != segments.end());
-  return std::distance(segments.begin(), it);
+  return (SegmentIdx)std::distance(segments.begin(), it);
 }
 
 void Connections::mapSegmentsToCells(
@@ -304,7 +304,7 @@ const SynapseData& Connections::dataForSynapse(Synapse synapse) const
 
 UInt32 Connections::segmentFlatListLength() const
 {
-  return segments_.size();
+  return (UInt)segments_.size();
 }
 
 bool Connections::compareSegments(Segment a, Segment b) const
@@ -500,7 +500,7 @@ void Connections::load(std::istream& inStream)
 
         if (!destroyedSegment)
         {
-          segment = segments_.size();
+          segment = (Segment)segments_.size();
           cellData.segments.push_back(segment);
           segments_.push_back(segmentData);
           segmentOrdinals_.push_back(nextSegmentOrdinal_++);
@@ -546,27 +546,27 @@ void Connections::load(std::istream& inStream)
 
 CellIdx Connections::numCells() const
 {
-  return cells_.size();
+  return (CellIdx) cells_.size();
 }
 
 UInt Connections::numSegments() const
 {
-  return segments_.size() - destroyedSegments_.size();
+  return (UInt)(segments_.size() - destroyedSegments_.size());
 }
 
 UInt Connections::numSegments(CellIdx cell) const
 {
-  return cells_[cell].segments.size();
+  return (UInt)cells_[cell].segments.size();
 }
 
 UInt Connections::numSynapses() const
 {
-  return synapses_.size() - destroyedSynapses_.size();
+  return (UInt)(synapses_.size() - destroyedSynapses_.size());
 }
 
 UInt Connections::numSynapses(Segment segment) const
 {
-  return segments_[segment].synapses.size();
+  return (UInt)segments_[segment].synapses.size();
 }
 
 bool Connections::operator==(const Connections &other) const

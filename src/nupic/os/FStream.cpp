@@ -39,48 +39,13 @@
 #include "nupic/os/Env.hpp"
 #include <fstream>
 #include <cstdlib>
+#include <boost/iostreams/filter/zlib.hpp>
 
-//@todo use boost::iostreams ???
 //#include <zlib.h>
 
 
 using namespace nupic;
 
-//////////////////////////////////////////////////////////////////////////
-/// Print out diagnostic information when a file open fails
-/////////////////////////////////////////////////////////////////////////
-void IFStream::diagnostics(const char* filename)
-{
-    // @todo
-    throw std::runtime_error("Not implemented");
-
-//  bool forceLog = false;
-//
-//  // We occasionally get error 116(ESTALE) "Stale NFS file handle" (TOO-402) when creating
-//  //  a file using OFStream::open() on a shared drive on unix systems. We found that
-//  //  if we perform a directory listing after encountering the error, that a retry 
-//  //  immediately after is successful. So.... we log this information if we 
-//  //  get errno==ESTALE OR if NTA_FILE_LOGGING is set. 
-//#ifdef ESTALE
-//  if (errno == ESTALE)
-//    forceLog = true;
-//#endif
-//  
-//  if (forceLog || ::getenv("NTA_FILE_LOGGING")) {
-//    NTA_DEBUG << "FStream::open() failed opening file " << filename
-//              << "; errno = " << errno
-//              << "; errmsg = " << strerror(errno)
-//              << "; cwd = " << Directory::getCWD();
-//    
-//    Directory::Iterator di(Directory::getCWD());
-//    Directory::Entry e;
-//    while (di.next(e)) {
-//      NTA_DEBUG << "FStream::open() ls: " << e.path;
-//    }
-//  }
-  
-}
-    
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -88,25 +53,7 @@ void IFStream::diagnostics(const char* filename)
 /////////////////////////////////////////////////////////////////////////
 void IFStream::open(const char * filename, ios_base::openmode mode)
 {
-    // @todo
-    throw std::runtime_error("Not implemented");
-//#if defined(NTA_OS_WINDOWS) && !defined(NTA_COMPILER_GNU)
-//  std::wstring pathW = Path::utf8ToUnicode(filename);
-//  std::ifstream::open(pathW.c_str(), mode);
-//#else
-//  std::ifstream::open(filename, mode);
-//#endif
-//
-//  // Check for error
-//  if (!is_open()) {
-//    IFStream::diagnostics(filename);
-//    // On unix, running nfs, we occasionally get errors opening a file on an nfs drive
-//    // and it seems that simply doing a retry makes it successful
-//    #if !defined(NTA_OS_WINDOWS)
-//      std::ifstream::clear();
-//      std::ifstream::open(filename, mode);
-//    #endif
-//  }
+  std::ifstream::open(filename, mode);
 }
     
   
@@ -115,59 +62,19 @@ void IFStream::open(const char * filename, ios_base::openmode mode)
 /////////////////////////////////////////////////////////////////////////
 void OFStream::open(const char * filename, ios_base::openmode mode)
 {
-    // @todo
-    throw std::runtime_error("Not implemented");
-//#if defined(NTA_OS_WINDOWS) && !defined(NTA_COMPILER_GNU)
-//  std::wstring pathW = Path::utf8ToUnicode(filename);
-//  std::ofstream::open(pathW.c_str(), mode);
-//#else
-//  std::ofstream::open(filename, mode);
-//#endif
-//
-//  // Check for error
-//  if (!is_open()) {
-//    IFStream::diagnostics(filename);
-//    // On unix, running nfs, we occasionally get errors opening a file on an nfs drive
-//    // and it seems that simply doing a retry makes it successful
-//    #if !(defined(NTA_OS_WINDOWS) && !defined(NTA_COMPILER_GNU))
-//      std::ofstream::clear();
-//      std::ofstream::open(filename, mode);
-//    #endif
-//  }
+  std::ofstream::open(filename, mode);
 }
-      
+ 
+//////////////////////////////////////////////////////////////////////////
+/// open a ZLIB file by name
+/////////////////////////////////////////////////////////////////////////
+
 void *ZLib::fopen(const std::string &filename, const std::string &mode,
   std::string *errorMessage)
 {
-    // @todo
-    throw std::runtime_error("Not implemented");
-//    if(mode.empty()) throw std::invalid_argument("Mode may not be empty.");
-//
-//#if defined(NTA_OS_WINDOWS) && !defined(NTA_COMPILER_GNU)
-//  std::wstring wfilename(Path::utf8ToUnicode(filename));
-//  int cflags = _O_BINARY;
-//  int pflags = 0;
-//  if(mode[0] == 'r') {
-//    cflags |= _O_RDONLY;
-//  }
-//  else if(mode[0] == 'w') {
-//    cflags |= _O_TRUNC  | _O_CREAT | _O_WRONLY;
-//    pflags |= _S_IREAD | _S_IWRITE;
-//  }
-//  else if(mode[0] == 'a') {
-//    cflags |= _O_APPEND | _O_CREAT | _O_WRONLY;
-//    pflags |= _S_IREAD | _S_IWRITE;
-//  }
-//  else { throw std::invalid_argument("Mode must start with 'r', 'w' or 'a'."); }
-//
-//  int fd = _wopen(wfilename.c_str(), cflags, pflags);
-//  gzFile fs = gzdopen(fd, mode.c_str());
-//
-//  if(fs == 0) {
-//    // TODO: Build an error message for Windows.
-//  }
-//
-//#else
+  throw std::invalid_argument("Not implemented.");
+    if(mode.empty()) throw std::invalid_argument("Mode may not be empty.");
+
 //  gzFile fs = nullptr;
 //  { // zlib may not be thread-safe in its current compiled state.
 //    int attempts = 0;
@@ -175,7 +82,7 @@ void *ZLib::fopen(const std::string &filename, const std::string &mode,
 //    int lastError = 0;
 //    while(1) {
 //      fs = gzopen(filename.c_str(), mode.c_str());
-//      if(fs) break;
+//     if(fs) break;
 //
 //      int error = errno;
 //      if(error != lastError) {

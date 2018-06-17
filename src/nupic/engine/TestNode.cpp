@@ -57,13 +57,14 @@ namespace nupic
     uint32Param_ = params.getScalarT<UInt32>("uint32Param", 33);
     int64Param_ = params.getScalarT<Int64>("int64Param", 64);
     uint64Param_ = params.getScalarT<UInt64>("uint64Param", 65);
-    real32Param_ = params.getScalarT<Real32>("real32Param", 32.1);
+    real32Param_ = params.getScalarT<Real32>("real32Param", 32.1f);
     real64Param_ = params.getScalarT<Real64>("real64Param", 64.1);
     boolParam_ = params.getScalarT<bool>("boolParam", false);
+    outputElementCount_ = params.getScalarT<UInt32>("count", 2);
 
     shouldCloneParam_ = params.getScalarT<UInt32>("shouldCloneParam", 1) != 0;
 
-    stringParam_ = *params.getString("stringParam");
+    stringParam_ = params.getString("stringParam");
 
     real32ArrayParam_.resize(8);
     for (size_t i = 0; i < 8; i++)
@@ -95,7 +96,6 @@ namespace nupic
     unclonedInt64ArrayParam_[0] = v;
 
     // params used for computation
-    outputElementCount_ = 2;
     delta_ = 1;
     iter_ = 0;
 
@@ -118,11 +118,26 @@ namespace nupic
     if (computeCallback_ != nullptr)
       computeCallback_(getName());
 
-    const Array & outputArray = bottomUpOut_->getData();
-    NTA_CHECK(outputArray.getCount() == nodeCount_ * outputElementCount_);
+    Array & outputArray = bottomUpOut_->getData();
+    NTA_CHECK(outputArray.getCount() == outputElementCount_);
     NTA_CHECK(outputArray.getType() == NTA_BasicType_Real64);
     Real64 *baseOutputBuffer = (Real64*) outputArray.getBuffer();
 
+    // There is only 1 node now and no dimensions. So that reduces to the
+    // outputArray being initialized from bottomUpIn_
+    // dek 2018
+    const Array& nodeInput = bottomUpIn_->getData();
+    Real64* inputBuffer = (Real64*)nodeInput.getBuffer();
+
+    // output[n] = node + sum(inputs) + (n-1) * delta
+    Real64 sum = 0.0;
+    for (size_t j = 0; j < nodeInput.getCount(); j++)
+      sum += inputBuffer[j];
+
+    baseOutputBuffer[0] = nupic::Real64(nodeInput.getCount() + iter_);
+    for (size_t i = 1; i < outputElementCount_; i++)
+      baseOutputBuffer[i] = 0 + sum + (i - 1) * delta_;
+    /*****
     // See TestNode.hpp for description of the computation
     std::vector<Real64> nodeInput;
     Real64* nodeOutputBuffer;
@@ -139,6 +154,7 @@ namespace nupic
       for (size_t i = 1; i < outputElementCount_; i++)
         nodeOutputBuffer[i] = node + sum + (i-1)*delta_;
     }
+    **/
 
     iter_++;
 
@@ -150,17 +166,31 @@ namespace nupic
   {
     auto ns = new Spec;
 
+    ns->description = "TestNode. Used as a plain simple plugin Region for unit tests only. "
+      "This is not useful for any real applicaton.";
+    ns->singleNodeOnly = true;
+
+
     /* ---- parameters ------ */
 
     ns->parameters.add(
-      "int32Param",
+      "count",
       ParameterSpec(
-        "Int32 scalar parameter",  // description
-        NTA_BasicType_Int32,
+        "Buffer size override for bottomUpOut Output",  // description
+        NTA_BasicType_UInt32,
         1,                         // elementCount
         "",                        // constraints
-        "32",                      // defaultValue
+        "2",                      // defaultValue
         ParameterSpec::ReadWriteAccess));
+
+    ns->parameters.add(
+      "int32Param",
+      ParameterSpec("Int32 scalar parameter", // description
+       NTA_BasicType_Int32,
+       1,    // elementCount
+       "",   // constraints
+       "32", // defaultValue
+       ParameterSpec::ReadWriteAccess));
 
     ns->parameters.add(
       "uint32Param",
@@ -373,7 +403,9 @@ namespace nupic
                                         Int64 index,
                                         IWriteBuffer& value)
   {
-    if (name == "int32Param") {
+    if (name == "count") {
+      value.write(outputElementCount_);
+    } else if (name == "int32Param") {
       value.write(int32Param_);
     } else if (name == "uint32Param") {
       value.write(uint32Param_);
@@ -439,7 +471,9 @@ namespace nupic
                                         Int64 index,
                                         IReadBuffer& value)
   {
-    if (name == "int32Param") {
+    if (name == "count") {
+      value.read(outputElementCount_);
+    } else if (name == "int32Param") {
       value.read(int32Param_);
     } else if (name == "uint32Param") {
       value.read(uint32Param_);
@@ -539,7 +573,6 @@ namespace nupic
 
   void TestNode::initialize()
   {
-    nodeCount_ = getDimensions().getCount();
     bottomUpOut_ = getOutput("bottomUpOut");
     bottomUpIn_ = getInput("bottomUpIn");
 
@@ -574,7 +607,7 @@ namespace nupic
     {
       return outputElementCount_;
     }
-    NTA_THROW << "TestNode::getOutputSize -- unknown output " << outputName;
+    NTA_THROW << "TestNode::getNodeOutputElementCount() -- unknown output " << outputName;
   }
 
   std::string TestNode::executeCommand(const std::vector<std::string>& args, Int64 index)

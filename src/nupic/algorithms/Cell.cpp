@@ -74,7 +74,7 @@ UInt Cell::getFreeSegment(const Segment::InSynapses& synapses,
   if (cellMatchPythonSegOrder) {
     // for unit tests where segment order matters
 
-    segIdx = _segments.size();
+    segIdx = (UInt)_segments.size();
     _segments.resize(_segments.size() + 1);
 
   } else {
@@ -86,7 +86,7 @@ UInt Cell::getFreeSegment(const Segment::InSynapses& synapses,
     // it to 2 different segments!
 
     if (_freeSegments.empty()) {
-      segIdx = _segments.size();
+      segIdx = (UInt)_segments.size();
       //TODO: Should we grow by larger amounts here?
       _segments.resize(_segments.size() + 1);
     } else {
@@ -95,7 +95,7 @@ UInt Cell::getFreeSegment(const Segment::InSynapses& synapses,
     }
   }
 
-  NTA_ASSERT(segIdx < _segments.size());
+  NTA_ASSERT(segIdx < (UInt)_segments.size());
   NTA_ASSERT(not_in(segIdx, _freeSegments));
   NTA_ASSERT(_segments[segIdx].empty()); // important in case we push_back
 

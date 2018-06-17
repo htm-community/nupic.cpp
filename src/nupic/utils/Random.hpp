@@ -135,7 +135,7 @@ namespace nupic {
     template <class RandomAccessIterator>
     void shuffle(RandomAccessIterator first, RandomAccessIterator last)
     {
-      UInt n = last - first;
+      UInt n = (UInt)(last - first);
       while (first != last)
       {
         // Pick a random position between the current and the end to swap the

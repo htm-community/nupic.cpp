@@ -1072,7 +1072,7 @@ namespace nupic {
           // TODO: this won't scale!
           std::stringstream tmp;
           this->save(tmp);
-          return tmp.str().size();
+          return static_cast<UInt>(tmp.str().size());
         }
 
         //----------------------------------------------------------------------

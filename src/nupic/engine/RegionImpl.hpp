@@ -206,17 +206,16 @@ namespace nupic
     /// getSerializationXStream a second time automatically closes the
     /// first stream. Any open stream is closed when serialize() returns.
     // ---
-    std::ostream& getSerializationOutputStream(const std::string& name);
-    std::istream& getSerializationInputStream(const std::string& name);
-    std::string getSerializationPath(const std::string& name);
+    //std::ostream& getSerializationOutputStream(const std::string& name);
+    //std::istream& getSerializationInputStream(const std::string& name);
+    //std::string getSerializationPath(const std::string& name);
 
     // These methods provide access to inputs and outputs
     // They raise an exception if the named input or output is
     // not found.
-    const Input* getInput(const std::string& name);
-    const Output* getOutput(const std::string& name);
+    Input* getInput(const std::string& name);
+    Output* getOutput(const std::string& name);
 
-    const Dimensions& getDimensions();
 
   };
 
