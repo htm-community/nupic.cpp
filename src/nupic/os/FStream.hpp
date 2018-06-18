@@ -149,6 +149,8 @@ public:
   
 }; // end class OFStream
 
+// zlib file access is currently replaced with a non-compressed file access
+// to reduce the need for dependancies.
 class ZLib
 {
 public:

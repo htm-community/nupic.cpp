@@ -29,6 +29,8 @@
 
 #include <gtest/gtest.h>
 
+#include <nupic/os/Directory.hpp>
+#include <nupic/os/FStream.hpp>
 #include <nupic/algorithms/Cells4.hpp>
 #include <nupic/algorithms/Segment.hpp>
 #include <nupic/math/ArrayAlgo.hpp> // is_in
@@ -145,32 +147,24 @@ TEST(Cells4Test, Serialization)
     cells.reset();
   }
 
-  //@todo
-  //Cells4 secondCells;
-  //{
-  //  capnp::MallocMessageBuilder message1;
-  //  Cells4Proto::Builder cells4Builder = message1.initRoot<Cells4Proto>();
-  //  cells.write(cells4Builder);
-  //  std::stringstream ss;
-  //  kj::std::StdOutputStream out(ss);
-  //  capnp::writeMessage(out, message1);
 
-  //  kj::std::StdInputStream in(ss);
-  //  capnp::InputStreamMessageReader message2(in);
-  //  Cells4Proto::Reader cells4Reader = message2.getRoot<Cells4Proto>();
-  //  secondCells.read(cells4Reader);
-  //}
+  Directory::removeTree("TestOutputDir", true);
+  Directory::create("TestOutputDir");
+  cells.saveToFile("TestOutputDir/Cells4Test");
 
-  //NTA_CHECK(checkCells4Attributes(cells, secondCells));
+  Cells4 secondCells;
+  secondCells.loadFromFile("TestOutputDir/Cells4Test");
 
-  //std::vector<Real> secondOutput(10*2);
-  //cells.compute(&input1.front(), &output.front(), true, true);
-  //secondCells.compute(&input1.front(), &secondOutput.front(), true, true);
-  //for (UInt i = 0; i < 10; ++i)
-  //{
-  //  ASSERT_EQ(output[i], secondOutput[i]) << "Outputs differ at index " << i;
-  //}
-  //NTA_CHECK(checkCells4Attributes(cells, secondCells));
+  NTA_CHECK(checkCells4Attributes(cells, secondCells));
+
+  std::vector<Real> secondOutput(10*2);
+  cells.compute(&input1.front(), &output.front(), true, true);
+  secondCells.compute(&input1.front(), &secondOutput.front(), true, true);
+  for (UInt i = 0; i < 10; ++i)
+  {
+    ASSERT_EQ(output[i], secondOutput[i]) << "Outputs differ at index " << i;
+  }
+  NTA_CHECK(checkCells4Attributes(cells, secondCells));
 }
 
 

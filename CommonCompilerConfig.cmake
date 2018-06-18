@@ -58,7 +58,7 @@ include(CheckCXXCompilerFlag)
 # Set the C++ Version
 #message("!REQUIRED! -- Supported features = ${cxx_std_14}")
 #message("Supported features = ${cxx_std_17}")
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -123,24 +123,26 @@ if(MSVC)
 	#	Common Stuff:  /permissive- /W3 /Gy /Gm- /O2 /Oi /MD /EHsc /FC /nologo
 	#      Release Only:    /O2 /Oi /Gy  /MD
 	#      Debug Only:       /Od /Zi /sdl /RTC1 /MDd
-	set(INTERNAL_CXX_FLAGS /permissive- /W3 /Gm- /EHsc /FC 
+	set(INTERNAL_CXX_FLAGS /permissive- /W3 /Gm- /EHsc /FC /std:c++17
 							$<$<CONFIG:RELEASE>:/O2 /Oi /Gy  /GL /MD> 
 							$<$<CONFIG:DEBUG>:/Ob0 /Od /Zi /sdl /RTC1 /MDd>)
 	
-	set(COMMON_COMPILER_DEFINITIONS 	/D "_CONSOLE"
-		/D "_MBCS"
-		/D "NTA_OS_WINDOWS"
-		/D "NTA_COMPILER_MSVC"
-		/D "NTA_VS_2017"
-		/D "_CRT_SECURE_NO_WARNINGS"
-		/D "_SCL_SECURE_NO_WARNINGS"
-		/D "_CRT_NONSTDC_NO_DEPRECATE"
-		/D "_SCL_SECURE_NO_DEPRECATE"
-		/D "BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE"
-		/D "BOOST_ALL_NO_LIB"
-		/D "VC_EXTRALEAN"
-		/D "NOMINMAX"
-		/D "NOGDI"
+	set(COMMON_COMPILER_DEFINITIONS 	
+		_CONSOLE
+		_MBCS
+		NTA_OS_WINDOWS
+		NTA_COMPILER_MSVC
+		NTA_VS_2017
+		_CRT_SECURE_NO_WARNINGS
+		_SCL_SECURE_NO_WARNINGS
+		_CRT_NONSTDC_NO_DEPRECATE
+		_SCL_SECURE_NO_DEPRECATE
+		BOOST_CONFIG_SUPPRESS_OUTDATED_MESSAGE
+		BOOST_ALL_NO_LIB
+		_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
+		VC_EXTRALEAN
+		NOMINMAX
+		NOGDI
 		)
 	# Note: /DEBUG or /NDEBUG are added by default.
 		
@@ -150,9 +152,10 @@ if(MSVC)
 	else()
 		set(machine "/MACHINE:X${BITNESS}")
 	endif()
-	set(INTERNAL_LINKER_FLAGS "${machine} /NOLOGO /LTCG")
+	set(INTERNAL_LINKER_FLAGS "${machine} /NOLOGO /ignore:4099 /LTCG")
 	# default flags: /MANIFEST /DYNAMICBASE /NXCOMPAT  /OPT:REF(for non-debug builds)  /OPT:ICF /INCREMENTAL:NO /ERRORREPORT:PROMPT  
 	#                        /PGD  /SUBSYSTEM /TLBID:1 /MANIFESTUAC:"level='asInvoker' uiAccess='false'" 
+	# NOTE:  /LTCG is needed for Release but not for Debug.  It can safely be ignored in Debug.
 	
 	# OS libraries
 	set(src_common_os_libs  "kernel32.lib" 

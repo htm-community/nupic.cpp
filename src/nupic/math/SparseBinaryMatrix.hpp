@@ -157,10 +157,10 @@ public:
 
   inline size_type nBytes() const {
     size_type n = sizeof(SparseBinaryMatrix);
-    n += ind_.capacity() * sizeof(Row);
+    n += (size_type)(ind_.capacity() * sizeof(Row));
     for (size_type i = 0; i != nRows(); ++i)
-      n += ind_[i].capacity() * sizeof(nz_index_type);
-    n += buffer_.capacity() * sizeof(nz_index_type);
+      n += (size_type)(ind_[i].capacity() * sizeof(nz_index_type));
+    n += (size_type)(buffer_.capacity() * sizeof(nz_index_type));
     return n;
   }
 
@@ -220,7 +220,7 @@ public:
       }
     }
 
-    ncols_ = new_ncols;
+    ncols_ = (nz_index_type)new_ncols;
     buffer_.resize(new_ncols);
 
     if (new_nrows < nRows()) {
@@ -477,8 +477,7 @@ public:
   }
 
   struct lexicographic_order
-      : public std::binary_function<bool, std::pair<size_type, size_type>,
-                                    std::pair<size_type, size_type>> {
+  {
     inline bool operator()(const std::pair<size_type, size_type> &a,
                            const std::pair<size_type, size_type> &b) const {
       if (a.first < b.first)
@@ -604,9 +603,9 @@ public:
     } else {
 
       if (it == ind_[row].end())
-        ind_[row].push_back(col);
+        ind_[row].push_back((nz_index_type)col);
       else if (*it != col)
-        ind_[row].insert(it, col);
+        ind_[row].insert(it, (nz_index_type)col);
     }
   }
 

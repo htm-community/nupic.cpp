@@ -43,6 +43,7 @@ Implementation of the Network class
 #include <nupic/os/Path.hpp>
 #include <nupic/os/Directory.hpp>
 #include <nupic/ntypes/BundleIO.hpp>
+
 #include <yaml-cpp/yaml.h>
 
 namespace nupic

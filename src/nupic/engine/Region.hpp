@@ -657,9 +657,6 @@ namespace nupic
     void
     initInputs() const;
 
-    void
-    intialize();
-
 
     bool
     hasOutgoingLinks() const;

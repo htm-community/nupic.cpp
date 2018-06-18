@@ -129,7 +129,7 @@ void _prepareInput_sweepOff(const NUMPY_ARRAY * psInput,
                    int nHalfFilterDim,
                    const NUMPY_ARRAY * psBBox,
                    const NUMPY_ARRAY * psImageBox,
-                   float fOffImageFillValue) {
+                   float fOffImageFillValue) noexcept(false) {
   int i, j;
   int nFilterDim = nHalfFilterDim << 1;
 
@@ -381,7 +381,7 @@ void _prepareInput_constrained(const NUMPY_ARRAY * psInput,
                    const NUMPY_ARRAY * psBufferIn,
                    int nHalfFilterDim,
                    const NUMPY_ARRAY * psBBox,
-                   const NUMPY_ARRAY * psImageBox) {
+                   const NUMPY_ARRAY *psImageBox) noexcept(false) {
   int i, j;
 
   // Locate the start of input plane
@@ -563,7 +563,7 @@ void _doConvolution_alpha( const NUMPY_ARRAY * psBufferIn,
                           NORMALIZE_METHOD eNormalizeMethod, 
                           NORMALIZE_MODE eNormalizeMode,
                           unsigned int anStatPosGrand[],
-                          unsigned int anStatNegGrand[] ) {
+                          unsigned int anStatNegGrand[]) noexcept(false) {
   int i, j, jj;
   int nFilterIndex;
   int nResponse;
@@ -1236,7 +1236,7 @@ void _doConvolution_bbox( const NUMPY_ARRAY * psBufferIn,
                           NORMALIZE_METHOD eNormalizeMethod, 
                           NORMALIZE_MODE eNormalizeMode,
                           unsigned int anStatPosGrand[],
-                          unsigned int anStatNegGrand[] ) {
+                          unsigned int anStatNegGrand[]) noexcept(false) {
   int i, j, jj;
   int nFilterIndex;
   int nResponse;
@@ -1855,7 +1855,7 @@ void _computeGains(float fGain,
                    PHASE_MODE ePhaseMode,
                    PHASENORM_MODE ePhaseNormMode,
                    float & fGainPos, 
-                   float & fGainNeg) {
+                   float &fGainNeg) noexcept(false) {
   fGainPos = fGain;
   NTA_ASSERT(nStatPosGrand > 0);
   fGainPos /= float(nStatPosGrand);
@@ -1912,7 +1912,7 @@ void _postProcess( const NUMPY_ARRAY * psBufferIn,
                    const unsigned int anStatPosGrand[],
                    const unsigned int anStatNegGrand[],
                    const NUMPY_ARRAY * psPostProcLUT,
-                   float fPostProcScalar) {
+                   float fPostProcScalar) noexcept(false) {
   int i, j;
   int nFilterIndex;
   int nResponse;

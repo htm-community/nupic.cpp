@@ -58,9 +58,9 @@ include_directories(${Boost_INCLUDE_DIRS})
 message(STATUS "Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}")
 
 # zlib
-hunter_add_package(ZLIB)
-find_package(ZLIB CONFIG REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIRS})
+#hunter_add_package(ZLIB)
+#find_package(ZLIB CONFIG REQUIRED)
+#include_directories(${ZLIB_INCLUDE_DIRS})
 
 # yaml-cpps
 hunter_add_package(yaml-cpp)
@@ -226,8 +226,6 @@ set(ntypes_files
 set(os_files
     ${nupic_src}/os/Directory.cpp
     ${nupic_src}/os/Directory.hpp
-    ${nupic_src}/os/DynamicLibrary.cpp
-    ${nupic_src}/os/DynamicLibrary.hpp
     ${nupic_src}/os/Env.cpp
     ${nupic_src}/os/Env.hpp
     ${nupic_src}/os/FStream.cpp
@@ -318,7 +316,7 @@ target_compile_options(${lib_name} PUBLIC ${INTERNAL_CXX_FLAGS})
 
 #########################################################
 # Test
-# The tests were placed in a separate file to avoid clutting up this file.
+# The tests were placed in a separate file to avoid clutering up this file.
 include(NupicCoreTests.cmake)
 
 

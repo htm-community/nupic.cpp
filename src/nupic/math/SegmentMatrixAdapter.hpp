@@ -61,7 +61,7 @@ namespace nupic {
      */
     size_type nCells() const
     {
-      return segmentsForCell_.size();
+      return (size_type)segmentsForCell_.size();
     }
 
     /**
@@ -222,7 +222,7 @@ namespace nupic {
            cell != cells_end;
            ++cell, ++out)
       {
-        *out = segmentsForCell_[*cell].size();
+        *out = (size_type)segmentsForCell_[*cell].size();
       }
     }
 

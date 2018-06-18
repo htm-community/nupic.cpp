@@ -377,19 +377,47 @@ void VectorFile::saveVectors(ostream &out, Size nColumns, UInt32 fileFormat,
   out.flush();
 }
 
+/**************************** No longer supporting zipped files
 class AutoReleaseFile
 {
 public:
   void * file_;
-  AutoReleaseFile(const string &filename) : file_(ZLib::fopen(filename, "rb"))
+  AutoReleaseFile(const string &filename)
   {
+    file_ = ZLib::fopen(filename, "rb");
     if(!file_) throw runtime_error("Unable to open file '" + filename + "'.");
   }
-  ~AutoReleaseFile() { ::gzclose((gzFile)file_); file_ = nullptr; }
-  void read(void *out, int n)
+  ~AutoReleaseFile() 
+  { 
+    ::gzclose((gzFile)file_); 
+    file_ = nullptr; 
+  }
+  void read(void *out, size_t n)
   {
     int result = gzread((gzFile)file_, out, n);
     if(result < n) throw runtime_error("Failed to read requested bytes from file.");
+  }
+};
+**************************/
+class AutoReleaseFile {
+public:
+  FILE *file_;
+  AutoReleaseFile(const string &filename) {
+    if (Path::getExtension(filename) == ".zip")
+      NTA_THROW << "Reading ZIPed files is no longer supported. " << filename;
+
+    file_ = fopen(filename.c_str(), "rb");
+    if (!file_)
+      throw runtime_error("Unable to open file '" + filename + "'.");
+  }
+  ~AutoReleaseFile() {
+    fclose(file_);
+    file_ = nullptr;
+  }
+  void read(void *out, size_t n) {
+    size_t result = fread(out, 1,n,file_); // Read n bytes from the file.
+    if (result < n)
+      throw runtime_error("Failed to read requested bytes from file.");
   }
 };
 

@@ -27,6 +27,7 @@
 #include <nupic/ntypes/MemStream.hpp>
 #include <nupic/engine/Spec.hpp>
 #include <string.h> // strlen
+
 #include <yaml-cpp/yaml.h>
 
 #include <sstream>

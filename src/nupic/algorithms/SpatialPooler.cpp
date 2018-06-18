@@ -607,6 +607,8 @@ void SpatialPooler::compute(UInt inputArray[], bool learn,
   }
   else
   {
+    // There is a problem here. BoostedOverlaps is a vector<Real32>, overlaps_ is a vector<UInt32>
+    // so there is a type conversion happening during the .assign() and the compiler complains about it.
     boostedOverlaps_.assign(overlaps_.begin(), overlaps_.end());
   }
 

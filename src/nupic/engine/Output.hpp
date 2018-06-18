@@ -28,10 +28,10 @@
 #define NTA_OUTPUT_HPP
 
 #include <set>
+
 #include <yaml-cpp/yaml.h>
 
 #include <nupic/types/ptr_types.hpp>
-
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp> // temporary, while impl is in this file

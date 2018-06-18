@@ -93,7 +93,7 @@ namespace nupic
   getParameterT(Int32);
   getParameterT(UInt32);
   getParameterT(Int64);
-  getParameterT(UInt64)
+  getParameterT(UInt64);
   getParameterT(Real32);
   getParameterT(Real64);
   getParameterInternalT(Bool, bool);
@@ -114,7 +114,7 @@ namespace nupic
   setParameterT(Int32);
   setParameterT(UInt32);
   setParameterT(Int64);
-  setParameterT(UInt64)
+  setParameterT(UInt64);
   setParameterT(Real32);
   setParameterT(Real64);
   setParameterInternalT(Bool, bool);

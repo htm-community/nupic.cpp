@@ -30,7 +30,6 @@
 #include <string>
 #include <deque>
 
-#include <boost/circular_buffer.hpp>
 #include <yaml-cpp/yaml.h>
 
 #include <nupic/engine/Input.hpp> // needed for splitter map

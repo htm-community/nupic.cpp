@@ -42,6 +42,7 @@
 #include <nupic/math/Math.hpp>
 #include <nupic/math/Types.hpp>
 
+using namespace std::placeholders;
 namespace nupic {
 
   //--------------------------------------------------------------------------------
@@ -3903,10 +3904,10 @@ namespace nupic {
       return (int) count;
 
 #else
-      return std::count_if(begin, end, std::bind2nd(std::greater<nupic::Real32>(), threshold));
+      return std::count_if(begin, end, std::bind(std::greater<nupic::Real32>(), _1, threshold));
 #endif
     } else {
-      return std::count_if(begin, end, std::bind2nd(std::greater<nupic::Real32>(), threshold));
+      return std::count_if(begin, end, std::bind(std::greater<nupic::Real32>(), _1, threshold));
     }
   }
 
@@ -3926,8 +3927,7 @@ namespace nupic {
     NTA_ASSERT(begin <= end);
 
     return std::count_if(begin, end,
-                         std::bind2nd(std::greater_equal<nupic::Real32>(),
-                         threshold));
+       std::bind(std::greater_equal<nupic::Real32>(), _1, threshold));
   }
 
 
