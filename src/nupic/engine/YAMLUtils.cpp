@@ -55,28 +55,28 @@ static void _toScalar(const YAML::Node& node, boost::shared_ptr<Scalar>& s)
     NTA_THROW << "Internal error: attempting to convert YAML string to scalar of type Byte";
     break;
   case NTA_BasicType_UInt16:
-    s->value.uint16 = node.as<NTA_UInt16>(); 
+    s->value.uint16 = node.as<UInt16>(); 
     break;
   case NTA_BasicType_Int16:
-    s->value.int16 = node.as<NTA_Int16>();
+    s->value.int16 = node.as<Int16>();
     break;
   case NTA_BasicType_UInt32:
-    s->value.uint32 = node.as<NTA_UInt32>(); 
+    s->value.uint32 = node.as<UInt32>(); 
     break;
   case NTA_BasicType_Int32:
-    s->value.int32 = node.as<NTA_Int32>();
+    s->value.int32 = node.as<Int32>();
     break;
   case NTA_BasicType_UInt64:
-    s->value.uint64 = node.as<NTA_UInt64>();
+    s->value.uint64 = node.as<UInt64>();
     break;
   case NTA_BasicType_Int64:
-    s->value.int64 = node.as<NTA_Int64>();
+    s->value.int64 = node.as<Int64>();
     break;
   case NTA_BasicType_Real32:
-    s->value.real32 = node.as<NTA_Real32>();
+    s->value.real32 = node.as<Real32>();
     break;
   case NTA_BasicType_Real64:
-    s->value.real64 = node.as<NTA_Real64>();
+    s->value.real64 = node.as<Real64>();
     break;
   case NTA_BasicType_Bool:
     s->value.boolean = node.as<bool>();

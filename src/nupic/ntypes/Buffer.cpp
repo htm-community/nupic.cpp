@@ -38,7 +38,7 @@ namespace nupic
   //
   // -----------------------------------------
   
-  NTA_Size staticReadBufferGetSize(NTA_ReadBufferHandle handle)
+  Size staticReadBufferGetSize(NTA_ReadBufferHandle handle)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -46,7 +46,7 @@ namespace nupic
     return rb->getSize();
   }
 
-  const NTA_Byte * staticGetData(NTA_ReadBufferHandle handle)
+  const Byte * staticGetData(NTA_ReadBufferHandle handle)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -62,7 +62,7 @@ namespace nupic
     return rb->reset();
   }  
   
-  static NTA_Int32 staticReadByte(NTA_ReadBufferHandle handle, NTA_Byte * value)
+  static Int32 staticReadByte(NTA_ReadBufferHandle handle, Byte * value)
   {
     if (!handle || !value)
       return -1;
@@ -71,7 +71,7 @@ namespace nupic
     return rb->read(*value);
   }
 
-  NTA_Int32 staticReadByteArray(NTA_ReadBufferHandle handle, NTA_Byte * value, NTA_Size * size)
+  Int32 staticReadByteArray(NTA_ReadBufferHandle handle, Byte * value, Size * size)
   {
     if (!handle || !value || !size || *size <= 0)
       return -1;
@@ -81,11 +81,11 @@ namespace nupic
   }
 
 
-  NTA_Int32 staticReadString(NTA_ReadBufferHandle handle, 
-      NTA_Byte ** value, 
-      NTA_UInt32 * size,
-      NTA_Byte *(*fAlloc)(NTA_UInt32),
-      void (*fDealloc)(NTA_Byte *)
+  Int32 staticReadString(NTA_ReadBufferHandle handle, 
+      Byte ** value, 
+      UInt32 * size,
+      Byte *(*fAlloc)(UInt32),
+      void (*fDealloc)(Byte *)
     )
   {
     if (!handle || !value) {
@@ -97,7 +97,7 @@ namespace nupic
   }
 
 
-  static NTA_Int32 staticReadUInt32(NTA_ReadBufferHandle handle, NTA_UInt32 * value)
+  static Int32 staticReadUInt32(NTA_ReadBufferHandle handle, UInt32 * value)
   {
     if (!handle || !value)
       return -1;
@@ -106,7 +106,7 @@ namespace nupic
     return rb->read(*value);
   }
 
-  NTA_Int32 staticReadUInt32Array(NTA_ReadBufferHandle handle, NTA_UInt32 * value, NTA_Size size)
+  Int32 staticReadUInt32Array(NTA_ReadBufferHandle handle, UInt32 * value, Size size)
   {
     if (!handle || !value || size <= 0)
       return -1;
@@ -115,7 +115,7 @@ namespace nupic
     return rb->read(value, size);
   }
   
-  static NTA_Int32 staticReadInt32(NTA_ReadBufferHandle handle, NTA_Int32 * value)
+  static Int32 staticReadInt32(NTA_ReadBufferHandle handle, Int32 * value)
   {
     if (!handle || !value)
       return -1;
@@ -124,7 +124,7 @@ namespace nupic
     return rb->read(*value);
   }
 
-  NTA_Int32 staticReadInt32Array(NTA_ReadBufferHandle handle, NTA_Int32 * value, NTA_Size size)
+  Int32 staticReadInt32Array(NTA_ReadBufferHandle handle, Int32 * value, Size size)
   {
     if (!handle || !value || size <= 0)
       return -1;
@@ -133,7 +133,7 @@ namespace nupic
     return rb->read(value, size);
   }
   
-  static NTA_Int32 staticReadUInt64(NTA_ReadBufferHandle handle, NTA_UInt64 * value)
+  static Int32 staticReadUInt64(NTA_ReadBufferHandle handle, UInt64 * value)
   {
     if (!handle || !value)
       return -1;
@@ -142,7 +142,7 @@ namespace nupic
     return rb->read(*value);
   }
 
-  NTA_Int32 staticReadUInt64Array(NTA_ReadBufferHandle handle, NTA_UInt64 * value, NTA_Size size)
+  Int32 staticReadUInt64Array(NTA_ReadBufferHandle handle, UInt64 * value, Size size)
   {
     if (!handle || !value || size <= 0)
       return -1;
@@ -151,7 +151,7 @@ namespace nupic
     return rb->read(value, size);
   }
 
-  static NTA_Int32 staticReadInt64(NTA_ReadBufferHandle handle, NTA_Int64 * value)
+  static Int32 staticReadInt64(NTA_ReadBufferHandle handle, Int64 * value)
   {
     if (!handle || !value)
       return -1;
@@ -160,7 +160,7 @@ namespace nupic
     return rb->read(*value);
   }
   
-  NTA_Int32 staticReadInt64Array(NTA_ReadBufferHandle handle, NTA_Int64 * value, NTA_Size size)
+  Int32 staticReadInt64Array(NTA_ReadBufferHandle handle, Int64 * value, Size size)
   {
     if (!handle || !value || size <= 0)
       return -1;
@@ -169,7 +169,7 @@ namespace nupic
     return rb->read(value, size);
   }
 
-  static NTA_Int32 staticReadReal32(NTA_ReadBufferHandle handle, NTA_Real32 * value)
+  static Int32 staticReadReal32(NTA_ReadBufferHandle handle, Real32 * value)
   {
     if (!handle || !value)
       return -1;
@@ -178,7 +178,7 @@ namespace nupic
     return rb->read(*value);
   }
   
-  NTA_Int32 staticReadReal32Array(NTA_ReadBufferHandle handle, NTA_Real32 * value, NTA_Size size)
+  Int32 staticReadReal32Array(NTA_ReadBufferHandle handle, Real32 * value, Size size)
   {
     if (!handle || !value || size <= 0)
       return -1;
@@ -187,7 +187,7 @@ namespace nupic
     return rb->read(value, size);
   }
 
-  static NTA_Int32 staticReadReal64(NTA_ReadBufferHandle handle, NTA_Real64 * value)
+  static Int32 staticReadReal64(NTA_ReadBufferHandle handle, Real64 * value)
   {
     if (!handle || !value)
       return -1;
@@ -196,7 +196,7 @@ namespace nupic
     return rb->read(*value);
   }
   
-  NTA_Int32 staticReadReal64Array(NTA_ReadBufferHandle handle, NTA_Real64 * value, NTA_Size size)
+  Int32 staticReadReal64Array(NTA_ReadBufferHandle handle, Real64 * value, Size size)
   {
     if (!handle || !value || size <= 0)
       return -1;
@@ -421,12 +421,12 @@ namespace nupic
     return 0;
   }
 
-  typedef NTA_Byte *(*fp_alloc)(NTA_UInt32);
-  typedef void (*fp_dealloc)(NTA_Byte *);
+  typedef Byte *(*fp_alloc)(UInt32);
+  typedef void (*fp_dealloc)(Byte *);
 
   Int32 ReadBuffer::readString(
-      NTA_Byte * &value, 
-      NTA_UInt32 &size,
+      Byte * &value, 
+      UInt32 &size,
       fp_alloc fAlloc,
       fp_dealloc fDealloc
     ) const
@@ -463,7 +463,7 @@ namespace nupic
       if(result != 0) return result;
     }
     else {
-      value = const_cast<NTA_Byte *>(reinterpret_cast<const NTA_Byte *>(""));
+      value = const_cast<Byte *>(reinterpret_cast<const Byte *>(""));
     }
     return findWithLeadingWhitespace(*this, "</s>", 1);
   }
@@ -516,7 +516,7 @@ namespace nupic
   //    W R I T E   B U F F E R
   //
   // -----------------------------------------
-  NTA_Int32 staticWriteUInt32(NTA_WriteBufferHandle handle, NTA_UInt32 value)
+  Int32 staticWriteUInt32(NTA_WriteBufferHandle handle, UInt32 value)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -524,7 +524,7 @@ namespace nupic
     return wb->write(value);
   }
   
-  NTA_Int32 staticWriteUInt32Array(NTA_WriteBufferHandle handle, const NTA_UInt32 * value, NTA_Size size)
+  Int32 staticWriteUInt32Array(NTA_WriteBufferHandle handle, const UInt32 * value, Size size)
   {
     NTA_CHECK(handle != nullptr);
     NTA_CHECK(value != nullptr);
@@ -534,7 +534,7 @@ namespace nupic
     return wb->write(value, size);
   }
 
-  NTA_Int32 staticWriteInt32(NTA_WriteBufferHandle handle, NTA_Int32 value)
+  Int32 staticWriteInt32(NTA_WriteBufferHandle handle, Int32 value)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -542,7 +542,7 @@ namespace nupic
     return wb->write(value);
   }
 
-  NTA_Int32 staticWriteInt32Array(NTA_WriteBufferHandle handle, const NTA_Int32 * value, NTA_Size size)
+  Int32 staticWriteInt32Array(NTA_WriteBufferHandle handle, const Int32 * value, Size size)
   {
     NTA_CHECK(handle != nullptr);
     NTA_CHECK(value != nullptr);
@@ -552,25 +552,7 @@ namespace nupic
     return wb->write(value, size);
   }
 
-  NTA_Int32 staticWriteInt64(NTA_WriteBufferHandle handle, NTA_Int64 value)
-  {
-    NTA_CHECK(handle != nullptr);
-    
-    WriteBuffer * wb = reinterpret_cast<WriteBuffer *>(handle);
-    return wb->write(value);
-  }
-  
-  NTA_Int32 staticWriteInt64Array(NTA_WriteBufferHandle handle, const NTA_Int64 * value, NTA_Size size)
-  {
-    NTA_CHECK(handle != nullptr);
-    NTA_CHECK(value != nullptr);
-    NTA_CHECK(size > 0);
-    
-    WriteBuffer * wb = reinterpret_cast<WriteBuffer *>(handle);
-    return wb->write(value, size);
-  }
-
-  NTA_Int32 staticWriteUInt64(NTA_WriteBufferHandle handle, NTA_UInt64 value)
+  Int32 staticWriteInt64(NTA_WriteBufferHandle handle, Int64 value)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -578,7 +560,7 @@ namespace nupic
     return wb->write(value);
   }
   
-  NTA_Int32 staticWriteUInt64Array(NTA_WriteBufferHandle handle, const NTA_UInt64 * value, NTA_Size size)
+  Int32 staticWriteInt64Array(NTA_WriteBufferHandle handle, const Int64 * value, Size size)
   {
     NTA_CHECK(handle != nullptr);
     NTA_CHECK(value != nullptr);
@@ -588,7 +570,7 @@ namespace nupic
     return wb->write(value, size);
   }
 
-  NTA_Int32 staticWriteReal32(NTA_WriteBufferHandle handle, NTA_Real32 value)
+  Int32 staticWriteUInt64(NTA_WriteBufferHandle handle, UInt64 value)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -596,7 +578,7 @@ namespace nupic
     return wb->write(value);
   }
   
-  NTA_Int32 staticWriteReal32Array(NTA_WriteBufferHandle handle, const NTA_Real32 * value, NTA_Size size)
+  Int32 staticWriteUInt64Array(NTA_WriteBufferHandle handle, const UInt64 * value, Size size)
   {
     NTA_CHECK(handle != nullptr);
     NTA_CHECK(value != nullptr);
@@ -606,7 +588,25 @@ namespace nupic
     return wb->write(value, size);
   }
 
-  NTA_Int32 staticWriteReal64(NTA_WriteBufferHandle handle, NTA_Real64 value)
+  Int32 staticWriteReal32(NTA_WriteBufferHandle handle, Real32 value)
+  {
+    NTA_CHECK(handle != nullptr);
+    
+    WriteBuffer * wb = reinterpret_cast<WriteBuffer *>(handle);
+    return wb->write(value);
+  }
+  
+  Int32 staticWriteReal32Array(NTA_WriteBufferHandle handle, const Real32 * value, Size size)
+  {
+    NTA_CHECK(handle != nullptr);
+    NTA_CHECK(value != nullptr);
+    NTA_CHECK(size > 0);
+    
+    WriteBuffer * wb = reinterpret_cast<WriteBuffer *>(handle);
+    return wb->write(value, size);
+  }
+
+  Int32 staticWriteReal64(NTA_WriteBufferHandle handle, Real64 value)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -614,7 +614,7 @@ namespace nupic
     return wb->write(value);
   }
 
-  NTA_Int32 staticWriteReal64Array(NTA_WriteBufferHandle handle, const NTA_Real64 * value, NTA_Size size)
+  Int32 staticWriteReal64Array(NTA_WriteBufferHandle handle, const Real64 * value, Size size)
   {
     NTA_CHECK(handle != nullptr);
     NTA_CHECK(value != nullptr);
@@ -624,7 +624,7 @@ namespace nupic
     return wb->write(value, size);
   }
 
-  NTA_Int32 staticWriteByte(NTA_WriteBufferHandle handle, NTA_Byte value)
+  Int32 staticWriteByte(NTA_WriteBufferHandle handle, Byte value)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -632,7 +632,7 @@ namespace nupic
     return wb->write(value);
   }
 
-  NTA_Int32 staticWriteByteArray(NTA_WriteBufferHandle handle, const NTA_Byte * value, NTA_Size size)
+  Int32 staticWriteByteArray(NTA_WriteBufferHandle handle, const Byte * value, Size size)
   {
     NTA_CHECK(handle != nullptr);
     NTA_CHECK(value != nullptr);
@@ -642,7 +642,7 @@ namespace nupic
     return wb->write(value, size);
   }
 
-  NTA_Int32 staticWriteString(NTA_WriteBufferHandle handle, const NTA_Byte * value, NTA_Size size)
+  Int32 staticWriteString(NTA_WriteBufferHandle handle, const Byte * value, Size size)
   {
     NTA_CHECK(handle != nullptr);
     NTA_CHECK(value != nullptr);
@@ -659,7 +659,7 @@ namespace nupic
     return wb->getData();
   }
   
-  NTA_Size staticWriteBufferGetSize(NTA_WriteBufferHandle handle)
+  Size staticWriteBufferGetSize(NTA_WriteBufferHandle handle)
   {
     NTA_CHECK(handle != nullptr);
     
@@ -787,9 +787,9 @@ namespace nupic
     return writeT(value, size);
   }
 
-  NTA_Int32 WriteBuffer::writeString(const NTA_Byte *value, NTA_Size size)
+  Int32 WriteBuffer::writeString(const Byte *value, Size size)
   {
-    NTA_Int32 result = write("<s n=", 5);
+    Int32 result = write("<s n=", 5);
     if(result != 0) return result;
     result = writeT(size, nullptr);
     if(result != 0) return result;

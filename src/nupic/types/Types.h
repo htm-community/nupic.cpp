@@ -42,8 +42,12 @@
 #pragma warning( once : 4838 ) // narrowing conversions
 #endif
 
+
 /*---------------------------------------------------------------------- */
- 
+//// determine the bittness that this was compiled for.   (determines size of int, etc.)
+#if defined(NTA_OS_WINDOWS) && !defined(_WIN64)
+#define NTA_ARCH_32
+#endif
 /** 
  * Basic types enumeration
  */
@@ -122,184 +126,6 @@ typedef enum NTA_BasicType
 
   } NTA_BasicType;
 
-/**
- * @name Basic types
- *
- * @{
- */
-
-/**
- * Represents a 8-bit byte.
- */
-typedef char           NTA_Byte;
-
-/**
- * Represents lengths of arrays, strings and so on.
- */
-typedef size_t         NTA_Size;
-
-/**
- * Represents a 16-bit signed integer.
- */
-typedef short           NTA_Int16;
-
-/**
- * Represents a 16-bit unsigned integer.
- */
-typedef unsigned short  NTA_UInt16;
-  
-/**
- * Represents a 32-bit real number(a floating-point number).
- */
-typedef float          NTA_Real32;
-
-/**
- * Represents a 64-bit real number(a floating-point number).
- */
-typedef double         NTA_Real64;
-
-/**
- * Represents an opaque handle/pointer, same as `void *`
- */
-typedef void *         NTA_Handle;
-
-/**
-* Represents an opaque pointer, same as `uintptr_t`
-*/
-typedef uintptr_t      NTA_UIntPtr;
-
-
-#if defined(NTA_OS_WINDOWS)
-  #if defined(NTA_ARCH_32)
-    /**
-    * Represents a 32-bit signed integer.
-    */
-    typedef long                  NTA_Int32;
-    /**
-    * Represents a 32-bit unsigned integer.
-    */
-    typedef unsigned long         NTA_UInt32;
-    /**
-    * Represents a 64-bit signed integer.
-    */
-    typedef long long             NTA_Int64;
-    /**
-    * Represents a 64-bit unsigned integer.
-    */
-    typedef unsigned long long    NTA_UInt64;
-  #else // 64bit (LLP64 data models)
-    /**
-    * Represents a 32-bit signed integer.
-    */
-    typedef int                   NTA_Int32;
-    /**
-    * Represents a 32-bit unsigned integer.
-    */
-    typedef unsigned int          NTA_UInt32;
-    /**
-    * Represents a 64-bit signed integer.
-    */
-    typedef long long             NTA_Int64;
-    /**
-    * Represents a 64-bit unsigned integer.
-    */
-    typedef unsigned long long    NTA_UInt64;
-  #endif
-#else // *nix (linux, darwin, etc)
-  #if defined(NTA_ARCH_32)
-    /**
-     * Represents a 32-bit signed integer.
-     */
-    typedef  int                  NTA_Int32;
-    /**
-     * Represents a 32-bit unsigned integer.
-     */
-    typedef  unsigned int         NTA_UInt32;
-    /**
-     * Represents a 64-bit signed integer.
-     */
-    typedef  long long            NTA_Int64;
-    /**
-     * Represents a 64-bit unsigned integer.
-     */
-    typedef  unsigned long long   NTA_UInt64;
-  #else // 64bit
-    /**
-     * Represents a 32-bit signed integer.
-     */
-    typedef  int                  NTA_Int32;
-    /**
-     * Represents a 32-bit unsigned integer.
-     */
-    typedef  unsigned int         NTA_UInt32;
-    /**
-     * Represents a 64-bit signed integer.
-     */
-    typedef  long                 NTA_Int64;
-    /**
-     * Represents a 64-bit unsigned integer.
-     */
-    typedef  unsigned long        NTA_UInt64;
-  #endif
-#endif
-/**
- * @}
- */
-
-/**
- * @name Flexible types
- * 
- * The following are flexible types depending on `NTA_DOUBLE_PRECISION` and `NTA_BIG_INTEGER`.
- *
- * @{
- * 
- */
-
-#ifdef NTA_DOUBLE_PRECISION 
-  /**
-   * Represents a real number(a floating-point number).
-   *
-   * Same as NTA_Real64 if `NTA_DOUBLE_PRECISION` is defined, NTA_Real32 otherwise.
-   */
-  typedef NTA_Real64 NTA_Real;
-  #define NTA_REAL_TYPE_STRING "NTA_Real64"
-#else
-  /**
-   * Represents a real number(a floating-point number).
-   *
-   * Same as NTA_Real64 if `NTA_DOUBLE_PRECISION` is defined, NTA_Real32 otherwise.
-   */
-  typedef NTA_Real32 NTA_Real;
-  #define NTA_REAL_TYPE_STRING "NTA_Real32"
-#endif
-  
-#ifdef NTA_BIG_INTEGER
-  /**
-   * Represents a signed integer.
-   *
-   * Same as NTA_Int64 if `NTA_BIG_INTEGER` is defined, NTA_Int32 otherwise.
-   */
-  typedef  NTA_Int64  NTA_Int;
-  /**
-   * Represents a unsigned integer.
-   *
-   * Same as NTA_UInt64 if `NTA_BIG_INTEGER` is defined, NTA_UInt32 otherwise.
-   */
-  typedef  NTA_UInt64 NTA_UInt;
-#else
-  /**
-   * Represents a signed integer.
-   *
-   * Same as NTA_Int64 if `NTA_BIG_INTEGER` is defined, NTA_Int32 otherwise.
-   */
-  typedef  NTA_Int32  NTA_Int;
-  /**
-   * Represents a unsigned integer.
-   *
-   * Same as NTA_UInt64 if `NTA_BIG_INTEGER` is defined, NTA_UInt32 otherwise.
-   */
-  typedef  NTA_UInt32 NTA_UInt;
-#endif
 
 /**
  * @}

@@ -47,16 +47,16 @@ namespace nupic
 
 
     union {
-      NTA_Handle handle;
-      NTA_Byte byte;
-      NTA_Int16 int16; 
-      NTA_UInt16 uint16;
-      NTA_Int32 int32;
-      NTA_UInt32 uint32;
-      NTA_Int64 int64;
-      NTA_UInt64 uint64;
-      NTA_Real32 real32;
-      NTA_Real64 real64;
+      Handle handle;
+      Byte byte;
+      Int16 int16; 
+      UInt16 uint16;
+      Int32 int32;
+      UInt32 uint32;
+      Int64 int64;
+      UInt64 uint64;
+      Real32 real32;
+      Real64 real64;
       bool boolean;
     } value;
 

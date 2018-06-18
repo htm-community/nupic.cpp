@@ -33,7 +33,9 @@ namespace nupic
   // The supported operations are:
   // - isValid()
   // - getName()
-  // - getSize() and parse().
+  // - getSize()
+  // - parse()
+  // - convertArray
   //
   class BasicType
   {    

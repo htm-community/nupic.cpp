@@ -176,16 +176,16 @@ size_t BasicType::getSize(NTA_BasicType t)
 {
   static size_t basicTypeSizes[] = 
     {
-      sizeof(NTA_Byte),
-      sizeof(NTA_Int16),
-      sizeof(NTA_UInt16),
-      sizeof(NTA_Int32),
-      sizeof(NTA_UInt32), 
-      sizeof(NTA_Int64), 
-      sizeof(NTA_UInt64), 
-      sizeof(NTA_Real32),
-      sizeof(NTA_Real64),
-      sizeof(NTA_Handle),
+      sizeof(Byte),
+      sizeof(Int16),
+      sizeof(UInt16),
+      sizeof(Int32),
+      sizeof(UInt32), 
+      sizeof(Int64), 
+      sizeof(UInt64), 
+      sizeof(Real32),
+      sizeof(Real64),
+      sizeof(Handle),
       sizeof(bool),
     };
   

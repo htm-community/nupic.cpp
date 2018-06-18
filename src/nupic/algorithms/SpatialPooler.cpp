@@ -28,6 +28,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <iterator>
 
 #include <nupic/algorithms/SpatialPooler.hpp>
 #include <nupic/math/Math.hpp>
@@ -609,7 +610,13 @@ void SpatialPooler::compute(UInt inputArray[], bool learn,
   {
     // There is a problem here. BoostedOverlaps is a vector<Real32>, overlaps_ is a vector<UInt32>
     // so there is a type conversion happening during the .assign() and the compiler complains about it.
-    boostedOverlaps_.assign(overlaps_.begin(), overlaps_.end());
+    // The solution is to use a loop so that there is a proper type conversion.
+    //boostedOverlaps_.assign(overlaps_.begin(), overlaps_.end());
+    boostedOverlaps_.clear();
+    vector<UInt32>::iterator itr;
+    for (itr = overlaps_.begin(); itr != overlaps_.end(); itr++) {
+      boostedOverlaps_.push_back((Real)*itr);
+    }
   }
 
   inhibitColumns_(boostedOverlaps_, activeColumns_);

@@ -36,9 +36,11 @@
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>
 
-typedef NTA_UInt64 (*RandomSeedFuncPtr)();
 
 namespace nupic {
+
+  typedef UInt64 (*RandomSeedFuncPtr)();
+
   /**
    * @b Responsibility
    * Provides standardized random number generation for the NuPIC Runtime Engine.
@@ -191,7 +193,7 @@ namespace nupic {
     friend class RandomTest;
     friend std::ostream& operator<<(std::ostream&, const Random&);
     friend std::istream& operator>>(std::istream&, Random&);
-    friend NTA_UInt64 GetRandomSeed();
+    friend UInt64 GetRandomSeed();
 
   };
 
@@ -205,7 +207,7 @@ namespace nupic {
   // set to this function. The plugin framework can override this
   // behavior by explicitly setting the seeder to the RandomSeeder
   // function provided by the application.
-  NTA_UInt64 GetRandomSeed();
+  UInt64 GetRandomSeed();
 
 
 } // namespace nupic

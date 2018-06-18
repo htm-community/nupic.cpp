@@ -57,11 +57,11 @@ VectorFileSensor::VectorFileSensor(const ValueMap& params, Region* region) :
   scalingMode_("none"),
   recentFile_("")
 {
-  activeOutputCount_ = params.getScalarT<NTA_UInt32>("activeOutputCount", 0);
-  hasCategoryOut_ = (params.getScalarT<NTA_UInt32>("hasCategoryOut", 0) == 1);
-  hasResetOut_ = (params.getScalarT<NTA_UInt32>("hasResetOut", 0) == 1);
+  activeOutputCount_ = params.getScalarT<UInt32>("activeOutputCount", 0);
+  hasCategoryOut_ = (params.getScalarT<UInt32>("hasCategoryOut", 0) == 1);
+  hasResetOut_ = (params.getScalarT<UInt32>("hasResetOut", 0) == 1);
   filename_ = params.getString("inputFile","");
-  repeatCount_ = params.getScalarT<NTA_UInt32>("repeatCount", 1);
+  repeatCount_ = params.getScalarT<UInt32>("repeatCount", 1);
 }
 
 VectorFileSensor::VectorFileSensor(BundleIO& bundle, Region* region) :
@@ -236,7 +236,7 @@ std::string VectorFileSensor::executeCommand(const std::vector<std::string>& arg
 
   else if (command == "dump")
   {
-    nupic::Byte message[256];
+    char message[256];
     Size n = ::sprintf(message,
       "VectorFileSensor isLabeled = %d repeatCount = %d vectorCount = %d iterations = %d\n",
       vectorFile_.isLabeled(), (int) repeatCount_, (int) vectorFile_.vectorCount(), (int) iterations_);
@@ -452,7 +452,7 @@ void VectorFileSensor::seek(int n)
   iterations_ = 0;
   curVector_ = n - 1;
   //circular-buffer, reached one end of vector/line, continue fro the other
-  if (n - 1 <= 0) curVector_ = static_cast<NTA_UInt32>((NTA_Size)vectorFile_.vectorCount() - 1);
+  if (n - 1 <= 0) curVector_ = static_cast<UInt32>((Size)vectorFile_.vectorCount() - 1);
 }
 
 size_t VectorFileSensor::getNodeOutputElementCount(const std::string& outputName)

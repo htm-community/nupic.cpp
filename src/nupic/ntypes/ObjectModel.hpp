@@ -134,11 +134,11 @@ namespace nupic
      *                 cleanup allocated memory.
      * @return         0 for success, -1 for failure
      */
-    virtual NTA_Int32 readString(
-        NTA_Byte * &value, 
-        NTA_UInt32 &size,
-        NTA_Byte *(fAlloc)(NTA_UInt32 size),
-        void (fDealloc)(NTA_Byte *)
+    virtual Int32 readString(
+        Byte * &value, 
+        UInt32 &size,
+        Byte *(fAlloc)(UInt32 size),
+        void (fDealloc)(Byte *)
       ) const = 0;
 
     /**
@@ -1020,7 +1020,7 @@ namespace nupic
     *
     * @retval [IInput *] flattened node input object
     */ 
-    virtual IInput * getInput(const NTA_Byte* varName) = 0;
+    virtual IInput * getInput(const char* varName) = 0;
 
    /**
     * Return an object used to access the output of a node. 
@@ -1032,7 +1032,7 @@ namespace nupic
     *
     * @retval [IOutput *] node output object
     */ 
-    virtual IOutput * getOutput(const NTA_Byte* varName) = 0;
+    virtual IOutput * getOutput(const char* varName) = 0;
 
 
    /**
@@ -1084,7 +1084,7 @@ namespace nupic
     *
     * @retval [NTA_Size] number of baby nodes in this multi-node. 
     */      
-    virtual NTA_Size getMNNodeCount() = 0;
+    virtual Size getMNNodeCount() = 0;
     
    /**
     * Return the Multi-node input list for a given input variable in a multi-node
@@ -1097,7 +1097,7 @@ namespace nupic
     *
     * @retval [NTA_IndexRangeList *] array of NTA_IndexRangeLists, one for each baby node
     */      
-    virtual const NTA_IndexRangeList * getMNInputLists(const NTA_Byte* varName) = 0;
+    virtual const NTA_IndexRangeList * getMNInputLists(const char* varName) = 0;
     
    /**
     * Return the Multi-node output sizes for a given output variable of a multi-node
@@ -1107,7 +1107,7 @@ namespace nupic
     *
     * @retval [IReadBuffer &] serialized SparseMatrix01
     */      
-    virtual const NTA_Size * getMNOutputSizes(const NTA_Byte* varName) = 0;
+    virtual const Size * getMNOutputSizes(const char* varName) = 0;
   };
 
 
@@ -1298,16 +1298,16 @@ namespace nupic
 //    virtual const NTA_Size * getOutputSizes(const NTA_Byte* varName) = 0;
 //  };
 
-inline NTA_Byte *_ReadString_alloc(NTA_UInt32 size)
-  { return new NTA_Byte[size]; }
-inline void _ReadString_dealloc(NTA_Byte *p)
+inline Byte *_ReadString_alloc(UInt32 size)
+  { return new Byte[size]; }
+inline void _ReadString_dealloc(Byte *p)
   { delete[] p; }
 
 inline std::string ReadStringFromBuffer(const IReadBuffer &buf)
 {
-  NTA_Byte *value = nullptr;
-  NTA_UInt32 size = 0;
-  NTA_Int32 result = buf.readString(value, size, 
+  Byte *value = nullptr;
+  UInt32 size = 0;
+  Int32 result = buf.readString(value, size, 
       _ReadString_alloc, _ReadString_dealloc); 
   if(result != 0)
     throw std::runtime_error("Failed to read string from stream.");

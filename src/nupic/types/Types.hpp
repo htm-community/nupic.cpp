@@ -42,97 +42,84 @@ namespace nupic
   /**
    * Represents a 8-bit byte.
    */
-  typedef NTA_Byte            Byte;
+  typedef char            Byte;
 
   /**
-   * Represents a 16-bit signed integer.
+   * Represents a 16-bit signed/unsigned integer.
    */
-  typedef NTA_Int16           Int16;
+  typedef short           Int16;
+  typedef unsigned short  UInt16;
 
   /**
-   * Represents a 16-bit unsigned integer.
+   * Represents a 32-bit signed/unsigned integer.
    */
-  typedef NTA_UInt16          UInt16;
+#if defined(NTA_OS_WINDOWS) && defined(NTA_ARCH_32)
+  // (LP32 data models)
+  typedef long Int32;
+  typedef unsigned long UInt32;
+#else  
+   // (LLP64 data models)
+  typedef int Int32;
+  typedef unsigned int UInt32;
+#endif
 
   /**
-   * Represents a 32-bit signed integer.
+   * Represents a 64-bit signed/unsigned integer.
    */
-  typedef NTA_Int32           Int32;
-
-  /**
-   * Represents a 32-bit unsigned integer.
-   */
-  typedef NTA_UInt32          UInt32;
-
-  /**
-   * Represents a 64-bit signed integer.
-   */
-  typedef NTA_Int64           Int64;
-
-  /**
-   * Represents a 64-bit unsigned integer.
-   */
-  typedef NTA_UInt64          UInt64;
-
+  typedef long long           Int64;
+  typedef unsigned long long  UInt64;
 
   /**
    * Represents a 32-bit real number(a floating-point number).
    */
-  typedef NTA_Real32          Real32;
+
+  typedef float          Real32;
 
   /**
    * Represents a 64-bit real number(a floating-point number).
    */
-  typedef NTA_Real64          Real64;
+  typedef double          Real64;
 
   /**
    * Represents an opaque handle/pointer, same as `void *`
    */
-  typedef NTA_Handle          Handle;
+  typedef void *       Handle;
 
   /**
-  * Represents an opaque pointer, same as `uintptr_t`
+  * Represents an opaque pointer, 
   */
-  typedef NTA_UIntPtr         UIntPtr;
+  typedef uintptr_t         UIntPtr;
 
-  /**
-   * @}
-   */
 
+#ifdef NTA_DOUBLE_PRECISION
   /**
-   * @name Flexible types
-   * 
-   * The following are flexible types depending on `NTA_DOUBLE_PRECISION` and `NTA_BIG_INTEGER`.
-   *
-   * @{
-   * 
+   * Real - Represents a real number(a floating-point number).
+   * Same as Real64 if `NTA_DOUBLE_PRECISION` is defined, else Real32
    */
+  typedef Real64 Real;
+#define NTA_REAL_TYPE_STRING "Real64"
+#else
+  typedef Real32 Real;
+#define NTA_REAL_TYPE_STRING "Real32"
+#endif
+
+#ifdef NTA_BIG_INTEGER
+  /**
+   * UInt, Int Represents a signed/Unsigned integer.
+   * Same as Int64 if `NTA_BIG_INTEGER` is defined, Int32 otherwise.
+   */
+  typedef Int64 Int;
+  typedef UInt64 UInt;
+#else
+  typedef Int32 Int;
+  typedef UInt32 UInt;
+#endif
   
-  /**
-   * Represents a real number(a floating-point number).
-   *
-   * Same as nupic::Real64 if `NTA_DOUBLE_PRECISION` is defined, nupic::Real32 otherwise.
-   */
-  typedef NTA_Real Real;
-
-  /**
-   * Represents a signed integer.
-   *
-   * Same as nupic::Int64 if `NTA_BIG_INTEGER` is defined, nupic::Int32 otherwise.
-   */
-  typedef NTA_Int  Int;
-
-  /**
-   * Represents a unsigned integer.
-   *
-   * Same as nupic::UInt64 if `NTA_BIG_INTEGER` is defined, nupic::UInt32 otherwise.
-   */
-  typedef NTA_UInt UInt;
 
   /**
    * Represents lengths of arrays, strings and so on.
    */
-  typedef NTA_Size Size;
+  typedef size_t Size;
 
   /**
    * @}

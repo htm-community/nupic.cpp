@@ -41,7 +41,7 @@ const UInt32 Random::MAX32 = (UInt32)((Int32)(-1));
 const UInt64 Random::MAX64 = (UInt64)((Int64)(-1));
 
 
-static NTA_UInt64 badSeeder()
+static UInt64 badSeeder()
 {
   NTA_THROW << "Logic error in initialization of Random subsystem.";
   return 0;
@@ -387,11 +387,11 @@ namespace nupic
   // helper function for seeding RNGs across the plugin barrier
   // Unless there is a logic error, should not be called if
   // the Random singleton has not been initialized.
-  NTA_UInt64 GetRandomSeed()
+  UInt64 GetRandomSeed()
   {
     Random* r = nupic::Random::theInstanceP_;
     NTA_CHECK(r != nullptr);
-    NTA_UInt64 result = r->getUInt64();
+    UInt64 result = r->getUInt64();
     return result;
   }
 

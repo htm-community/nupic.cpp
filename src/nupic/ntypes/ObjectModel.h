@@ -41,6 +41,9 @@ extern "C" {
 
 #include <nupic/types/Types.h>
 
+namespace nupic 
+{
+
 /*----------------------------------------------------------------------
  */
 
@@ -99,29 +102,29 @@ typedef struct NTA_ReadBuffer
 {
   /* functions */
   void (*reset)(NTA_ReadBufferHandle handle);
-  NTA_Size (*getSize)(NTA_ReadBufferHandle handle);
-  const NTA_Byte * (*getData)(NTA_ReadBufferHandle handle);
-  NTA_Int32 (*readByte)(NTA_ReadBufferHandle handle, NTA_Byte * value);
-  NTA_Int32 (*readByteArray)(NTA_ReadBufferHandle handle, NTA_Byte * value, NTA_Size * size);
-  NTA_Int32 (*readAsString)(NTA_ReadBufferHandle handle, 
-      NTA_Byte ** value, 
-      NTA_UInt32 * size,
-      NTA_Byte *(*fAlloc)(NTA_UInt32),
-      void (*fDealloc)(NTA_Byte *)
+  Size (*getSize)(NTA_ReadBufferHandle handle);
+  const Byte * (*getData)(NTA_ReadBufferHandle handle);
+  Int32 (*readByte)(NTA_ReadBufferHandle handle, Byte * value);
+  Int32 (*readByteArray)(NTA_ReadBufferHandle handle, Byte * value, Size * size);
+  Int32 (*readAsString)(NTA_ReadBufferHandle handle, 
+      Byte ** value, 
+      UInt32 * size,
+      Byte *(*fAlloc)(UInt32),
+      void (*fDealloc)(Byte *)
     );
     
-  NTA_Int32 (*readInt32)(NTA_ReadBufferHandle handle, NTA_Int32 * value);
-  NTA_Int32 (*readInt32Array)(NTA_ReadBufferHandle handle, NTA_Int32 * value, NTA_Size size);
-  NTA_Int32 (*readUInt32)(NTA_ReadBufferHandle handle, NTA_UInt32 * value);
-  NTA_Int32 (*readUInt32Array)(NTA_ReadBufferHandle handle, NTA_UInt32 * value, NTA_Size size);
-  NTA_Int32 (*readInt64)(NTA_ReadBufferHandle handle, NTA_Int64 * value);
-  NTA_Int32 (*readInt64Array)(NTA_ReadBufferHandle handle, NTA_Int64 * value, NTA_Size size);
-  NTA_Int32 (*readUInt64)(NTA_ReadBufferHandle handle, NTA_UInt64 * value);
-  NTA_Int32 (*readUInt64Array)(NTA_ReadBufferHandle handle, NTA_UInt64 * value, NTA_Size size);
-  NTA_Int32 (*readReal32)(NTA_ReadBufferHandle handle, NTA_Real32 * value);
-  NTA_Int32 (*readReal32Array)(NTA_ReadBufferHandle handle, NTA_Real32 * value, NTA_Size size);   
-  NTA_Int32 (*readReal64)(NTA_ReadBufferHandle handle, NTA_Real64 * value);
-  NTA_Int32 (*readReal64Array)(NTA_ReadBufferHandle handle, NTA_Real64 * value, NTA_Size size);   
+  Int32 (*readInt32)(NTA_ReadBufferHandle handle, Int32 * value);
+  Int32 (*readInt32Array)(NTA_ReadBufferHandle handle, Int32 * value, Size size);
+  Int32 (*readUInt32)(NTA_ReadBufferHandle handle, UInt32 * value);
+  Int32 (*readUInt32Array)(NTA_ReadBufferHandle handle, UInt32 * value, Size size);
+  Int32 (*readInt64)(NTA_ReadBufferHandle handle, Int64 * value);
+  Int32 (*readInt64Array)(NTA_ReadBufferHandle handle, Int64 * value, Size size);
+  Int32 (*readUInt64)(NTA_ReadBufferHandle handle, UInt64 * value);
+  Int32 (*readUInt64Array)(NTA_ReadBufferHandle handle, UInt64 * value, Size size);
+  Int32 (*readReal32)(NTA_ReadBufferHandle handle, Real32 * value);
+  Int32 (*readReal32Array)(NTA_ReadBufferHandle handle, Real32 * value, Size size);   
+  Int32 (*readReal64)(NTA_ReadBufferHandle handle, Real64 * value);
+  Int32 (*readReal64Array)(NTA_ReadBufferHandle handle, Real64 * value, Size size);   
   
   /* data members */
   NTA_ReadBufferHandle handle;
@@ -166,23 +169,23 @@ typedef struct _NTA_WriteBufferHandle { char c; } * NTA_WriteBufferHandle;
 typedef struct NTA_WriteBuffer
 {
   /* functions */
-  NTA_Size (*getSize)(NTA_WriteBufferHandle handle);
-  const NTA_Byte * (*getData)(NTA_WriteBufferHandle handle);
-  NTA_Int32 (*writeByte)(NTA_WriteBufferHandle handle, NTA_Byte value);
-  NTA_Int32 (*writeByteArray)(NTA_WriteBufferHandle handle, const NTA_Byte * value, NTA_Size size);
-  NTA_Int32 (*writeAsString)(NTA_WriteBufferHandle handle, const NTA_Byte * value, NTA_Size size);
-  NTA_Int32 (*writeInt32)(NTA_WriteBufferHandle handle, NTA_Int32 value);
-  NTA_Int32 (*writeInt32Array)(NTA_WriteBufferHandle handle, const NTA_Int32 * value, NTA_Size size);
-  NTA_Int32 (*writeUInt32)(NTA_WriteBufferHandle handle, NTA_UInt32 value);
-  NTA_Int32 (*writeUInt32Array)(NTA_WriteBufferHandle handle, const NTA_UInt32 * value, NTA_Size size);
-  NTA_Int32 (*writeInt64)(NTA_WriteBufferHandle handle, NTA_Int64 value);
-  NTA_Int32 (*writeInt64Array)(NTA_WriteBufferHandle handle, const NTA_Int64 * value, NTA_Size size);
-  NTA_Int32 (*writeUInt64)(NTA_WriteBufferHandle handle, NTA_UInt64 value);
-  NTA_Int32 (*writeUInt64Array)(NTA_WriteBufferHandle handle, const NTA_UInt64 * value, NTA_Size size);
-  NTA_Int32 (*writeReal32)(NTA_WriteBufferHandle handle, NTA_Real32 value);
-  NTA_Int32 (*writeReal32Array)(NTA_WriteBufferHandle handle, const NTA_Real32 * value, NTA_Size size);   
-  NTA_Int32 (*writeReal64)(NTA_WriteBufferHandle handle, NTA_Real64 value);
-  NTA_Int32 (*writeReal64Array)(NTA_WriteBufferHandle handle, const NTA_Real64 * value, NTA_Size size); 
+  Size (*getSize)(NTA_WriteBufferHandle handle);
+  const Byte * (*getData)(NTA_WriteBufferHandle handle);
+  Int32 (*writeByte)(NTA_WriteBufferHandle handle, Byte value);
+  Int32 (*writeByteArray)(NTA_WriteBufferHandle handle, const Byte * value, Size size);
+  Int32 (*writeAsString)(NTA_WriteBufferHandle handle, const Byte * value, Size size);
+  Int32 (*writeInt32)(NTA_WriteBufferHandle handle, Int32 value);
+  Int32 (*writeInt32Array)(NTA_WriteBufferHandle handle, const Int32 * value, Size size);
+  Int32 (*writeUInt32)(NTA_WriteBufferHandle handle, UInt32 value);
+  Int32 (*writeUInt32Array)(NTA_WriteBufferHandle handle, const UInt32 * value, Size size);
+  Int32 (*writeInt64)(NTA_WriteBufferHandle handle, Int64 value);
+  Int32 (*writeInt64Array)(NTA_WriteBufferHandle handle, const Int64 * value, Size size);
+  Int32 (*writeUInt64)(NTA_WriteBufferHandle handle, UInt64 value);
+  Int32 (*writeUInt64Array)(NTA_WriteBufferHandle handle, const UInt64 * value, Size size);
+  Int32 (*writeReal32)(NTA_WriteBufferHandle handle, Real32 value);
+  Int32 (*writeReal32Array)(NTA_WriteBufferHandle handle, const Real32 * value, Size size);   
+  Int32 (*writeReal64)(NTA_WriteBufferHandle handle, Real64 value);
+  Int32 (*writeReal64Array)(NTA_WriteBufferHandle handle, const Real64 * value, Size size); 
    
   /* data members */
   NTA_WriteBufferHandle handle;
@@ -205,10 +208,10 @@ typedef struct _NTA_InputRangeHandle { char c; } * NTA_InputRangeHandle;
 typedef struct NTA_InputRange
 {
   /* functions */
-  const NTA_Byte * (*begin)(NTA_InputRangeHandle handle);
-  const NTA_Byte * (*end)(NTA_InputRangeHandle handle);
-  NTA_Size (*getElementCount)(NTA_InputRangeHandle handle);
-  NTA_Size (*getElementSize)(NTA_InputRangeHandle handle);
+  const Byte * (*begin)(NTA_InputRangeHandle handle);
+  const Byte * (*end)(NTA_InputRangeHandle handle);
+  Size (*getElementCount)(NTA_InputRangeHandle handle);
+  Size (*getElementSize)(NTA_InputRangeHandle handle);
 
   /* data members */
   NTA_InputRangeHandle handle;
@@ -234,7 +237,7 @@ typedef struct NTA_InputRangeMapEntry
   const NTA_InputRange * (*next)(NTA_InputRangeMapEntryHandle handle);
 
   /* data members */
-  const NTA_Byte * name;
+  const char* name;
   NTA_InputRangeMapEntryHandle handle;
    
 } NTA_InputRangeMapEntry;
@@ -256,7 +259,7 @@ typedef struct NTA_InputRangeMap
   /* functions */
   void (*reset)(NTA_InputRangeMapHandle handle);
   const NTA_InputRangeMapEntry * (*next)(NTA_InputRangeMapHandle handle);
-  const NTA_InputRangeMapEntry * (*lookup)(NTA_InputRangeMapHandle handle, const NTA_Byte * name);
+  const NTA_InputRangeMapEntry * (*lookup)(NTA_InputRangeMapHandle handle, const char* name);
 
   /* data members */
   NTA_InputRangeMapHandle handle;
@@ -275,8 +278,8 @@ typedef struct NTA_InputRangeMap
 typedef struct NTA_IndexRange
 {
   /* data members */
-  NTA_UInt32       begin;   // begin offset
-  NTA_UInt32       size;    // number of elements
+  UInt32       begin;   // begin offset
+  UInt32       size;    // number of elements
    
 } NTA_IndexRange;
 
@@ -293,8 +296,8 @@ typedef struct NTA_IndexRange
 typedef struct NTA_IndexRangeList
 {
   /* data members */
-  NTA_Size          rangeCount;   // number of elements in the ranges array 
-  NTA_IndexRange *  ranges;       // array of rangeCount NTA_IndexRange's
+  Size          rangeCount;   // number of elements in the ranges array 
+  NTA_IndexRange*  ranges;       // array of rangeCount NTA_IndexRange's
    
 } NTA_IndexRangeList;
 
@@ -314,10 +317,10 @@ typedef struct _NTA_OutputRangeHandle { char c; } * NTA_OutputRangeHandle;
 typedef struct NTA_OutputRange
 {
   /* functions */
-  NTA_Byte * (*begin)(NTA_OutputRangeHandle handle);
-  NTA_Byte * (*end)(NTA_OutputRangeHandle handle);
-  NTA_Size (*getElementCount)(NTA_OutputRangeHandle handle);
-  NTA_Size (*getElementSize)(NTA_OutputRangeHandle handle);
+  Byte* (*begin)(NTA_OutputRangeHandle handle);
+  Byte* (*end)(NTA_OutputRangeHandle handle);
+  Size (*getElementCount)(NTA_OutputRangeHandle handle);
+  Size (*getElementSize)(NTA_OutputRangeHandle handle);
 
   /* data memebers */
   NTA_OutputRangeHandle handle;
@@ -335,7 +338,7 @@ typedef struct NTA_OutputRange
  */
 typedef struct NTA_OutputRangeMapEntry
 {
-  const NTA_Byte * name;
+  const char* name;
   NTA_OutputRange * range;
    
 } NTA_OutputRangeMapEntry;
@@ -357,7 +360,7 @@ typedef struct NTA_OutputRangeMap
   /* functions */
   void (*reset)(NTA_OutputRangeMapHandle handle);
   NTA_OutputRangeMapEntry * (*next)(NTA_OutputRangeMapHandle handle);
-  NTA_OutputRange * (*lookup)(NTA_OutputRangeMapHandle handle, const NTA_Byte * name);
+  NTA_OutputRange * (*lookup)(NTA_OutputRangeMapHandle handle, const char* name);
 
   /* data members */
   NTA_OutputRangeMapHandle handle;
@@ -376,7 +379,7 @@ typedef struct NTA_OutputRangeMap
  */
 typedef struct NTA_ParameterMapEntry
 {
-  const NTA_Byte * name;
+  const char* name;
   const NTA_ReadBuffer * value;
    
 } NTA_ParameterMapEntry;
@@ -398,7 +401,7 @@ typedef struct NTA_ParameterMap
   /* functions */
   void (*reset)(NTA_ParameterMapHandle handle);
   const NTA_ParameterMapEntry * (*next)(NTA_ParameterMapHandle handle);
-  const NTA_ReadBuffer * (*lookup)(NTA_ParameterMapHandle handle, const NTA_Byte * name);
+  const NTA_ReadBuffer * (*lookup)(NTA_ParameterMapHandle handle, const char* name);
 
   /* data members */
   NTA_ParameterMapHandle handle;
@@ -418,14 +421,13 @@ typedef struct _NTA_InputHandle { char c; } * NTA_InputHandle;
 typedef struct NTA_Input
 {
   /* functions */
-  const NTA_Byte * (*begin)(NTA_InputHandle handle, NTA_Int32 nodeIdx, 
-                            const NTA_Byte* sentinelP);
-  const NTA_Byte * (*end)(NTA_InputHandle handle, NTA_Int32 nodeIdx);
-  NTA_Size (*getElementCount)(NTA_InputHandle handle, NTA_Int32 nodeIdx);
-  NTA_Size (*getElementSize)(NTA_InputHandle handle);
+  const Byte * (*begin)(NTA_InputHandle handle, Int32 nodeIdx,  const Byte* sentinelP);
+  const Byte * (*end)(NTA_InputHandle handle, Int32 nodeIdx);
+  Size (*getElementCount)(NTA_InputHandle handle, Int32 nodeIdx);
+  Size (*getElementSize)(NTA_InputHandle handle);
   
-  NTA_Size * (*getLinkBoundaries)(NTA_InputHandle handle, NTA_Int32 nodeIdx);
-  NTA_Size (*getLinkCount)(NTA_InputHandle handle, NTA_Int32 nodeIdx);
+  Size * (*getLinkBoundaries)(NTA_InputHandle handle, Int32 nodeIdx);
+  Size (*getLinkCount)(NTA_InputHandle handle, Int32 nodeIdx);
 
   /* data members */
   NTA_InputHandle handle;
@@ -445,10 +447,10 @@ typedef struct _NTA_OutputHandle { char c; } * NTA_OutputHandle;
 typedef struct NTA_Output
 {
   /* functions */
-  NTA_Byte * (*begin)(NTA_OutputHandle handle, NTA_Int32 nodeIdx);
-  NTA_Byte * (*end)(NTA_OutputHandle handle, NTA_Int32 nodeIdx);
-  NTA_Size (*getElementCount)(NTA_OutputHandle handle, NTA_Int32 nodeIdx);
-  NTA_Size (*getElementSize)(NTA_OutputHandle handle);
+  Byte * (*begin)(NTA_OutputHandle handle, Int32 nodeIdx);
+  Byte * (*end)(NTA_OutputHandle handle, Int32 nodeIdx);
+  Size (*getElementCount)(NTA_OutputHandle handle, Int32 nodeIdx);
+  Size (*getElementSize)(NTA_OutputHandle handle);
   
   /* data members */
   NTA_OutputHandle handle;
@@ -470,18 +472,18 @@ typedef struct _NTA_NodeInfoHandle { char c; } * NTA_NodeInfoHandle;
 typedef struct _NTA_NodeInfo
 {
   /* functions */
-  NTA_UInt64 (*getID)(NTA_NodeInfoHandle handle);
-  const NTA_Byte * (*getType)(NTA_NodeInfoHandle handle);
+  UInt64 (*getID)(NTA_NodeInfoHandle handle);
+  const Byte * (*getType)(NTA_NodeInfoHandle handle);
   NTA_LogLevel (*getLogLevel)(NTA_NodeInfoHandle handle);
-  NTA_Input * (*getInput)(NTA_NodeInfoHandle handle, const NTA_Byte* varName);
-  NTA_Output * (*getOutput)(NTA_NodeInfoHandle handle, const NTA_Byte* varName);
+  NTA_Input * (*getInput)(NTA_NodeInfoHandle handle, const char* varName);
+  NTA_Output * (*getOutput)(NTA_NodeInfoHandle handle, const char* varName);
   NTA_InputRangeMap * (*getInputs)(NTA_NodeInfoHandle handle);
   NTA_OutputRangeMap * (*getOutputs)(NTA_NodeInfoHandle handle);
   NTA_ParameterMap * (*getParameters)(NTA_NodeInfoHandle handle);
   NTA_ReadBuffer * (*getState)(NTA_NodeInfoHandle handle);
-  NTA_Size (*getMNNodeCount)(NTA_NodeInfoHandle handle);
-  const NTA_IndexRangeList * (*getMNInputLists)(NTA_NodeInfoHandle handle, const NTA_Byte* varName);
-  const NTA_Size * (*getMNOutputSizes)(NTA_NodeInfoHandle handle, const NTA_Byte* varName);
+  Size (*getMNNodeCount)(NTA_NodeInfoHandle handle);
+  const NTA_IndexRangeList * (*getMNInputLists)(NTA_NodeInfoHandle handle, const char* varName);
+  const Size * (*getMNOutputSizes)(NTA_NodeInfoHandle handle, const char* varName);
 
   /* data members */
   NTA_NodeInfoHandle handle;
@@ -504,9 +506,9 @@ typedef struct _NTA_MultiNodeInfo
 {
   /* functions */
 
-  NTA_Size (*getNodeCount)(NTA_MultiNodeInfoHandle handle);
-  const NTA_IndexRangeList * (*getInputList)(NTA_MultiNodeInfoHandle handle, const NTA_Byte* varName);
-  const NTA_Size * (*getOutputSizes)(NTA_NodeInfoHandle handle, const NTA_Byte* varName);
+  Size (*getNodeCount)(NTA_MultiNodeInfoHandle handle);
+  const NTA_IndexRangeList * (*getInputList)(NTA_MultiNodeInfoHandle handle, const char* varName);
+  const Size * (*getOutputSizes)(NTA_NodeInfoHandle handle, const char* varName);
 
   /* data members */
   NTA_MultiNodeInfoHandle handle;
@@ -528,9 +530,9 @@ typedef struct _NTA_InputSizeMapEntryHandle { char c; } * NTA_InputSizeMapEntryH
 typedef struct NTA_InputSizeMapEntry
 {
   /* data members */
-  const NTA_Byte * name;
-  NTA_UInt32       count;
-  NTA_UInt32 *     sizes;
+  const char* name;
+  UInt32      count;
+  UInt32*     sizes;
    
 } NTA_InputSizeMapEntry;
 
@@ -551,7 +553,7 @@ typedef struct NTA_InputSizeMap
   /* functions */
   void (*reset)(NTA_InputSizeMapHandle handle);
   const NTA_InputSizeMapEntry * (*next)(NTA_InputSizeMapHandle handle);
-  const NTA_InputSizeMapEntry * (*lookup)(NTA_InputSizeMapHandle handle, const NTA_Byte * name);
+  const NTA_InputSizeMapEntry * (*lookup)(NTA_InputSizeMapHandle handle, const char* name);
 
   /* data members */
   NTA_InputSizeMapHandle handle;
@@ -569,8 +571,8 @@ typedef struct NTA_InputSizeMap
  */
 typedef struct NTA_OutputSizeMapEntry
 {
-  const NTA_Byte * name;
-  NTA_UInt32       size;
+  const char* name;
+  UInt32       size;
    
 } NTA_OutputSizeMapEntry;
 
@@ -591,7 +593,7 @@ typedef struct NTA_OutputSizeMap
   /* functions */
   void (*reset)(NTA_OutputSizeMapHandle handle);
   NTA_OutputSizeMapEntry * (*next)(NTA_OutputSizeMapHandle handle);
-  NTA_UInt32 (*lookup)(NTA_OutputSizeMapHandle handle, const NTA_Byte * name);
+  UInt32 (*lookup)(NTA_OutputSizeMapHandle handle, const char* name);
 
   /* data members */
   NTA_OutputSizeMapHandle handle;
@@ -612,7 +614,7 @@ typedef struct _NTA_InitialStateInfoHandle { char c; } * NTA_InitialStateInfoHan
 typedef struct _NTA_InitialStateInfo
 {
   /* functions */
-  const NTA_Byte * (*getNodeType)(NTA_InitialStateInfoHandle handle);
+  const Byte * (*getNodeType)(NTA_InitialStateInfoHandle handle);
   const NTA_InputSizeMap * (*getInputSizes)(NTA_InitialStateInfoHandle handle);
   const NTA_OutputSizeMap * (*getOutputSizes)(NTA_InitialStateInfoHandle handle);
   const NTA_ParameterMap *  (*getParameters)(NTA_InitialStateInfoHandle handle);
@@ -623,7 +625,7 @@ typedef struct _NTA_InitialStateInfo
   
 } NTA_InitialStateInfo;
 
-
+} // namespace nupic
 #ifdef  __cplusplus
 }
 #endif

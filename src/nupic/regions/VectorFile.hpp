@@ -67,7 +67,7 @@ namespace nupic
     ///           5        # Reads in a big-endian float32 binary file
     ///           6        # Reads in a big-endian IDX binary file
     void appendFile(const std::string &fileName,
-                    NTA_Size expectedElementCount,
+                    Size expectedElementCount,
                     UInt32 fileFormat);
     
     /// Retrieve i'th vector, apply scaling and copy result into output

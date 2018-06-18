@@ -141,7 +141,7 @@ set(encoders_files
 )
 
 set(engine_files
-    ${nupic_src}/engine/Collections.cpp
+	${nupic_src}/engine/Collections.cpp
     ${nupic_src}/engine/Input.cpp
     ${nupic_src}/engine/Input.hpp
     ${nupic_src}/engine/Link.cpp

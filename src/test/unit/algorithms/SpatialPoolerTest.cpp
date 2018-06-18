@@ -548,7 +548,7 @@ namespace {
 
     Real initOverlapArr1[] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
     sp.setOverlapDutyCycles(initOverlapArr1);
-    Real overlapNewVal1[] = {1.0f, 5.0f, 7.0f, 0.0f, 0.0f};
+    UInt overlapNewVal1[] = {1, 5, 7, 0, 0};
     overlaps.assign(overlapNewVal1, overlapNewVal1+numColumns);
     UInt active[] = {0, 0, 0, 0, 0};
 
@@ -1010,7 +1010,7 @@ namespace {
     dutyCycles.clear();
     newValues.clear();
     Real dutyCyclesArr1[] = {1000.0, 1000.0, 1000.0, 1000.0, 1000.0};
-    Real newValues1[] = {0, 0, 0, 0, 0};
+    UInt newValues1[] = {0, 0, 0, 0, 0};
     period = 1000;
     Real trueDutyCycles1[] = {999.0, 999.0, 999.0, 999.0, 999.0};
     dutyCycles.assign(dutyCyclesArr1, dutyCyclesArr1+5);
@@ -1021,7 +1021,7 @@ namespace {
     dutyCycles.clear();
     newValues.clear();
     Real dutyCyclesArr2[] = {1000.0, 1000.0, 1000.0, 1000.0, 1000.0};
-    Real newValues2[] = {1000, 1000, 1000, 1000, 1000};
+    UInt newValues2[] = {1000, 1000, 1000, 1000, 1000};
     period = 1000;
     Real trueDutyCycles2[] = {1000.0, 1000.0, 1000.0, 1000.0, 1000.0};
     dutyCycles.assign(dutyCyclesArr2, dutyCyclesArr2+5);
@@ -1032,7 +1032,7 @@ namespace {
     dutyCycles.clear();
     newValues.clear();
     Real dutyCyclesArr3[] = {1000.0, 1000.0, 1000.0, 1000.0, 1000.0};
-    Real newValues3[] = {2000, 4000, 5000, 6000, 7000};
+    UInt newValues3[] = {2000, 4000, 5000, 6000, 7000};
     period = 1000;
     Real trueDutyCycles3[] = {1001.0, 1003.0, 1004.0, 1005.0, 1006.0};
     dutyCycles.assign(dutyCyclesArr3, dutyCyclesArr3+5);
@@ -1043,7 +1043,7 @@ namespace {
     dutyCycles.clear();
     newValues.clear();
     Real dutyCyclesArr4[] = {1000.0, 800.0, 600.0, 400.0, 2000.0};
-    Real newValues4[] = {0, 0, 0, 0, 0};
+    UInt newValues4[] = {0, 0, 0, 0, 0};
     period = 2;
     Real trueDutyCycles4[] = {500.0, 400.0, 300.0, 200.0, 1000.0};
     dutyCycles.assign(dutyCyclesArr4, dutyCyclesArr4+5);
@@ -1440,7 +1440,8 @@ namespace {
 
 
     density = 0.5f;
-    UInt overlapsArray2[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+    Real overlapsArray2[10] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f,
+                               6.0f, 7.0f, 8.0f, 9.0f, 10.0f};
     overlaps.assign(&overlapsArray2[0],&overlapsArray2[numColumns]);
     sp.inhibitColumnsGlobal_(overlaps, density, activeColumns);
     UInt trueActiveArray2[5] = {5,6,7,8,9};

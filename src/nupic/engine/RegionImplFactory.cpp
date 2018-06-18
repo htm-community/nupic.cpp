@@ -27,7 +27,6 @@
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/RegisteredRegionImpl.hpp>
 #include <nupic/engine/Spec.hpp>
-#include <nupic/os/DynamicLibrary.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/os/OS.hpp>
 #include <nupic/os/Env.hpp>

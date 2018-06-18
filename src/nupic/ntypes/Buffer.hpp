@@ -98,10 +98,10 @@ namespace nupic
     Int32 read(bool & value) const override;
     Int32 read(bool * value, Size size) const override;
     Int32 readString(
-        NTA_Byte * &value, 
-        NTA_UInt32 &size,
-        NTA_Byte *(*fAlloc)(NTA_UInt32 size)=nullptr,
-        void (*fDealloc)(NTA_Byte *)=nullptr
+        Byte * &value, 
+        UInt32 &size,
+        Byte *(*fAlloc)(UInt32 size)=nullptr,
+        void (*fDealloc)(Byte *)=nullptr
       ) const override;
     
     template <typename T>

@@ -80,7 +80,7 @@ void VectorFile::clear(bool clearScaling)
 
 //----------------------------------------------------------------------------
 void VectorFile::appendFile(const string &fileName,
-                            NTA_Size expectedElementCount,
+                            Size expectedElementCount,
                             UInt32 fileFormat)
 { 
   bool handled = false;
@@ -123,7 +123,7 @@ void VectorFile::appendFile(const string &fileName,
       {
         // Read in space separated text file
         string sLine;
-        NTA_Size elementCount = expectedElementCount;
+        Size elementCount = expectedElementCount;
         if (fileFormat != 2) {
           inFile >> elementCount;
           getline(inFile, sLine);
@@ -163,7 +163,7 @@ void VectorFile::appendFile(const string &fileName,
             inFile >> vectorLabel;
           }
   
-          auto b = new NTA_Real[elementCount];
+          auto b = new Real[elementCount];
           for (Size i= 0; i < elementCount; ++i) {
             inFile >> b[i];
           }
