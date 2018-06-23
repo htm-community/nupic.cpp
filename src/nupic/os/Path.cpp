@@ -28,7 +28,7 @@
 #include <nupic/os/OS.hpp>
 #include <nupic/os/FStream.hpp>
 #include <nupic/utils/Log.hpp>
-#include <boost/tokenizer.hpp>
+//#include <boost/tokenizer.hpp>
 #include <boost/scoped_array.hpp>
 
 #include <codecvt>
@@ -38,6 +38,7 @@
 #include <iterator>
 #include  <stdio.h>  
 #include  <stdlib.h>  
+#include <regex>
 #if defined(NTA_OS_WINDOWS)
 #include  <io.h>  
 #else
@@ -48,7 +49,7 @@
 // using boost::filesystem
 #include <boost/filesystem.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
-#include <boost/algorithm/string/replace.hpp>
+//#include <boost/algorithm/string/replace.hpp>
 using namespace boost::system;
 namespace fs = boost::filesystem;
 
@@ -73,10 +74,13 @@ namespace nupic
 
     bool Path::equals(const std::string& path1, const std::string& path2)
     {
+      std::regex del("\\");
       std::string s1 = normalize(path1);
-      boost::replace_all(s1, "\\", "/");
+      s1 = std::regex_replace(s1, del, "/");
+      //boost::replace_all(s1, "\\", "/");
       std::string s2 = normalize(path2);
-      boost::replace_all(s2, "\\", "/");
+      s2 = std::regex_replace(s1, del, "/");
+      //boost::replace_all(s2, "\\", "/");
       return (s1 == s2);
     }
 

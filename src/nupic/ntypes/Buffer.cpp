@@ -311,7 +311,7 @@ namespace nupic
     ReadBuffer * r = const_cast<ReadBuffer *>(this);
     try
     {
-      size = r->memStream_.readsome(bytes, size);
+      size = (Size)r->memStream_.readsome(bytes, size);
       return 0;
     }
     catch (...)

@@ -52,7 +52,7 @@ MemParser::MemParser(std::istream& in, UInt32 bytes)
       in.read(chunkP, chunkSize);
       NTA_CHECK (in.good() || in.eof()) 
           << "MemParser::MemParser() - error reading data from stream";
-      data.append (chunkP, in.gcount());
+      data.append (chunkP, (Size)in.gcount());
     }
     
     bytes_ = (UInt32)data.size();

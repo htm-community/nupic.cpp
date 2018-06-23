@@ -138,8 +138,9 @@ target_link_libraries(${unit_tests_executable}
 	${lib_name}
 	Boost::filesystem
 	Boost::system
-    yaml-cpp::yaml-cpp
-    GTest::main
+    gtest_main
+    gtest
+    yaml-cpp
    # ZLIB::zlib
     -OPT:NOREF
 )

@@ -1,8 +1,14 @@
 @echo off
-rem Runs CMake to configure Nupic for Visual Studio 2015 or 2017.
+rem Runs CMake to configure Nupic for Visual Studio 2015 or 2017
+rem and it will use Hunter to find the dependancies or download and compile them.
 rem
 rem Run this from the "Developer Command Prompt for VS" provided by Visual Studio
-rem   so that vsvars32.bat gets executed to set the tool chain.
+rem so that vsvars32.bat gets executed to set the tool chain.
+rem
+rem The location of vsvars32.bat cannot be reliably be determined at execution time
+rem so the best way is to just use the "Developer Command Prompt for VS".
+rem
+rem No arguments are required. 
 
 
 
@@ -44,7 +50,7 @@ if defined VS150COMNTOOLS (
   if defined VS140COMNTOOLS (
 
     rem Run CMake using the Visual Studio generator for VS 2015
-    cmake -G "Visual Studio 14 2015 Win64"  ..
+    cmake -G "Visual Studio 14 2015 Win64" ..
     if exist "nupic.base.sln" (
   	@echo You can now start Visual Studio using solution file %BUILDDIR%/nupic.base.sln
 	exit /B 0

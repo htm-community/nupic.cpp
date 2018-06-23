@@ -60,7 +60,7 @@ namespace nupic
 
     Size free_space(const std::string & path) {
       fs::space_info si = fs::space(path);
-      return si.available;  // disk space available to non-privalaged pocesses.
+      return (Size)si.available;  // disk space available to non-privalaged pocesses.
     }
     
     void setCWD(const std::string & path)

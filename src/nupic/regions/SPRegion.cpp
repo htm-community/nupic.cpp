@@ -1242,14 +1242,14 @@ void SPRegion::getParameterFromBuffer(const std::string &name, Int64 index,
         value.write(elem);
       }
     } else
-      value.write(0);
+      value.write((UInt32)0);
   } else if (name == "columnDimensions") {
     if (sp_) {
       for (auto &elem : sp_->getColumnDimensions()) {
         value.write(elem);
       }
     } else
-      value.write(0);
+      value.write((UInt32)0);
   } else {
     NTA_THROW << "SPRegion::getParameterFromBuffer() -- unknown name " << name;
   }

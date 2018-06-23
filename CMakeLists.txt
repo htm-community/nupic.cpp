@@ -18,61 +18,124 @@
 #
 # http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
-# Minimal CMake configuration for nupic.base 
+# Minimal CMake configuration for nupic.cpp 
+#
+# To startup on Windows:
+#    The scripts are found in external\Windows
+#		startupVCpkg.bat  -- create nupic.base.sln using the vcpkg package manager
+#       startupHunter.bat -- create nupic.base.sln using the Hunter package manager
+#    You should only need to run one of these, once to create the Visual Studio solution file
+#    then you can use that to start up Visual Studio and build everything. 
+#
+#    NOTE: with either package manager, The first time it will take a long time to 
+#          download, build and install the depenancies (boost takes a long time).
+#
+#          If you should need to wipe out the build/ folder and start over with a fresh 
+#          Visual Studio the package managers will verify all of the dependancies but 
+#          they will not need to download and re-install them.
+#
+#
+# If using vcpkg package manager:
+#    Before running the startup script, you must download and install vcpkg
+#    from https://github.com/Microsoft/vcpkg
+#
+#    startupVCpkg.bat  will download and install the dependancies using vcpkg:
+#      vcpkg install  boost-system:x64-windows-static
+#      vcpkg install  boost-filesystem:x64-windows-static
+#      vcpkg install  boost-dll:x64-windows-static
+#      vcpkg install  yaml-cpp:x64-windows-static
+#      vcpkg install  boost-system:x64-windows-static
+#      vcpkg install  gtest:x64-windows-static
+# 
+#    the script will then specify the following to cmake:
+#      cmake -G "Visual Studio 15 2017 Win64" ^
+#            -DBOOST_ROOT:PATH=c:/vcpkg/installed/x64-windows-static/ ^
+#            -DBOOST_LIBRARYDIR:PATH=c:/vcpkg/installed/x64-windows-static/lib ^
+#            -DVCPKG_TOOLCHAIN_FILE=c:/vcpkg/scripts/buildsystems/vcpkg.cmake ^
+#            -DVCPKG_TARGET_TRIPLET=x64-windows-static ^
+#            ...
+#
+# If using Hunter package manager:
+#     Hunter package manger does not need to be installed prior to running.
+#     It will install itself the first time the startup script is ran.
+#     By default it will install itself at C:/.hunter
+#
+#     startupHunter.bat will download and install the dependancies using Hunter.
+#     The scropt will start cmake with the following:
+#         cmake -G "Visual Studio 15 2017 Win64" ...
+#     Inside cmake, Hunter will install itself and all of the dependancies
+#     and then complete the installation of the nupic.base.sln solution file.
 #
 
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
-include("cmake/HunterGate.cmake")
-option(HUNTER_ENABLED "Enable Hunter package manager. If OFF no installs will occur." ON)
-option(HUNTER_STATUS_DEBUG "Print info to help debug cmake scrips." ON)
-HunterGate(
-    URL "https://github.com/ruslo/hunter/archive/v0.20.24.tar.gz"
-    SHA1 "3e2037a462bcf2ec3440f60298d933e74ffd4df3"
-)
-
-
+if (NOT VCPKG_TARGET_TRIPLET)
+	include("cmake/HunterGate.cmake")
+	option(HUNTER_ENABLED "Enable Hunter package manager. If OFF no installs will occur." ON)
+	option(HUNTER_STATUS_DEBUG "Print info to help debug cmake scrips." ON)
+	HunterGate(
+		URL "https://github.com/ruslo/hunter/archive/v0.20.24.tar.gz"
+		SHA1 "3e2037a462bcf2ec3440f60298d933e74ffd4df3"
+	)
+endif()
 
 set(project_name nupic.base)
-
 project(${project_name} LANGUAGES CXX)
 
-# if install directory was not specified on the command line, default it to build/bin
+# if install directory was not specified on the command line, default it to ./build/bin
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/bin" CACHE PATH "default install path" FORCE )
 endif()
 
-if(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-	set(HAS_GIT ON)
+##########################################
+# Find the dependencies
+##########################################
+
+if (VCPKG_TARGET_TRIPLET)
+	#################### Using vcpkg Package Manager ###############
+	message(STATUS "CMAKE_TOOLCHAIN_FILE= ${CMAKE_TOOLCHAIN_FILE}")
+	message(STATUS "VCPKG_TARGET_TRIPLET= ${VCPKG_TARGET_TRIPLET}")
+	message(STATUS "BOOST_ROOT= ${BOOST_ROOT}")
+	message(STATUS "BOOST_LIBRARYDIR= ${BOOST_LIBRARYDIR}")
+
+	include_directories(${BOOST_ROOT}/include)
+	link_directories(${BOOST_LIBRARYDIR} ${BOOST_LIBRARYDIR}/manual-link)
+
+	# Boost 
+	find_package(Boost REQUIRED COMPONENTS filesystem)
+	message(STATUS "Boost_FOUND=${Boost_FOUND}")
+	message(STATUS "Boost_INCLUDE_DIR=${Boost_INCLUDE_DIR}")
+
+	# yaml-cpp  (include only package)
+	find_package(yaml-cpp CONFIG REQUIRED)
+	message(STATUS "yaml-cpp_FOUND=${yaml-cpp_FOUND}")
+
+	# gtest: link with gtest::main and gtest::gtest will be linked automatically
+	#find_package(gtest REQUIRED)
+	#message(STATUS "gtest_FOUND=${gtest_FOUND}")
+	
+else()
+	#################### Using Hunter Package Manager ###############
+	# Boost 
+	hunter_add_package(Boost COMPONENTS system filesystem)
+	find_package(Boost CONFIG REQUIRED system filesystem)
+	include_directories(${Boost_INCLUDE_DIRS})
+	message(STATUS "Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}")
+
+	# yaml-cpps
+	hunter_add_package(yaml-cpp)
+	find_package(yaml-cpp CONFIG REQUIRED)
+	message(STATUS "yaml-cpp_FOUND=${yaml-cpp_FOUND}")
+
+
+	# gtest: link with gtest::main and gtest::gtest will be linked automatically
+	hunter_add_package(gtest)
+	find_package(gtest CONFIG REQUIRED)
+	include_directories(${GTEST_ROOT}/include)
+	message(STATUS "gtest_FOUND=${gtest_FOUND}")
+
 endif()
-
-
-##########################################
-# Download and install the dependencies
-##########################################
-# Boost 
-hunter_add_package(Boost COMPONENTS system filesystem)
-find_package(Boost CONFIG REQUIRED system filesystem)
-include_directories(${Boost_INCLUDE_DIRS})
-message(STATUS "Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}")
-
-# zlib
-#hunter_add_package(ZLIB)
-#find_package(ZLIB CONFIG REQUIRED)
-#include_directories(${ZLIB_INCLUDE_DIRS})
-
-# yaml-cpps
-hunter_add_package(yaml-cpp)
-find_package(yaml-cpp CONFIG REQUIRED)
-
-
-# Library: link with GTest::main and GTest::gtest will be linked automatically
-hunter_add_package(GTest)
-find_package(GTest CONFIG REQUIRED)
-include_directories(${GTEST_ROOT}/include)
-message(STATUS "GTest_INCLUDE_DIRS = ${GTEST_ROOT}/include")
-
 
 ##########################################
 # Determine common toolchain settings, compiler and link flags

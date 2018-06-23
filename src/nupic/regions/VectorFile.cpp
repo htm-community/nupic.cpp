@@ -23,7 +23,7 @@
 /** @file
 * Implementation for VectorFile class
 */
-#include <zlib.h>
+//#include <zlib.h>
 
 #include <cstring> // memset
 #include <cmath>
