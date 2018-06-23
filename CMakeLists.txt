@@ -99,8 +99,8 @@ if (VCPKG_TARGET_TRIPLET)
 	message(STATUS "BOOST_ROOT= ${BOOST_ROOT}")
 	message(STATUS "BOOST_LIBRARYDIR= ${BOOST_LIBRARYDIR}")
 
-	include_directories(${BOOST_ROOT}/include)
-	link_directories(${BOOST_LIBRARYDIR} ${BOOST_LIBRARYDIR}/manual-link)
+	#include_directories(${BOOST_ROOT}/include)
+	#link_directories(${BOOST_LIBRARYDIR} ${BOOST_LIBRARYDIR}/manual-link)
 
 	# Boost 
 	find_package(Boost REQUIRED COMPONENTS filesystem)
@@ -111,9 +111,9 @@ if (VCPKG_TARGET_TRIPLET)
 	find_package(yaml-cpp CONFIG REQUIRED)
 	message(STATUS "yaml-cpp_FOUND=${yaml-cpp_FOUND}")
 
-	# gtest: link with gtest::main and gtest::gtest will be linked automatically
-	#find_package(gtest REQUIRED)
-	#message(STATUS "gtest_FOUND=${gtest_FOUND}")
+	# GTest: link with GTest::main and GTest::gtest will be linked too
+	find_package(GTest REQUIRED)
+	message(STATUS "GTest_FOUND=${GTest_FOUND}")
 	
 else()
 	#################### Using Hunter Package Manager ###############
@@ -129,11 +129,11 @@ else()
 	message(STATUS "yaml-cpp_FOUND=${yaml-cpp_FOUND}")
 
 
-	# gtest: link with gtest::main and gtest::gtest will be linked automatically
-	hunter_add_package(gtest)
-	find_package(gtest CONFIG REQUIRED)
+	# GTest: link with GTest::main and GTest::gtest will be linked too
+	hunter_add_package(GTest)
+	find_package(GTest CONFIG REQUIRED)
 	include_directories(${GTEST_ROOT}/include)
-	message(STATUS "gtest_FOUND=${gtest_FOUND}")
+	message(STATUS "GTest_FOUND=${GTest_FOUND}")
 
 endif()
 

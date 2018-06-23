@@ -44,8 +44,6 @@ if defined VS150COMNTOOLS (
   	@echo You can now start Visual Studio using solution file %BUILDDIR%/nupic.base.sln
 	exit /B 0
   )    
-  popd
-  popd
 ) else (
   if defined VS140COMNTOOLS (
 
@@ -62,6 +60,8 @@ if defined VS150COMNTOOLS (
     @echo  Visual Studio 2017 or 2015 not found
     @echo  "%%VS150COMNTOOLS%%" or "%%VS140COMNTOOLS%%" environment variable not defined
     @echo  You must execute this command using "Developer Command Prompt for VS2015" to set the tool chain.
+    popd
+    popd
     exit /B 1
   )
 )
