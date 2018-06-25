@@ -123,9 +123,19 @@ if(MSVC)
 	#	Common Stuff:  /permissive- /W3 /Gy /Gm- /O2 /Oi /MD /EHsc /FC /nologo
 	#      Release Only:    /O2 /Oi /Gy  /MD
 	#      Debug Only:       /Od /Zi /sdl /RTC1 /MDd
-	set(INTERNAL_CXX_FLAGS /permissive- /W3 /Gm- /EHsc /FC /std:c++17
+							
+	# If using vcpkg package manager, with a triplet ending with -static, the CRT library must also be static
+	# otherwise use the dynamic version of CRT.
+	if (VCPKG_TARGET_TRIPLET)
+		set(INTERNAL_CXX_FLAGS /permissive- /W3 /Gm- /EHsc /FC /std:c++17
+							$<$<CONFIG:RELEASE>:/O2 /Oi /Gy  /GL /MT> 
+							$<$<CONFIG:DEBUG>:/Ob0 /Od /Zi /sdl /RTC1 /MTd>)
+	else()
+		set(INTERNAL_CXX_FLAGS /permissive- /W3 /Gm- /EHsc /FC /std:c++17
 							$<$<CONFIG:RELEASE>:/O2 /Oi /Gy  /GL /MD> 
 							$<$<CONFIG:DEBUG>:/Ob0 /Od /Zi /sdl /RTC1 /MDd>)
+	
+	endif()
 	
 	set(COMMON_COMPILER_DEFINITIONS 	
 		_CONSOLE
@@ -141,6 +151,7 @@ if(MSVC)
 		BOOST_ALL_NO_LIB
 		_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING
 		VC_EXTRALEAN
+		WIN32_LEAN_AND_MEAN
 		NOMINMAX
 		NOGDI
 		)

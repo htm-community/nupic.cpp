@@ -28,8 +28,6 @@
 #include <sstream>
 #include <exception>
 
-//#include <boost/filesystem.hpp>
-
 #include <nupic/engine/Network.hpp>
 #include <nupic/engine/NuPIC.hpp>
 #include <nupic/engine/Region.hpp>

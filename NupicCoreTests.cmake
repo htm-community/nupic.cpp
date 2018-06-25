@@ -134,13 +134,11 @@ set(src_executable_gtests
 )
 
 add_executable(${unit_tests_executable} ${src_executable_gtests})
-target_link_libraries(${unit_tests_executable}
+target_link_libraries(${unit_tests_executable} PRIVATE
 	${lib_name}
-	Boost::filesystem
-	Boost::system
-    GTest::main
-    yaml-cpp::yaml-cpp
-   # ZLIB::zlib
+	${Boost_LIBRARIES}
+    ${GTest_LIBNAME}
+    ${yaml-cpp_LIBNAME}
     -OPT:NOREF
 )
 target_compile_definitions(${unit_tests_executable} PRIVATE ${COMMON_COMPILER_DEFINITIONS})

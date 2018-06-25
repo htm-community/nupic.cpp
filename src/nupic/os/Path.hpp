@@ -86,10 +86,11 @@ namespace nupic
     static const char * pathSep;
     static const char * parDir;
 
+
     /**
     * This will first convert the path to absolute, then return the full parent path.
     */
-    static std::string getParent(const std::string & path);
+    static std::string getParent(std::string path);
 
     /**
      * getBasename(foo/bar.baz) -> bar.baz
@@ -128,7 +129,7 @@ namespace nupic
      * normalize(".") -> current path
      * Note: may convert from relative to absolute if ".." backs up over current directory
      **/
-    static std::string normalize(const std::string & path);
+    static std::string normalize(std::string path);
 
     /**
      * true if path exists. false is for broken links
@@ -168,7 +169,7 @@ namespace nupic
     static bool areEquivalent(const std::string & path1, const std::string & path2);
 
     // Get a path to the currently running executable
-    static std::string getExecutablePath();
+    //static std::string getExecutablePath();
 
     /**
     * Set permissions on files and directories.

@@ -1,6 +1,6 @@
 @echo off
-rem Runs CMake to configure Nupic for Visual Studio 2015 or 2017
-rem and it will use Hunter to find the dependancies or download and compile them.
+rem Runs CMake to configure Nupic.base for Visual Studio 2015 or 2017
+rem and it will use the Hunter package manager to find the dependancies, download, compile, and install them.
 rem
 rem Run this from the "Developer Command Prompt for VS" provided by Visual Studio
 rem so that vsvars32.bat gets executed to set the tool chain.
@@ -13,10 +13,10 @@ rem No arguments are required.
 
 
 :CheckCMake
-rem  make sure CMake is installed.
+rem  make sure CMake is installed.  (version 3.12 minimum)
 cmake -version > NUL 2> NUL 
 if %errorlevel% neq 0 (
-  @echo build.bat;  CMake was not found. 
+  @echo startupHunter.bat;  CMake was not found. 
   @echo Make sure its path is in the system PATH environment variable.
   exit /B 1
 )

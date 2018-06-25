@@ -1,4 +1,4 @@
-Nupic.Base is a very slim cpp library containing mostly the htm algorithms. It's cpp only with very few dependencies:
+Nupic.Base is a very slim cpp library containing mostly the htm algorithms and the Network API. It is cpp only with very few dependencies:
 
 
 # Building under windows using Visual Studio 2017
@@ -8,13 +8,14 @@ Nupic.Base is a very slim cpp library containing mostly the htm algorithms. It's
 	- with Desktop development with C++  
 	   (be sure to check sub component "Visual C++ tools for CMake")
 	- configured to build with C++17 compiler
-	- Also note that Visual Studio 2015 will also work.
-- CMake 3.11 or newer
-     Add path to cmake.exe (i.e. C:\Program Files\CMake\bin) to your path environment variable.
+	- Also note that Visual Studio 2015 may also work but not tested.
+- CMake 3.12 or newer
+     Add path to cmake.exe (i.e. C:\Program Files\CMake\bin) to your PATH environment variable.
      
 - vcpkg package manager (optional)
 	Clone vcpkg repository from https://github.com/Microsoft/vcpkg
 	This will be used by the startupVCpkg.bat script be used to download, build, and install the prerequisite packages.
+	If you use this, place a path to vcpkg.exe in your system's PATH environment variable.
 - hunter package manager (alternative)
 	This does not require prior installation.  It will download and install itself if using startupHunter.bat
 	
@@ -33,15 +34,15 @@ The scripts to do this are found in the "external\Windows" folder of the reposit
 - startupVCpkg.bat  -- create nupic.base.sln using the vcpkg package manager
 - startupHunter.bat -- create nupic.base.sln using the Hunter package manager
 
-You should only need to run one of these, once to create the Visual Studio solution file
+You should only need to run one of these, just once to create the Visual Studio solution file
 then you can use that to start up Visual Studio and build everything. If using the vcpkg package manager
 be sure to add its path to the system PATH environment variable.
 
-Run as administrator 'Visual Studio 2017 Developer version' of Command Prompt (a shortcut is in your start menu). 
+Run 'Visual Studio 2017 Developer version' of Command Prompt (a shortcut is in your start menu). 
 CD to the folder "external/Windows/" under the repository. Execute startupVCpkg.bat to use the vcpkg manager
 or startupHunter.bat to use the Hunter package manager. 
 
-**Note: This can take a while the first time you run this because it needs to download, build and install all of the prerequiete packages including boost. If there is a major change to CMake structure you may need to start over with this step, delete the "build/" folder before running startupVCpkg.bat or startupHunter.bat command again.
+**Note: This can take a while the first time you run this because it needs to download, build and install all of the prerequiete packages including boost. If there is a major change to CMake structure you may need to start over with this step, delete the "build/" folder in the repository before running startupVCpkg.bat or startupHunter.bat command again.
 
 3) Now you can start Visual Studio by double clicking the solution file at build/nupic.base.sln.  It will setup its configuration based on CMake.  
 4) Build the "ALL_BUILD" project.  This will build all of the libraries.

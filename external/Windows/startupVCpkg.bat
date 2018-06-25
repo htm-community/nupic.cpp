@@ -1,6 +1,7 @@
 @echo off
 setlocal enableextensions enabledelayedexpansion
 rem |     startupVCpkg.bat
+rem | Must be ran using "Developer Command Prompt for VS2015" to set the tool chain.
 rem | 
 rem | Runs CMake to configure nupic.base for Visual Studio 2017.
 rem | When complete, double click build\nupic.base.sln to start Visual Studio 2017
@@ -18,7 +19,7 @@ rem |   2) using " - " as first argument
 rem |         Looks for environment variable VCPKG_ROOT  expects the path to the vcpkg installation ROOT folder.
 rem |         else Looks for the path to vcpkg.exe in the PATH environment variable.
 rem |
-rem | The triplet is a specification for the target environment.
+rem | The triplet is a specification for the target environment of the dependancy libraries.
 rem | This can be specified in the following ways:
 rem |  1) using second runtime option -t e.g  setup.bat path... x64-windows-static
 rem |  2) by setting environment varable VCPKG_TRIPLET
@@ -27,9 +28,10 @@ rem | The acceptable values for the  triplet are listed using:
 rem |       C:\> vcpkg>vcpkg help triplet
 rem |   A triplet of "x64-windows" means to build dynamic libraries for 64 bit Windows.
 rem |   A triplet of "x64-windows-static" means build static libraries for 64 bit Windows.
-
 rem |
   
+if not defined VS150COMNTOOLS goto :NoVS
+
 rem  Evaluate the argument 1
 	if "%1"=="" goto checkDefaultRoot
 	if "%1"=="-" goto checkDefaultRoot
@@ -91,16 +93,11 @@ if !errorlevel! neq 0 (
 set "VCPKG_DEFAULT_TRIPLET=!VCPKG_TRIPLET!"
 set "VCPKG=!VCPKG_ROOT!\vcpkg"
 %VCPKG% install boost-system
-%VCPKG% install boost-filesystem
-%VCPKG% install boost-dll
+%VCPKG% install boost-concept-check
+%VCPKG% install boost-smart-ptr
 %VCPKG% install yaml-cpp
 %VCPKG% install gtest
 
-rem |   6/21/2018  There is an issue regarding the build of boost as a static library. 
-rem |          https://github.com/Microsoft/vcpkg/issues/1338
-rem |  So, the Boost configuration must be manually set
-set "BOOST_ROOT_FOLDER=!VCPKG_ROOT!/installed/!VCPKG_TRIPLET!
-set "BOOST_LIBS_FOLDER=!VCPKG_ROOT!/installed/!VCPKG_TRIPLET!/lib
 set "CMAKE_TOOLCHAIN_FILE=!VCPKG_ROOT!/scripts/buildsystems/vcpkg.cmake"
 
 
@@ -114,10 +111,9 @@ mkdir build
 pushd build
 
 !CMAKE! -DBOOST_ROOT:PATH=%BOOST_ROOT_FOLDER% ^
-		-DBOOST_LIBRARYDIR:PATH=%BOOST_LIBS_FOLDER% ^
+		-A x64 ^
 		-DCMAKE_TOOLCHAIN_FILE=!CMAKE_TOOLCHAIN_FILE! ^
 		-DVCPKG_TARGET_TRIPLET:STRING=!VCPKG_TRIPLET! ^
-		-G "Visual Studio 15 2017 Win64" ^
 		..
 
 
@@ -135,4 +131,12 @@ goto :EOF
 @echo                Default is root path in envirement VCPKG_ROOT
 @echo                 or vcpkg.exe path in PATH envirement variable.
 @echo      triplet   Triplet to use, default is  x64-windows-static
+exit /B 1
+
+
+:NoVS
+@echo build.bat
+@echo  Visual Studio 2017 not found
+@echo  "%%VS150COMNTOOLS%%" environment variable not defined
+    @echo  You must execute this command using "Developer Command Prompt for VS2015" to set the tool chain.
 exit /B 1

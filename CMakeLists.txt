@@ -41,16 +41,12 @@
 #
 #    startupVCpkg.bat  will download and install the dependancies using vcpkg:
 #      vcpkg install  boost-system:x64-windows-static
-#      vcpkg install  boost-filesystem:x64-windows-static
-#      vcpkg install  boost-dll:x64-windows-static
 #      vcpkg install  yaml-cpp:x64-windows-static
 #      vcpkg install  boost-system:x64-windows-static
 #      vcpkg install  gtest:x64-windows-static
 # 
 #    the script will then specify the following to cmake:
-#      cmake -G "Visual Studio 15 2017 Win64" ^
-#            -DBOOST_ROOT:PATH=c:/vcpkg/installed/x64-windows-static/ ^
-#            -DBOOST_LIBRARYDIR:PATH=c:/vcpkg/installed/x64-windows-static/lib ^
+#      cmake -A x64 ^
 #            -DVCPKG_TOOLCHAIN_FILE=c:/vcpkg/scripts/buildsystems/vcpkg.cmake ^
 #            -DVCPKG_TARGET_TRIPLET=x64-windows-static ^
 #            ...
@@ -67,7 +63,7 @@
 #     and then complete the installation of the nupic.base.sln solution file.
 #
 
-cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 if (NOT VCPKG_TARGET_TRIPLET)
@@ -96,37 +92,37 @@ if (VCPKG_TARGET_TRIPLET)
 	#################### Using vcpkg Package Manager ###############
 	message(STATUS "CMAKE_TOOLCHAIN_FILE= ${CMAKE_TOOLCHAIN_FILE}")
 	message(STATUS "VCPKG_TARGET_TRIPLET= ${VCPKG_TARGET_TRIPLET}")
-	message(STATUS "BOOST_ROOT= ${BOOST_ROOT}")
-	message(STATUS "BOOST_LIBRARYDIR= ${BOOST_LIBRARYDIR}")
-
-	#include_directories(${BOOST_ROOT}/include)
-	#link_directories(${BOOST_LIBRARYDIR} ${BOOST_LIBRARYDIR}/manual-link)
 
 	# Boost 
-	find_package(Boost REQUIRED COMPONENTS filesystem)
+	find_package(Boost  1.67.0 REQUIRED COMPONENTS system)
+	include_directories(${Boost_INCLUDE_DIRS})
 	message(STATUS "Boost_FOUND=${Boost_FOUND}")
-	message(STATUS "Boost_INCLUDE_DIR=${Boost_INCLUDE_DIR}")
+	set(Boost_LIBNAME ${BoostLIBRARIES})
 
 	# yaml-cpp  (include only package)
 	find_package(yaml-cpp CONFIG REQUIRED)
 	message(STATUS "yaml-cpp_FOUND=${yaml-cpp_FOUND}")
+	set(yaml-cpp_LIBNAME yaml-cpp)
 
-	# GTest: link with GTest::main and GTest::gtest will be linked too
+	# GTest: 
 	find_package(GTest REQUIRED)
 	message(STATUS "GTest_FOUND=${GTest_FOUND}")
-	
+	set(GTest_LIBNAME GTest::GTest GTest::Main)
+
 else()
 	#################### Using Hunter Package Manager ###############
 	# Boost 
-	hunter_add_package(Boost COMPONENTS system filesystem)
-	find_package(Boost CONFIG REQUIRED system filesystem)
+	hunter_add_package(Boost COMPONENTS system)
+	find_package(Boost CONFIG REQUIRED system)
 	include_directories(${Boost_INCLUDE_DIRS})
 	message(STATUS "Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}")
+	set(Boost_LIBNAME Boost::system)
 
 	# yaml-cpps
 	hunter_add_package(yaml-cpp)
 	find_package(yaml-cpp CONFIG REQUIRED)
 	message(STATUS "yaml-cpp_FOUND=${yaml-cpp_FOUND}")
+	set(yaml-cpp_LIBNAME yaml-cpp::yaml-cpp)
 
 
 	# GTest: link with GTest::main and GTest::gtest will be linked too
@@ -134,6 +130,7 @@ else()
 	find_package(GTest CONFIG REQUIRED)
 	include_directories(${GTEST_ROOT}/include)
 	message(STATUS "GTest_FOUND=${GTest_FOUND}")
+	set(GTest_LIBNAME GTest::main)
 
 endif()
 

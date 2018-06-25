@@ -27,15 +27,15 @@
 #include <algorithm>
 #include <chrono>   // for sleep_for()
 #include <thread>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 
 #include <nupic/utils/Log.hpp>
 #include <nupic/os/Directory.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/os/OS.hpp>
 #include <nupic/utils/Log.hpp>
-using namespace boost::system;
-namespace fs = boost::filesystem;
+//using namespace boost::system;
+namespace fs = std::filesystem;
 using namespace std::literals::chrono_literals;
 
 
@@ -72,7 +72,7 @@ namespace nupic
 
     static bool removeEmptyDir(const std::string & path, bool noThrow)
     {
-        error_code ec;
+        std::error_code ec;
         fs::remove(path, ec);
         if(!noThrow) {
             NTA_CHECK(!ec) << "removeEmptyDir: " << ec.message();
@@ -85,14 +85,14 @@ namespace nupic
     // If a file already exists in the destination it is overwritten.
     void copyTree(const std::string & source, const std::string & destination)
     {
-      error_code ec;
+      std::error_code ec;
 
       NTA_CHECK(Path::isDirectory(source)) << "copyTree() source is not a directory. " << source;
       if (Path::exists(destination)) {
         NTA_CHECK(Path::isDirectory(destination)) << "copyTree() destination exists '" << destination << "' and it is not a directory.";
       }
       else {
-        fs::copy_directory(source, destination, ec); // creates directory, copying permissions
+        fs::create_directory(destination, source, ec); // creates directory, copying permissions
         NTA_CHECK(!ec) << "copyTree: Could not create destination directory. '" << destination << "' " << ec.message();
       }
       Directory::Iterator it(source);
@@ -101,7 +101,7 @@ namespace nupic
         // Note: this does not copy links.
         std::string to = destination + Path::sep + entry.filename;
         if (entry.type == Entry::FILE) {
-          fs::copy_file(entry.path, to, fs::copy_option::overwrite_if_exists, ec);
+          fs::copy_file(entry.path, to, fs::copy_options::overwrite_existing, ec);
         }
         else if (entry.type == Entry::DIRECTORY) {
           copyTree(entry.path, to);
@@ -112,7 +112,7 @@ namespace nupic
 
     bool removeTree(const std::string & path, bool noThrow)
     {
-      error_code ec;
+      std::error_code ec;
       if (fs::is_directory(path, ec)) {
         fs::remove_all(path, ec);
       }
@@ -135,7 +135,7 @@ namespace nupic
       }
       else {
         if (recursive) {
-          error_code ec;
+          std::error_code ec;
           if (!fs::create_directories(p, ec)) {
             NTA_CHECK(!ec) << "Directory::createRecursive: " << ec.message();
           }
@@ -143,7 +143,7 @@ namespace nupic
         else {
           // non-recursive case
           NTA_CHECK(fs::exists(p.parent_path())) << "Directory::create -- path " << path << " Parent directory does not exist.";
-          error_code ec;
+          std::error_code ec;
           fs::create_directory(p, ec);
           NTA_CHECK(!ec) << "Directory::create " << ec.message();
         }

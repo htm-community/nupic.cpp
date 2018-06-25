@@ -74,7 +74,6 @@ public:
   }
 
 
-
 };
 
 //test static isRootdir()
@@ -93,31 +92,31 @@ TEST_F(PathTest, isRootDir)
 TEST_F(PathTest, isAbsolute)
 {
 #if defined(NTA_OS_WINDOWS)
-  ASSERT_TRUE(Path::isAbsolute("c:"));
-  ASSERT_TRUE(Path::isAbsolute("c:/"));
-  ASSERT_TRUE(Path::isAbsolute("c:\\"));
-  ASSERT_TRUE(Path::isAbsolute("c:\\foo\\"));
-  ASSERT_TRUE(Path::isAbsolute("c:\\foo\\bar"));
+  EXPECT_TRUE(Path::isAbsolute("c:"));
+  EXPECT_TRUE(Path::isAbsolute("c:/"));
+  EXPECT_TRUE(Path::isAbsolute("c:\\"));
+  EXPECT_TRUE(Path::isAbsolute("c:\\foo\\"));
+  EXPECT_TRUE(Path::isAbsolute("c:\\foo\\bar"));
 
-  ASSERT_TRUE(Path::isAbsolute("\\\\foo"));
-  ASSERT_TRUE(Path::isAbsolute("\\\\foo\\"));
-  ASSERT_TRUE(Path::isAbsolute("\\\\foo\\bar"));
-  ASSERT_TRUE(Path::isAbsolute("\\\\foo\\bar\\baz"));
+  EXPECT_TRUE(Path::isAbsolute("\\\\foo"));
+  EXPECT_TRUE(Path::isAbsolute("\\\\foo\\"));
+  EXPECT_TRUE(Path::isAbsolute("\\\\foo\\bar"));
+  EXPECT_TRUE(Path::isAbsolute("\\\\foo\\bar\\baz"));
 
-  ASSERT_TRUE(!Path::isAbsolute("foo"));
-  ASSERT_TRUE(!Path::isAbsolute("foo\\bar"));
-  ASSERT_TRUE(!Path::isAbsolute("/"));
-  ASSERT_TRUE(!Path::isAbsolute("\\"));
-  ASSERT_TRUE(!Path::isAbsolute("\\\\"));
-  ASSERT_TRUE(!Path::isAbsolute("\\foo"));
+  EXPECT_TRUE(!Path::isAbsolute("foo"));
+  EXPECT_TRUE(!Path::isAbsolute("foo\\bar"));
+  EXPECT_TRUE(!Path::isAbsolute("/"));
+  EXPECT_TRUE(!Path::isAbsolute("\\"));
+  EXPECT_TRUE(!Path::isAbsolute("\\\\"));
+  EXPECT_TRUE(!Path::isAbsolute("\\foo"));
 #else
-  ASSERT_TRUE(Path::isAbsolute("/"));
-  ASSERT_TRUE(Path::isAbsolute("/foo"));
-  ASSERT_TRUE(Path::isAbsolute("/foo/"));
-  ASSERT_TRUE(Path::isAbsolute("/foo/bar"));
+  EXPECT_TRUE(Path::isAbsolute("/"));
+  EXPECT_TRUE(Path::isAbsolute("/foo"));
+  EXPECT_TRUE(Path::isAbsolute("/foo/"));
+  EXPECT_TRUE(Path::isAbsolute("/foo/bar"));
 
-  ASSERT_TRUE(!Path::isAbsolute("foo"));
-  ASSERT_TRUE(!Path::isAbsolute("foo/bar"));
+  EXPECT_TRUE(!Path::isAbsolute("foo"));
+  EXPECT_TRUE(!Path::isAbsolute("foo/bar"));
 #endif 
 }
 
@@ -125,9 +124,9 @@ TEST_F(PathTest, isAbsolute)
 
 TEST_F(PathTest, getParent)
 {
-  // Note: boost::filesystem::Path compares are Lexical compares
+  // Note: Path compares are normalized Lexical compares
   //       so they will match on both windows or linux.
-  std::string g = "/a/b/c/g.ext";
+  std::string g = "/a/b\\c/g.ext";
   g = Path::getParent(g);
   EXPECT_FALSE(Path("/a/b/c1") == Path(g)) << "getParent1 negative";
   EXPECT_TRUE(Path("/a/b/c") == Path(g)) << "getParent1";
@@ -150,10 +149,16 @@ TEST_F(PathTest, getParent)
 
   // getParent() of a relative directory may be a bit non-intuitive
   g = "a/b";
-  EXPECT_TRUE(Path("a") == Path::getParent(g)) << "getParent7";
+  EXPECT_TRUE(Path("a") == Path::getParent(g)) << "getParent7a";
+
+  g = "a/b/";
+  EXPECT_TRUE(Path("a") == Path::getParent(g)) << "getParent7b";
+
+  g = "a/";
+  EXPECT_TRUE(Path(".") == Path::getParent(g)) << "getParent8a";
 
   g = "a";
-  EXPECT_TRUE(Path(".") == Path::getParent(g)) << "getParent8";
+  EXPECT_TRUE(Path(".") == Path::getParent(g)) << "getParent8b";
   
   // getParent() of a relative directory above us should work
   g = "../../a";
@@ -188,7 +193,7 @@ TEST_F(PathTest, getBasename)
   EXPECT_STREQ(a.getBasename().c_str(), "1.txt");
 
   EXPECT_TRUE(Path("bar") == Path::getBasename("/foo/bar")) << "basename1";
-  EXPECT_TRUE(Path(".") == Path::getBasename("/foo/bar/")) << "basename2";
+  EXPECT_TRUE(Path("") == Path::getBasename("/foo/bar/")) << "basename2";
   EXPECT_TRUE(Path("bar.ext") == Path::getBasename("/this is a long dir / foo$/bar.ext")) << "basename3";
 }
 
@@ -205,10 +210,10 @@ TEST_F(PathTest, getExtension)
 // test static normalize()
 TEST_F(PathTest, normalize)
 {
-  EXPECT_TRUE("//foo/bar" == Path::normalize("//foo/quux/..//bar"))
+  EXPECT_TRUE(Path("//foo/bar") == Path::normalize("//foo/quux/..//bar"))
     << "normalize1";
   EXPECT_TRUE(Path("/foo/contains a lot of spaces") == 
-       Path::normalize("///foo/a/b/c/../../d/../../contains a lot of spaces/g.tgz/.."))
+       Path::normalize("   ///foo/a/b/c/../../d/../../contains a lot of spaces/g.tgz/.. "))
     << "normalize2";
   EXPECT_TRUE(Path("../..") == Path::normalize("../foo/../..")) 
     << "normalize3";
@@ -360,7 +365,7 @@ TEST_F(PathTest, copyDirToDir)
   ASSERT_TRUE(Directory::empty("."));   // make sure we cleaned up
 }
 
-
+/******* removing this function until we find we really need it *****
 TEST_F(PathTest, getExecutablePath)
 { 
   // test static getExecutablePath
@@ -377,3 +382,5 @@ TEST_F(PathTest, getExecutablePath)
     << "basename should be unit_tests";
 #endif
 }    
+
+**************************************************************/

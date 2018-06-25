@@ -29,7 +29,7 @@
 //----------------------------------------------------------------------
 
 #include <string>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <nupic/os/Path.hpp>
 
 
@@ -81,32 +81,28 @@ namespace nupic
     public:
       Iterator(const nupic::Path & path) {
         std::string pstr = path.c_str();
-        p_ = boost::filesystem::absolute(pstr);
-        current_ = boost::filesystem::directory_iterator(p_);
+        p_ = std::filesystem::absolute(pstr);
+        current_ = std::filesystem::directory_iterator(p_);
       }
       Iterator(const std::string & path) {
-        p_ = boost::filesystem::absolute(path);
-        current_ = boost::filesystem::directory_iterator(p_);
+        p_ = std::filesystem::absolute(path);
+        current_ = std::filesystem::directory_iterator(p_);
       }
       ~Iterator() {}
 		
       // Resets directory to start. Subsequent call to next() 
       // will retrieve the first entry
       void reset() { 
-        current_ = boost::filesystem::directory_iterator(p_);
+        current_ = std::filesystem::directory_iterator(p_);
       }
 
       // get next directory entry
       Entry * next(Entry & e) {
-        boost::system::error_code ec;
+        std::error_code ec;
         if (current_ == end_)  return nullptr;
-        while (current_->path().filename_is_dot() || current_->path().filename_is_dot_dot()) {
-          current_++;
-          if (current_ == end_)  return nullptr;
-        }
-        e.type = (boost::filesystem::is_directory(current_->path(), ec)) ? Entry::DIRECTORY : 
-                 (boost::filesystem::is_regular_file(current_->path(), ec)) ? Entry::FILE :
-                 (boost::filesystem::is_symlink(current_->path(), ec))? Entry::LINK : Entry::OTHER;
+        e.type = (std::filesystem::is_directory(current_->path(), ec)) ? Entry::DIRECTORY : 
+                 (std::filesystem::is_regular_file(current_->path(), ec)) ? Entry::FILE :
+                 (std::filesystem::is_symlink(current_->path(), ec))? Entry::LINK : Entry::OTHER;
         e.path = current_->path().string();
         e.filename = current_->path().filename().string();
         current_++;
@@ -118,9 +114,9 @@ namespace nupic
       Iterator(const Iterator &) {}
 		
     private:
-      boost::filesystem::path p_;
-      boost::filesystem::directory_iterator current_;
-      boost::filesystem::directory_iterator end_;
+      std::filesystem::path p_;
+      std::filesystem::directory_iterator current_;
+      std::filesystem::directory_iterator end_;
 
     };
   }

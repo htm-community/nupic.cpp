@@ -28,8 +28,7 @@
 #include <nupic/os/OS.hpp>
 #include <nupic/os/FStream.hpp>
 #include <nupic/utils/Log.hpp>
-//#include <boost/tokenizer.hpp>
-#include <boost/scoped_array.hpp>
+#include <nupic/utils/StringUtils.hpp>  // for trim
 
 #include <codecvt>
 
@@ -38,7 +37,7 @@
 #include <iterator>
 #include  <stdio.h>  
 #include  <stdlib.h>  
-#include <regex>
+#include <filesystem>   // as of C++17
 #if defined(NTA_OS_WINDOWS)
 #include  <io.h>  
 #else
@@ -46,25 +45,23 @@
 #include <unistd.h>
 #endif
 
-// using boost::filesystem
-#include <boost/filesystem.hpp>
-#include <boost/dll/runtime_symbol_info.hpp>
-//#include <boost/algorithm/string/replace.hpp>
-using namespace boost::system;
-namespace fs = boost::filesystem;
+//#include <boost/dll/runtime_symbol_info.hpp>
 
 
+namespace fs = std::filesystem;
 
 namespace nupic
 {
+    const char *Path::parDir = "..";
+
 #if defined(NTA_OS_WINDOWS)
     const char * Path::sep = "\\";
     const char * Path::pathSep = ";";
+
 #else
     const char * Path::sep = "/";
     const char * Path::pathSep = ":";
 #endif
-    const char * Path::parDir = "..";
 
 
     bool Path::exists(const std::string & path)
@@ -74,13 +71,8 @@ namespace nupic
 
     bool Path::equals(const std::string& path1, const std::string& path2)
     {
-      std::regex del("\\");
       std::string s1 = normalize(path1);
-      s1 = std::regex_replace(s1, del, "/");
-      //boost::replace_all(s1, "\\", "/");
       std::string s2 = normalize(path2);
-      s2 = std::regex_replace(s1, del, "/");
-      //boost::replace_all(s2, "\\", "/");
       return (s1 == s2);
     }
 
@@ -109,12 +101,26 @@ namespace nupic
       return fs::path(path).is_absolute();
     }
 
-    std::string Path::normalize(const std::string & path)
+
+    //  A path can be normalized by following this algorithm:  (from C++17 std::filesystem::path)
+    //      1) If the path is empty, stop (normal form of an empty path is an empty path)
+    //      2) Replace each directory-separator (which may consist of multiple slashes) with a single path::preferred_separator.
+    //      3) Replace each slash character in the root-name with path::preferred_separator.
+    //      4) Remove each dot and any immediately following directory-separator.
+    //      5) Remove each non-dot-dot filename immediately followed by a directory-separator and a dot-dot, along with any immediately following directory-separator.
+    //      6) If there is root-directory, remove all dot-dots and any directory-separators immediately following them.
+    //      7) If the last filename is dot-dot, remove any trailing directory-separator.
+    //      8) If the path is empty, add a dot (normal form of ./ is .)
+    std::string Path::normalize(std::string path)
     {
       // Note: I expected to use system_complete() for this but it requires the path to exist.
-      if (path.empty()) return path;
+      trim(path);  // inplace trim
+      if (path.empty()) return ".";
       fs::path p(path);
+      p = p.make_preferred();
       p = p.lexically_normal();
+      if (p.string().back() == Path::sep[0])
+        p = p.parent_path(); // remove trailing sep if not root
       return p.string();
     }
 
@@ -129,16 +135,20 @@ namespace nupic
       return fs::equivalent(p1, p2);
     }
 
-    std::string Path::getParent(const std::string & path)
+    std::string Path::getParent(std::string path)
     {
-        if (path.empty()) return path;
-        if (path == ".") return "..";
+        trim(path);
+        if (path.empty() || path == ".") return "..";
         fs::path p(path);
-        if (p.root_path() == path) return path; // parent of root is the root
+        p = p.make_preferred();
         p = p.lexically_normal(); // remove .. and . if possible
-        if (p.filename_is_dot_dot()) return p.string() + "/..";
+        if (p.string().length() >= 2 && p.string().substr(p.string().length() - 2) == "..") {
+          return (p.string() + std::string(Path::sep) + "..");
+        }
+        if (p.string().back() == Path::sep[0])
+          p = p.parent_path();  // remove trailing sep if not root
         p = p.parent_path();
-        if (p.string().empty())
+        if (p.empty())
           return ".";
         return p.string();
     }
@@ -213,7 +223,7 @@ namespace nupic
             return;
         }
         fs::path parent = fs::path(destination).parent_path();
-        error_code ec;
+        std::error_code ec;
         if (!parent.string().empty() && !fs::exists(parent)) {
           fs::create_directories(parent, ec);
           NTA_CHECK(!ec) << "Path::copy - failure creating destination path '" << destination << "'" << ec.message();
@@ -231,12 +241,15 @@ namespace nupic
     {
         if (Path::isDirectory(path)) {
           fs::perms prms =
-            (userRead ? fs::owner_exe | fs::owner_read : fs::no_perms)
-            | (userWrite ? fs::owner_all : fs::no_perms)
-            | (groupRead ? fs::group_exe | fs::group_read : fs::no_perms)
-            | (groupWrite ? fs::group_all : fs::no_perms)
-            | (otherRead ? fs::others_exe | fs::others_read : fs::no_perms)
-            | (otherWrite ? fs::others_all : fs::no_perms)
+              (userRead ? fs::perms::owner_exec | fs::perms::owner_read
+                        : fs::perms::none) |
+              (userWrite ? fs::perms::owner_all : fs::perms::none) |
+              (groupRead ? fs::perms::group_exec | fs::perms::group_read
+                         : fs::perms::none) |
+              (groupWrite ? fs::perms::group_all : fs::perms::none) |
+              (otherRead ? fs::perms::others_exec | fs::perms::others_read
+                         : fs::perms::none) |
+              (otherWrite ? fs::perms::others_all : fs::perms::none)
             ;
           fs::permissions(path, prms);
 
@@ -251,12 +264,12 @@ namespace nupic
         }
         else {
           fs::perms prms = 
-              (userRead ? fs::owner_read : fs::no_perms)
-            | (userWrite ? fs::owner_write : fs::no_perms)
-            | (groupRead ? fs::group_read : fs::no_perms)
-            | (groupWrite ? fs::group_write : fs::no_perms)
-            | (otherRead ? fs::others_read : fs::no_perms)
-            | (otherWrite ? fs::others_write : fs::no_perms)
+              (userRead ? fs::perms::owner_read : fs::perms::none) |
+              (userWrite ? fs::perms::owner_write : fs::perms::none) |
+              (groupRead ? fs::perms::group_read : fs::perms::none) |
+              (groupWrite ? fs::perms::group_write : fs::perms::none) |
+              (otherRead ? fs::perms::others_read : fs::perms::none) |
+              (otherWrite ? fs::perms::others_write : fs::perms::none)
             ;
             fs::permissions(path, prms);
         }
@@ -275,7 +288,7 @@ namespace nupic
             Directory::removeTree(path);
             return;
         }
-        error_code ec;
+        std::error_code ec;
         fs::remove(path, ec);
         NTA_CHECK(!ec) << "Path::remove - failure removing file '" << path << "'" << ec.message();
     }
@@ -287,7 +300,7 @@ namespace nupic
         fs::path oldp = fs::absolute(oldPath);
         fs::path newp = fs::absolute(newPath);
 
-        error_code ec;
+        std::error_code ec;
         fs::rename(oldp, newp, ec);
         NTA_CHECK(!ec) << "Path::remove - failure renaming file '" << oldp.string() << "' to '" << newp.string() << "'" << ec.message();
     }
@@ -315,14 +328,18 @@ namespace nupic
     *     https://stackoverflow.com/questions/1528298/get-path-of-executable
     * The above links show that this is difficult to do and not 100% reliable in the general case.
     * However, the boost solution is one of the best.
-    */
+    * /
     std::string Path::getExecutablePath()
     {
-      error_code ec;
-      fs::path p = boost::dll::program_location(ec);
+      boost::system::error_code ec;
+      boost::filesystem::path p = boost::dll::program_location(ec);
       NTA_CHECK(!ec) << "Path::getExecutablePath() Fail. " << ec.message();
       return p.string();
     }
+    ****** Removed until we find we need this function, dek 06/2018 ********/
+
+
+
 
     // Global operators
     Path operator+(const Path & p1, const Path & p2) { return Path(std::string(*p1) + Path::sep + std::string(*p2)); }
