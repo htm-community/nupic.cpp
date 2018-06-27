@@ -45,7 +45,7 @@
 #include <unistd.h>
 #endif
 
-//#include <boost/dll/runtime_symbol_info.hpp>
+//#include <boost/dll/runtime_symbol_info.hpp>   // for getExecutablePath()
 
 
 namespace fs = std::filesystem;

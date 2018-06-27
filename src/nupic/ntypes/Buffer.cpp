@@ -206,7 +206,7 @@ namespace nupic
   }
 
   ReadBuffer::ReadBuffer(const char * bytes, Size size, bool copy) : 
-    bytes_(copy ? new Byte[size] : nullptr),
+    bytes_(copy ? new char[size] : nullptr, std::default_delete<char[]>()),
     memStream_(copy ? bytes_.get() : bytes, size)
   {
     // Copy the buffer to the internal bytes_ array (because 

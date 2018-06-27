@@ -39,7 +39,6 @@
 #include <nupic/ntypes/Array.hpp>
 #include <string>
 #include <map>
-#include <boost/shared_ptr.hpp>
 
 namespace nupic
 {
@@ -56,15 +55,15 @@ namespace nupic
    * A string is similar to an Array of NTA_BasicType_Byte, but
    * is handled differently, so it is separated in the API. 
    * 
-   * The Value API uses boost::shared_ptr instead of directly 
+   * The Value API uses std::shared_ptr instead of directly 
    * using the underlying objects, to avoid copying, and because
    * Array may not be copied. 
    */
   class Value
   {
   public:
-    Value(boost::shared_ptr<Scalar>& s);
-    Value(boost::shared_ptr<Array>& a);
+    Value(std::shared_ptr<Scalar>& s);
+    Value(std::shared_ptr<Array>& a);
     Value(const std::string& s);
 
     enum Category {scalarCategory, arrayCategory, stringCategory};
@@ -76,9 +75,9 @@ namespace nupic
 
     NTA_BasicType getType() const;
 
-    boost::shared_ptr<Scalar> getScalar() const;
+    std::shared_ptr<Scalar> getScalar() const;
 
-    boost::shared_ptr<Array> getArray() const;
+    std::shared_ptr<Array> getArray() const;
 
     std::string getString() const;
 
@@ -90,8 +89,8 @@ namespace nupic
     // Default constructor would not be useful
     Value(); 
     Category category_;
-    boost::shared_ptr<Scalar> scalar_;
-    boost::shared_ptr<Array> array_;
+    std::shared_ptr<Scalar> scalar_;
+    std::shared_ptr<Array> array_;
     std::string string_;
   };
 
@@ -111,8 +110,8 @@ namespace nupic
     Value& getValue(const std::string& key) const;
 
     // Method below are for convenience, bypassing the Value
-    boost::shared_ptr<Array> getArray(const std::string& key) const;
-    boost::shared_ptr<Scalar> getScalar(const std::string& key) const;
+    std::shared_ptr<Array> getArray(const std::string& key) const;
+    std::shared_ptr<Scalar> getScalar(const std::string& key) const;
     std::string getString(const std::string& key) const;
     std::string getString(const std::string &key,  const std::string defaultValue) const;
 

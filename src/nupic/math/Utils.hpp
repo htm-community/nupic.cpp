@@ -42,7 +42,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/shared_array.hpp>
 
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>

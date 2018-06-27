@@ -34,7 +34,7 @@
 #include <nupic/os/Path.hpp>
 #include <nupic/os/OS.hpp>
 #include <nupic/utils/Log.hpp>
-//using namespace boost::system;
+
 namespace fs = std::filesystem;
 using namespace std::literals::chrono_literals;
 

@@ -29,7 +29,6 @@
 //
 // #include "IndexUnitTest.hpp"
 //
-// #include <boost/timer.hpp>
 //
 // using namespace std;
 //

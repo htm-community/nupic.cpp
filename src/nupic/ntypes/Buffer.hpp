@@ -26,7 +26,6 @@
 #ifndef NTA_BUFFER_HPP
 #define NTA_BUFFER_HPP
 
-#include <boost/shared_array.hpp>
 #include <nupic/ntypes/MemStream.hpp>
 #include <nupic/ntypes/ObjectModel.h>
 #include <nupic/ntypes/ObjectModel.hpp>
@@ -141,7 +140,7 @@ namespace nupic
       }
     }
   private:
-    boost::shared_array<Byte> bytes_;
+    std::shared_ptr<Byte> bytes_;
     mutable IMemStream memStream_;
   };
 

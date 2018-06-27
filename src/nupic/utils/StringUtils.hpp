@@ -29,7 +29,6 @@
 
 
 #include <nupic/types/Types.hpp>
-#include <boost/shared_array.hpp>
 #include <string>
 #include <vector>
 #include <set>
@@ -217,15 +216,15 @@ namespace nupic
      * 8 bits of the mask, bit 0 of byte 0 holds entry 0, bit 1 of byte 0 holds entry 1, etc.
      *
      * The string can be of the form "0-9,10, 12, 13-19", "all", or "". Both "all" and ""
-     * are special cases representing all bits and return a boost::shared_array with a
+     * are special cases representing all bits and return a std::shared_ptr with a
      * NIL pointer (retval.get() == NULL). 
      *
      * @param s         a string to convert
      * @param bitCount  number of bits to include in the return mask. 
-     * @retval          boost::shared_array containing the dynamically allocated mask
+     * @retval          std::shared_ptr containing the dynamically allocated mask
      *
      */
-    static boost::shared_array<Byte> toByteArray(const std::string& s, Size bitCount);
+    static std::shared_ptr<Byte> toByteArray(const std::string& s, Size bitCount);
 
   };
 }

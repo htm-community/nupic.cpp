@@ -40,7 +40,7 @@ TEST(YAMLUtilsTest, toValueTestInt)
   ASSERT_EQ(v.getType(), NTA_BasicType_Int32);
   Int32 i = v.getScalarT<Int32>();
   ASSERT_EQ(10, i);
-  boost::shared_ptr<Scalar> s = v.getScalar();
+  std::shared_ptr<Scalar> s = v.getScalar();
   i = s->value.int32;
   ASSERT_EQ(10, i);
 }
@@ -56,7 +56,7 @@ TEST(YAMLUtilsTest, toValueTestReal32)
   EXPECT_NEAR(10.1, x, 0.000001) << "assertion 10.1 == " << x
     << "\" failed at " << __FILE__ << ":" << __LINE__;
 
-  boost::shared_ptr<Scalar> s = v.getScalar();
+  std::shared_ptr<Scalar> s = v.getScalar();
   x = s->value.real32;
   EXPECT_NEAR(10.1, x, 0.000001) << "assertion 10.1 == " << x
     << "\" failed at " << __FILE__ << ":" << __LINE__;
@@ -84,7 +84,7 @@ TEST(YAMLUtilsTest, toValueTestBool)
   ASSERT_EQ(v.getType(), NTA_BasicType_Bool);
   bool b = v.getScalarT<bool>();
   ASSERT_EQ(true, b);
-  boost::shared_ptr<Scalar> s = v.getScalar();
+  std::shared_ptr<Scalar> s = v.getScalar();
   b = s->value.boolean;
   ASSERT_EQ(true, b);
 }

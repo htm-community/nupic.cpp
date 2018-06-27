@@ -39,7 +39,6 @@
 #include "nupic/os/Env.hpp"
 #include <fstream>
 #include <cstdlib>
-//#include <boost/iostreams/filter/zlib.hpp>
 
 //#include <zlib.h>
 
