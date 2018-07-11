@@ -45,29 +45,6 @@
 #include <nupic/utils/Log.hpp>
 
 namespace nupic {
-///////////////////////////////////////////////////////////////////////////////
-// Some static functions
-static Array makeNonZeroArray(const ArrayBase& a) {
-  NTA_CHECK(a.getType() == NTA_BasicType_Real32)  << "Expected an Array with type of Real32.";
-  Real32 *originalBuffer = (Real32*)a.getBuffer();
-  size_t len = a.getCount();
-  // find the length of the array
-  size_t nonZeroLen = 0;
-  for (size_t i = 0; i < len; i++) {
-    if (originalBuffer[i])
-      nonZeroLen++;
-  }
-  // populate the array with indexes of non-zero values.
-  Array nonZero(NTA_BasicType_UInt32);
-  nonZero.allocateBuffer(nonZeroLen);
-  UInt32 *ptr = (UInt32 *)nonZero.getBuffer();
-  for (size_t i = 0; i < len; i++) {
-    if (originalBuffer[i])
-      *ptr++ = (UInt32)i;
-  }
-  return nonZero;  // shallow copy
-}
-/////////////////////////////////////////////////////////////////////////////
 
 SPRegion::SPRegion(const ValueMap &params, Region *region)
     : RegionImpl(region), computeCallback_(nullptr) {
@@ -1011,14 +988,14 @@ void SPRegion::getParameterArray(const std::string &name, Int64 index,  Array &a
   } else if (name == "spInputNonZeros") {
     if (!nzInputValid_) {
       const Array &incoming = getInput("bottomUpIn")->getData();
-      nzInput_ = makeNonZeroArray(incoming);
+      nzInput_ = incoming.nonZero();
       nzInputValid_ = true;
     }
     array = nzInput_;
   } else if (name == "spOutputNonZeros") {
     if (!nzOutputValid_) {
       const Array &output = getOutput("bottomUpOut")->getData();
-      nzOutput_ = makeNonZeroArray(output);
+      nzOutput_ = output.nonZero();
       nzOutputValid_ = true;
     }
     array = nzOutput_;

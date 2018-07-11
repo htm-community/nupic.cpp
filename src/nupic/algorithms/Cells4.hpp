@@ -512,8 +512,17 @@ namespace nupic {
         UInt nCells() const                 { return _nCells; }
         UInt nColumns() const               { return _nColumns; }
         UInt nCellsPerCol() const           { return _nCellsPerCol; }
+        Real getPermInitial() const         { return _permInitial; }
         UInt getMinThreshold() const        { return _minThreshold; }
         Real getPermConnected() const       { return _permConnected; }
+        UInt getNewSynapseCount() const     { return _newSynapseCount; }
+        Real getPermInc() const             { return _permInc; }
+        Real getPermDec() const             { return _permDec; }
+        Real getPermMax() const             { return _permMax; }
+        Real getGlobalDecay() const         { return _globalDecay; }
+        UInt getActivationThreshold() const { return _activationThreshold; }
+        bool getDoPooling()                 { return _doPooling; }
+        UInt getSegUpdateValidDuration()    { return _segUpdateValidDuration; }
         UInt getVerbosity() const           { return _verbosity; }
         UInt getMaxAge() const              { return _maxAge; }
         UInt getPamLength() const           { return _pamLength; }

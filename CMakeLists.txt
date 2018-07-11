@@ -191,6 +191,8 @@ set(algorithm_files
     ${nupic_src}/algorithms/SvmT.hpp
     ${nupic_src}/algorithms/TemporalMemory.cpp
     ${nupic_src}/algorithms/TemporalMemory.hpp
+    ${nupic_src}/algorithms/BacktrackingTMCpp.cpp
+    ${nupic_src}/algorithms/BacktrackingTMCpp.hpp
 )
 
 set(encoders_files 
@@ -311,8 +313,8 @@ set(regions_files
     ${nupic_src}/regions/VectorFileSensor.hpp   
     ${nupic_src}/regions/SPRegion.cpp 
     ${nupic_src}/regions/SPRegion.hpp 
-   # ${nupic_src}/regions/TMRegion.cpp 
-   # ${nupic_src}/regions/TMRegion.hpp 
+    ${nupic_src}/regions/TMRegion.cpp 
+    ${nupic_src}/regions/TMRegion.hpp 
 )
 
 set(types_files
@@ -346,7 +348,7 @@ set(utils_files
 )
 
 #set up file tabs in Visual Studio
-source_group("algorithm" FILES ${algorithm_files})
+source_group("algorithms" FILES ${algorithm_files})
 source_group("encoders" FILES ${encoders_files})
 source_group("engine" FILES ${engine_files})
 source_group("math" FILES ${math_files})

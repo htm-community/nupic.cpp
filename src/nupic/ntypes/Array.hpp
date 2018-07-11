@@ -160,6 +160,13 @@ namespace nupic {
       return a;
     }
 
+    // copies the buffer into the Array.
+    void copyFrom(NTA_BasicType type, void* buf, size_t size) { 
+      type_ = type;
+      allocateBuffer(size);
+      memcpy((char *)buffer_.get(), (char *)buf, count_ * BasicType::getSize(type_));
+    }
+
     // This will do a shallow copy into the target array
     // This is for when we do not want to replace the Array object but
     // want it to become a shared buffer instance.
@@ -168,6 +175,20 @@ namespace nupic {
       a.count_ = count_;
       a.capacity_ = capacity_;
       a.type_ = type_;
+    }
+
+    // Convert to a vector; copies buffer
+    std::vector<UInt32> asVector(){ 
+      NTA_CHECK(type_ == NTA_BasicType_UInt32)  << "Expected an Array with type of UInt32.";
+      std::vector<UInt32> v(buffer_.get(), buffer_.get() + count_);
+      return v;
+    }
+
+    // from a vector; copies buffer
+    void fromVector(std::vector<UInt32>& vect) { 
+      type_ = NTA_BasicType_UInt32;
+      allocateBuffer(vect.size());
+      memcpy(buffer_.get(), vect.data(), count_ * sizeof(UInt32));
     }
 
     // Type conversion
@@ -185,6 +206,27 @@ namespace nupic {
     //       However, if buffer is too small, it will be reallocated.
     void convertInto(Array& a, size_t offset=0) const {
       ArrayBase::convertInto(a, offset);
+    }
+
+    // Create a NonZero array from the indexes of non-zero values.
+    Array nonZero() const {
+      NTA_CHECK(type_ == NTA_BasicType_Real32)  << "Expected an Array with type of Real32.";
+      Real32 *originalBuffer = (Real32 *)buffer_.get();
+      // find the length of the array
+      size_t nonZeroLen = 0;
+      for (size_t i = 0; i < count_; i++) {
+        if (originalBuffer[i])
+          nonZeroLen++;
+      }
+      // populate the new array with indexes of non-zero values.
+      Array nonZero(NTA_BasicType_UInt32);
+      nonZero.allocateBuffer(nonZeroLen);
+      UInt32 *ptr = (UInt32 *)nonZero.getBuffer();
+      for (size_t i = 0; i < count_; i++) {
+        if (originalBuffer[i])
+          *ptr++ = (UInt32)i;
+      }
+      return nonZero; // shallow copy
     }
 
     // Copy a subset

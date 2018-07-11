@@ -455,8 +455,9 @@ void Segment::print(std::ostream& outStream, UInt nCellsPerCol) const
       outStream << _synapses[i];
     }
     if (i < _synapses.size() -1)
-      std::cout << " ";
+      outStream << " ";
   }
+  outStream << std::endl;
 }
 
 namespace nupic{
