@@ -19,28 +19,27 @@
  * http://numenta.org/licenses/
  * ---------------------------------------------------------------------
  */
+// derived from code taken from
+// https://stackoverflow.com/questions/1120140/how-can-i-read-and-parse-csv-files-in-c
+//    answered May 20 '15 at 0:59 by @sastanin
+
+#ifndef _CSVREADER_HPP_
+#define _CSVREADER_HPP_
+
+#include <istream>
+#include <string>
+#include <vector>
+#include <nupic/types/Types.hpp>
+namespace nupic 
+{
 
 
-#include <nupic/engine/Spec.hpp>
+/// Read CSV file, Excel dialect. Accept "quoted fields ""with quotes"""
+std::vector<std::vector<std::string>> readCSV(std::istream &in);
 
-/*
- * We need to import the code from Collection.cpp 
- * in order to instantiate all the methods in the classes
- * instantiated below. 
- */
-#include <nupic/ntypes/Collection.hpp>
-#include <nupic/ntypes/Collection.cpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Network.hpp>
+// Read a CSV file, return a two dimentional array in a tuple.
+template <typename T>
+std::tuple<Size, Size, std::shared_ptr<T>> readCSVArray(std::istream &in);
 
-using namespace nupic;
-
-
-// Explicit instantiations of the collection classes used by Spec
-template class nupic::Collection<OutputSpec>;
-template class nupic::Collection<InputSpec>;
-template class nupic::Collection<ParameterSpec>;
-template class nupic::Collection<CommandSpec>;
-template class nupic::Collection<Region_Ptr_t>;
-template class nupic::Collection<Link_Ptr_t>;
-template class nupic::Collection<Network::callbackItem>;
+} // namespace
+#endif // _CSVREADER_HPP_

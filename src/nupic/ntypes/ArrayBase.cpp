@@ -187,6 +187,43 @@ bool ArrayBase::isInstance(const ArrayBase &a) {
   return (buffer_ == a.buffer_);
 }
 
+// populate the given array with the NZ of the current array.
+void ArrayBase::NonZero(ArrayBase& a) const {
+      switch(type_) 
+      {
+      case NTA_BasicType_Byte:   ArrayBase::NonZeroT<Byte>(a);   break;
+      case NTA_BasicType_Int16:  ArrayBase::NonZeroT<Int16>(a);  break;
+      case NTA_BasicType_UInt16: ArrayBase::NonZeroT<UInt16>(a); break;
+      case NTA_BasicType_Int32:  ArrayBase::NonZeroT<Int32>(a);  break;
+      case NTA_BasicType_UInt32: ArrayBase::NonZeroT<UInt32>(a); break;
+      case NTA_BasicType_Real32: ArrayBase::NonZeroT<Real32>(a); break;
+      case NTA_BasicType_Real64: ArrayBase::NonZeroT<Real64>(a); break;
+      default:
+        NTA_THROW << "Unexpected source array type.";
+      }
+}
+
+
+template <typename T>
+void ArrayBase::NonZeroT(ArrayBase& a) const
+{
+  NTA_ASSERT(a.getType() == NTA_BasicType_UInt32) 
+    << "Expected UInt32 type for NonZero() destination array";
+  T *originalBuffer = (T *)buffer_.get();
+  // find the number of elements for the NZ array
+  size_t nonZeroLen = 0;
+  for (size_t i = 0; i < count_; i++) {
+    if (originalBuffer[i])
+      nonZeroLen++;
+  }
+  // populate the new array with indexes of non-zero values.
+  a.allocateBuffer(nonZeroLen);
+  UInt32 *ptr = (UInt32 *)a.getBuffer();
+  for (size_t i = 0; i < count_; i++) {
+    if (originalBuffer[i])
+      *ptr++ = (UInt32)i;
+  }
+}
 
 
 
@@ -205,7 +242,34 @@ bool operator==(const ArrayBase &lhs, const ArrayBase &rhs) {
                  lhs.getCount() * BasicType::getSize(lhs.getType())) == 0);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//         Binary Serialization
+////////////////////////////////////////////////////////////////////////////////
+void ArrayBase::binarySave(std::ostream &outStream) const
+{
+    outStream << "[ " << count_ << " " << BasicType::getName(type_) << " ";
+    if (count_ > 0) {
+      Size size = count_ * BasicType::getSize(type_);
+      outStream.write((const char*)buffer_.get(), size);
+    }
+    outStream << "]" << std::endl;
 
+}
+void ArrayBase::binaryLoad(std::istream &inStream) { 
+  std::string tag;
+  size_t count;
+
+  NTA_CHECK(inStream.get() == '[') << "Binary load of Array, expected starting '['.";
+  inStream >> count;
+  inStream >> tag;
+  type_ = BasicType::parse(tag);
+  allocateBuffer(count);
+  inStream.ignore(1);
+  Size size = count_ * BasicType::getSize(type_);
+  inStream.read(buffer_.get(), size);
+  NTA_CHECK(inStream.get() == ']') << "Binary load of Array, expected ending ']'.";
+  inStream.ignore(1); // skip over the endl
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////

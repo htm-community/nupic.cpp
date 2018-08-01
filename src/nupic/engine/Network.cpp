@@ -27,6 +27,7 @@ Implementation of the Network class
 #include <limits>
 #include <iostream>
 #include <sstream>
+#include <stdlib.h>
 #include <stdexcept>
 
 #include <nupic/types/ptr_types.hpp>
@@ -36,6 +37,8 @@ Implementation of the Network class
 #include <nupic/engine/Spec.hpp>
 #include <nupic/engine/Link.hpp>
 #include <nupic/engine/Input.hpp>
+#include <nupic/engine/Output.hpp>
+#include <nupic/ntypes/Array.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/StringUtils.hpp>
 #include <nupic/engine/NuPIC.hpp> 
@@ -49,7 +52,7 @@ Implementation of the Network class
 namespace nupic
 {
 
-class GenericRegisteredRegionImpl;
+class RegisteredRegionImpl;
 
 Network::Network()
 {
@@ -57,6 +60,8 @@ Network::Network()
   NuPIC::registerNetwork(this);
 }
 
+
+// Restore from serialization
 Network::Network(const std::string& path)
 {
   commonInit();   // get setup
@@ -66,11 +71,19 @@ Network::Network(const std::string& path)
   NTA_CHECK(maxEnabledPhase_ < phaseInfo_.size())
       << "maxphase: " << maxEnabledPhase_ << " size: " << phaseInfo_.size();
 
+  // When serialized, the output buffers are saved
+  // by each RegionImpl.  After restore we need to 
   // copy restored outputs to connected inputs.
-  // must call prepareInputs() only once per region.
   for (size_t i = 0; i < regions_.getCount(); i++) {
     Region_Ptr_t r = regions_.getByIndex(i).second;
+
     r->prepareInputs();
+
+    // The Link serialization saves all but the first buffer 
+    // (the most recent) of the Propogation Delay array because 
+    // that buffer is the same as the most current output.
+    // So after restore we need to shift the current
+    // outputs into the Propogaton Delay array.
     for (const auto &inputTuple : r->getInputs()) {
       for (const auto pLink : inputTuple.second->getLinks()) {
         pLink->shiftBufferedData();
@@ -115,11 +128,13 @@ Network::~Network()
   }
 
   // 3. delete the regions
-  for (size_t i = 0; i < regions_.getCount(); i++)
-  {
-    std::pair<std::string, Region_Ptr_t>& item =  regions_.getByIndex(i);
-    item.second.reset();
-  }
+  // The Collection container contains a shared_ptr to the region
+  // so when the container is deleted, the regions are deleted.
+  //for (size_t i = 0; i < regions_.getCount(); i++)
+  //{
+  //  const std::pair<std::string, Region_Ptr_t>& item =  regions_.getByIndex(i);
+  //  item.second.reset();
+  //}
 }
 
 
@@ -432,7 +447,7 @@ Network::run(int n)
     // invoke callbacks
     for (UInt32 i = 0; i < callbacks_.getCount(); i++)
     {
-      std::pair<std::string, callbackItem>& callback = callbacks_.getByIndex(i);
+      const std::pair<std::string, callbackItem>& callback = callbacks_.getByIndex(i);
       callback.second.first(this, iteration_, callback.second.second);
     }
 
@@ -541,10 +556,23 @@ Network::getLinks()
   return links;
 }
 
+// This function is obsolete.  use setCallback() and unsetCallback().
 Collection<Network::callbackItem>& Network::getCallbacks()
 {
   return callbacks_;
 }
+
+void Network::setCallback(std::string name, runCallbackFunction func, void *arg) {
+  if (callbacks_.contains(name))
+    NTA_THROW << "SetCallback; item " << name << " already exists.";
+    Network::callbackItem itm = std::make_pair(func, arg);
+    callbacks_.add(name, itm);
+}
+void Network::unsetCallback(std::string name) {
+  if (callbacks_.contains(name))
+    callbacks_.remove(name);
+}
+
 
 void
 Network::setMinEnabledPhase(UInt32 minPhase)
@@ -620,11 +648,11 @@ void Network::saveToBundle(const std::string& name)
     if (! Path::isDirectory(fullPath) || ! Path::exists(networkStructureFilename))
     {
       NTA_THROW << "Existing filesystem entry " << fullPath
-                << " open by someone else or is not a network bundle -- refusing to delete";
+                << " open by someone else or is not a network bundle.";
     }
     Directory::removeTree(fullPath);
   }
-  Directory::create(fullPath, false, true);
+  std::filesystem::create_directories(fullPath.c_str());
 
   {
     YAML::Emitter out;
@@ -635,7 +663,7 @@ void Network::saveToBundle(const std::string& name)
     out << YAML::Key << "Regions" << YAML::Value << YAML::BeginSeq;
     for (size_t regionIndex = 0; regionIndex < regions_.getCount(); regionIndex++)
     {
-      std::pair<std::string, Region_Ptr_t>& info = regions_.getByIndex(regionIndex);
+      const std::pair<std::string, Region_Ptr_t>& info = regions_.getByIndex(regionIndex);
       Region_Ptr_t r = info.second;
       // Network serializes the region directly because it is actually easier
       // to do here than inside the region, and we don't have the RegionImpl data yet.
@@ -651,8 +679,10 @@ void Network::saveToBundle(const std::string& name)
       out << YAML::EndSeq;
       // label is going to be used to name RegionImpl files within the bundle
       out << YAML::Key << "label" << YAML::Value << getLabel(regionIndex);
-      out << YAML::Key << "outputs" << YAML::Value;
-      r->serializeOutput(out); 
+
+      // regionImpl will serialize their own outputs
+      //out << YAML::Key << "outputs" << YAML::Value;
+      //r->serializeOutput(out); 
 
       out << YAML::EndMap;
     }
@@ -689,7 +719,7 @@ void Network::saveToBundle(const std::string& name)
   // Now save RegionImpl data
   for (size_t regionIndex = 0; regionIndex < regions_.getCount(); regionIndex++)
   {
-    std::pair<std::string, Region_Ptr_t>& info = regions_.getByIndex(regionIndex);
+    const std::pair<std::string, Region_Ptr_t>& info = regions_.getByIndex(regionIndex);
     Region_Ptr_t r = info.second;
     std::string label = getLabel(regionIndex);
     BundleIO bundle(fullPath, label, info.first, /* isInput: */ false);
@@ -747,7 +777,8 @@ void Network::loadFromBundle(const std::string& name)
     // Each region is a map -- extract the 5 values in the map
     NTA_CHECK(region.Type() == YAML::NodeType::Map) << "Invalid network structure file -- bad region (not a map)";
 
-    NTA_CHECK(region.size() == 5) << "Invalid network structure file -- bad region (wrong size)";
+    NTA_CHECK(region.size() == 4) << "Invalid network structure file "
+                          << "-- bad region (wrong size). found: " << region.size();
 
     // 1. name
     node = region["name"];
@@ -782,15 +813,17 @@ void Network::loadFromBundle(const std::string& name)
     Region_Ptr_t r = addRegionFromBundle(name, nodeType, fullPath, label);
     setPhases_(r, phases);
 
-    // 5. Outputs, Need to deserialize the Output buffers for this region.
-    node = region["outputs"];
-    NTA_CHECK(node.IsSequence()) << "Invalid network structure file -- region '"  << name << "' missing the outputs.";
-    r->deserializeOutput(node);
+    // Note: each regionImpl restores its own output buffers.
+    //       Input buffers are not saved, they are restored by
+    //       copying from their source output buffers via links.  
+    //       If an input is manually set then the input would be 
+    //       lost after restore.
 
   }
 
   const auto links = doc["Links"];
   NTA_CHECK(links.size() > 0) << "Invalid network structure file -- no links";
+  // Without links inputs cannot be restored.
 
   NTA_CHECK(links.Type() == YAML::NodeType::Sequence)<< "Invalid network structure file -- links element is not a list";
 
@@ -850,7 +883,7 @@ void Network::resetProfiling()
 }
 
 
-void Network::registerCPPRegion(const std::string name, GenericRegisteredRegionImpl* wrapper)
+void Network::registerCPPRegion(const std::string name, RegisteredRegionImpl* wrapper)
 {
   Region::registerCPPRegion(name, wrapper);
 }
@@ -859,6 +892,7 @@ void Network::unregisterCPPRegion(const std::string name)
 {
   Region::unregisterCPPRegion(name);
 }
+
 
 
 } // namespace nupic

@@ -72,10 +72,8 @@ public:
   // This method is called only for outputs whose size is not
   // specified in the spec.
   size_t getNodeOutputElementCount(const std::string &outputName) override;
-  void getParameterFromBuffer(const std::string &name, Int64 index,
-                              IWriteBuffer &value) override;
-  void setParameterFromBuffer(const std::string &name, Int64 index,
-                              IReadBuffer &value) override;
+
+
 
   /* -----------  Optional RegionImpl Interface methods ------- */
   UInt32 getParameterUInt32(const std::string &name, Int64 index) override;
@@ -83,16 +81,11 @@ public:
   Real32 getParameterReal32(const std::string &name, Int64 index) override;
   bool getParameterBool(const std::string &name, Int64 index) override;
   std::string getParameterString(const std::string &name, Int64 index) override;
-  void getParameterArray(const std::string &name, Int64 index,
-                         Array &array) override;
-  size_t getParameterArrayCount(const std::string &name, Int64 index) override;
 
   void setParameterUInt32(const std::string &name, Int64 index,
                           UInt32 value) override;
   void setParameterInt32(const std::string &name, Int64 index,
                          Int32 value) override;
-  void setParameterReal32(const std::string &name, Int64 index,
-                          Real32 value) override;
   void setParameterBool(const std::string &name, Int64 index,
                         bool value) override;
   void setParameterString(const std::string &name, Int64 index,
@@ -118,7 +111,7 @@ private:
     UInt32 burnIn;
     bool collectStats;
     Int32 seed;
-    bool verbosity;
+    UInt32 verbosity;
     bool checkSynapseConsistency;
     UInt32 pamLength;
     UInt32 maxInfBacktrack;
@@ -126,13 +119,10 @@ private:
     UInt32 maxAge;
     UInt32 maxSeqLength;
     Int32 maxSegmentsPerCell;
-    Int32 maxSegmentsPerSegment;
+    Int32 maxSynapsesPerSegment;
     char  outputType[25];
 
-    // variables used by this class and not passed on
-    std::string cellsSavePath;
-    std::string logPathOutput;
-    std::string temporalImp;
+    // parameters used by this class and not passed on
     bool learningMode;
     bool inferenceMode;
     bool anomalyMode;
@@ -140,12 +130,18 @@ private:
     bool storeDenseOutput;
     bool computePredictedActiveCellIndices;
     bool orColumnOutputs;
+
+    // some local variables
     UInt32 outputWidth; // columnCount *cellsPerColumn
+    bool init;
+    Size iter;
+    UInt32 sequencePos;
   } args_;
 
-  bool init_;
-  Size iter_;
-  UInt32 sequencePos_;
+  std::string cellsSavePath_;
+  std::string logPathOutput_;
+  std::string temporalImp_;   // This is to allow variations in future versions.
+
   Byte* prevPredictedState_;
   std::vector<UInt32> prevPredictedColumns_;
 

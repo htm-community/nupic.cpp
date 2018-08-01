@@ -146,6 +146,9 @@ namespace nupic
           vector<Real64> calculateError_(const vector<UInt>& bucketIdxList, 
             const vector<UInt> patternNZ, UInt step);
 
+          void softmax_(vector<Real64>::iterator begin,
+                        vector<Real64>::iterator end);
+
           // The list of prediction steps to learn and infer.
           vector<UInt> steps_;
 

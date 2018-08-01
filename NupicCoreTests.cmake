@@ -35,6 +35,21 @@ set(unit_tests_executable unit_tests)
 
 set(test_src ${CMAKE_SOURCE_DIR}/src/test)
 
+set(algorithm_tests
+	   ${test_src}/unit/algorithms/AnomalyTest.cpp
+	   ${test_src}/unit/algorithms/Cells4Test.cpp
+	   ${test_src}/unit/algorithms/CondProbTableTest.cpp
+	   ${test_src}/unit/algorithms/ConnectionsTest.cpp
+	   ${test_src}/unit/algorithms/NearestNeighborUnitTest.cpp
+	   ${test_src}/unit/algorithms/SDRClassifierTest.cpp
+	   ${test_src}/unit/algorithms/SegmentTest.cpp
+	   ${test_src}/unit/algorithms/SpatialPoolerTest.cpp
+	   ${test_src}/unit/algorithms/SvmTest.cpp
+	   ${test_src}/unit/algorithms/TemporalMemoryTest.cpp
+	   ${test_src}/unit/algorithms/BacktrackingTMCppTest.cpp
+	   )
+               
+
 set(math_tests
 	   ${test_src}/unit/math/DenseTensorUnitTest.cpp
 	   ${test_src}/unit/math/DomainUnitTest.cpp
@@ -81,19 +96,6 @@ set(utils_tests
 	   ${test_src}/unit/utils/WatcherTest.cpp
 	   )
 	   
-set(algorithm_tests
-	   ${test_src}/unit/algorithms/AnomalyTest.cpp
-	   ${test_src}/unit/algorithms/Cells4Test.cpp
-	   ${test_src}/unit/algorithms/CondProbTableTest.cpp
-	   ${test_src}/unit/algorithms/ConnectionsTest.cpp
-	   ${test_src}/unit/algorithms/NearestNeighborUnitTest.cpp
-	   ${test_src}/unit/algorithms/SDRClassifierTest.cpp
-	   ${test_src}/unit/algorithms/SegmentTest.cpp
-	   ${test_src}/unit/algorithms/SpatialPoolerTest.cpp
-	   ${test_src}/unit/algorithms/SvmTest.cpp
-	   ${test_src}/unit/algorithms/TemporalMemoryTest.cpp
-	   )
-               
 set(engine_tests
 	   ${test_src}/unit/engine/InputTest.cpp
 	   ${test_src}/unit/engine/LinkTest.cpp
@@ -102,7 +104,10 @@ set(engine_tests
 	   )
 	   
 set(regions_tests
+	   ${test_src}/unit/region/regionTestUtilities.cpp
+	   ${test_src}/unit/region/regionTestUtilities.hpp
 	   ${test_src}/unit/region/SPRegionTest.cpp
+	   ${test_src}/unit/region/TMRegionTest.cpp
 	   )
 	   
 set(encoders_test

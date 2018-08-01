@@ -53,6 +53,8 @@ namespace nupic
 
   {
     // params for get/setParameter testing
+
+    // Populate the parameters with values.
     int32Param_ = params.getScalarT<Int32>("int32Param", 32);
     uint32Param_ = params.getScalarT<UInt32>("uint32Param", 33);
     int64Param_ = params.getScalarT<Int64>("int64Param", 64);
@@ -704,6 +706,18 @@ namespace nupic
         name << "unclonedInt64ArrayParam[" << i << "]";
         arrayOut(f, unclonedInt64ArrayParam_[i], name.str());
       }
+
+      // save the output buffers
+      f << "outputs [";
+      std::map<const std::string, Output *> outputs = region_->getOutputs();
+      for (auto iter : outputs) {
+        const Array &outputBuffer = iter.second->getData();
+        if (outputBuffer.getCount() != 0) {
+          f << iter.first << " ";
+          outputBuffer.binarySave(f);
+        }
+      }
+      f << "] "; // end of all output buffers
       f.close();
     }  // main file
 
@@ -775,6 +789,20 @@ namespace nupic
         name << "unclonedInt64ArrayParam[" << i << "]";
         arrayIn(f, unclonedInt64ArrayParam_[i], name.str());
       }
+
+      // Restore outputs
+      f >> label;
+      NTA_CHECK(label == "outputs");
+      f.ignore(1);
+      NTA_CHECK(f.get() == '['); // start of outputs
+      while (true) {
+        f >> label;
+        f.ignore(1);
+        if (label == "]")
+          break;
+        getOutput(label)->getData().binaryLoad(f);
+      }
+
       f.close();
     }  // main file
 

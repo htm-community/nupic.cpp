@@ -20,6 +20,8 @@
  * ---------------------------------------------------------------------
  */
 
+#include <filesystem>
+
 #include <nupic/ntypes/BundleIO.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/utils/Log.hpp>
@@ -64,14 +66,18 @@ namespace nupic
     NTA_CHECK(!isInput_);
     
     checkStreams_();
-    
-    ostream_ = new OFStream(getPath(name).c_str(), std::ios::out | std::ios::binary);
+    std::filesystem::path p(getPath(name));
+    std::filesystem::create_directories(p.parent_path());
+
+    ostream_ = new OFStream(p.string().c_str(), std::ios::out | std::ios::binary);
     if (!ostream_->is_open())
     {
       NTA_THROW << "getOutputStream - Unable to open bundle file " << name
                 << " for region " << regionName_ << " in network bundle "
                 << bundlePath_;
     }
+    ostream_->precision(std::numeric_limits<float>::max_digits10);
+    ostream_->precision(std::numeric_limits<double>::max_digits10);
     
     return *ostream_;
   }

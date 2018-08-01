@@ -34,6 +34,8 @@
 #include <nupic/math/Math.hpp>
 #include <nupic/math/Topology.hpp>
 
+#define VERSION 2  // version for stream serialization
+
 using namespace std;
 using namespace nupic;
 using namespace nupic::algorithms::spatial_pooler;
@@ -118,7 +120,7 @@ class CoordinateConverterND
 SpatialPooler::SpatialPooler()
 {
   // The current version number.
-  version_ = 2;
+  version_ = VERSION;
 }
 
 SpatialPooler::SpatialPooler(vector<UInt> inputDimensions,
@@ -139,6 +141,9 @@ SpatialPooler::SpatialPooler(vector<UInt> inputDimensions,
                              UInt spVerbosity,
                              bool wrapAround) : SpatialPooler::SpatialPooler()
 {
+  // The current version number.
+  version_ = VERSION;
+
   initialize(inputDimensions,
              columnDimensions,
              potentialRadius,
@@ -1381,6 +1386,14 @@ static void saveFloat_(ostream& outStream, FloatType v)
 
 void SpatialPooler::save(ostream& outStream) const
 {
+  // NOTE: outStream must be opened in binary mode.  Cannot test for this.
+  { // Pre-conditions
+      NTA_CHECK(outStream.good()) << "SpatialPooler::save: Bad stream";
+  } // End pre-conditions
+
+  outStream << std::setprecision(std::numeric_limits<float>::max_digits10);
+  outStream << std::setprecision(std::numeric_limits<double>::max_digits10);
+
   // Write a starting marker and version.
   outStream << "SpatialPooler" << endl;
   outStream << version_ << endl;
@@ -1388,112 +1401,86 @@ void SpatialPooler::save(ostream& outStream) const
   // Store the simple variables first.
   outStream << numInputs_ << " "
             << numColumns_ << " "
-            << potentialRadius_ << " ";
-
-  saveFloat_(outStream, potentialPct_);
-  saveFloat_(outStream, initConnectedPct_);
-
-  outStream << globalInhibition_ << " "
-            << numActiveColumnsPerInhArea_ << " ";
-
-  saveFloat_(outStream, localAreaDensity_);
-
-  outStream << stimulusThreshold_ << " "
+            << potentialRadius_ << " "
+            << potentialPct_ << " "
+            << initConnectedPct_ << " "
+            << globalInhibition_ << " "
+            << numActiveColumnsPerInhArea_ << " "
+            << localAreaDensity_ << " "
+            << stimulusThreshold_ << " "
             << inhibitionRadius_ << " "
-            << dutyCyclePeriod_ << " ";
-
-  saveFloat_(outStream, boostStrength_);
-
-  outStream << iterationNum_ << " "
+            << dutyCyclePeriod_ << " "
+            << boostStrength_ << " "
+            << iterationNum_ << " "
             << iterationLearnNum_ << " "
             << spVerbosity_ << " "
-            << updatePeriod_ << " ";
-
-  saveFloat_(outStream, synPermMin_);
-  saveFloat_(outStream, synPermMax_);
-  saveFloat_(outStream, synPermTrimThreshold_);
-  saveFloat_(outStream, synPermInactiveDec_);
-  saveFloat_(outStream, synPermActiveInc_);
-  saveFloat_(outStream, synPermBelowStimulusInc_);
-  saveFloat_(outStream, synPermConnected_);
-  saveFloat_(outStream, minPctOverlapDutyCycles_);
-
-  outStream << wrapAround_ << " "
-            << endl;
+            << updatePeriod_ << " "
+            << synPermMin_ << " "
+            << synPermMax_ << " "
+            << synPermTrimThreshold_ << " "
+            << synPermInactiveDec_ << " "
+            << synPermActiveInc_ << " "
+            << synPermBelowStimulusInc_ << " "
+            << synPermConnected_ << " "
+            << minPctOverlapDutyCycles_ << " "
+            << wrapAround_ << " "
+            << std::endl;
 
   // Store vectors.
-  outStream << inputDimensions_.size() << " ";
-  for (auto & elem : inputDimensions_)
-  {
-    outStream << elem << " ";
-  }
-  outStream << endl;
+  outStream << "inputDimensions " << inputDimensions_.size() << "[";
+  outStream.write((const char *)&inputDimensions_[0],
+                  inputDimensions_.size() * sizeof(UInt32));
+  outStream << "]" << std::endl;
 
-  outStream << columnDimensions_.size() << " ";
-  for (auto & elem : columnDimensions_)
-  {
-    outStream << elem << " ";
-  }
-  outStream << endl;
+  outStream << "columnDimensions " << columnDimensions_.size() << "[";
+  outStream.write((const char *)&columnDimensions_[0],
+                  columnDimensions_.size() * sizeof(UInt32));
+  outStream << "]" << std::endl;
 
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    saveFloat_(outStream, boostFactors_[i]);
-  }
-  outStream << endl;
+  outStream << "boostFactors " << boostFactors_.size() << "[";
+  outStream.write((const char *)&boostFactors_[0],
+                  boostFactors_.size() * sizeof(Real));
+  outStream << "]" << std::endl;
 
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    saveFloat_(outStream, overlapDutyCycles_[i]);
-  }
-  outStream << endl;
+  outStream << "overlapDutyCycles " << overlapDutyCycles_.size() << "[";
+  outStream.write((const char *)&overlapDutyCycles_[0],
+                  overlapDutyCycles_.size() * sizeof(Real));
+  outStream << "]" << std::endl;
 
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    saveFloat_(outStream, activeDutyCycles_[i]);
-  }
-  outStream << endl;
+  outStream << "activeDutyCycles " << activeDutyCycles_.size() << "[";
+  outStream.write((const char *)&activeDutyCycles_[0],
+                  activeDutyCycles_.size() * sizeof(Real));
+  outStream << "]" << std::endl;
 
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    saveFloat_(outStream, minOverlapDutyCycles_[i]);
-  }
-  outStream << endl;
+  outStream << "minOverlapDutyCycles " << minOverlapDutyCycles_.size() << "[";
+  outStream.write((const char *)&minOverlapDutyCycles_[0],
+                  minOverlapDutyCycles_.size() * sizeof(Real));
+  outStream << "]" << std::endl;
 
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    outStream << tieBreaker_[i] << " ";
-  }
-  outStream << endl;
-
+  outStream << "tieBreaker " << tieBreaker_.size() << "[";
+  outStream.write((const char *)&tieBreaker_[0],
+                  tieBreaker_.size() * sizeof(Real));
+  outStream << "]" << std::endl;
 
   // Store matrices.
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    vector<UInt> pot;
-    pot.resize(potentialPools_.nNonZerosOnRow(i));
-    pot = potentialPools_.getSparseRow(i);
-    outStream << pot.size() << endl;
-    for (auto & elem : pot)
-    {
-      outStream << elem << " ";
-    }
-    outStream << endl;
-  }
-  outStream << endl;
+  outStream << "potentialPools ";
+  potentialPools_.toBinary(outStream);
+  outStream << std::endl;
 
+  outStream << "permanences ";
+  //permanences_.toBinary(outStream);    TODO: This does not work
   for (UInt i = 0; i < numColumns_; i++)
   {
     vector<pair<UInt, Real> > perm;
     perm.resize(permanences_.nNonZerosOnRow(i));
-    outStream << perm.size() << endl;
+    UInt nNonZerosOnRow = (UInt)perm.size();
+    outStream.write((const char *)&nNonZerosOnRow, sizeof(nNonZerosOnRow));
     permanences_.getRowToSparse(i, perm.begin());
     for (auto & elem : perm)
     {
-      outStream << elem.first << " ";
-      saveFloat_(outStream, elem.second);
+      outStream.write((const char *)&elem.first, sizeof(UInt));
+      outStream.write((const char *)&elem.second, sizeof(Real));
     }
-    outStream << endl;
   }
   outStream << endl;
 
@@ -1507,8 +1494,15 @@ void SpatialPooler::save(ostream& outStream) const
 // that everything in initialize is handled properly here.
 void SpatialPooler::load(istream& inStream)
 {
+  // NOTE: inStream must be opened in binary mode.  Cannot test for this.
+  //       This is not platform independent.  If written on windows x64 it should 
+  //       be able to read on Windows x64.  Endedness and bitness must match.
+  { // Pre-conditions
+      NTA_CHECK(inStream.good()) << "SpatialPooler::load: Bad stream";
+  } // End pre-conditions
+
   // Current version
-  version_ = 2;
+  version_ = VERSION;
 
   // Check the marker
   string marker;
@@ -1556,92 +1550,196 @@ void SpatialPooler::load(istream& inStream)
     inStream >> wrapAround_;
   }
 
-  // Retrieve vectors.
-  UInt numInputDimensions;
-  inStream >> numInputDimensions;
-  inputDimensions_.resize(numInputDimensions);
-  for (UInt i = 0; i < numInputDimensions; i++)
-  {
-    inStream >> inputDimensions_[i];
-  }
-
-  UInt numColumnDimensions;
-  inStream >> numColumnDimensions;
-  columnDimensions_.resize(numColumnDimensions);
-  for (UInt i = 0; i < numColumnDimensions; i++)
-  {
-    inStream >> columnDimensions_[i];
-  }
-
-  boostFactors_.resize(numColumns_);
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    inStream >> boostFactors_[i];
-  }
-
-  overlapDutyCycles_.resize(numColumns_);
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    inStream >> overlapDutyCycles_[i];
-  }
-
-  activeDutyCycles_.resize(numColumns_);
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    inStream >> activeDutyCycles_[i];
-  }
-
-  minOverlapDutyCycles_.resize(numColumns_);
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    inStream >> minOverlapDutyCycles_[i];
-  }
-
-  tieBreaker_.resize(numColumns_);
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    inStream >> tieBreaker_[i];
-  }
-
-
-  // Retrieve matrices.
-  potentialPools_.resize(numColumns_, numInputs_);
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    UInt nNonZerosOnRow;
-    inStream >> nNonZerosOnRow;
-    vector<UInt> pot(nNonZerosOnRow, 0);
-    for (UInt j = 0; j < nNonZerosOnRow; j++)
+  if (version < 2) {
+    // Retrieve vectors.
+    UInt numInputDimensions;
+    inStream >> numInputDimensions;
+    inputDimensions_.resize(numInputDimensions);
+    for (UInt i = 0; i < numInputDimensions; i++)
     {
-      inStream >> pot[j];
+      inStream >> inputDimensions_[i];
     }
-    potentialPools_.replaceSparseRow(i,pot.begin(), pot.end());
-  }
 
-  permanences_.resize(numColumns_, numInputs_);
-  connectedSynapses_.resize(numColumns_, numInputs_);
-  connectedCounts_.resize(numColumns_);
-  for (UInt i = 0; i < numColumns_; i++)
-  {
-    UInt nNonZerosOnRow;
-    inStream >> nNonZerosOnRow;
-    vector<Real> perm(numInputs_, 0);
-
-    for (UInt j = 0; j < nNonZerosOnRow; j++)
+    UInt numColumnDimensions;
+    inStream >> numColumnDimensions;
+    columnDimensions_.resize(numColumnDimensions);
+    for (UInt i = 0; i < numColumnDimensions; i++)
     {
-      UInt index;
-      Real value;
-      inStream >> index;
-      inStream >> value;
-      perm[index] = value;
+      inStream >> columnDimensions_[i];
     }
-    updatePermanencesForColumn_(perm, i, false);
+
+    boostFactors_.resize(numColumns_);
+    for (UInt i = 0; i < numColumns_; i++)
+    {
+      inStream >> boostFactors_[i];
+    }
+
+    overlapDutyCycles_.resize(numColumns_);
+    for (UInt i = 0; i < numColumns_; i++)
+    {
+      inStream >> overlapDutyCycles_[i];
+    }
+
+    activeDutyCycles_.resize(numColumns_);
+    for (UInt i = 0; i < numColumns_; i++)
+    {
+      inStream >> activeDutyCycles_[i];
+    }
+
+    minOverlapDutyCycles_.resize(numColumns_);
+    for (UInt i = 0; i < numColumns_; i++)
+    {
+      inStream >> minOverlapDutyCycles_[i];
+    }
+
+    tieBreaker_.resize(numColumns_);
+    for (UInt i = 0; i < numColumns_; i++)
+    {
+      inStream >> tieBreaker_[i];
+    }
+
+
+    // Retrieve matrices.
+    potentialPools_.resize(numColumns_, numInputs_);
+    for (UInt i = 0; i < numColumns_; i++)
+    {
+      UInt nNonZerosOnRow;
+      inStream >> nNonZerosOnRow;
+      vector<UInt> pot(nNonZerosOnRow, 0);
+      for (UInt j = 0; j < nNonZerosOnRow; j++)
+      {
+        inStream >> pot[j];
+      }
+      potentialPools_.replaceSparseRow(i,pot.begin(), pot.end());
+    }
+
+    permanences_.resize(numColumns_, numInputs_);
+    connectedSynapses_.resize(numColumns_, numInputs_);
+    connectedCounts_.resize(numColumns_);
+    for (UInt i = 0; i < numColumns_; i++)
+    {
+      UInt nNonZerosOnRow;
+      inStream >> nNonZerosOnRow;
+      vector<Real> perm(numInputs_, 0);
+
+      for (UInt j = 0; j < nNonZerosOnRow; j++)
+      {
+        UInt index;
+        Real value;
+        inStream >> index;
+        inStream >> value;
+        perm[index] = value;
+      }
+      updatePermanencesForColumn_(perm, i, false);
+    }
+  } else {
+    // This is version 2, binary save/load
+    Size size;
+
+    // Restore vectors
+    inStream >> marker;
+    NTA_CHECK(marker == "inputDimensions");
+    inStream >> size;
+    NTA_CHECK(inStream.get() == '[');
+    inputDimensions_.resize(size);
+    inStream.read((char*)&inputDimensions_[0], size * sizeof(UInt32));
+    NTA_CHECK(inStream.get() == ']');
+    inStream.ignore(1);
+
+    inStream >> marker;
+    NTA_CHECK(marker == "columnDimensions");
+    inStream >> size;
+    NTA_CHECK(inStream.get() == '[');
+    columnDimensions_.resize(size);
+    inStream.read((char*)&columnDimensions_[0], size * sizeof(UInt32));
+    NTA_CHECK(inStream.get() == ']');
+    inStream.ignore(1);
+
+    inStream >> marker;
+    NTA_CHECK(marker == "boostFactors");
+    inStream >> size;
+    NTA_CHECK(inStream.get() == '[');
+    boostFactors_.resize(size);
+    inStream.read((char*)&boostFactors_[0], size * sizeof(Real));
+    NTA_CHECK(inStream.get() == ']');
+    inStream.ignore(1);
+
+    inStream >> marker;
+    NTA_CHECK(marker == "overlapDutyCycles");
+    inStream >> size;
+    NTA_CHECK(inStream.get() == '[');
+    overlapDutyCycles_.resize(size);
+    inStream.read((char*)&overlapDutyCycles_[0], size * sizeof(Real));
+    NTA_CHECK(inStream.get() == ']');
+    inStream.ignore(1);
+
+    inStream >> marker;
+    NTA_CHECK(marker == "activeDutyCycles");
+    inStream >> size;
+    NTA_CHECK(inStream.get() == '[');
+    activeDutyCycles_.resize(size);
+    inStream.read((char*)&activeDutyCycles_[0], size * sizeof(Real));
+    NTA_CHECK(inStream.get() == ']');
+    inStream.ignore(1);
+
+    inStream >> marker;
+    NTA_CHECK(marker == "minOverlapDutyCycles");
+    inStream >> size;
+    NTA_CHECK(inStream.get() == '[');
+    minOverlapDutyCycles_.resize(size);
+    inStream.read((char*)&minOverlapDutyCycles_[0], size * sizeof(Real));
+    NTA_CHECK(inStream.get() == ']');
+    inStream.ignore(1);
+
+    inStream >> marker;
+    NTA_CHECK(marker == "tieBreaker");
+    inStream >> size;
+    NTA_CHECK(inStream.get() == '[');
+    tieBreaker_.resize(size);
+    inStream.read((char*)&tieBreaker_[0], size * sizeof(Real));
+    NTA_CHECK(inStream.get() == ']');
+    inStream.ignore(1);
+    
+    // Sparse matrix
+    inStream >> marker;
+    NTA_CHECK(marker == "potentialPools");
+    inStream.ignore(1);
+    potentialPools_.fromBinary(inStream);
+    inStream.ignore(1);
+
+    inStream >> marker;
+    NTA_CHECK(marker == "permanences");
+    inStream.ignore(1);
+    // permanences_.fromBinary(inStream);  TODO: does not work
+    // we will have to deserialize each NZ row.
+    permanences_.resize(numColumns_, numInputs_);
+    connectedSynapses_.resize(numColumns_, numInputs_);
+    connectedCounts_.resize(numColumns_);
+    for (UInt i = 0; i < numColumns_; i++)
+    {
+      UInt nNonZerosOnRow;
+      inStream.read((char *)&nNonZerosOnRow, sizeof(nNonZerosOnRow));
+      vector<Real> perm(numInputs_, 0);
+
+      for (UInt j = 0; j < nNonZerosOnRow; j++)
+      {
+        UInt index;
+        Real value;
+        inStream.read((char *)&index, sizeof(UInt));
+        inStream.read((char *)&value, sizeof(Real));
+        perm[index] = value;
+      }
+      updatePermanencesForColumn_(perm, i, false);
+    }
+    inStream.ignore(1);
   }
 
   inStream >> rng_;
+  inStream.ignore(1);
 
   inStream >> marker;
   NTA_CHECK(marker == "~SpatialPooler");
+  inStream.ignore(1);
 
   // initialize ephemeral members
   overlaps_.resize(numColumns_);

@@ -173,7 +173,7 @@ static Value toValue(const YAML::Node& node, NTA_BasicType dataType)
 
 
 /* 
- * For converting default values specified in nodespec
+ * For converting default values specified in nodespec string
  */
 Value toValue(const std::string& yamlstring, NTA_BasicType dataType)
 {
@@ -238,15 +238,20 @@ ValueMap toValueMap(const char* yamlstring,
     }
     if (vm.contains(key))
       NTA_THROW << "Parameter '" << key << "' specified more than once in YAML document";
-    ParameterSpec spec = parameters.getByName(key);
+    ParameterSpec ps = parameters.getByName(key); // makes a copy of ParameterSpec
+    Size x = sizeof(ps);
+    Size y = sizeof(ParameterSpec);
     try
     {
-      Value v = toValue(i->second, spec.dataType);
-      if (v.isScalar() && spec.count != 1)
+      if (ps.accessMode == ParameterSpec::ReadOnlyAccess) {
+        NTA_THROW << "Parameter '" << key << "'. This is ReadOnly access. Cannot be set.";
+      }
+      Value v = toValue(i->second, ps.dataType);
+      if (v.isScalar() && ps.count != 1)
       {
         NTA_THROW << "Parameter '" << key << "'. Bad value in runtime parameters. Expected array value but got scalar value";
       }
-      if (!v.isScalar() && spec.count == 1)
+      if (!v.isScalar() && ps.count == 1)
       {
         NTA_THROW << "Parameter '" << key << "'. Bad value in runtime parameters. Expected scalar value but got array value";
       }
@@ -259,10 +264,10 @@ ValueMap toValueMap(const char* yamlstring,
   // Populate ValueMap with default values if they were not specified in the YAML dictionary.
   for (size_t i = 0; i < parameters.getCount(); i++)
   {
-    std::pair<std::string, ParameterSpec>& item = parameters.getByIndex(i);
+    const std::pair<std::string, ParameterSpec>& item = parameters.getByIndex(i);
     if (!vm.contains(item.first))
     {
-      ParameterSpec & ps = item.second;
+      const ParameterSpec & ps = item.second;
       if (ps.defaultValue != "")
       {
         // TODO: This check should be uncommented after dropping NuPIC 1.x nodes (which don't comply) //FIXME try this

@@ -113,11 +113,14 @@ namespace nupic
     bool removeTree(const std::string & path, bool noThrow)
     {
       std::error_code ec;
-      if (fs::is_directory(path, ec)) {
-        fs::remove_all(path, ec);
-      }
-      if (!noThrow) {
-        NTA_CHECK(!ec) << "removeTree: " << ec.message();
+      if (fs::exists(path)) {
+        if (fs::is_directory(path, ec)) {
+          fs::remove_all(path, ec);
+          std::this_thread::sleep_for(std::chrono::milliseconds(100));  // need a yield.
+        }
+        if (!noThrow) {
+          NTA_CHECK(!ec) << "removeTree: " << ec.message();
+        }
       }
       return(!ec);
     }

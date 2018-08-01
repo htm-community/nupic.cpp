@@ -117,12 +117,14 @@ namespace nupic
     isInstance(const ArrayBase &a);
 
 
-
     /**
-    * YAML serialization and deserialization for an Array
+    * serialization and deserialization for an Array
     */
     virtual void serialize(YAML::Emitter& out) const;
     virtual void deserialize(const YAML::Node& node);
+
+    void binarySave(std::ostream &outStream) const;
+    void binaryLoad(std::istream &inStream);
 
 
     friend std::ostream &operator<<(std::ostream &outStream,  const ArrayBase &a);
@@ -137,6 +139,13 @@ namespace nupic
     NTA_BasicType type_;// type of data in this buffer
     bool own_;
     void convertInto(ArrayBase &a, size_t offset=0) const;
+
+    // Used by the Array class to return an NZ array from local array.
+    // Template defines the type of the local array.
+    void NonZero(ArrayBase& a) const;
+
+    template <typename T> 
+    void NonZeroT(ArrayBase &a) const;
 
 
   private:

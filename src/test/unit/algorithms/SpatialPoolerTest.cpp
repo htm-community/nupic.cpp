@@ -31,6 +31,7 @@
 #include <nupic/algorithms/SpatialPooler.hpp>
 #include <nupic/math/StlIo.hpp>
 #include <nupic/types/Types.hpp>
+#include <nupic/os/Directory.hpp>
 #include <nupic/utils/Log.hpp>
 #include "gtest/gtest.h"
 
@@ -2217,18 +2218,20 @@ namespace {
 
   TEST(SpatialPoolerTest, testSaveLoad)
   {
-    const char* filename = "SpatialPoolerSerialization.tmp";
+    Directory::removeTree("TestOutputDir", true);
+    Directory::create("TestOutputDir");
+    const char* filename = "TestOutputDir/SpatialPoolerSerialization.tmp";
     SpatialPooler sp1, sp2;
     UInt numInputs = 6;
     UInt numColumns = 12;
     setup(sp1, numInputs, numColumns);
 
     ofstream outfile;
-    outfile.open(filename);
+    outfile.open(filename, ios::binary);
     sp1.save(outfile);
     outfile.close();
 
-    ifstream infile (filename);
+    ifstream infile (filename, ios::binary);
     sp2.load(infile);
     infile.close();
 

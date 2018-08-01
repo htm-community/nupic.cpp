@@ -50,21 +50,22 @@ struct CollectionTest : public ::testing::Test
   };
 };
 
-namespace nupic {
+//namespace nupic {
   // The Collection class must be explicitly instantiated. 
-  template class Collection<int>;
-  template class Collection<CollectionTest::Item>;
-  template class Collection<CollectionTest::Item*>;
-}
+//  template class Collection<int>;
+//  template class Collection<CollectionTest::Item>;
+//  template class Collection<CollectionTest::Item*>;
+//}
 
 
 TEST_F(CollectionTest, testEmptyCollection)
 {
   Collection<int> c;
+  int i;
   ASSERT_TRUE(c.getCount() == 0);
   ASSERT_TRUE(c.contains("blah") == false);
   ASSERT_ANY_THROW(c.getByIndex(0));
-  ASSERT_ANY_THROW(c.getByName("blah"));
+  ASSERT_ANY_THROW(i = c.getByName("blah"));
 }
 
 TEST_F(CollectionTest, testCollectionWith_1_Item)

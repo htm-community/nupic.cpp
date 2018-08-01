@@ -59,10 +59,10 @@
  * which Cell's project to which Cell's and Segments.
  *
  * The Cells4 class is used extensively by Python code. Most of the
- * methods are wrapped automatically by SWIG. Some additional methods
- * are explicitly defined in algorithms_impl.i. The memory for
+ * methods are wrapped automatically. The memory buffers for
  * certain states, such as _infActiveStateT, can be initialized as
- * pointers to numpy array buffers, avoiding a copy step.
+ * pointers to numpy array buffers, avoiding a copy step. For C++
+ * implemented BacktrackingTMCpp the Cells4 class owns these state buffers.
  */
 
 namespace nupic {
@@ -269,7 +269,7 @@ namespace nupic {
         typedef Segment::InSynapses InSynapses;
         typedef std::vector<OutSynapse> OutSynapses;
         typedef std::vector<SegmentUpdate> SegmentUpdates;
-        static const UInt VERSION = 2;
+        static const UInt VERSION = 3;
 
       private:
         nupic::Random _rng;
@@ -471,8 +471,7 @@ namespace nupic {
 
         //-----------------------------------------------------------------------
         /**
-         * Use this when C++ allocates memory for the arrays, and Python needs to look
-         * at them.
+         * Use this when C++ allocates memory for the arrays, and Python needs to look at them.
          */
         void getStatePointers(Byte*& activeT, Byte*& activeT1,
                                      Byte*& predT, Byte*& predT1,
@@ -503,6 +502,23 @@ namespace nupic {
           predT    = _learnPredictedStateT.arrayPtr();
           predT1   = _learnPredictedStateT1.arrayPtr();
         }
+
+        //----------------------------------------------------------------------
+        /**
+         * Get individual state buffer pointers
+         */
+        Byte *getInfActiveStateT() { return _infActiveStateT.arrayPtr(); }
+        Byte *getInfActiveStateT1() { return _infActiveStateT1.arrayPtr(); }
+        Byte *getInfPredictedStateT() { return _infPredictedStateT.arrayPtr(); }
+        Byte *getInfPredictedStateT1() { return _infPredictedStateT1.arrayPtr();}
+        Byte *getLearnActiveStateT() { return _learnActiveStateT.arrayPtr(); }
+        Byte *getLearnActiveStateT1() { return _learnActiveStateT1.arrayPtr(); }
+        Byte *getLearnPredictedStateT(){return _learnPredictedStateT.arrayPtr();}
+        Byte *getLearnPredictedStateT1(){return _learnPredictedStateT.arrayPtr();}
+        Real *getCellConfidenceT() { return _cellConfidenceT; }
+        Real *getCellConfidenceT1() { return _cellConfidenceT1; }
+        Real *getColConfidenceT() { return _colConfidenceT; }
+        Real *getColConfidenceT1() { return _colConfidenceT1; }
 
         //----------------------------------------------------------------------
         /**
@@ -546,8 +562,7 @@ namespace nupic {
         void setVerbosity(UInt v)         {_verbosity = v; }
         void setMaxAge(UInt a)            {_maxAge = a; }
         void setMaxSeqLength(UInt v)      {_maxSeqLength = v;}
-        void setCheckSynapseConsistency(bool val)
-                                          { _checkSynapseConsistency = val;}
+        void setCheckSynapseConsistency(bool val) { _checkSynapseConsistency = val;}
 
         void setMaxSegmentsPerCell(int maxSegs) {
           if (maxSegs != -1) {
@@ -558,7 +573,7 @@ namespace nupic {
           _maxSegmentsPerCell = maxSegs;
         }
 
-        void setMaxSynapsesPerCell(int maxSyns) {
+        void setMaxSynapsesPerSegment(int maxSyns) {
           if (maxSyns != -1) {
             NTA_CHECK(maxSyns > 0);
             NTA_CHECK(_globalDecay == 0.0);

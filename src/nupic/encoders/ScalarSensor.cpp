@@ -108,7 +108,7 @@ namespace nupic
         1, // elementCount
         "", // constraints
         "0", // defaultValue
-        ParameterSpec::ReadWriteAccess));
+        ParameterSpec::CreateAccess));
 
     ns->parameters.add(
       "w",
@@ -118,7 +118,7 @@ namespace nupic
         1, // elementCount
         "", // constraints
         "0", // defaultValue
-        ParameterSpec::ReadWriteAccess));
+        ParameterSpec::CreateAccess));
 
     ns->parameters.add(
       "resolution",
@@ -128,7 +128,7 @@ namespace nupic
         1, // elementCount
         "", // constraints
         "0", // defaultValue
-        ParameterSpec::ReadWriteAccess));
+        ParameterSpec::CreateAccess));
 
     ns->parameters.add(
       "radius",
@@ -138,7 +138,7 @@ namespace nupic
         1, // elementCount
         "", // constraints
         "0", // defaultValue
-        ParameterSpec::ReadWriteAccess));
+        ParameterSpec::CreateAccess));
 
     ns->parameters.add(
       "minValue",
@@ -148,7 +148,7 @@ namespace nupic
         1, // elementCount
         "", // constraints
         "-1", // defaultValue
-        ParameterSpec::ReadWriteAccess));
+        ParameterSpec::CreateAccess));
 
     ns->parameters.add(
       "maxValue",
@@ -158,7 +158,7 @@ namespace nupic
         1, // elementCount
         "", // constraints
         "-1", // defaultValue
-        ParameterSpec::ReadWriteAccess));
+        ParameterSpec::CreateAccess));
 
     ns->parameters.add(
       "periodic",
@@ -166,9 +166,9 @@ namespace nupic
         "Whether the encoder is periodic",
         NTA_BasicType_Bool,
         1, // elementCount
-        "", // constraints
+        "bool", // constraints
         "false", // defaultValue
-        ParameterSpec::ReadWriteAccess));
+        ParameterSpec::CreateAccess));
 
     ns->parameters.add(
       "clipInput",
@@ -176,9 +176,9 @@ namespace nupic
         "Whether to clip inputs if they're outside [minValue, maxValue]",
         NTA_BasicType_Bool,
         1, // elementCount
-        "", // constraints
+        "bool", // constraints
         "false", // defaultValue
-        ParameterSpec::ReadWriteAccess));
+        ParameterSpec::CreateAccess));
 
     /* ----- outputs ----- */
 
@@ -205,40 +205,58 @@ namespace nupic
     return ns;
   }
 
-  void
-  ScalarSensor::getParameterFromBuffer(const std::string& name,
-                                       Int64 index,
-                                       IWriteBuffer& value)
+  ////////////////////////////////////////////////////////////////////////
+  //           Parameters
+  ////////////////////////////////////////////////////////////////////////
+  Real64 ScalarSensor::getParameterReal64(const std::string &name, Int64 index) 
   {
-    if (name == "sensedValue")
-    {
-      value.write(sensedValue_);
-    }
-    else if (name == "n")
-    {
-      // Cast to UInt32 to avoid call resolution ambiguity on the write() method
-      value.write((UInt32)encoder_->getOutputWidth());
-    }
-    else
-    {
-      NTA_THROW << "ScalarSensor::getParameter -- Unknown parameter " << name;
-    }
+      if (name == "sensedValue") {
+        return sensedValue_;
+      }
+      if (name == "resolution") {
+        return resolution_;
+      }
+      if (name == "radius") {
+        return radius_;
+      }
+      if (name == "minValue") {
+        return minValue_;
+      }
+      if (name == "maxValue") {
+        return maxValue_;
+      }
+      return this->RegionImpl::getParameterUInt32(name, index); // default
+  }
+  UInt32 ScalarSensor::getParameterUInt32(const std::string &name, Int64 index) 
+  {
+      if (name == "n") {
+        return (UInt32)encoder_->getOutputWidth();
+      }
+      if (name == "w") {
+        return w_;
+      }
+      return this->RegionImpl::getParameterUInt32(name, index); // default
+  }
+  bool ScalarSensor::getParameterBool(const std::string &name, Int64 index) 
+  {
+      if (name == "periodic") {
+        return periodic_;
+      }
+      if (name == "clipInput") {
+        return clipInput_;
+      }
+      return this->RegionImpl::getParameterBool(name, index); // default
   }
 
-  void
-  ScalarSensor::setParameterFromBuffer(const std::string& name,
-                                       Int64 index,
-                                       IReadBuffer& value)
+  void ScalarSensor::setParameterReal64(const std::string &name, Int64 index, Real64 value) 
   {
-    if (name == "sensedValue")
-    {
-      value.read(sensedValue_);
+    if (name == "sensedValue") {
+      sensedValue_ = value;
+      return;
     }
-    else
-    {
-      NTA_THROW << "ScalarSensor::setParameter -- Unknown parameter " << name;
-    }
+    RegionImpl::setParameterReal64(name, index, value);
   }
+
 
   void
   ScalarSensor::initialize()
@@ -312,6 +330,10 @@ namespace nupic
     }
     initialize();
 
+    // create and prepopulate the output buffers
+    encodedOutput_->initialize(getNodeOutputElementCount("encoded"));
+    bucketOutput_->initialize(getNodeOutputElementCount("bucket"));
+    compute();
   }
 
 } // namespace

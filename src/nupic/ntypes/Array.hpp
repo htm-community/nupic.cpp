@@ -208,26 +208,13 @@ namespace nupic {
       ArrayBase::convertInto(a, offset);
     }
 
-    // Create a NonZero array from the indexes of non-zero values.
-    Array nonZero() const {
-      NTA_CHECK(type_ == NTA_BasicType_Real32)  << "Expected an Array with type of Real32.";
-      Real32 *originalBuffer = (Real32 *)buffer_.get();
-      // find the length of the array
-      size_t nonZeroLen = 0;
-      for (size_t i = 0; i < count_; i++) {
-        if (originalBuffer[i])
-          nonZeroLen++;
-      }
-      // populate the new array with indexes of non-zero values.
-      Array nonZero(NTA_BasicType_UInt32);
-      nonZero.allocateBuffer(nonZeroLen);
-      UInt32 *ptr = (UInt32 *)nonZero.getBuffer();
-      for (size_t i = 0; i < count_; i++) {
-        if (originalBuffer[i])
-          *ptr++ = (UInt32)i;
-      }
-      return nonZero; // shallow copy
+    // Create a NonZero array from the indexes of non-zero values of the local array.
+    Array nonZero() const { 
+      Array a(NTA_BasicType_UInt32);
+      ArrayBase::NonZero(a);
+      return a;
     }
+
 
     // Copy a subset
     // This creates a new buffer of the same type.

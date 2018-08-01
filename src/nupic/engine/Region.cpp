@@ -47,7 +47,7 @@ Methods related to inputs and outputs are in Region_io.cpp
 
 namespace nupic {
 
-class GenericRegisteredRegionImpl;
+class RegisteredRegionImpl;
 
 // Create region from parameter spec
 Region::Region(std::string name, const std::string &nodeType,
@@ -57,10 +57,12 @@ Region::Region(std::string name, const std::string &nodeType,
 {
   // Set region info before creating the RegionImpl so that the
   // Impl has access to the region info in its constructor.
+  // Get the spec from the factory. It is cached by RegisteredRegionImpl.
   RegionImplFactory &factory = RegionImplFactory::getInstance();
   spec_ = factory.getSpec(nodeType);
 
 
+  // This returns a new instance of the nodeType.  This class must free.
   impl_ = factory.createRegionImpl(nodeType, nodeParams, this);
   createInputsAndOutputs_();
 }
@@ -140,6 +142,7 @@ Region::~Region() {
   inputs_.clear();
 
   delete impl_;
+
 }
 
 void Region::initialize() {
@@ -165,7 +168,7 @@ const Spec *Region::getSpecFromType(const std::string &nodeType) {
 }
 
 void Region::registerCPPRegion(const std::string name,
-                               GenericRegisteredRegionImpl *wrapper) {
+                               RegisteredRegionImpl *wrapper) {
   RegionImplFactory::registerCPPRegion(name, wrapper);
 }
 
@@ -235,6 +238,7 @@ size_t Region::getNodeOutputElementCount(const std::string &name) {
 }
 
 void Region::initOutputs() {
+  // Called by Network during initialization.
   // Some outputs are optional. These outputs will have 0 elementCount in the
   // node spec and also return 0 from impl->getNodeOutputElementCount(). These
   // outputs still appear in the output map, but with an array size of 0. All

@@ -35,6 +35,7 @@
 #include <vector>
 
 #include <nupic/ntypes/Collection.hpp>
+#include <nupic/engine/Region.hpp>
 
 #include <nupic/types/ptr_types.hpp>
 #include <nupic/types/Types.hpp>
@@ -44,7 +45,7 @@ namespace nupic
 
   class Region;
   class Dimensions;
-  class GenericRegisteredRegionImpl;
+  class RegisteredRegionImpl;
   class Link;
 
   /**
@@ -149,6 +150,7 @@ namespace nupic
 
     /**
      * Create a new region from saved state.
+     * (A Streamed binary file)
      *
      * @param name
      *        Name of the region, Must be unique in the network
@@ -169,6 +171,7 @@ namespace nupic
                         const std::string& nodeType,
                         const std::string& bundlePath,
                         const std::string& label);
+
 
     /**
      * Removes an existing region from the network.
@@ -377,6 +380,9 @@ namespace nupic
      */
     Collection<callbackItem>& getCallbacks();
 
+    void setCallback(std::string name, runCallbackFunction func, void *arg);
+    void unsetCallback(std::string name);
+
     /**
      * @}
      *
@@ -413,7 +419,7 @@ namespace nupic
      * Adds a c++ region to the RegionImplFactory's packages
      */
     static void registerCPPRegion(const std::string name,
-                                  GenericRegisteredRegionImpl* wrapper);
+                                  RegisteredRegionImpl* wrapper);
 
     /*
      * Removes a c++ region from RegionImplFactory's packages

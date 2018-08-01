@@ -90,7 +90,7 @@ namespace nupic {
       class CState
       {
       public:
-        static const UInt VERSION = 1;
+        static const UInt VERSION = 2;
 
         CState()
         {
@@ -152,6 +152,7 @@ namespace nupic {
           // inconsistent.
           return _pData ;
         }
+        // output ascii
         void print(std::ostream& outStream) const
         {
           outStream << version() << " "
@@ -164,17 +165,34 @@ namespace nupic {
           outStream << std::endl
                     << "end" << std::endl;
         }
-        void load(std::istream& inStream)
+        // output binary
+        inline void binary_save(std::ostream& outStream) const
+        {
+          outStream << version() << " "
+                    << _fMemoryAllocatedByPython << " "
+                    << _nCells << std::endl;
+          outStream.write((const char *)_pData, _nCells * sizeof(Byte));
+          //for (UInt i = 0; i < _nCells; ++i)
+          //{
+          //  outStream << _pData[i] << " ";
+          //}
+          outStream << std::endl
+                    << "end" << std::endl;
+        }
+
+        inline void load(std::istream& inStream)
         {
           UInt version;
           inStream >> version;
-          NTA_CHECK(version == 1);
+          NTA_CHECK(version == 2);
           inStream >> _fMemoryAllocatedByPython
                    >> _nCells;
-          for (UInt i = 0; i < _nCells; ++i)
-          {
-            inStream >> _pData[i];
-          }
+          inStream.ignore(1);
+          inStream.read((char *)_pData, _nCells * sizeof(Byte));
+          //for (UInt i = 0; i < _nCells; ++i)
+          //{
+          //  inStream >> _pData[i];
+          //}
           std::string token;
           inStream >> token;
           NTA_CHECK(token == "end");
@@ -196,7 +214,7 @@ namespace nupic {
       class CStateIndexed : public CState
       {
       public:
-        static const UInt VERSION = 1;
+        static const UInt VERSION = 2;
 
         CStateIndexed() : CState()
         {
@@ -253,6 +271,7 @@ namespace nupic {
           _countOn = 0;
           _isSorted = true;
         }
+        // output ascii
         void print(std::ostream& outStream) const
         {
           outStream << version() << " "
@@ -270,18 +289,35 @@ namespace nupic {
           }
           outStream << "end" << std::endl;
         }
-
-        void load(std::istream& inStream)
+        // output binary
+        inline void binary_save(std::ostream& outStream) const
+        {
+          outStream << version() << " "
+                    << _fMemoryAllocatedByPython << " "
+                    << _nCells << " ";
+          outStream.write((const char *)_pData, _nCells * sizeof(Byte));
+          outStream << _countOn << " ";
+          outStream << _cellsOn.size() << " ";
+          for (auto & elem : _cellsOn)
+          {
+            outStream << elem << " ";
+          }
+          outStream << "end" << std::endl;
+        }
+        // input binary
+        inline void load(std::istream& inStream)
         {
           UInt version;
           inStream >> version;
-          NTA_CHECK(version == 1);
+          NTA_CHECK(version == 2);
           inStream >> _fMemoryAllocatedByPython
                    >> _nCells;
-          for (UInt i = 0; i < _nCells; ++i)
-          {
-            inStream >> _pData[i];
-          }
+          inStream.ignore(1);
+          inStream.read((char *)_pData, _nCells * sizeof(Byte));
+          //for (UInt i = 0; i < _nCells; ++i)
+          //{
+          //  inStream >> _pData[i];
+          //}
           inStream >> _countOn;
           UInt nCellsOn;
           inStream >> nCellsOn;
@@ -860,8 +896,7 @@ namespace nupic {
       //-----------------------------------------------------------------------
       std::ostream& operator<<(std::ostream& outStream, const Segment& seg);
       std::ostream& operator<<(std::ostream& outStream, const CState& cstate);
-      std::ostream& operator<<(std::ostream& outStream,
-                               const CStateIndexed& cstate);
+      std::ostream& operator<<(std::ostream& outStream, const CStateIndexed& cstate);
 
       //-----------------------------------------------------------------------
     } // end namespace Cells4

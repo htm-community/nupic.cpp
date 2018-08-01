@@ -324,8 +324,8 @@ TEST(NetworkTest, Phases)
 
 
   net.initialize();
-  l1->setParameterUInt64("computeCallback", (UInt64)recordCompute);
-  l2->setParameterUInt64("computeCallback", (UInt64)recordCompute);
+  l1->setParameterHandle("computeCallback", recordCompute);
+  l2->setParameterHandle("computeCallback", recordCompute);
 
   computeHistory.clear();
   net.run(2);
@@ -372,9 +372,9 @@ TEST(NetworkTest, MinMaxPhase)
 
   n.initialize();
 
-  l1->setParameterUInt64("computeCallback", (UInt64)recordCompute);
-  l2->setParameterUInt64("computeCallback", (UInt64)recordCompute);
-  l3->setParameterUInt64("computeCallback", (UInt64)recordCompute);
+  l1->setParameterHandle("computeCallback", recordCompute);
+  l2->setParameterHandle("computeCallback", recordCompute);
+  l3->setParameterHandle("computeCallback", recordCompute);
 
   minPhase = n.getMinEnabledPhase();
   maxPhase = n.getMaxEnabledPhase();

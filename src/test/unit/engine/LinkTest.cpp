@@ -121,7 +121,7 @@ TEST(LinkTest, DelayedLink) {
   };
 
   RegionImplFactory::registerCPPRegion("MyTestNode",
-                                       new RegisteredRegionImpl<MyTestNode>());
+                                       new RegisteredRegionImplCpp<MyTestNode>());
 
   Network net;
   auto region1 = net.addRegion("region1", "MyTestNode", "{count: 64}");
@@ -245,7 +245,7 @@ TEST(LinkTest, DelayedLinkSerialization) {
   };
   // Register the plugin
   RegionImplFactory::registerCPPRegion("MyTestNode",
-                                       new RegisteredRegionImpl<MyTestNode>());
+                                       new RegisteredRegionImplCpp<MyTestNode>());
 
   Network net;
   auto region1 = net.addRegion("region1", "MyTestNode", "{count: 64}");
@@ -724,13 +724,13 @@ TEST(LinkTest, L2L4WithDelayedLinksAndPhases) {
   Network net;
 
   RegionImplFactory::registerCPPRegion(
-      "L4TestRegion", new RegisteredRegionImpl<L4TestRegion>());
+      "L4TestRegion", new RegisteredRegionImplCpp<L4TestRegion>());
   auto r1 = net.addRegion("R1", "L4TestRegion", "{\"k\": 1}");
   auto r2 = net.addRegion("R2", "L4TestRegion", "{\"k\": 5}");
   RegionImplFactory::unregisterCPPRegion("L4TestRegion");
 
   RegionImplFactory::registerCPPRegion(
-      "L2TestRegion", new RegisteredRegionImpl<L2TestRegion>());
+      "L2TestRegion", new RegisteredRegionImplCpp<L2TestRegion>());
   auto r3 = net.addRegion("R3", "L2TestRegion", "");
   auto r4 = net.addRegion("R4", "L2TestRegion", "");
   RegionImplFactory::unregisterCPPRegion("L2TestRegion");
@@ -923,12 +923,12 @@ TEST(LinkTest, L2L4With1ColDelayedLinksAndPhase1OnOffOn) {
   Network net;
 
   RegionImplFactory::registerCPPRegion(
-      "L4TestRegion", new RegisteredRegionImpl<L4TestRegion>());
+      "L4TestRegion", new RegisteredRegionImplCpp<L4TestRegion>());
   auto r1 = net.addRegion("R1", "L4TestRegion", "{\"k\": 1}");
   RegionImplFactory::unregisterCPPRegion("L4TestRegion");
 
   RegionImplFactory::registerCPPRegion(
-      "L2TestRegion", new RegisteredRegionImpl<L2TestRegion>());
+      "L2TestRegion", new RegisteredRegionImplCpp<L2TestRegion>());
   auto r3 = net.addRegion("R3", "L2TestRegion", "");
   RegionImplFactory::unregisterCPPRegion("L2TestRegion");
 
@@ -1064,7 +1064,7 @@ TEST(LinkTest, SingleL4RegionWithDelayedLoopbackInAndPhaseOnOffOn) {
   Network net;
 
   RegionImplFactory::registerCPPRegion(
-      "L4TestRegion", new RegisteredRegionImpl<L4TestRegion>());
+      "L4TestRegion", new RegisteredRegionImplCpp<L4TestRegion>());
   auto r1 = net.addRegion("R1", "L4TestRegion", "{\"k\": 1}");
   RegionImplFactory::unregisterCPPRegion("L4TestRegion");
 

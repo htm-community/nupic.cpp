@@ -264,6 +264,19 @@ namespace nupic
         return likelihoods;
       }
 
+      void SDRClassifier::softmax_(vector<Real64>::iterator begin,
+                             vector<Real64>::iterator end) {
+        vector<Real64>::iterator maxItr = max_element(begin, end);
+        for (auto itr = begin; itr != end; ++itr) {
+          *itr -= *maxItr;
+        }
+        range_exp(1.0, begin, end);
+        Real64 sum = accumulate(begin, end, 0.0);
+        for (auto itr = begin; itr != end; ++itr) {
+          *itr /= sum;
+        }
+      }
+
       UInt SDRClassifier::version() const
       {
         return version_;

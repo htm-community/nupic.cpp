@@ -329,6 +329,8 @@ set(types_files
 )
 
 set(utils_files
+    ${nupic_src}/utils/CSVReader.cpp
+    ${nupic_src}/utils/CSVReader.hpp
     ${nupic_src}/utils/GroupBy.hpp
     ${nupic_src}/utils/Log.hpp
     ${nupic_src}/utils/LoggingException.cpp

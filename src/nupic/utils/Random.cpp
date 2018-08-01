@@ -294,7 +294,7 @@ namespace nupic
     outStream << r.seed_ << " ";
     NTA_CHECK(r.impl_ != nullptr);
     outStream << *r.impl_;
-    outStream << " endrandom-v1";
+    outStream << " endrandom-v1 ";
     return outStream;
   }
 

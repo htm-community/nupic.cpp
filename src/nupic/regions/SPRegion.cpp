@@ -44,6 +44,8 @@
 #include <nupic/regions/SPRegion.hpp>
 #include <nupic/utils/Log.hpp>
 
+#define VERSION 1 // version for streaming serialization format
+
 namespace nupic {
 
 SPRegion::SPRegion(const ValueMap &params, Region *region)
@@ -52,7 +54,6 @@ SPRegion::SPRegion(const ValueMap &params, Region *region)
   // parameters
   //       out of the map and set aside so we can pass them to the SpatialPooler
   //       algorithm when we create it during initialization().
-  args_.inputWidth = params.getScalarT<UInt32>("inputWidth", 0);
   args_.columnCount = params.getScalarT<UInt32>("columnCount", 0);
   args_.potentialRadius = params.getScalarT<UInt32>("potentialRadius", 0);
   args_.potentialPct = params.getScalarT<Real32>("potentialPct", 0.5);
@@ -72,31 +73,25 @@ SPRegion::SPRegion(const ValueMap &params, Region *region)
   args_.seed = params.getScalarT<Int32>("seed", 1);
   args_.spVerbosity = params.getScalarT<UInt32>("spVerbosity", 0);
   args_.wrapAround = params.getScalarT<bool>("wrapAround", true);
-  args_.spatialImp = params.getString("spatialImp", "");
+  spatialImp_ = params.getString("spatialImp", "");
 
   // variables used by this class and not passed on to the SpatialPooler class
-  learningMode_ = (1 == params.getScalarT<UInt32>("learningMode", true));
-  inferenceMode_ =
+  args_.learningMode = (1 == params.getScalarT<UInt32>("learningMode", true));
+  args_.inferenceMode =
       (1 == params.getScalarT<UInt32>("inferenceMode", true)); // obsolete
-  anomalyMode_ =
+  args_.anomalyMode =
       (1 == params.getScalarT<UInt32>("anomalyMode", true)); // obsolete
-  topDownMode_ =
+  args_.topDownMode =
       (1 == params.getScalarT<UInt32>("topDownMode", true)); // obsolete
-  iter_ = 0;
+  args_.iter = 0;
 
-  spatialPoolerInput_ = Array(NTA_BasicType_UInt32);
-  spatialPoolerOutput_ = Array(NTA_BasicType_UInt32);
   nzInputValid_ = false;
   nzOutputValid_ = false;
-  inputValid_ = false;
-  outputValid_ = false;
 }
 
 SPRegion::SPRegion(BundleIO &bundle, Region *region) : RegionImpl(region) {
   nzInputValid_ = false;
   nzOutputValid_ = false;
-  inputValid_    = false;
-  outputValid_   = false;
 
   deserialize(bundle);
 }
@@ -104,47 +99,29 @@ SPRegion::SPRegion(BundleIO &bundle, Region *region) : RegionImpl(region) {
 SPRegion::~SPRegion() {}
 
 void SPRegion::initialize() {
-  // Before calling region.initialize() the dimensions for a region should have
-  // been set. They may have been set manually --- by app calling
-  // setDimensions() for a region, or they may have been set automatically due
-  // to known dimentions on the other end of a link. See Network::initialize()
-  // and Input::evaluateLinks() for details.
-  UInt32 columnCount = (UInt32)region_->getOutputData("bottomUpOut").getCount();
-  if (columnCount == 0) {
-    NTA_THROW << "SPRegion::initialize - Output Dimensions were not set.\n";
+  // Input and output buffers should already have been created by Network or deserialize.
+  Array &outputBuffer = getOutput("bottomUpOut")->getData();
+  UInt32 columnCount = (UInt32)outputBuffer.getCount();
+  if (columnCount == 0 || outputBuffer.getBuffer() == nullptr) {
+    NTA_THROW << "SPRegion::initialize - Output buffer not set.\n";
   }
-  if (columnCount == 1) // marked as 'don't care'
-  {
-    columnCount = args_.columnCount;
-  }
-  spatialPoolerOutput_.allocateBuffer(columnCount);
-  spatialPoolerOutput_.zeroBuffer();
 
   // All input links should have been initialized during Network.initialize().
   // However, if nothing is connected it might not be. The SpatialPooler
   // algorithm requires input.
   //
-  // If there are more than on input link, the input buffer will be the concatination
-  // of all incomming buffers.
-  UInt32 inputWidth = (UInt32)region_->getInputData("bottomUpIn").getCount();
-  if (inputWidth == 0) {
+  // If there are more than on input link, the input buffer will be the
+  // concatination of all incomming buffers.
+  Array &inputBuffer = getInput("bottomUpIn")->getData();
+  args_.inputWidth = (UInt32)inputBuffer.getCount();
+  if (args_.inputWidth == 0) {
     NTA_THROW << "SPRegion::initialize - No input was provided.\n";
   }
 
-  // Note: if inputWidth is provided in the parameters then the SpatialPooler
-  // will only look at that many bits regardless as to how many output buffers
-  // are concatinated to form the input buffer.
-  if (args_.inputWidth && args_.inputWidth != inputWidth) {
-    if (inputWidth > args_.inputWidth)
-      inputWidth = args_.inputWidth;  // truncate the buffer to configured width.
-  }
-  // start with an empty buffer until we start running.
-  spatialPoolerInput_.allocateBuffer(inputWidth);
-  spatialPoolerInput_.zeroBuffer();
-
-  std::vector<UInt32> inputDimensions = {inputWidth};
+  std::vector<UInt32> inputDimensions = {args_.inputWidth};
   std::vector<UInt32> columnDimensions = {columnCount};
-  args_.potentialRadius = inputWidth;
+  if (args_.potentialRadius == 0)
+    args_.potentialRadius = args_.inputWidth;
 
   sp_ = new SpatialPooler(
       inputDimensions, columnDimensions, args_.potentialRadius,
@@ -157,27 +134,21 @@ void SPRegion::initialize() {
 
 void SPRegion::compute() {
   // Note: the Python code has a hook at this point to activate profiling with
-  // hotshot.
-  //       This version does not provide this hook although there are several
-  //       C++ profilers that could be used.
+  // hotshot.  This version does not provide this hook although there are
+  // several C++ profilers that could be used.
 
   NTA_ASSERT(sp_) << "SP not initialized";
 
-  if (topDownMode_) {
+  if (args_.topDownMode) {
     // TOP-DOWN inference mode
     NTA_THROW << "Top Down Inference mode is not implemented.";
   } else {
     // BOTTOM-UP compute mode
-    iter_++;
+    args_.iter++;
 
-    // Note: The Input and Output objects are Real32 types.
-    //       The SpatialPooler algorithm expects UInt32 (containing 1's and 0's)
-    //       So we must perform a copy with a type conversion.
-    // Prepare the input
-    spatialPoolerInput_ = getInput("bottomUpIn")->getData().as(NTA_BasicType_UInt32);
-    inputValid_ = true;
+    // Note: The Input and Output objects are UInt32 types (containing 1's and
+    // 0's).
     nzInputValid_ = false;
-
 
     /**************************************************  Not used.
     // check for reset
@@ -189,19 +160,18 @@ void SPRegion::compute() {
     resetSignal is true. const Array& resetArray = resetIn->getData();
       NTA_CHECK(resetArray.getCount() == 1);
       resetSignal = (*((Real32*)resetArray.getBuffer()) != 0.0);
-      
-
     }
     ***************************************************/
 
     // Call SpatialPooler
-    UInt32 *inputVector = (UInt32 *)spatialPoolerInput_.getBuffer();
-    UInt32 *outputVector = (UInt32 *)spatialPoolerOutput_.getBuffer();
-    sp_->compute(inputVector, learningMode_, outputVector);
+    Array &inputBuffer = getInput("bottomUpIn")->getData();
+    Array &outputBuffer = getOutput("bottomUpOut")->getData();
+
+    UInt32 *inputVector = (UInt32 *)inputBuffer.getBuffer();
+    UInt32 *outputVector = (UInt32 *)outputBuffer.getBuffer();
+    sp_->compute(inputVector, args_.learningMode, outputVector);
 
     // Prepare the output
-    getOutput("bottomUpOut")->getData().convertInto(spatialPoolerOutput_);
-    outputValid_ = true;
     nzOutputValid_ = false;
 
     size_t size = sp_->getNumColumns();
@@ -260,11 +230,9 @@ Spec *SPRegion::createSpec() {
 
   ns->description =
       "SPRegion. This implements the Spatial Pooler algorithm as a plugin "
-      "for the Network framework.  The Spatial Pooler "
-      "manages relationships between the columns of a region and the inputs "
-      "bits. The "
-      "primary public interface to this function is the \"compute\" method, "
-      "which "
+      "for the Network framework.  The Spatial Pooler manages relationships "
+      "between the columns of a region and the inputs bits. The primary "
+      "public interface to this function is the \"compute\" method, which "
       "takes in an input vector and returns a list of activeColumns columns.";
 
   ns->singleNodeOnly = true; // this means we don't care about dimensions;
@@ -279,13 +247,14 @@ Spec *SPRegion::createSpec() {
                                    1,                    // elementCount
                                    "",                   // constraints
                                    "",                   // defaultValue
-                                   ParameterSpec::ReadOnlyAccess)); // access
+                                   ParameterSpec::CreateAccess)); // access
 
   ns->parameters.add(
       "inputWidth",
-      ParameterSpec("Maximum size of the 'bottomUpIn' input to the SP.  This is the input Dimension. "
-                    "If not given or 0, the input buffer width is taken from the width "
-                    "of all concatinated output buffers that are connected to the input.",
+      ParameterSpec("Maximum size of the 'bottomUpIn' input to the SP.  "
+                    "This is the input Dimension. The input buffer width "
+                    "is taken from the width of all concatinated output "
+                    "buffers that are connected to the input.",
                     NTA_BasicType_UInt32,            // type
                     1,                               // elementCount
                     "",                              // constraints
@@ -296,20 +265,16 @@ Spec *SPRegion::createSpec() {
       "potentialRadius",
       ParameterSpec("(int)\n"
                     "This parameter determines the extent of the input that "
-                    "each column can "
-                    "potentially be connected to.This can be thought of as the "
-                    "input bits "
-                    "that are visible to each column, or a 'receptiveField' of "
-                    "the field of "
-                    "vision.A large enough value will result in 'global "
-                    "coverage', meaning "
-                    "that each column can potentially be connected to every "
-                    "input bit.This "
-                    "parameter defines a square(or hyper "
-                    "square) area: a column will have a max square potential "
-                    "pool with sides of "
-                    "length 2 * potentialRadius + 1. Default ``0``. "
-                    "During, Initialization it is set to the value of "
+                    "each column can potentially be connected to.This can "
+                    "be thought of as the input bits that are visible to "
+                    "each column, or a 'receptiveField' of the field of "
+                    "vision. A large enough value will result in 'global "
+                    "coverage', meaning that each column can potentially "
+                    "be connected to every input bit. This parameter defines "
+                    "a square(or hyper square) area: a column will have a "
+                    "max square potential pool with sides of length "
+                    "'2 * potentialRadius + 1'. Default '0'. "
+                    "If 0, during, Initialization it is set to the value of "
                     "inputWidth parameter.",
                     NTA_BasicType_UInt32,             // type
                     1,                                // elementCount
@@ -362,16 +327,20 @@ Spec *SPRegion::createSpec() {
           "(float)\n"
           "The desired density of active columns within a local inhibition "
           "area (the size of which is set by the internally calculated "
-          "inhibitionRadius,  which is in turn determined from the average size of the "
-          "connected potential pools of all columns).The inhibition logic will insure "
-          "that at most N columns remain ON within a local inhibition area, where "
-          "N = localAreaDensity * (total number of columns in inhibition area). "
+          "inhibitionRadius,  which is in turn determined from the average "
+          "size of the "
+          "connected potential pools of all columns).The inhibition logic will "
+          "insure "
+          "that at most N columns remain ON within a local inhibition area, "
+          "where "
+          "N = localAreaDensity * (total number of columns in inhibition "
+          "area). "
           "Mutually exclusive with numActiveColumnsPerInhArea. "
           " Default ``0.0``.",
           NTA_BasicType_Real32,             // type
           1,                                // elementCount
           "",                               // constraints
-          "0.0",                           // defaultValue
+          "0.0",                            // defaultValue
           ParameterSpec::ReadWriteAccess)); // access
 
   ns->parameters.add(
@@ -379,16 +348,22 @@ Spec *SPRegion::createSpec() {
       ParameterSpec(
           "(int)\n"
           "An alternate way to control the density of the active columns.If "
-          "numActiveColumnsPerInhArea is specified then localAreaDensity is set "
+          "numActiveColumnsPerInhArea is specified then localAreaDensity is "
+          "set "
           "to 0, and vice versa. When using numActiveColumnsPerInhArea, "
-          "the inhibition logic will insure that at most 'numActiveColumnsPerInhArea' "
+          "the inhibition logic will insure that at most "
+          "'numActiveColumnsPerInhArea' "
           "columns remain ON within a local inhibition area(the size of which "
           "is set by the internally calculated inhibitionRadius, which is in "
-          "turn determined from the average size of the connected receptive fields "
-          "of all  columns).When using this method, as columns learn and grow their "
+          "turn determined from the average size of the connected receptive "
+          "fields "
+          "of all  columns).When using this method, as columns learn and grow "
+          "their "
           "effective receptive fields, the inhibitionRadius will grow, and "
-          "hence the net density of the active columns will *decrease*.This is in "
-          "contrast to the localAreaDensity method, which keeps the density of active "
+          "hence the net density of the active columns will *decrease*.This is "
+          "in "
+          "contrast to the localAreaDensity method, which keeps the density of "
+          "active "
           "columns the same regardless of the size of their receptive fields.\n"
           "Default ``10``.",
           NTA_BasicType_UInt32,             // type
@@ -702,7 +677,7 @@ Spec *SPRegion::createSpec() {
   /* ----- inputs ------- */
   ns->inputs.add("bottomUpIn",
                  InputSpec("The input vector.",  // description
-                           NTA_BasicType_Real32, // type
+                           NTA_BasicType_UInt32, // type
                            0,                    // count.
                            true,                 // required?
                            false,                // isRegionLevel,
@@ -748,7 +723,7 @@ Spec *SPRegion::createSpec() {
       "bottomUpOut",
       OutputSpec("The output signal generated from the bottom-up inputs "
                  "from lower levels.",
-                 NTA_BasicType_Real32, // type
+                 NTA_BasicType_UInt32, // type
                  0,                    // count 0 means is dynamic
                  true,                 // isRegionLevel
                  true                  // isDefaultOutput
@@ -756,7 +731,8 @@ Spec *SPRegion::createSpec() {
 
   ns->outputs.add("topDownOut",
                   OutputSpec("The top-down output signal, generated from "
-                             "feedback from upper levels.   not implemented.",
+                             "feedback from upper levels. \n"
+                             "Not implemented.",
                              NTA_BasicType_Real32, // type
                              0,                    // count 0 means is dynamic
                              true,                 // isRegionLevel
@@ -767,8 +743,8 @@ Spec *SPRegion::createSpec() {
       "spatialTopDownOut",
       OutputSpec("The top-down output, generated only from the current "
                  "SP output.This can be used to evaluate how well the "
-                 "SP is representing the inputs independent of the TM.  not "
-                 "implemented.",
+                 "SP is representing the inputs independent of the TM. \n"
+                 "Not implemented.",
                  NTA_BasicType_Real32, // type
                  0,                    // count 0 means is dynamic
                  true,                 // isRegionLevel
@@ -778,7 +754,8 @@ Spec *SPRegion::createSpec() {
   ns->outputs.add(
       "temporalTopDownOut",
       OutputSpec("The top-down output, generated only from the current "
-                 "TM output feedback down through the SP.   not implemented.",
+                 "TM output feedback down through the SP.\n"
+                 "Not implemented.",
                  NTA_BasicType_Real32, // type
                  0,                    // count 0 means is dynamic
                  true,                 // isRegionLevel
@@ -787,14 +764,14 @@ Spec *SPRegion::createSpec() {
 
   ns->outputs.add(
       "anomalyScore",
-      OutputSpec(
-          "The score for how 'anomalous' (i.e. rare) this spatial "
-          "input pattern is.Higher values are increasingly rare.  Obsolete.",
-          NTA_BasicType_Real32, // type
-          1,                    // count 0 means is dynamic
-          true,                 // isRegionLevel
-          false                 // isDefaultOutput
-          ));
+      OutputSpec("The score for how 'anomalous' (i.e. rare) this spatial "
+                 "input pattern is.Higher values are increasingly rare. \n"
+                 "Obsolete.",
+                 NTA_BasicType_Real32, // type
+                 1,                    // count 0 means is dynamic
+                 true,                 // isRegionLevel
+                 false                 // isDefaultOutput
+                 ));
 
   /* ----- commands ------ */
   // commands TBD
@@ -814,10 +791,10 @@ UInt32 SPRegion::getParameterUInt32(const std::string &name, Int64 index) {
   switch (name[0]) {
   case 'a':
     if (name == "activeOutputCount") {
-      return (UInt32)spatialPoolerOutput_.getCount();
+      return (UInt32)getOutput("bottomUpOut")->getData().getCount();
     }
     if (name == "anomalyMode") {
-      return anomalyMode_;
+      return args_.anomalyMode;
     }
     break;
   case 'c':
@@ -844,12 +821,12 @@ UInt32 SPRegion::getParameterUInt32(const std::string &name, Int64 index) {
         return (Int32)args_.inputWidth;
     }
     if (name == "inferenceMode") {
-      return inferenceMode_;
+      return args_.inferenceMode;
     }
     break;
   case 'l':
     if (name == "learningMode") {
-      return learningMode_;
+      return args_.learningMode;
     }
     break;
   case 'n':
@@ -883,7 +860,7 @@ UInt32 SPRegion::getParameterUInt32(const std::string &name, Int64 index) {
     break;
   case 't':
     if (name == "topDownMode") {
-      return topDownMode_;
+      return args_.topDownMode;
     }
     break;
   }                                                         // end switch
@@ -971,34 +948,27 @@ bool SPRegion::getParameterBool(const std::string &name, Int64 index) {
   return this->RegionImpl::getParameterBool(name, index); // default
 }
 
-void SPRegion::getParameterArray(const std::string &name, Int64 index,  Array &array) {
+// copy the contents of the requested array into the caller's array.
+// Allocate the buffer if one is not provided.  Convert data types if needed.
+void SPRegion::getParameterArray(const std::string &name, Int64 index, Array &array) {
   if (name == "spatialPoolerInput") {
-    if (!inputValid_) {
-      const Array &incoming = getInput("bottomUpIn")->getData();
-      Real32 *in1 = (Real32 *)incoming.getBuffer();
-      UInt32 *in2 = (UInt32 *)spatialPoolerInput_.getBuffer();
-      for (size_t i = 0; i < incoming.getCount(); i++) {
-        *in2++ = (UInt32)floor(*in1++); // convert from Real32 to UInt32
-      }
-      inputValid_ = true;
-    }
-    array = spatialPoolerInput_;
+    getInput("bottomUpIn")->getData().convertInto(array);
   } else if (name == "spatialPoolerOutput") {
-    array = spatialPoolerOutput_;
+    getOutput("bottomUpOut")->getData().convertInto(array);
   } else if (name == "spInputNonZeros") {
     if (!nzInputValid_) {
       const Array &incoming = getInput("bottomUpIn")->getData();
       nzInput_ = incoming.nonZero();
       nzInputValid_ = true;
     }
-    array = nzInput_;
+    nzInput_.convertInto(array);
   } else if (name == "spOutputNonZeros") {
     if (!nzOutputValid_) {
       const Array &output = getOutput("bottomUpOut")->getData();
       nzOutput_ = output.nonZero();
       nzOutputValid_ = true;
     }
-    array = nzOutput_;
+    nzOutput_.convertInto(array);
   }
   //  spOverlapDistribution not found
   //  sparseCoincidenceMatrix not found
@@ -1012,17 +982,17 @@ size_t SPRegion::getParameterArrayCount(const std::string &name, Int64 index) {
   if (name == "spatialPoolerInput") {
     return getInput("bottomUpIn")->getData().getCount();
   } else if (name == "spatialPoolerOutput") {
-    return spatialPoolerOutput_.getCount();
+    return getOutput("bottomUpOut")->getData().getCount();
   } else if (name == "spInputNonZeros") {
     if (!nzInputValid_) {
       Array a;
-      getParameterArray(name, index, a);  // This forces nzInput_ to be valid.
+      getParameterArray(name, index, a); // This forces nzInput_ to be valid.
     }
     return nzInput_.getCount();
   } else if (name == "spOutputNonZeros") {
     if (!nzOutputValid_) {
       Array a;
-      getParameterArray(name, index, a);  // This forces nzOutput_ to be valid.
+      getParameterArray(name, index, a); // This forces nzOutput_ to be valid.
     }
     return nzOutput_.getCount();
   }
@@ -1040,7 +1010,7 @@ std::string SPRegion::getParameterString(const std::string &name, Int64 index) {
     return logPathOutputDense_;
   }
   if (name == "spatialImp") {
-    return args_.spatialImp;
+    return spatialImp_;
   }
   // "spLearningStatsStr"  not found
   return this->RegionImpl::getParameterString(name, index);
@@ -1051,7 +1021,7 @@ void SPRegion::setParameterUInt32(const std::string &name, Int64 index,
   switch (name[0]) {
   case 'a':
     if (name == "anomalyMode") {
-      anomalyMode_ = (value != 0);
+      args_.anomalyMode = (value != 0);
       return;
     }
     break;
@@ -1065,13 +1035,13 @@ void SPRegion::setParameterUInt32(const std::string &name, Int64 index,
     break;
   case 'i':
     if (name == "inferenceMode") {
-      inferenceMode_ = (value != 0);
+      args_.inferenceMode = (value != 0);
       return;
     }
     break;
   case 'l':
     if (name == "learningMode") {
-      learningMode_ = (value != 0);
+      args_.learningMode = (value != 0);
       return;
     }
     break;
@@ -1107,7 +1077,7 @@ void SPRegion::setParameterUInt32(const std::string &name, Int64 index,
     break;
   case 't':
     if (name == "topDownMode") {
-      topDownMode_ = (value != 0);
+      args_.topDownMode = (value != 0);
       return;
     }
     break;
@@ -1241,23 +1211,29 @@ void SPRegion::serialize(BundleIO &bundle) {
   std::ofstream &f = bundle.getOutputStream("SPRegion");
   // There is more than one way to do this. We could serialize to YAML, which
   // would make a readable format, or we could serialize directly to the stream
-  // Choose the easier one.
+  // Choose the fastest executing one.
+  f << "SPRegion " << (int)VERSION << std::endl;
+  f << "args " << sizeof(args_) << " ";
+  f.write((const char *)&args_, sizeof(args_));
+  f << std::endl;
+  f << spatialImp_ << std::endl;
+  f << logPathInput_ << std::endl;
+  f << logPathOutput_ << std::endl;
+  f << logPathOutputDense_ << std::endl;
+  f << "outputs [";
+  std::map<const std::string, Output *> outputs = region_->getOutputs();
+  for (auto iter : outputs) {
+    const Array &outputBuffer = iter.second->getData();
+    if (outputBuffer.getCount() != 0) {
+      f << iter.first << " ";
+      outputBuffer.binarySave(f);
+    }
+  }
+  f << "] "; // end of all output buffers
+
   bool init = ((sp_) ? true : false);
-  f << "SPRegion" << std::endl
-    << std::setprecision(std::numeric_limits<Real32>::max_digits10)
-    << args_.inputWidth << " " << args_.columnCount << " "
-    << args_.potentialRadius << " " << args_.potentialPct << " "
-    << args_.globalInhibition << " " << args_.localAreaDensity << " "
-    << args_.numActiveColumnsPerInhArea << " " << args_.stimulusThreshold << " "
-    << args_.synPermInactiveDec << " " << args_.synPermActiveInc << " "
-    << args_.synPermConnected << " " << args_.minPctOverlapDutyCycles << " "
-    << args_.dutyCyclePeriod << " " << args_.boostStrength << " " << args_.seed
-    << " " << args_.spVerbosity << " " << args_.wrapAround << " "
-    << learningMode_ << " " << inferenceMode_ << " " << anomalyMode_ << " "
-    << topDownMode_ << " " << init << " " << iter_ << " \"" << args_.spatialImp
-    << "\" " << std::endl;
-  f << (nupic::ArrayBase &)spatialPoolerOutput_ << std::endl;
-  if (sp_)
+  f << init << " ";
+  if (init)
     sp_->save(f);
   f.close();
 }
@@ -1267,54 +1243,54 @@ void SPRegion::deserialize(BundleIO &bundle) {
   // There is more than one way to do this. We could serialize to YAML, which
   // would make a readable format, or we could serialize directly to the stream
   // Choose the easier one.
+  char bigbuffer[5000];
   bool init;
-  std::string signatureString;
-  f >> signatureString;
-  if (signatureString != "SPRegion") {
-    NTA_THROW << "Bad serialization for region '" << region_->getName()
-              << "' of type SPRegion. Main serialization file must start "
-              << "with \"SPRegion\" but instead it starts with '"
-              << signatureString << "'";
+  std::string tag;
+  Size v;
+  f >> tag;
+  NTA_CHECK(tag == "SPRegion")
+      << "Bad serialization for region '" << region_->getName()
+      << "' of type SPRegion. Main serialization file must start "
+      << "with \"SPRegion\" but instead it starts with '" << tag << "'";
+
+  f >> v;
+  NTA_CHECK(v >= 1)
+      << "Unexpected version for SPRegion deserialization stream, "
+      << region_->getName();
+  f >> tag;
+  NTA_CHECK(tag == "args");
+  f >> v;
+  NTA_CHECK(v == sizeof(args_));
+  f.ignore(1);
+  f.read((char *)&args_, v);
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  spatialImp_ = bigbuffer;
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  logPathInput_ = bigbuffer;
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  logPathOutput_ = bigbuffer;
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  logPathOutputDense_ = bigbuffer;
+  f >> tag;
+  NTA_CHECK(tag == "outputs");
+  f.ignore(1);
+  NTA_CHECK(f.get() == '['); // start of outputs
+  while (true) {
+    f >> tag;
+    f.ignore(1);
+    if (tag == "]")
+      break;
+    getOutput(tag)->getData().binaryLoad(f);
   }
-  f >> args_.inputWidth;
-  f >> args_.columnCount;
-  f >> args_.potentialRadius;
-  f >> args_.potentialPct;
-  f >> args_.globalInhibition;
-  f >> args_.localAreaDensity;
-  f >> args_.numActiveColumnsPerInhArea;
-  f >> args_.stimulusThreshold;
-  f >> args_.synPermInactiveDec;
-  f >> args_.synPermActiveInc;
-  f >> args_.synPermConnected;
-  f >> args_.minPctOverlapDutyCycles;
-  f >> args_.dutyCyclePeriod;
-  f >> args_.boostStrength;
-  f >> args_.seed;
-  f >> args_.spVerbosity;
-  f >> args_.wrapAround;
-  f >> learningMode_;
-  f >> inferenceMode_;
-  f >> anomalyMode_;
-  f >> topDownMode_;
   f >> init;
-  f >> iter_;
-  f >> args_.spatialImp;
-  f >> spatialPoolerOutput_;
-
-  if (args_.spatialImp[0] == '"')
-    args_.spatialImp =
-        args_.spatialImp.substr(1, args_.spatialImp.length() - 2);
-
+  f.ignore(1);
   if (init) {
     sp_ = new SpatialPooler();
     sp_->load(f);
   } else
     sp_ = nullptr;
   f.close();
-
-  // Note:  The Arrays spatialPoolerInput_ and spatialPoolerOutput_
-  //        will be re-instantiated on next call to compute().
 }
 
 } // namespace nupic

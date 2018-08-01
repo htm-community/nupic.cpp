@@ -53,16 +53,18 @@ Output::initialize(size_t count)
   // reinitialization is ok
   // might happen if initial initialization failed with an
   // exception (elsewhere) and was retried.
-  if (data_.getBuffer() != nullptr)
-    return;
+  // If just restored from serialization it will already have a buffer.
 
-  nodeOutputElementCount_ = count;
-  if (nodeOutputElementCount_ != 0)
-  {
-    data_.allocateBuffer(nodeOutputElementCount_);
-    // Zero the buffer because unitialized outputs can screw up inspectors,
-    // which look at the output before compute(). NPC-60
-    data_.zeroBuffer();
+  if (data_.getBuffer() == nullptr) {
+    // no buffer, so create one and zero it.
+    nodeOutputElementCount_ = count;
+    if (nodeOutputElementCount_ != 0)
+    {
+      data_.allocateBuffer(nodeOutputElementCount_);
+      // Zero the buffer because unitialized outputs can screw up inspectors,
+      // which look at the output before compute(). NPC-60
+      data_.zeroBuffer();
+    }
   }
 }
 

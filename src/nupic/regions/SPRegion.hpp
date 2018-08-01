@@ -64,7 +64,7 @@ namespace nupic
 
     /**
     * Inputs/Outputs are made available in initialize()
-    * It is always called after the constructor (or load from serialized state)
+    * Region Impls are created at that time.
     */
     void initialize() override;
 
@@ -118,24 +118,20 @@ namespace nupic
       Int  seed;
       UInt spVerbosity;
       bool wrapAround;
-      std::string spatialImp;
+      bool learningMode;
+      bool inferenceMode;  // This mode not implemented.
+      bool anomalyMode;
+      bool topDownMode;
+      int  iter;
     } args_;
 		computeCallbackFunc computeCallback_;
-    bool learningMode_;
-    bool inferenceMode_;  // This mode not implemented.
-    bool anomalyMode_;
-    bool topDownMode_;
-    int  iter_;
-    Array spatialPoolerInput_;
-    Array spatialPoolerOutput_;
     Array nzInput_;
     Array nzOutput_;
     bool nzInputValid_;
     bool nzOutputValid_;
-    bool inputValid_;
-    bool outputValid_;
 
 
+    std::string spatialImp_;
     std::string logPathInput_; 
     std::string logPathOutput_;  
     std::string logPathOutputDense_; // can be set and get but not used for anything.

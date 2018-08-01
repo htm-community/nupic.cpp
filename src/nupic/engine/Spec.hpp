@@ -110,12 +110,12 @@ namespace nupic
     std::string constraints;
     std::string defaultValue; // JSON representation; empty std::string means parameter is required
     AccessMode  accessMode;
-
   };
 
 
-  struct Spec
+  class Spec
   {
+  public:
     // Return a printable string with Spec information
     // TODO: should this be in the base API or layered? In the API right
     // now since we do not build layered libraries. 

@@ -42,6 +42,7 @@
 #include <nupic/regions/VectorFileEffector.hpp>
 #include <nupic/regions/VectorFileSensor.hpp>
 #include <nupic/regions/SPregion.hpp>
+#include <nupic/regions/TMregion.hpp>
 
 
 
@@ -54,13 +55,13 @@
 namespace nupic
 {
   // Mappings for C++ regions
-  static std::map<const std::string, GenericRegisteredRegionImpl*> cppRegions;
+  static std::map<const std::string, RegisteredRegionImpl*> cppRegions;
 
   bool initializedRegions = false;
 
 
 
-  void RegionImplFactory::registerCPPRegion(const std::string nodetype, GenericRegisteredRegionImpl * wrapper)
+  void RegionImplFactory::registerCPPRegion(const std::string nodetype, RegisteredRegionImpl * wrapper)
   {
     if (cppRegions.find(nodetype) != cppRegions.end())
     {
@@ -89,12 +90,13 @@ namespace nupic
     // Initialize Regions
     if (!initializedRegions)
     {
-      // Create C++ regions
-      cppRegions["ScalarSensor"] = new RegisteredRegionImpl<ScalarSensor>();
-      cppRegions["TestNode"] = new RegisteredRegionImpl<TestNode>();
-      cppRegions["VectorFileEffector"] = new RegisteredRegionImpl<VectorFileEffector>();
-      cppRegions["VectorFileSensor"] = new RegisteredRegionImpl<VectorFileSensor>();
-      cppRegions["SPRegion"] = new RegisteredRegionImpl<SPRegion>();
+      // Register the Built-in C++ regions
+      cppRegions["ScalarSensor"] = new RegisteredRegionImplCpp<ScalarSensor>();
+      cppRegions["TestNode"] = new RegisteredRegionImplCpp<TestNode>();
+      cppRegions["VectorFileEffector"] = new RegisteredRegionImplCpp<VectorFileEffector>();
+      cppRegions["VectorFileSensor"] = new RegisteredRegionImplCpp<VectorFileSensor>();
+      cppRegions["SPRegion"] = new RegisteredRegionImplCpp<SPRegion>();
+      cppRegions["TMRegion"] = new RegisteredRegionImplCpp<TMRegion>();
 
       initializedRegions = true;
     }
@@ -173,7 +175,7 @@ namespace nupic
 
   void RegionImplFactory::cleanup()
   {
-    // destroy all RegisteredRegionImpls and cached specs
+    // destroy all RegisteredRegionImpls
     for (auto rri = cppRegions.begin(); rri != cppRegions.end(); rri++)
     {
       NTA_ASSERT(rri->second != nullptr);

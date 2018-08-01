@@ -51,12 +51,12 @@ namespace nupic
   class Input;
   class ArrayRef;
   class Array;
-  struct Spec;
+  class Spec;
   class NodeSet;
   class BundleIO;
   class Timer;
   class Network;
-  class GenericRegisteredRegionImpl;
+  class RegisteredRegionImpl;
 
   /**
    * Represents a set of one or more "identical" nodes in a Network.
@@ -127,7 +127,7 @@ namespace nupic
     /*
      * Adds a cpp region to the RegionImplFactory's packages
      */
-    static void registerCPPRegion(const std::string name, GenericRegisteredRegionImpl* wrapper);
+    static void registerCPPRegion(const std::string name, RegisteredRegionImpl* wrapper);
 
     /*
      * Removes a cpp region from the RegionImplFactory's packages
@@ -698,7 +698,7 @@ namespace nupic
     // pointer to the "plugin"; owned by Region
     RegionImpl* impl_;
     const std::string type_;
-    Spec* spec_;
+    Spec* spec_;  // cached by RegisteredRegionImpl. do not delete.
 
     typedef std::map<const std::string, Output*> OutputMap;
     typedef std::map<const std::string, Input*> InputMap;

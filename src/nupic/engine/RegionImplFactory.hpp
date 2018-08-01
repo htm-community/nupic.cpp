@@ -43,10 +43,10 @@ namespace nupic
   class RegionImpl;
   class Region;
   class DynamicPythonLibrary;
-  struct Spec;
+  class Spec;
   class BundleIO;
   class ValueMap;
-  class GenericRegisteredRegionImpl;
+  class RegisteredRegionImpl;
 
   class RegionImplFactory
   {
@@ -79,7 +79,7 @@ namespace nupic
     void cleanup();
 
     // Allows the user to load custom C++ regions
-    static void registerCPPRegion(const std::string nodetype, GenericRegisteredRegionImpl * wrapper);
+    static void registerCPPRegion(const std::string nodetype, RegisteredRegionImpl * wrapper);
     // Allows the user to unregister C++ regions
     static void unregisterCPPRegion(const std::string nodetype);
 

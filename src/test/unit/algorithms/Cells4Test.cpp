@@ -115,8 +115,7 @@ bool checkCells4Attributes(const Cells4& c1, const Cells4& c2)
 
 TEST(Cells4Test, Serialization)
 {
-  Cells4 cells(
-      10, 2, 1, 1, 1, 1, 0.5f, 0.8f, 1, 0.1f, 0.1f, 0, false, -1, true, false);
+  Cells4 cells(10, 2, 1, 1, 1, 1, 0.5f, 0.8f, 1, 0.1f, 0.1f, 0, false, -1, true, false);
   std::vector<Real> input1(10, 0.0);
   input1[1] = 1.0;
   input1[4] = 1.0;
@@ -147,9 +146,7 @@ TEST(Cells4Test, Serialization)
     cells.reset();
   }
 
-
   Directory::removeTree("TestOutputDir", true);
-  Directory::create("TestOutputDir");
   cells.saveToFile("TestOutputDir/Cells4Test");
 
   Cells4 secondCells;
@@ -165,6 +162,9 @@ TEST(Cells4Test, Serialization)
     ASSERT_EQ(output[i], secondOutput[i]) << "Outputs differ at index " << i;
   }
   NTA_CHECK(checkCells4Attributes(cells, secondCells));
+
+  Directory::removeTree("TestOutputDir", true);
+
 }
 
 

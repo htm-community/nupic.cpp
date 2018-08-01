@@ -19,7 +19,6 @@
  * http://numenta.org/licenses/
  * ---------------------------------------------------------------------
  */
-
 #include <nupic/ntypes/Collection.hpp>
 #include <nupic/utils/Log.hpp>
 #include <string>
@@ -129,4 +128,3 @@ void Collection<T>::remove(const std::string & name)
 }
 
 }
-

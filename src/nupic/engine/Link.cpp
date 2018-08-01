@@ -139,7 +139,10 @@ void Link::compute() {
   Array* from = &src_->getData();
   Array* to = &dest_->getData();
 
-
+// Debugging displays
+//if (destRegionName_ == "region2" && destInputName_ == "bottomUpIn") {
+//  std::cout << "Link: source " << src_->getData().nonZero() << std::endl;
+//}
   if (propagationDelay_) {
     // A delayed link's queue buffer size should always be number of delays.
     NTA_CHECK(propagationDelayBuffer_.size() == (propagationDelay_));
@@ -161,6 +164,10 @@ void Link::compute() {
     // has the Output buffers appended into a single large Input buffer.
     from->convertInto(*to, destOffset_);
   }
+// Debugging code
+//if (destRegionName_ == "region2" && destInputName_ == "bottomUpIn") {
+//  std::cout << "Link: Input: " << to->nonZero() << std::endl;
+//}
 }
 
 void Link::shiftBufferedData() 
