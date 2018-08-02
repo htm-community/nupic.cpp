@@ -30,14 +30,14 @@
 #include <nupic/utils/Log.hpp> // For NTA_ASSERT
 
 #include <cmath>
-#include <boost/math/special_functions/gamma.hpp>
-#include <boost/math/special_functions/digamma.hpp>
-#include <boost/math/special_functions/beta.hpp>
-#include <boost/math/special_functions/erf.hpp>
+//#include <boost/math/special_functions/gamma.hpp>
+//#include <boost/math/special_functions/digamma.hpp>
+//#include <boost/math/special_functions/beta.hpp>
+//#include <boost/math/special_functions/erf.hpp>
 
 namespace nupic {
 
-  // TODO: replace other functions by boost/math
+  // TODO: replace other functions by std/math
 
   static const double pi  =  3.14159265358979311600e+00;
 
@@ -45,28 +45,32 @@ namespace nupic {
   template <typename T>
   inline T lgamma(T x)
   {
-    return boost::math::lgamma(x);
+    //return boost::math::lgamma(x);
+    return std::lgamma(x);   // C++11
   }
 
   //--------------------------------------------------------------------------------
-  template <typename T>
-  inline T digamma(T x)
-  {
-    return boost::math::digamma(x);
-  }
+//  template <typename T>
+//  inline T digamma(T x)
+//  {
+//    return boost::math::digamma(x);
+//  }
+  // TODO:
 
   //--------------------------------------------------------------------------------
   template <typename T>
   inline T beta(T x, T y)
   {
-    return boost::math::beta(x, y);
+    //return boost::math::beta(x, y);
+    return std::beta(x, y);  
   }
 
   //--------------------------------------------------------------------------------
   template <typename T>
   inline T erf(T x)
   {
-    return boost::math::erf(x);
+    //return boost::math::erf(x);
+    return std::erf(x);
   }
 
   //--------------------------------------------------------------------------------
@@ -79,7 +83,7 @@ namespace nupic {
       init = false;
       a[0] = 1.0;
       for (size_t i = 1; i != 171; ++i)
-	a[i] = i * a[i-1];
+        a[i] = i * a[i-1];
     }
     
     if (n < 171)
@@ -96,7 +100,7 @@ namespace nupic {
     
     if (init) {
       for (size_t i = 0; i != 2000; ++i)
-	a[i] = lgamma(i+1.0);
+        a[i] = lgamma(i+1.0);
     }
 
     if (n < 2000)

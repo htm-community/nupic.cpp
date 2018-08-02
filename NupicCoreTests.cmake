@@ -141,7 +141,7 @@ set(src_executable_gtests
 add_executable(${unit_tests_executable} ${src_executable_gtests})
 target_link_libraries(${unit_tests_executable} PRIVATE
 	${lib_name}
-	${Boost_LIBRARIES}
+#	${Boost_LIBRARIES}
     ${GTest_LIBNAME}
     ${yaml-cpp_LIBNAME}
     -OPT:NOREF

@@ -29,15 +29,19 @@
  *
  * For those not familiar with GTest:
  * ASSERT_TRUE(value)   -- Fatal assertion that the value is true. Test
- *terminates if false. ASSERT_FALSE(value)   -- Fatal assertion that the value
- *is false. Test terminates if true. ASSERT_STREQ(str1, str2)   -- Fatal
- *assertion that the strings are equal. Test terminates if false.
+ *                         terminates if false. 
+ * ASSERT_FALSE(value)   -- Fatal assertion that the value
+ *                         is false. Test terminates if true. 
+ * ASSERT_STREQ(str1, str2)   -- Fatal assertion that the strings are equal. 
+ *                         Test terminates if false.
  * EXPECT_TRUE(value)   -- Nonfatal assertion that the value is true. Test
- *continues if false. EXPECT_FALSE(value)   -- Nonfatal assertion that the value
- *is false. Test continues if true. EXPECT_STREQ(str1, str2) -- Nonfatal
- *assertion that the strings are equal.Test continues if false.
+ *                         continues if false. 
+ * EXPECT_FALSE(value)   -- Nonfatal assertion that the value is false. 
+ *                          Test continues if true. 
+ * EXPECT_STREQ(str1, str2) -- Nonfatal assertion that the strings are equal.
+ *                          Test continues if false.
  * EXPECT_THROW(statement, exception_type) -- nonfatal exception, cought,
- *reported and continues.
+ *                         reported and continues.
  *---------------------------------------------------------------------
  */
 
@@ -52,7 +56,6 @@
 #include <nupic/os/Path.hpp>
 #include <nupic/os/FStream.hpp>
 #include <nupic/types/Exception.hpp>
-#include <nupic/utils/CSVReader.hpp>
 
 
 #include <gtest/gtest.h>

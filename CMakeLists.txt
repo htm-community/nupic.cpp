@@ -94,10 +94,10 @@ if (VCPKG_TARGET_TRIPLET)
 	message(STATUS "VCPKG_TARGET_TRIPLET= ${VCPKG_TARGET_TRIPLET}")
 
 	# Boost 
-	find_package(Boost  1.67.0 REQUIRED COMPONENTS system)
-	include_directories(${Boost_INCLUDE_DIRS})
-	message(STATUS "Boost_FOUND=${Boost_FOUND}")
-	set(Boost_LIBNAME ${BoostLIBRARIES})
+	#find_package(Boost  1.67.0 REQUIRED COMPONENTS system)
+	#include_directories(${Boost_INCLUDE_DIRS})
+	#message(STATUS "Boost_FOUND=${Boost_FOUND}")
+	#set(Boost_LIBNAME ${BoostLIBRARIES})
 
 	# yaml-cpp  (include only package)
 	find_package(yaml-cpp CONFIG REQUIRED)
@@ -112,11 +112,11 @@ if (VCPKG_TARGET_TRIPLET)
 else()
 	#################### Using Hunter Package Manager ###############
 	# Boost 
-	hunter_add_package(Boost COMPONENTS system)
-	find_package(Boost CONFIG REQUIRED system)
-	include_directories(${Boost_INCLUDE_DIRS})
-	message(STATUS "Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}")
-	set(Boost_LIBNAME Boost::system)
+	#hunter_add_package(Boost COMPONENTS system)
+	#find_package(Boost CONFIG REQUIRED system)
+	#include_directories(${Boost_INCLUDE_DIRS})
+	#message(STATUS "Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}")
+	#set(Boost_LIBNAME Boost::system)
 
 	# yaml-cpps
 	hunter_add_package(yaml-cpp)
@@ -239,7 +239,7 @@ set(math_files
     ${nupic_src}/math/Domain.hpp
     ${nupic_src}/math/Erosion.hpp
     ${nupic_src}/math/Functions.hpp
-    ${nupic_src}/math/GraphAlgorithms.hpp
+    #${nupic_src}/math/GraphAlgorithms.hpp
     ${nupic_src}/math/Index.hpp
     ${nupic_src}/math/Math.hpp
     ${nupic_src}/math/NearestNeighbor.hpp

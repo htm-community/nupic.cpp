@@ -120,52 +120,6 @@ template <typename T> inline void swapBytes(T *pxOut, Size n, const T *pxIn) {
 }
 
 /**
- * Calculates sizeof() types named by string names of types in
- * nupic/types/types. Throws if the requested type cannot be found.
- *
- * Supported type names include:
- * bool,
- * char, wchar_t,
- * NTA_Char, NTA_WChar, NTA_Byte,
- * float, double,
- * NTA_Real32, NTA_Real64, NTA_Real,
- * int, size_t,
- * NTA_Int32, NTA_UInt32, NTA_Int64, NTA_UInt64, NTA_Size
- *
- * @param name (string) Name of type to calculate sizeof() for.
- * @param isNumeric (bool&) set to true on exit if type name is a number.
- * @retval Number of bytes per element of the specified type.
- */
-extern size_t GetTypeSize(const std::string &name, bool &isNumeric);
-
-/**
- * Calculates sizeof() types named by string names of types in
- * nupic/types/types. Throws if the requested type cannot be found.
- *
- * Supported type names include:
- * bool,
- * char, wchar_t,
- * NTA_Char, NTA_WChar, NTA_Byte,
- * float, double,
- * NTA_Real32, NTA_Real64, NTA_Real,
- * int, size_t,
- * NTA_Int32, NTA_UInt32, NTA_Int64, NTA_UInt64, NTA_Size
- *
- * @param name (string) Name of type to calculate sizeof() for.
- * @param isNumeric (bool&) set to true on exit if type name is a number.
- * @retval Number of bytes per element of the specified type.
- */
-extern size_t GetTypeSize(NTA_BasicType type, bool &isNumeric);
-
-/**
- * Return a string representation of an NTA_BasicType
- *
- * @param type the NTA_BasicType enum
- * @retval name of the type as a string
- */
-extern std::string GetTypeName(NTA_BasicType type);
-
-/**
  * Utility routine used by PrintVariableArray to print array of a certain type
  */
 template <typename T>

@@ -115,7 +115,7 @@ template <typename UI = nupic::UInt32, typename Real_stor = nupic::Real32,
 class SparseMatrix {
   // TODO find boost config flag to enable ullong as UnsignedInteger
   // BOOST_CLASS_REQUIRE(UI, boost, UnsignedIntegerConcept);
-  BOOST_CLASS_REQUIRE(I, boost, SignedIntegerConcept);
+  // BOOST_CLASS_REQUIRE(I, boost, SignedIntegerConcept);
 
 public:
   typedef UI size_type;              // unsigned integral for sizes
