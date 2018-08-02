@@ -157,8 +157,8 @@ public:
   }
 
 
-  void serializeData(YAML::Emitter &out) { data_.serialize(out); }
-  void deserializeData(const YAML::Node doc) { data_.deserialize(doc); }
+  //void serializeData(YAML::Emitter &out) { data_.serialize(out); }
+  //void deserializeData(const YAML::Node doc) { data_.deserialize(doc); }
 
 private:
   Region &region_; // needed for number of nodes

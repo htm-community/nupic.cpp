@@ -120,8 +120,10 @@ namespace nupic
     /**
     * serialization and deserialization for an Array
     */
+#if defined YAML_SERIALIZATION
     virtual void serialize(YAML::Emitter& out) const;
     virtual void deserialize(const YAML::Node& node);
+#endif // YAML_SERIALIZATION
 
     void binarySave(std::ostream &outStream) const;
     void binaryLoad(std::istream &inStream);

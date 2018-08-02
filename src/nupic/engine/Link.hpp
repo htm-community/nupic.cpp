@@ -30,7 +30,7 @@
 #include <string>
 #include <deque>
 
-#include <yaml-cpp/yaml.h>
+//#include <yaml-cpp/yaml.h>
 
 #include <nupic/engine/Input.hpp> // needed for splitter map
 #include <nupic/ntypes/Array.hpp>
@@ -319,7 +319,11 @@ public:
    * @param out
    *            The YAML Emitter to encode into (from Network.cpp)
    */
+#if defined YAML_SERIALIZATION
   void serialize(YAML::Emitter &out);
+#else
+  void serialize(std::ostream &f);
+#endif // YAML_SERIALIZATION
 
   /**
    * Deserialize the link from YAML.
@@ -333,7 +337,12 @@ public:
    * After everything is deserialized caller must call
    *    net.initialize()
    */
+#if defined YAML_SERIALIZATION
   void deserialize(const YAML::Node &link);
+#else
+  void deserialize(std::istream &f);
+#endif // YAML_SERIALIZATION
+
 
 private:
   // common initialization for the two constructors.

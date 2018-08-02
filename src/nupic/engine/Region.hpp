@@ -621,8 +621,6 @@ namespace nupic
 
     virtual ~Region();
 
-    void serializeOutput(YAML::Emitter &out);
-    void deserializeOutput(const YAML::Node& node);
 
     void
     initialize();

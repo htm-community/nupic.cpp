@@ -279,7 +279,6 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
   template <typename T>
   static void _templatedStreamBuffer(std::ostream &outStream, const void *inbuf,
                                      size_t numElements) {
-    outStream << "( ";
 
     // Stream the elements
     auto it = (const T *)inbuf;
@@ -289,7 +288,6 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
         outStream << *it << " ";
       }
     }
-    outStream << ") ";
   }
 
   std::ostream& operator<<(std::ostream& outStream, const ArrayBase& a)
@@ -298,7 +296,7 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
     auto const numElements = a.getCount();
     auto const elementType = a.getType();
 
-    outStream << " [ " << BasicType::getName(elementType) << " " << numElements << " ";
+    outStream << "[ " << BasicType::getName(elementType) << " " << numElements << " ";
 
     switch (elementType)
     {
@@ -316,7 +314,7 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
       NTA_THROW << "Unexpected Element Type: " << elementType;
       break;
     }
-    outStream << " ]";
+    outStream << "]\n";
 
     return outStream;
   }
@@ -324,10 +322,6 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
 
   template <typename T>
   static void _templatedStreamBuffer(std::istream &inStream, void *buf, size_t numElements) {
-    std::string v;
-    inStream >> v;
-    NTA_CHECK (v == "(") << "deserialize Array buffer...expected an opening '(' but not found.";
-
     // Stream the elements
     auto it = (T *)buf;
     auto const end = it + numElements;
@@ -336,8 +330,6 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
         inStream >> *it; 
       }
     }
-    inStream >> v;
-    NTA_CHECK (v == ")") << "deserialize Array buffer...expected a closing ')' but not found.";
   }
 
 
@@ -382,14 +374,14 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
     }
     inStream >> v;
     NTA_CHECK(v == "]") << "deserialize Array buffer...expected a closing ']' but not found.";
-
+    inStream.ignore(1);
     return inStream;
   }
 
   ////////////////////////////////////////////////////////////////////////////////
   //         YAML Serialization
   ////////////////////////////////////////////////////////////////////////////////
-
+#if defined YAML_SERIALIZATION
   void ArrayBase::serialize(YAML::Emitter& out) const
   {
     out << YAML::BeginMap;
@@ -518,7 +510,7 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
       } // switch
     }   // for
   }
-
+#endif
 
 } // namespace
 
