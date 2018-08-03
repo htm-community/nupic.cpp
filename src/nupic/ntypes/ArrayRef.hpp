@@ -91,10 +91,7 @@ private:
   // Hide some base class methods (invalid for ArrayRef)
   void allocateBuffer(size_t count) override {}
   void zeroBuffer() override {}
-#if defined YAML_SERIALIZATION
-  // do not allow this to be deserialized
   void deserialize(const YAML::Node &node) override {}
-#endif // YAML_SERIALIZATION
   ArrayRef(NTA_BasicType type, std::shared_ptr<char> sharedBuffer, size_t count)
       : ArrayBase(type) {
     buffer_ = sharedBuffer;
