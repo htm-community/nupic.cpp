@@ -24,7 +24,6 @@
 #define NTA_BUNDLEIO_HPP
 
 #include <nupic/os/Path.hpp>
-#include <nupic/os/FStream.hpp>
 
 namespace nupic
 {

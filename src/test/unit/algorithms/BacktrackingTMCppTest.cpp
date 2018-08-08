@@ -54,7 +54,6 @@
 #include <nupic/algorithms/BacktrackingTMCpp.hpp>
 #include <nupic/os/Directory.hpp>
 #include <nupic/os/Path.hpp>
-#include <nupic/os/FStream.hpp>
 #include <nupic/types/Exception.hpp>
 
 

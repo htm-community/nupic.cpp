@@ -33,7 +33,6 @@
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/Output.hpp>
 #include <nupic/engine/Network.hpp>
-#include <nupic/os/FStream.hpp>
 #include <nupic/os/Directory.hpp>
 #include <nupic/engine/Spec.hpp>
 #include <nupic/utils/Log.hpp>

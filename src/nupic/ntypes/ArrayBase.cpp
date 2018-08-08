@@ -27,6 +27,7 @@
 #include <iostream> // for ostream
 //#include <iomanip>  // for std::setprecision
 #include <stdlib.h> // for size_t
+#include <cstring>   // for memcpy, memcmp
 
 #include <nupic/types/Types.hpp>
 #include <nupic/types/BasicType.hpp>
@@ -95,9 +96,8 @@ ArrayBase::allocateBuffer(size_t count)
   //disambiguate uninitialized ArrayBases and ArrayBases initialized with
   //size zero.
   count_ = count;
-  capacity_ = count;
-  size_t memsize = count_ * BasicType::getSize(type_);
-  std::shared_ptr<char> sp(new char[memsize], std::default_delete<char[]>());
+  capacity_ = count_ * BasicType::getSize(type_);
+  std::shared_ptr<char> sp(new char[capacity_], std::default_delete<char[]>());
   buffer_ = sp;
   own_ = true;
 }
@@ -109,7 +109,7 @@ ArrayBase::allocateBuffer(size_t count)
 void
 ArrayBase::zeroBuffer()
 {
-  memset(buffer_.get(), 0, capacity_ * BasicType::getSize(type_));
+  std::memset(buffer_.get(), 0, capacity_);
 }
 
 /**
@@ -125,7 +125,7 @@ ArrayBase::setBuffer(void *buffer, size_t count)
 {
   buffer_ = std::shared_ptr<char>((char*)buffer, nonDeleter());
   count_ = count;
-  capacity_ = count;
+  capacity_ = count * BasicType::getSize(type_);
   own_ = false;
 }
 
@@ -143,6 +143,9 @@ ArrayBase::getBuffer() const
   return buffer_.get();
 }
 
+size_t ArrayBase::getBufferSize() const { return capacity_; }
+
+
 // number of elements of given type in the buffer
 size_t
 ArrayBase::getCount() const
@@ -150,16 +153,19 @@ ArrayBase::getCount() const
   return count_;
 };
 
+// max number of elements this buffer can hold
+size_t ArrayBase::getMaxElementsCount() const {
+  return capacity_ / BasicType::getSize(type_);
+};
+
 void ArrayBase::setCount(size_t count)
 { 
-  NTA_ASSERT(count > capacity_)  << "Cannot set the array count greater than the capacity.";
+  NTA_ASSERT(count <= capacity_/BasicType::getSize(type_))  
+		<< "Cannot set the array count (" << count << ") greater than the capacity ("
+		<< (capacity_/BasicType::getSize(type_)) << ").";
   count_ = count; 
 }
 
-size_t 
-ArrayBase::getCapacity() const
-{ 
-  return capacity_; }
 
 NTA_BasicType
 ArrayBase::getType() const
@@ -170,7 +176,7 @@ ArrayBase::getType() const
 
 void 
 ArrayBase::convertInto(ArrayBase &a, size_t offset) const { 
-  if (offset + count_ > a.getCapacity()) {
+  if (offset + count_ > a.getMaxElementsCount()) {
     a.allocateBuffer(offset + count_);
   }
   char *toPtr = (char *)a.getBuffer();  // type as char* so there is an element size
@@ -238,7 +244,7 @@ bool operator==(const ArrayBase &lhs, const ArrayBase &rhs) {
     return false;
   if (lhs.getCount() == 0)
     return true;
-  return (memcmp(lhs.getBuffer(), rhs.getBuffer(),
+  return (std::memcmp(lhs.getBuffer(), rhs.getBuffer(),
                  lhs.getCount() * BasicType::getSize(lhs.getType())) == 0);
 }
 
@@ -265,8 +271,7 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
   type_ = BasicType::parse(tag);
   allocateBuffer(count);
   inStream.ignore(1);
-  Size size = count_ * BasicType::getSize(type_);
-  inStream.read(buffer_.get(), size);
+  inStream.read(buffer_.get(), capacity_);
   NTA_CHECK(inStream.get() == ']') << "Binary load of Array, expected ending ']'.";
   inStream.ignore(1); // skip over the endl
 }
@@ -360,8 +365,7 @@ void ArrayBase::binaryLoad(std::istream &inStream) {
       // An ArrayRef, the ArrayRef does not own the buffer
       // but we can overwrite the buffer if there is room.
       size_t neededSize = numElements * BasicType::getSize(elementType);
-      size_t actualSize = a.capacity_ * BasicType::getSize(a.type_);
-      NTA_CHECK(actualSize >= neededSize) << "deserialize into an ArrayRef object...Not enough space in buffer.";
+      NTA_CHECK(a.capacity_ >= neededSize) << "deserialize into an ArrayRef object...Not enough space in buffer.";
       a.count_ = numElements;
       a.type_ = elementType;
     }

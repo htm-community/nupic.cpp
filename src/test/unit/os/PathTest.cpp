@@ -30,7 +30,6 @@
 #include <nupic/os/Directory.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/os/OS.hpp>
-#include <nupic/os/FStream.hpp>
 #include <nupic/utils/Log.hpp>
 #include <gtest/gtest.h>
 

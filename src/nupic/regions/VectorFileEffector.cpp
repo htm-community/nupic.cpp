@@ -28,13 +28,13 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <list>
 
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/Spec.hpp>
 #include <nupic/regions/VectorFileEffector.hpp>
 #include <nupic/utils/Log.hpp>
-#include <nupic/os/FStream.hpp>
 #include <nupic/ntypes/Value.hpp>
 
 namespace nupic
@@ -106,7 +106,7 @@ void VectorFileEffector::compute()
 
   Real *inputVec = (Real*)(dataIn_.getBuffer());
   NTA_CHECK(inputVec != nullptr);
-  OFStream &outFile = *outFile_;
+  std::ofstream &outFile = *outFile_;
   for(Size offset = 0; offset < dataIn_.getCount(); ++offset)
   {
     // TBD -- could be very inefficient to do one at a time
@@ -134,7 +134,7 @@ void VectorFileEffector::openFile(const std::string& filename)
   if (filename == "")
     return;
 
-  outFile_ = new OFStream(filename.c_str(), std::ios::app);
+  outFile_ = new std::ofstream(filename.c_str(), std::ios::app);
   if (outFile_->fail())
   {
     delete outFile_;

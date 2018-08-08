@@ -26,7 +26,6 @@
 #include <nupic/os/Path.hpp>
 #include <nupic/os/Directory.hpp>
 #include <nupic/os/OS.hpp>
-#include <nupic/os/FStream.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/StringUtils.hpp>  // for trim
 
@@ -37,6 +36,7 @@
 #include <iterator>
 #include  <stdio.h>  
 #include  <stdlib.h>  
+#include <fstream>
 #include <filesystem>   // as of C++17
 #if defined(NTA_OS_WINDOWS)
 #include  <io.h>  
@@ -308,7 +308,9 @@ namespace nupic
 
     void Path::write_all(const std::string& filename, const std::string& value)
     {
-      OFStream f(filename.c_str());
+      std::ofstream f;
+      f.open(filename.c_str());
+
       f << value;
       f.close();
     }
@@ -316,7 +318,8 @@ namespace nupic
     std::string Path::read_all(const std::string& filename)
     {
       std::string s;
-      IFStream f(filename.c_str());
+      std::ifstream f;
+      f.open(filename.c_str());
       f >> s;
       return s;
     }

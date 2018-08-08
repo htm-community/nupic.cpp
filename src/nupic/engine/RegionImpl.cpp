@@ -28,7 +28,6 @@
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/ntypes/Buffer.hpp>
 #include <nupic/ntypes/BundleIO.hpp>
-#include <nupic/os/FStream.hpp>
 #include <nupic/types/BasicType.hpp>
 
 namespace nupic

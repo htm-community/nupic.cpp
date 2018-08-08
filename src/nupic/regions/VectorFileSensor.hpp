@@ -34,7 +34,6 @@
 #include <vector>
 
 #include <nupic/types/Types.h>
-#include <nupic/os/FStream.hpp>
 #include <nupic/engine/RegionImpl.hpp>
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/ntypes/ArrayRef.hpp>
@@ -298,10 +297,6 @@ namespace nupic
 
     void compute() override;
     virtual std::string executeCommand(const std::vector<std::string>& args, Int64 index) override;
-
-  private:
-    void closeFile();
-    void openFile(const std::string& filename);
 
   private:
     UInt32 repeatCount_;       // Repeat count for output vectors

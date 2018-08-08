@@ -26,10 +26,12 @@
   * An ArrayBase object contains a memory buffer that is used for
   * implementing zero-copy and one-copy operations in NuPIC.
   * An ArrayBase contains:
-  * - a pointer to a buffer
+  * - a pointer to a buffer (held in a shared_ptr)
   * - a length
+  * - a capacity   (useful if buffer is larger than data in buffer)
   * - a type
   * - a flag indicating whether or not the object owns the buffer.
+  * Note: if buffer is not owned, shared_ptr will not delete it.
   */
 
 #ifndef NTA_ARRAY_BASE_HPP
@@ -78,14 +80,14 @@ namespace nupic
 
 
     /**
-     * Ask ArrayBase to allocate its buffer
-     */
+         * Ask ArrayBase to allocate its buffer
+         */
     virtual void
     allocateBuffer(size_t count);
 
     /**
-    * Ask ArrayBase to zero fill its buffer
-    */
+         * Ask ArrayBase to zero fill its buffer
+        */
     virtual void
     zeroBuffer();
 
@@ -102,13 +104,15 @@ namespace nupic
     // number of elements of given type in the buffer
     size_t
     getCount() const;
+    
+    // max number of elements this buffer can hold (capacity)
+	  size_t getMaxElementsCount() const;
+
+	  // Returns the allocated buffer size in bytes independent of array length
+    size_t getBufferSize() const;
+
 
     void setCount(size_t count);
-
-    // capacity of buffer
-    size_t 
-    getCapacity() const;
-
 
     NTA_BasicType
     getType() const;
@@ -135,7 +139,7 @@ namespace nupic
     // cast to/from void* as necessary
     std::shared_ptr<char> buffer_;
     size_t count_;      // number of elements in the buffer
-    size_t capacity_;   // size of the allocated buffer
+    size_t capacity_;   // size of the allocated buffer in bytes
     NTA_BasicType type_;// type of data in this buffer
     bool own_;
     void convertInto(ArrayBase &a, size_t offset=0) const;

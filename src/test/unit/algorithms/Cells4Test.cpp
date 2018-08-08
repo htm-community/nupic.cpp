@@ -30,7 +30,6 @@
 #include <gtest/gtest.h>
 
 #include <nupic/os/Directory.hpp>
-#include <nupic/os/FStream.hpp>
 #include <nupic/algorithms/Cells4.hpp>
 #include <nupic/algorithms/Segment.hpp>
 #include <nupic/math/ArrayAlgo.hpp> // is_in

@@ -21,6 +21,8 @@
  */
 
 #include <filesystem>
+#include <fstream>
+
 
 #include <nupic/ntypes/BundleIO.hpp>
 #include <nupic/os/Path.hpp>
@@ -69,7 +71,8 @@ namespace nupic
     std::filesystem::path p(getPath(name));
     std::filesystem::create_directories(p.parent_path());
 
-    ostream_ = new OFStream(p.string().c_str(), std::ios::out | std::ios::binary);
+    ostream_ = new std::ofstream;
+    ostream_->open(p.string().c_str(), std::ios::out | std::ios::binary);
     if (!ostream_->is_open())
     {
       NTA_THROW << "getOutputStream - Unable to open bundle file " << name
@@ -88,7 +91,8 @@ namespace nupic
     
     checkStreams_();
     
-    istream_ = new IFStream(getPath(name).c_str(), std::ios::in | std::ios::binary);
+    istream_ = new std::ifstream;
+    istream_->open(getPath(name).c_str(), std::ios::in | std::ios::binary);
     if (!istream_->is_open())
     {
       NTA_THROW << "getInputStream - Unable to open bundle file " << name

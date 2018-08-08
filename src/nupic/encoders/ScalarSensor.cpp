@@ -25,6 +25,8 @@
  */
 
 #include <string>
+#include <fstream>
+
 
 #include <nupic/encoders/ScalarSensor.hpp>
 #include <nupic/engine/Spec.hpp>

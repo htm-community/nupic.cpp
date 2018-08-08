@@ -33,6 +33,8 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <fstream>
+
 
 #include <nupic/ntypes/Collection.hpp>
 #include <nupic/engine/Region.hpp>

@@ -32,7 +32,6 @@
 //----------------------------------------------------------------------
 
 #include <nupic/types/Types.h>
-#include <nupic/os/FStream.hpp>
 #include <nupic/engine/RegionImpl.hpp>
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/ntypes/ArrayRef.hpp>
@@ -106,7 +105,7 @@ namespace nupic
 
     ArrayRef dataIn_;
     std::string filename_;          // Name of the output file
-    nupic::OFStream *outFile_;        // Handle to current file
+    std::ofstream *outFile_;        // Handle to current file
 
     /// Disable unsupported default constructors
     VectorFileEffector(const VectorFileEffector&);

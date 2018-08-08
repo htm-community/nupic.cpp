@@ -31,7 +31,6 @@
 #include <nupic/engine/Network.hpp>
 #include <nupic/engine/NuPIC.hpp>
 #include <nupic/engine/Region.hpp>
-#include <nupic/os/FStream.hpp>
 #include <nupic/os/Path.hpp>
 
 #include <nupic/ntypes/ArrayBase.hpp>

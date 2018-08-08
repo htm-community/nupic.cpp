@@ -290,8 +290,6 @@ set(os_files
     ${nupic_src}/os/Directory.hpp
     ${nupic_src}/os/Env.cpp
     ${nupic_src}/os/Env.hpp
-    ${nupic_src}/os/FStream.cpp
-    ${nupic_src}/os/FStream.hpp
     ${nupic_src}/os/OS.cpp
     ${nupic_src}/os/OS.hpp
     ${nupic_src}/os/OSUnix.cpp

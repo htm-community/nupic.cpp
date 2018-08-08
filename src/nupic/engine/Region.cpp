@@ -298,39 +298,4 @@ const Timer &Region::getComputeTimer() const { return computeTimer_; }
 
 const Timer &Region::getExecuteTimer() const { return executeTimer_; }
 
-
-void Region::serializeOutput(YAML::Emitter &out) {
-
-  out << YAML::BeginSeq;
-  for (auto iter : outputs_) {
-    Output *output = iter.second;
-    out << YAML::BeginMap;
-    out << YAML::Key << "name" << YAML::Value << output->getName();
-    out << YAML::Key << "data";
-    output->serializeData(out);
-    out << YAML::EndMap;
-  }
-  out << YAML::EndSeq;
-}
-
-void Region::deserializeOutput(const YAML::Node& doc) {
-  for (const auto &valiter : doc) { // list of Outputs for this region.
-    NTA_CHECK(valiter.IsMap()) << "Deserializing network structure file -- missing region output.";
-    NTA_CHECK(valiter.size() == 2)  << "Deserializing network structure file -- wrong map size for region output.";
-
-    YAML::Node node;
-    node = valiter["name"];
-    NTA_CHECK(node.IsScalar()) << "Deserializing network structure file -- missing region output name.";
-    std::string name = node.as<std::string>();
-
-    Output *output = getOutput(name);
-    NTA_CHECK(output != nullptr) << "Deserializing network structure file -- No output with the name '" << name << "'.";
-
-    node = valiter["data"];
-    NTA_CHECK(node.IsMap()) << "Deserializing network structure file -- missing region output data.";
-    output->deserializeData(node);
-
-  }
-}
-
 } // namespace nupic

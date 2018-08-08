@@ -42,7 +42,6 @@ Implementation of the Network class
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/StringUtils.hpp>
 #include <nupic/engine/NuPIC.hpp> 
-#include <nupic/os/FStream.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/os/Directory.hpp>
 #include <nupic/ntypes/BundleIO.hpp>
@@ -710,7 +709,7 @@ void Network::saveToBundle(const std::string& name)
     out << YAML::EndMap; // end of network
     out << YAML::EndDoc;
 
-    OFStream f;
+    std::ofstream f;
     f.open(networkStructureFilename.c_str());
     f << out.c_str();
     f.close();

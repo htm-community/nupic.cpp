@@ -155,7 +155,7 @@ void Link::compute() {
     // when the last reference is deleted.
     from->zeroCopy(*to);
   } else {
-    NTA_CHECK(from->getCount() + destOffset_ <= to->getCapacity())
+    NTA_CHECK(from->getCount() + destOffset_ <= to->getMaxElementsCount())
         << "Not enough room in buffer to propogate to " << destRegionName_
         << " " << destInputName_ << ". ";
     // This does a deep copy of the buffer, and if needed it also does a type

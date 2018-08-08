@@ -28,6 +28,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <list>
 #include <cstring> // strlen
 
@@ -36,7 +37,6 @@
 #include <nupic/regions/VectorFileSensor.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/StringUtils.hpp>
-//#include <nupic/os/FStream.hpp>
 #include <nupic/ntypes/Value.hpp>
 #include <nupic/ntypes/BundleIO.hpp>
 
@@ -274,8 +274,7 @@ std::string VectorFileSensor::executeCommand(const std::vector<std::string>& arg
 
     NTA_CHECK(argCount <= 5) << "VectorFileSensor: too many arguments";
 
-
-    OFStream f(filename.c_str());
+    std::ofstream f(filename.c_str());
     if (hasEnd)
       vectorFile_.saveVectors(f, dataOut_.getCount(), format, begin, end);
     else

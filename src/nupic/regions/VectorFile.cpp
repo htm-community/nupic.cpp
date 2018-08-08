@@ -37,7 +37,6 @@
 #include <nupic/regions/VectorFile.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/math/Utils.hpp> // For isSystemLittleEndian and utils::swapBytesInPlace.
-#include <nupic/os/FStream.hpp>
 #include <nupic/os/Path.hpp>
 
 using namespace std;
@@ -102,7 +101,7 @@ void VectorFile::appendFile(const string &fileName,
 
   if(!handled) {
     // Open up the vector file
-    IFStream inFile(fileName.c_str());
+    std::ifstream inFile(fileName.c_str());
     if (!inFile) {
       NTA_THROW << "VectorFile::appendFile - unable to open file: "
         << fileName;
@@ -201,7 +200,7 @@ void VectorFile::appendFile(const string &fileName,
 // False otherwise. 
 // This is a bit of a hack - if a string contains 13 or 10 it should not count, but
 // we don't support strings in files anyway.
-static bool dosEndings(IFStream &inFile)
+static bool dosEndings(std::istream &inFile)
 {
   bool unixLines = true;
   auto pos = inFile.tellg();
@@ -505,7 +504,7 @@ void VectorFile::appendFloat32File(const string &filename,
 //    23,24,
 //    23,"42,d",55
 
-void VectorFile::appendCSVFile(IFStream &inFile, Size expectedElements)
+void VectorFile::appendCSVFile(istream &inFile, Size expectedElements)
 {
   // Read in csv file one line at a time. If that line contains any errors, 
   // skip it and move onto the next one.
