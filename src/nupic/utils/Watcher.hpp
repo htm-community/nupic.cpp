@@ -38,7 +38,6 @@ namespace nupic
   class ArrayBase;
   class Network;
   class Region;
-  class OFStream;
 
   enum watcherType
   {

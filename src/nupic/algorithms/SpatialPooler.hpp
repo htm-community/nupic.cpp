@@ -34,6 +34,7 @@
 #include <nupic/math/SparseBinaryMatrix.hpp>
 #include <nupic/math/SparseMatrix.hpp>
 #include <nupic/types/Types.hpp>
+#include <nupic/types/Serializable.hpp>
 
 using namespace std;
 
@@ -67,7 +68,7 @@ namespace nupic
        *     }
        *
        */
-      class SpatialPooler
+      class SpatialPooler : public Serializable
       {
         public:
           SpatialPooler();
@@ -194,7 +195,7 @@ namespace nupic
                 boost. Shorter values make it potentially more unstable and
                 likely to oscillate.
 
-          @param boostStrength A number greater or equal than 0, used to 
+          @param boostStrength A number greater or equal than 0, used to
           control boosting strength. No boosting is applied if it is set to 0.
           The strength of boosting increases as a function of boostStrength.
           Boosting encourages columns to have similar activeDutyCycles as their
@@ -462,7 +463,7 @@ namespace nupic
           /**
           Sets the strength of boost.
 
-          @param boostStrength real number of boosting strength, 
+          @param boostStrength real number of boosting strength,
           must be larger than 0.0
           */
           void setBoostStrength(Real boostStrength);

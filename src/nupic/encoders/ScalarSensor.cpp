@@ -289,20 +289,24 @@ namespace nupic
     NTA_THROW << "ScalarSensor::executeCommand -- commands not supported";
   }
 
+  /**
+   * Serialize this regionImpl to caputre current state
+   */
   void ScalarSensor::serialize(BundleIO& bundle)
   {
-    std::ofstream &f = bundle.getOutputStream("scaler");
+    std::ostream &f = bundle.getOutputStream();
     f << "ScalarSensor" << " " 
       << n_ << " " << w_ << " " << resolution_ << " " << radius_ << " "
       << minValue_ << " " << maxValue_ << " " << clipInput_ << " " << periodic_ << " "
       << sensedValue_ << " ";
-    f.close();
   }
 
-
+  /**
+   * Deserialize this regionImpl to restore stored state.
+   */
   void ScalarSensor::deserialize(BundleIO& bundle)
   {
-    std::ifstream &f = bundle.getInputStream("scaler");
+    std::istream &f = bundle.getInputStream();
     std::string signatureString;
     f >> signatureString;
     if (signatureString != "ScalarSensor") {
@@ -321,7 +325,6 @@ namespace nupic
     f >> clipInput_;
     f >> periodic_;
     f >> sensedValue_;
-    f.close();
 
     if (periodic_) {
       encoder_ = new PeriodicScalarEncoder(w_, minValue_, maxValue_, n_,

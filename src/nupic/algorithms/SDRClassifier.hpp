@@ -33,10 +33,12 @@
 #include <string>
 #include <vector>
 
-#include <nupic/types/Types.hpp>
+#include <nupic/algorithms/ClassifierResult.hpp>
 #include <nupic/math/DenseMatrix.hpp>
+#include <nupic/types/Types.hpp>
+#include <nupic/types/Serializable.hpp>
 
-namespace nupic 
+namespace nupic
 {
   namespace algorithms
   {
@@ -50,8 +52,10 @@ namespace nupic
 
       typedef Dense<UInt, Real64> Matrix;
 
-      class SDRClassifier
+      class SDRClassifier : public Serializable
       {
+  		// Make test class friend so it can unit test private members directly
+  		friend class SDRClassifierTest;
         public:
           /**
            * Constructor for use when deserializing.
@@ -112,12 +116,12 @@ namespace nupic
           /**
            * Gets the learning rate
            */
-          auto getAlpha() const;
+          Real64 getAlpha() const;
 
           /**
            * Get the size of the string needed for the serialized state.
            */
-          auto persistentSize() const;
+          size_t persistentSize() const;
 
           /**
            * Save the state to the ostream.
@@ -143,7 +147,7 @@ namespace nupic
             const vector<Real64>& actValue, ClassifierResult* result);
 
           // Helper function to compute the error signal in learning mode
-          vector<Real64> calculateError_(const vector<UInt>& bucketIdxList, 
+          vector<Real64> calculateError_(const vector<UInt>& bucketIdxList,
             const vector<UInt> patternNZ, UInt step);
 
           void softmax_(vector<Real64>::iterator begin,
@@ -192,4 +196,4 @@ namespace nupic
   }  // end of namespace algorithms
 }  // end of name space nupic
 
-#endif 
+#endif

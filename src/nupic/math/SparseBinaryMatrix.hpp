@@ -30,9 +30,9 @@
 #include <algorithm>
 #include <sstream>
 
+#include <nupic/math/ArrayAlgo.hpp>
 #include <nupic/math/Math.hpp>
 #include <nupic/math/StlIo.hpp>
-#include <nupic/math/ArrayAlgo.hpp>
 
 namespace nupic {
 

@@ -225,7 +225,7 @@ namespace testing
 
 	  VERBOSE << "Checking data after first iteration..." << std::endl;
     VERBOSE << "  VectorFileSensor Output" << std::endl;
-    Array r1OutputArray = region1->getOutputData("dataOut");
+    ArrayRef r1OutputArray = region1->getOutputData("dataOut");
     EXPECT_EQ(r1OutputArray.getCount(), dataWidth);
     EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32);
     Real32 *buffer1 = (Real32*) r1OutputArray.getBuffer();
@@ -239,7 +239,7 @@ namespace testing
 	  ASSERT_TRUE (r1OutputArray.getCount() == r2InputArray.getCount()) 
 		<< "Buffer length different. Output from VectorFileSensor is " << r1OutputArray.getCount() << ", input to SPRegion is " << r2InputArray.getCount();
     EXPECT_TRUE(r2InputArray.getType() == NTA_BasicType_UInt32);
-		UInt32 *buffer2 = (UInt32*)r2InputArray.getBuffer(); 
+		const UInt32 *buffer2 = (const UInt32*)r2InputArray.getBuffer(); 
 		for (size_t i = 0; i < r2InputArray.getCount(); i++)
 		{
 		  //VERBOSE << "  [" << i << "]=    " << buffer2[i] << "" << std::endl;
@@ -255,10 +255,10 @@ namespace testing
     VERBOSE << "Checking Output Data." << std::endl;
     VERBOSE << "  SPRegion output" << std::endl;
     UInt32 columnCount = region2->getParameterUInt32("columnCount");
-	  Array r2OutputArray = region2->getOutputData("bottomUpOut");
+	  ArrayRef r2OutputArray = region2->getOutputData("bottomUpOut");
 	  ASSERT_TRUE(r2OutputArray.getCount() == columnCount)
 		 << "Buffer length different. Output from SPRegion is " << r2OutputArray.getCount() << ", should be " << columnCount;
-    UInt32 *buffer3 = (UInt32*)r2OutputArray.getBuffer();
+    const UInt32 *buffer3 = (const UInt32*)r2OutputArray.getBuffer();
     for (size_t i = 0; i < r2OutputArray.getCount(); i++)
     {
       //VERBOSE << "  [" << i << "]=    " << buffer3[i] << "" << std::endl;
@@ -270,7 +270,7 @@ namespace testing
     VERBOSE << "  VectorFileEffector input" << std::endl;
     ArrayRef r3InputArray = region3->getInputData("dataIn");
     ASSERT_TRUE(r3InputArray.getCount() == columnCount);
-    Real32 *buffer4 = (Real32*)r3InputArray.getBuffer();
+    const Real32 *buffer4 = (const Real32*)r3InputArray.getBuffer();
     for (size_t i = 0; i < r3InputArray.getCount(); i++)
     {
       //VERBOSE << "  [" << i << "]=    " << buffer4[i] << "" << std::endl;
@@ -311,10 +311,11 @@ namespace testing
       EXPECT_TRUE(captureParameters(n1region2, parameterMap)) << "Capturing parameters before save.";
 
       Directory::removeTree("TestOutputDir", true);
-		  net1->save("TestOutputDir/spRegionTest.nta");
+		  net1->saveToFile("TestOutputDir/spRegionTest.stream");
 
 		  VERBOSE << "Restore into a second network and compare." << std::endl;
-		  net2 = new Network("TestOutputDir/spRegionTest.nta");
+		  net2 = new Network();
+      net2->loadFromFile("TestOutputDir/spRegionTest.stream");
 
 
 		  Region_Ptr_t n2region2 = net2->getRegions().getByName("region2");
@@ -355,10 +356,11 @@ namespace testing
 
       parameterMap.clear();
       EXPECT_TRUE(captureParameters(n2region2, parameterMap)) << "Capturing parameters before second save.";
-		  net2->save("TestOutputDir/spRegionTest.nta");
+		  net2->saveToFile("TestOutputDir/spRegionTest.stream");
 
 		  VERBOSE << "Restore into a third network and compare changed parameters." << std::endl;
-		  net3 = new Network("TestOutputDir/spRegionTest.nta");
+		  net3 = new Network();
+      net3->loadFromFile("TestOutputDir/spRegionTest.stream");
 		  Region_Ptr_t n3region2 = net3->getRegions().getByName("region2");
       EXPECT_TRUE(n3region2->getType() == "SPRegion")
           << "Failure: Restored region does not have the right type. "

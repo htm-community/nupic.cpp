@@ -733,7 +733,7 @@ Segment TemporalMemory::createSegment(CellIdx cell)
                          cell, iteration_, maxSegmentsPerCell_);
 }
 
-Int TemporalMemory::columnForCell(CellIdx cell)
+UInt TemporalMemory::columnForCell(const CellIdx cell) const
 {
   _validateCell(cell);
 
@@ -754,7 +754,7 @@ vector<CellIdx> TemporalMemory::cellsForColumn(Int column)
   return cellsInColumn;
 }
 
-UInt TemporalMemory::numberOfCells(void)
+UInt TemporalMemory::numberOfCells(void) const
 {
   return connections.numCells();
 }
@@ -802,7 +802,7 @@ UInt TemporalMemory::numberOfColumns() const
   return numColumns_;
 }
 
-bool TemporalMemory::_validateCell(CellIdx cell)
+bool TemporalMemory::_validateCell(CellIdx cell) const
 {
   if (cell < numberOfCells())
     return true;

@@ -20,7 +20,7 @@
  * ---------------------------------------------------------------------
  */
 
-/** @file STL IO 
+/** @file STL IO
  * This file contains functions to print out and save/load various STL data structures.
  */
 
@@ -53,10 +53,10 @@ namespace nupic {
 
     bool pair_paren;           // put parens around pairs in vector of pairs
     const char* pair_sep;      // put separator between pair.first and pair.second
-   
+
     int convert_to_sparse;     // convert dense vector to pos. of non-zeros
     int convert_from_sparse;   // convert from pos. of non-zero to dense 0/1 vector
-    
+
     SPARSE_IO_TYPE sparse_io;  // do sparse io according to SPARSE_IO_TYPE
 
     bool bit_vector;           // output 0/1 vector compactly
@@ -92,22 +92,22 @@ namespace nupic {
   extern IOControl io_control;
 
   template <typename CharT, typename Traits, typename T>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   operator,(std::basic_ostream<CharT,Traits>& out_stream, const T& a)
   {
     return out_stream << ' ' << a;
   }
-  
+
   template <typename CharT, typename Traits, typename T>
-  inline std::basic_istream<CharT,Traits>& 
+  inline std::basic_istream<CharT,Traits>&
   operator,(std::basic_istream<CharT,Traits>& in_stream, T& a)
   {
     return in_stream >> a;
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
-  operator,(std::basic_ostream<CharT,Traits>& out_stream, 
+  inline std::basic_ostream<CharT,Traits>&
+  operator,(std::basic_ostream<CharT,Traits>& out_stream,
             std::basic_ostream<CharT,Traits>& (*pf)(std::basic_ostream<CharT,Traits>&))
   {
     pf(out_stream);
@@ -115,7 +115,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   p_paren(std::basic_ostream<CharT,Traits>& out_stream)
   {
     io_control.pair_paren = true;
@@ -123,7 +123,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   psep_comma(std::basic_ostream<CharT,Traits>& out_stream)
   {
     io_control.pair_sep = ",";
@@ -131,7 +131,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   psep_dot(std::basic_ostream<CharT,Traits>& out_stream)
   {
     io_control.pair_sep = ".";
@@ -145,7 +145,7 @@ namespace nupic {
   };
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& out_stream, abbr s)
   {
     io_control.abbr = s.n;
@@ -159,7 +159,7 @@ namespace nupic {
   };
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& out_stream, debug d)
   {
     io_control.abbr = d.n;
@@ -170,7 +170,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_istream<CharT,Traits>& 
+  inline std::basic_istream<CharT,Traits>&
   from_csr_01(std::basic_istream<CharT,Traits>& in_stream)
   {
     io_control.convert_from_sparse = CSR_01;
@@ -178,7 +178,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   to_csr_01(std::basic_ostream<CharT,Traits>& out_stream)
   {
     io_control.convert_to_sparse = CSR_01;
@@ -186,7 +186,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_istream<CharT,Traits>& 
+  inline std::basic_istream<CharT,Traits>&
   bit_vector(std::basic_istream<CharT,Traits>& in_stream)
   {
     io_control.bit_vector = true;
@@ -194,7 +194,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   bit_vector(std::basic_ostream<CharT,Traits>& out_stream)
   {
     io_control.bit_vector = true;
@@ -202,7 +202,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_istream<CharT,Traits>& 
+  inline std::basic_istream<CharT,Traits>&
   general_vector(std::basic_istream<CharT,Traits>& in_stream)
   {
     io_control.bit_vector = false;
@@ -210,7 +210,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   general_vector(std::basic_ostream<CharT,Traits>& out_stream)
   {
     io_control.bit_vector = false;
@@ -223,15 +223,15 @@ namespace nupic {
   struct sparse_format_class
   {
     SPARSE_IO_TYPE format;
-    
+
     inline sparse_format_class(SPARSE_IO_TYPE f) : format(f) {}
   };
 
-  inline sparse_format_class 
+  inline sparse_format_class
   sparse_format(SPARSE_IO_TYPE f) { return sparse_format_class(f); }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   operator<<(std::basic_ostream<CharT,Traits>& out_stream, sparse_format_class s)
   {
     io_control.sparse_io = s.format;
@@ -239,7 +239,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_istream<CharT,Traits>& 
+  inline std::basic_istream<CharT,Traits>&
   operator>>(std::basic_istream<CharT,Traits>& in_stream, sparse_format_class s)
   {
     io_control.sparse_io = s.format;
@@ -247,7 +247,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   as_dense(std::basic_ostream<CharT,Traits>& out_stream)
   {
     io_control.sparse_io = AS_DENSE;
@@ -255,7 +255,7 @@ namespace nupic {
   }
 
   template <typename CharT, typename Traits>
-  inline std::basic_ostream<CharT,Traits>& 
+  inline std::basic_ostream<CharT,Traits>&
   as_binary(std::basic_ostream<CharT,Traits>& out_stream)
   {
     io_control.sparse_io = BINARY;
@@ -273,7 +273,7 @@ namespace nupic {
     inline is_positive_checker(T1& v) : var(v) {}
 
     template <typename CharT, typename Traits>
-    inline void do_check(std::basic_istream<CharT,Traits>& in_stream) 
+    inline void do_check(std::basic_istream<CharT,Traits>& in_stream)
     {
       double value = 0;
       in_stream >> value;
@@ -288,7 +288,7 @@ namespace nupic {
   };
 
   template <typename CharT, typename Traits, typename T1>
-  inline std::basic_istream<CharT,Traits>& 
+  inline std::basic_istream<CharT,Traits>&
   operator>>(std::basic_istream<CharT,Traits>& in_stream, is_positive_checker<T1> cp)
   {
     cp.do_check(in_stream);
@@ -297,10 +297,10 @@ namespace nupic {
 
   template <typename T1>
   inline is_positive_checker<T1> assert_positive(T1& var)
-  { 
-    return is_positive_checker<T1>(var); 
+  {
+    return is_positive_checker<T1>(var);
   }
-  
+
   //--------------------------------------------------------------------------------
   // BINARY PERSISTENCE
   //--------------------------------------------------------------------------------
@@ -383,7 +383,7 @@ namespace nupic {
    * Partial specialization of above functor for primitive types.
    */
   template <typename T>
-  struct vector_loader<T, true> 
+  struct vector_loader<T, true>
   {
     inline void load(size_t n, std::istream& in_stream, std::vector<T>& v)
     {
@@ -407,9 +407,9 @@ namespace nupic {
           else
             v[i] = 0;
         }
-        
+
       } else {
-        for (size_t i = 0; i != n; ++i) 
+        for (size_t i = 0; i != n; ++i)
           in_stream >> v[i];
       }
     }
@@ -417,16 +417,16 @@ namespace nupic {
 
   // declartion of >> which is used in the following function. Avoid lookup error
   template <typename T> inline std::istream& operator>>(std::istream& in_stream, std::vector<T>& v);
-  //--------------------------------------------------------------------------------
-  /**
-   * Partial specialization for non-primitive types.
-   */
   template <typename T>
+//--------------------------------------------------------------------------------
+/**
+ * Partial specialization for non-primitive types.
+ */
   struct vector_loader<T, false>
   {
     inline void load(size_t n, std::istream& in_stream, std::vector<T>& v)
     {
-      for (size_t i = 0; i != n; ++i) 
+      for (size_t i = 0; i != n; ++i)
         in_stream >> v[i];
     }
   };
@@ -442,10 +442,10 @@ namespace nupic {
     vector_loader<T, std::is_fundamental<T>::value > loader;
     loader.load(n, in_stream, v);
   }
-  
+
   //--------------------------------------------------------------------------------
   template <typename T, bool>
-  struct vector_saver 
+  struct vector_saver
   {
     inline void save(size_t n, std::ostream& out_stream, const std::vector<T>& v);
   };
@@ -461,18 +461,18 @@ namespace nupic {
     {
       if (io_control.output_n_elts)
         out_stream << n << ' ';
-      
-      if (io_control.abbr > 0) 
+
+      if (io_control.abbr > 0)
         n = std::min((size_t) io_control.abbr, n);
-      
+
       if (io_control.convert_to_sparse == CSR_01) {
-        
-        for (size_t i = 0; i != n; ++i) 
+
+        for (size_t i = 0; i != n; ++i)
           if (!is_zero(v[i]))
             out_stream << i << ' ';
-        
+
       } else if (io_control.bit_vector) {
-        
+
         size_t k = 7;
         for (size_t i = 0; i != v.size(); ++i) {
           out_stream << (is_zero(v[i]) ? '0' : '1');
@@ -484,7 +484,7 @@ namespace nupic {
 
       } else {
 
-        for (size_t i = 0; i != n; ++i) 
+        for (size_t i = 0; i != n; ++i)
           out_stream << v[i] << ' ';
       }
 
@@ -508,13 +508,13 @@ namespace nupic {
     {
       if (io_control.output_n_elts)
         out_stream << n << ' ';
-      
-      if (io_control.abbr > 0) 
+
+      if (io_control.abbr > 0)
         n = std::min((size_t) io_control.abbr, n);
-      
-      for (size_t i = 0; i != n; ++i) 
+
+      for (size_t i = 0; i != n; ++i)
         out_stream << v[i] << ' ';
-      
+
       if (io_control.abbr > 0 && n < v.size()) {
         size_t rest = v.size() - n;
         out_stream << "[+" << rest << "/" << count_non_zeros(v) << "]";
@@ -551,7 +551,7 @@ namespace nupic {
    * a sparse binary vector.
    */
   template <typename T>
-  inline std::istream& 
+  inline std::istream&
   operator>>(std::istream& in_stream, std::vector<T>& v)
   {
     size_t n = 0;
@@ -591,7 +591,7 @@ namespace nupic {
   template <typename T1>
   inline std::ostream& operator<<(std::ostream& out_stream, const std::set<T1>& m)
   {
-    typename std::set<T1>::const_iterator 
+    typename std::set<T1>::const_iterator
       it = m.begin(), end = m.end();
 
     while (it != end) {
@@ -604,20 +604,20 @@ namespace nupic {
 
   //--------------------------------------------------------------------------------
   // std::map
+  // Warning: This will not handle elements containing whitespace.
   //--------------------------------------------------------------------------------
   template <typename T1, typename T2>
   inline std::ostream& operator<<(std::ostream& out_stream, const std::map<T1, T2>& m)
   {
-    out_stream << m.size() << " ";
+    out_stream << "[ " << m.size() << "\n";
 
-    typename std::map<T1, T2>::const_iterator 
-      it = m.begin(), end = m.end();
+  typename std::map<T1, T2>::const_iterator it = m.begin(), end = m.end();
 
     while (it != end) {
       out_stream << it->first << ' ' << it->second << ' ';
       ++it;
     }
-
+    out_stream << "]\n";
     return out_stream;
   }
 
@@ -625,14 +625,22 @@ namespace nupic {
   template <typename T1, typename T2>
   inline std::istream& operator>>(std::istream& in_stream, std::map<T1, T2>& m)
   {
-    int size = 0;
+    std::string tag;
+    size_t size = 0;
+
+    in_stream >> tag;
+    NTA_CHECK(tag == "[");
     in_stream >> size;
 
-    for (int i = 0; i != size; ++i) {
+    m.clear();
+    for (size_t i = 0; i != size; ++i) {
       T1 k; T2 v;
       in_stream >> k >> v;
       m.insert(std::make_pair(k, v));
     }
+    in_stream >> tag;
+    NTA_CHECK(tag == "]") << "Expected a closing ']' after map object.";
+    in_stream.ignore(1);
 
     return in_stream;
   }
@@ -647,8 +655,8 @@ namespace nupic {
     find_all_differences(x, y, diffs);
     std::cout << diffs.size() << " differences: " << std::endl;
     for (size_t i = 0; i != diffs.size(); ++i)
-      std::cout << "(at:" << diffs[i] 
-                << " y=" << x[diffs[i]] 
+      std::cout << "(at:" << diffs[i]
+                << " y=" << x[diffs[i]]
                 << ", ans=" << y[diffs[i]] << ")";
     std::cout << std::endl;
   }

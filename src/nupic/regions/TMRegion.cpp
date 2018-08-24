@@ -1205,7 +1205,7 @@ void TMRegion::setParameterString(const std::string &name, Int64 index,
 
 
 void TMRegion::serialize(BundleIO &bundle) {
-  std::ofstream &f = bundle.getOutputStream("TMRegion");
+  std::ostream &f = bundle.getOutputStream();
   f.precision(std::numeric_limits<double>::digits10 + 1);
   f.precision(std::numeric_limits<float>::digits10 + 1);
 
@@ -1225,11 +1225,10 @@ void TMRegion::serialize(BundleIO &bundle) {
   if (tm_)
     // Note: tm_ saves the output buffers
     tm_->save(f);
-  f.close();
 }
 
 void TMRegion::deserialize(BundleIO &bundle) {
-  std::ifstream &f = bundle.getInputStream("TMRegion");
+  std::istream &f = bundle.getInputStream();
   // There is more than one way to do this. We could serialize to YAML, which
   // would make a readable format, but that is a bit slow so we try to directly
   // stream binary as much as we can.  
@@ -1272,7 +1271,6 @@ void TMRegion::deserialize(BundleIO &bundle) {
     tm_->load(f);
   } else
     tm_ = nullptr;
-  f.close();
 }
 
 } // namespace nupic

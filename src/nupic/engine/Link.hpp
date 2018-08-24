@@ -30,8 +30,6 @@
 #include <string>
 #include <deque>
 
-#include <yaml-cpp/yaml.h>
-
 #include <nupic/engine/Input.hpp> // needed for splitter map
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/types/Types.hpp>
@@ -81,9 +79,9 @@ public:
    * Initialization Phase 1: setting parameters of the link.
    *
    * @param linkType
-   *            The type of the link
+   *            The type of the link, normally ""
    * @param linkParams
-   *            The parameters of the link
+   *            The parameters of the link, normally ""
    * @param srcRegionName
    *            The name of the source Region
    * @param destRegionName
@@ -257,7 +255,7 @@ public:
    * @returns
    *         The propogation Delay.
    */
-  const size_t getPropagationDelay() const { return propagationDelay_; }
+  size_t getPropagationDelay() const { return propagationDelay_; }
 
   /**
    * @}
@@ -313,30 +311,26 @@ public:
    */
   friend std::ostream &operator<<(std::ostream &f, const Link &link);
 
-  /**
-   * Serialize the link to YAML.
-   *
-   * @param out
-   *            The YAML Emitter to encode into (from Network.cpp)
-   */
-  void serialize(YAML::Emitter &out);
+  bool operator==(const Link &o) const;
+  bool operator!=(const Link &o) const { return !operator==(o); }
 
   /**
-   * Deserialize the link from YAML.
+   * Serialize the link using a stream.
    *
-   * @param link
-   *            The YAML Node to decode from (from Network.cpp)
-   *
-   * @note After deserializing the link, caller must now call
-   *    newLink->connectToNetwork(srcOutput, destInput);
-   *
-   * After everything is deserialized caller must call
-   *    net.initialize()
+   * @param f -- The stream to output to.
    */
-  void deserialize(const YAML::Node &link);
+  void serialize(std::ostream &f);
+
+  /**
+   * Deserialize the link from binary stream.
+   *
+   * @param f -- the stream to read from
+   *
+   */
+  void deserialize(std::istream &f);
 
 private:
-  // common initialization for the two constructors.
+  // common initialization for the two Link constructors.
   void commonConstructorInit_(const std::string &linkType,
                               const std::string &linkParams,
                               const std::string &srcRegionName,
@@ -347,22 +341,15 @@ private:
 
 
 
-  // TODO: The strings with src/dest names are redundant with
-  // the src_ and dest_ objects. For unit testing links,
-  // and for deserializing networks, we need to be able to create
-  // a link object without a network. and for deserializing, we
-  // need to be able to instantiate a link before we have instantiated
-  // all the regions. (Maybe this isn't true? Re-evaluate when
-  // more infrastructure is in place).
+  // Note: The strings with src/dest names are redundant with
+  // the src_ and dest_ objects but for deserialization and testing
+  // it is convenent to keep them this way.
 
   std::string srcRegionName_;
   std::string destRegionName_;
   std::string srcOutputName_;
   std::string destInputName_;
 
-  // We store the values given to use. Use these for
-  // serialization instead of serializing the LinkPolicy
-  // itself.
   std::string linkType_;
   std::string linkParams_;
 
@@ -383,7 +370,7 @@ private:
   bool initialized_;
 
   // true if this link does not need to copy into the Input buffer
-  // Just pass the shared_ptr.
+  // Just pass the Array object (shared_ptr).
   bool zeroCopy_;
 };
 

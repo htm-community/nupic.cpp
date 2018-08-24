@@ -29,11 +29,12 @@
 #ifndef NTA_BACKTRACKINGTMCPP_HPP
 #define NTA_BACKTRACKINGTMCPP_HPP
 
-#include <any>
 #include <nupic/algorithms/Cells4.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Random.hpp>
+#include <nupic/types/Serializable.hpp>
 #include <vector>
+#include <string>
 
 using namespace std;
 using namespace nupic;
@@ -188,7 +189,8 @@ namespace backtracking_tm {
  *
  *************/
 
-class BacktrackingTMCpp {
+class BacktrackingTMCpp : public Serializable 
+{
 public:
   BacktrackingTMCpp(); // when restoring from serialization
 
@@ -206,7 +208,7 @@ public:
                     UInt32 maxLrnBacktrack = 5, UInt32 maxAge = 100000,
                     UInt32 maxSeqLength = 32, Int32 maxSegmentsPerCell = -1,
                     Int32 maxSynapsesPerSegment = -1,
-                    const char *outputType = "normal");
+                    const std::string outputType = "normal");
 
   virtual ~BacktrackingTMCpp();
 
@@ -266,13 +268,13 @@ public:
   };
   struct predictionResults_t {
     Size totalExtras;
-    Size totalMissing; 
-    std::vector<struct score_tuple> conf; 
+    Size totalMissing;
+    std::vector<struct score_tuple> conf;
     std::shared_ptr<Real> missing;
   };
   std::shared_ptr<struct BacktrackingTMCpp::predictionResults_t>
     _checkPrediction(std::vector<const UInt32 *> patternNZs,
-                     const Byte *predicted = nullptr, 
+                     const Byte *predicted = nullptr,
                      const Real *colConfidence = nullptr,
                      bool details = false);
 
@@ -301,11 +303,11 @@ public:
   inline UInt32 getMaxSeqLength() const  { return cells4_->getMaxSeqLength(); }
   inline Int32  getMaxSegmentsPerCell() const  { return cells4_->getMaxSegmentsPerCell(); }
   inline Int32  getMaxSynapsesPerSegment() const  { return cells4_->getMaxSynapsesPerSegment(); }
-  inline const char *getOutputType() const  { return loc_.outputType; }
+  inline std::string getOutputType() const  { return outputType_; }
   inline Int32  getBurnIn() const  { return loc_.burnIn; }
   inline bool   getCollectStats() const  { return loc_.collectStats; }
   inline bool   getSeed() const  { return loc_.seed; }
- 
+
   inline void setVerbosity(UInt val) { cells4_->setVerbosity(val); }
   inline void setCheckSynapseConsistency(bool val) { cells4_->setCheckSynapseConsistency(val); }
   inline void setPamLength(UInt32 val) { cells4_->setPamLength(val); }
@@ -329,7 +331,7 @@ public:
   inline UInt getNumSegments() const { return cells4_->nSegments(); }
   inline UInt getNumSegmentsInCell(Size c, Size i) const { return cells4_->nSegmentsOnCell((UInt)c, (UInt)i); }
   inline Size getNumSynapses() const { return cells4_->nSynapses(); }
-  inline Real32 getNumSynapsesPerSegmentAvg() const { 
+  inline Real32 getNumSynapsesPerSegmentAvg() const {
     return ((Real32)getNumSynapses() / std::max<Size>(1, getNumSegments()));
   }
 
@@ -441,8 +443,6 @@ public:
    * Serialization. save and load the current state of the TM to/from the
    * specified file.
    */
-  void saveToFile(std::string filePath);
-  void loadFromFile(std::string filePath);
   void save(std::ostream &out) const;
   void load(std::istream &in);
 
@@ -465,17 +465,21 @@ protected:
   virtual bool _slowIsSegmentActive(Segment &seg, const char *timestep) const;
 
   // Used by predict() to save/restore current state
-  typedef std::map<std::string, std::any> tmSavedState_t;
+  struct ss_t {
+      std::shared_ptr<Byte> Byteptr;
+      std::shared_ptr<Real> Realptr;
+  };
+  typedef std::map<std::string, struct ss_t> tmSavedState_t;
   virtual void _getTPDynamicState(tmSavedState_t &ss);
   virtual void _setTPDynamicState(tmSavedState_t &ss);
 
-  template <typename T>
-  void deepcopySave_(tmSavedState_t &ss, std::string name, T *buf, Size count);
+  void deepcopySave_(tmSavedState_t &ss, std::string name, Byte *buf, Size count);
+  void deepcopySave_(tmSavedState_t &ss, std::string name, Real *buf, Size count);
+
+  void deepcopyRestore_(tmSavedState_t &ss, std::string name, Byte *buf, Size count);
+  void deepcopyRestore_(tmSavedState_t &ss, std::string name, Real *buf, Size count);
 
   template <typename T>
-  void deepcopyRestore_(tmSavedState_t &ss, std::string name, T *buf, Size count);
-
-  template <typename T> 
   void fastbuffercopy(T *tobuf, T *frombuf, Size size);
 
   ////// local parameters  ////////////
@@ -518,9 +522,8 @@ protected:
     // If true, always fetch the learn state pointers after every compute().
     bool retrieveLearningStates;
 
-    char outputType[25];
-
   } loc_;
+  std::string outputType_;
 
   Size nCells;  // number of cells (numberOfCols * cellsPerColumn)
 

@@ -66,9 +66,9 @@ namespace nupic
 
     /* ------- Convenience methods  that access region data -------- */
 
-    const std::string& getType() const;
+    std::string getType() const;
 
-    const std::string& getName() const;
+    std::string getName() const;
 
 
     /* ------- Parameter support in the base class. ---------*/

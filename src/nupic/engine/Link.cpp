@@ -151,7 +151,7 @@ void Link::compute() {
   if (zeroCopy_) {
     // This does a shallow copy so that the buffer does NOT get copied
     // but the type, count, capacity, and shared_ptr are copied.
-    // The buffer is a smart shared pointer so its contents will be deleted 
+    // The buffer is a smart shared pointer so its contents will be deleted
     // when the last reference is deleted.
     from->zeroCopy(*to);
   } else {
@@ -170,7 +170,7 @@ void Link::compute() {
 //}
 }
 
-void Link::shiftBufferedData() 
+void Link::shiftBufferedData()
 {
   if (propagationDelay_) {
     Array *from = &src_->getData();
@@ -239,19 +239,18 @@ Input &Link::getDest() const {
   return *dest_;
 }
 
-void Link::serialize(YAML::Emitter &out) {
+void Link::serialize(std::ostream &f) {
   size_t srcCount = ((!src_) ? (size_t)0 : src_->getData().getCount());
-  NTA_BasicType srcType =
-      ((!src_) ? BasicType::parse(getLinkType()) : src_->getData().getType());
-  out << YAML::BeginMap;
-  out << YAML::Key << "linkType" << YAML::Value << getLinkType();
-  out << YAML::Key << "params" << YAML::Value << getLinkParams();
-  out << YAML::Key << "srcRegion" << YAML::Value << getSrcRegionName();
-  out << YAML::Key << "srcOutput" << YAML::Value << getSrcOutputName();
-  out << YAML::Key << "destRegion" << YAML::Value << getDestRegionName();
-  out << YAML::Key << "destInput" << YAML::Value << getDestInputName();
-  out << YAML::Key << "propagationDelay" << YAML::Value << propagationDelay_;
-  out << YAML::Key << "propagationDelayBuffer" << YAML::Value << YAML::BeginSeq;
+
+  f << "{\n";
+  f << "linkType: " <<  getLinkType() << "\n";
+  f << "params: " << getLinkParams() << "\n";
+  f << "srcRegion: " << getSrcRegionName() << "\n";
+  f << "srcOutput: " << getSrcOutputName() << "\n";
+  f << "destRegion: " << getDestRegionName() << "\n";
+  f << "destInput: " << getDestInputName() << "\n";
+  f << "propagationDelay: " << propagationDelay_ << "\n";
+  f << "propagationDelayBuffer: [ " << propagationDelayBuffer_.size() << "\n";
   if (propagationDelay_ > 0) {
     // we need to capture the propagationDelayBuffer_ used for propagationDelay
     // Do not copy the last entry.  It is the same as the output buffer.
@@ -262,8 +261,8 @@ void Link::serialize(YAML::Emitter &out) {
     // before the next execution. If there is an offset, we only
     // want to capture the amount of the input buffer contributed by
     // this link.
-    Array a = dest_->getData().subset(destOffset_, srcCount); 
-    a.serialize(out); // our part of the current Dest Input buffer.
+    Array a = dest_->getData().subset(destOffset_, srcCount);
+    f << a; // our part of the current Dest Input buffer.
 
     std::deque<Array>::iterator itr;
     for (auto itr = propagationDelayBuffer_.begin();
@@ -271,93 +270,126 @@ void Link::serialize(YAML::Emitter &out) {
       if (itr + 1 == propagationDelayBuffer_.end())
         break; // skip the last buffer. Its the current output.
       Array &buf = *itr;
-      buf.serialize(out);
+      f << buf;
     } // end for
   }
-  out << YAML::EndSeq;
+  f << "]\n";  // end of list of buffers in propagationDelayBuffer
 
-  out << YAML::EndMap;
+  f << "}\n";  // end of sequence
 }
 
-void Link::deserialize(const YAML::Node &link) {
+void Link::deserialize(std::istream &f) {
   // Each link is a map -- extract the 9 values in the map
   // The "circularBuffer" element is a two dimentional array only present if
   // propogationDelay > 0.
-  NTA_CHECK(link.Type() == YAML::NodeType::Map)
-      << "Invalid network structure file -- bad link (not a map)";
-  NTA_CHECK(link.size() == 8)
-      << "Invalid network structure file -- bad link (wrong size)";
+  char bigbuffer[5000];
+  std::string tag;
+  Size count;
+  std::string linkType;
+  std::string linkParams;
+  std::string srcRegionName;
+  std::string srcOutputName;
+  std::string destRegionName;
+  std::string destInputName;
+  Size propagationDelay;
 
-  YAML::Node node;
+  f >> tag;
+  NTA_CHECK(tag == "{") << "Invalid network structure file -- bad link (not a map)";
 
   // 1. type
-  node = link["linkType"];
-  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
-                                "not have a 'linkType' field.";
-  std::string linkType = node.as<std::string>();
+  f >> tag;
+  NTA_CHECK(tag == "linkType:");
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  linkType = bigbuffer;
 
   // 2. params
-  node = link["params"];
-  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
-                                "not have a 'params' field.";
-  std::string linkParams = node.as<std::string>();
+  f >> tag;
+  NTA_CHECK(tag == "params:");
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  linkParams = bigbuffer;
 
   // 3. srcRegion (name)
-  node = link["srcRegion"];
-  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
-                                "not have a 'srcRegion' field.";
-  std::string srcRegionName = node.as<std::string>();
+  f >> tag;
+  NTA_CHECK(tag == "srcRegion:");
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  srcRegionName = bigbuffer;
 
   // 4. srcOutput
-  node = link["srcOutput"];
-  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
-                                "not have a 'srcOutput' field";
-  std::string srcOutputName = node.as<std::string>();
+  f >> tag;
+  NTA_CHECK(tag == "srcOutput:");
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  srcOutputName = bigbuffer;
 
   // 5. destRegion
-  node = link["destRegion"];
-  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
-                                "not have a 'destRegion' field.";
-  std::string destRegionName = node.as<std::string>();
+  f >> tag;
+  NTA_CHECK(tag == "destRegion:");
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  destRegionName = bigbuffer;
 
   // 6. destInput
-  node = link["destInput"];
-  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
-                                "not have a 'destInput' field.";
-  std::string destInputName = node.as<std::string>();
+  f >> tag;
+  NTA_CHECK(tag == "destInput:");
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  destInputName = bigbuffer;
 
   // 7. propagationDelay (number of cycles to delay propagation)
-  node = link["propagationDelay"];
-  NTA_CHECK(node.IsScalar()) << "Invalid network structure file -- link does "
-                                "not have a 'propagationDelay' field.";
-  size_t propagationDelay = node.as<size_t>();
+  f >> tag;
+  NTA_CHECK(tag == "propagationDelay:");
+  f >> propagationDelay;
 
   // fill in the data for the Link object
   commonConstructorInit_(linkType, linkParams, srcRegionName, destRegionName,
                          srcOutputName, destInputName, propagationDelay);
 
   // 8. propagationDelayBuffer
-  node = link["propagationDelayBuffer"];
-  NTA_CHECK(node.IsSequence()) << " Invalid network structure file-- link does "
-                                  "not have a 'propagationDelayBuffer' field.";
+  f >> tag;
+  NTA_CHECK(tag == "propagationDelayBuffer:");
+  f >> tag;
+  NTA_CHECK(tag == "[")  << "Expected start of a sequence.";
+  f >> count;
   // if no propagationDelay (value = 0) then there should be an empty sequence.
-  size_t idx = 0;
-  for (const auto &valiter : node) {
-    NTA_CHECK(idx < propagationDelay_) << "Invalid network structure file -- "
-                                          "link has too many buffers in "
-                                          "'propagationDelayBuffer'.";
+  NTA_CHECK(count == propagationDelay_) << "Invalid network structure file -- "
+            "link has " << count << " buffers in 'propagationDelayBuffer'. "
+            << "Expecting " << propagationDelay << ".";
+  Size idx = 0;
+  for (; idx < count; idx++) {
     Array a;
+    f >> a;
     propagationDelayBuffer_.push_back(a);
-    propagationDelayBuffer_.back().deserialize(valiter);
-    idx++;
   }
-  NTA_CHECK(idx == propagationDelay_) << "Invalid network structure file -- "
-                                         "link has too few buffers in "
-                                         "'propagationDelayBuffer'.";
   // To complete the restore, call r->prepareInputs()
   // and then shiftBufferedData();
+  f >> tag;
+  NTA_CHECK(tag == "]");
+  f >> tag;
+  NTA_CHECK(tag == "}");
+  f.ignore(1);
 }
 
+
+bool Link::operator==(const Link &o) const {
+  if (initialized_ != o.initialized_ ||
+      propagationDelay_ != o.propagationDelay_ || linkType_ != o.linkType_ ||
+      linkParams_ != o.linkParams_ || destOffset_ != o.destOffset_ ||
+      srcRegionName_ != o.srcRegionName_ ||
+      destRegionName_ != o.destRegionName_ ||
+      srcOutputName_ != o.srcOutputName_ ||
+      destInputName_ != o.destInputName_) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * A readable display of a Link.
+ * This is not part of the save/load facility.
+ */
 std::ostream &operator<<(std::ostream &f, const Link &link) {
   f << "<Link>\n";
   f << "  <type>" << link.getLinkType() << "</type>\n";

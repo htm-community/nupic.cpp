@@ -35,10 +35,10 @@
 #include <vector>
 #include <fstream>
 
-
 #include <nupic/ntypes/Collection.hpp>
 #include <nupic/engine/Region.hpp>
 
+#include <nupic/types/Serializable.hpp>
 #include <nupic/types/ptr_types.hpp>
 #include <nupic/types/Types.hpp>
 
@@ -55,7 +55,7 @@ namespace nupic
    *
    * @nosubgrouping
    */
-  class Network
+  class Network : public Serializable
   {
   public:
 
@@ -72,16 +72,6 @@ namespace nupic
      */
     Network();
 
-    /**
-     * Create a Network by loading previously saved bundle,
-     * and register it to NuPIC.
-     *
-     * @param path The path to the previously saved bundle file, currently only
-     * support files with `.nta` extension.
-     *
-     * @note Creating a Network will auto-initialize NuPIC.
-     */
-    Network(const std::string& path);
 
     /**
      * Destructor.
@@ -106,25 +96,33 @@ namespace nupic
      *
      * @note After Deserializing, it is assumed that net.initialize() will be called.
      */
-    void
-    initialize();
+    void initialize();
 
     /**
      * @}
-     *
-     * @name Serialization
-     *
+     * @name Internal Serialization methods
      * @{
      */
-
     /**
-     * Save the network to a network bundle (extension `.nta`).
+     *    saveToFile(path)
+     *    save(ostream f)
+     *    f << net;
+     *          serialize everything into one stream.  This can be
+     *          opened to a file or a memory stream but must be binary.
      *
-     * @param name
-     *        Name of the bundle
-     */
-    void save(const std::string& name);
-
+     *    loadFromFile(path)
+     *    load(istream f)
+     *    f >> net;
+     *          restores the streamed Network and all its parts back to
+     *          what it was before being serialized.
+     *
+     * @path The filename into which to save/load the streamed serialization.
+     * @f    The stream with which to save/load the serialization.
+     *
+	   * See Serializable base class for definitions.
+	   */
+    virtual void save(std::ostream &f) const override;
+    virtual void load(std::istream &stream)  override;
     /**
      * @}
      *
@@ -143,37 +141,25 @@ namespace nupic
      * @param nodeParams
      *        A JSON-encoded string specifying writable params
      *
-     * @returns A pointer to the newly created Region
+     * @returns A smart pointer to the newly created Region
      */
-    Region_Ptr_t
-    addRegion(const std::string& name,
-              const std::string& nodeType,
-              const std::string& nodeParams);
+    Region_Ptr_t addRegion( const std::string& name,
+                            const std::string& nodeType,
+                            const std::string& nodeParams);
 
     /**
-     * Create a new region from saved state.
-     * (A Streamed binary file)
+     * Create a new region in a network from serialized region
      *
+     * @param stream
+     *        opened stream
      * @param name
-     *        Name of the region, Must be unique in the network
-     * @param nodeType
-     *        Type of node in the region, e.g. "FDRNode"
-     * @param bundlePath
-     *        The path to the bundle
-     * @param label
-     *        The label of the bundle
-     *
-     * @todo @a label is the prefix of filename of the saved bundle, should this
-     * be documented?
+     *        Name of the region, Must be unique in the network.
+     *        If not given, it uses the name it was serialized with.
      *
      * @returns A pointer to the newly created Region
      */
-    Region_Ptr_t
-    addRegionFromBundle(const std::string& name,
-                        const std::string& nodeType,
-                        const std::string& bundlePath,
-                        const std::string& label);
-
+    Region_Ptr_t addRegion( std::istream &stream,
+                            std::string name = "");
 
     /**
      * Removes an existing region from the network.
@@ -181,8 +167,7 @@ namespace nupic
      * @param name
      *        Name of the Region
      */
-    void
-    removeRegion(const std::string& name);
+    void removeRegion(const std::string& name);
 
     /**
      * Create a link and add it to the network.
@@ -204,8 +189,7 @@ namespace nupic
      *            iterations involving the link as input; the delay vectors, if
      *            any, are initially populated with 0's. Defaults to 0=no delay
      */
-    void
-    link(const std::string& srcName, const std::string& destName,
+    void link(const std::string& srcName, const std::string& destName,
          const std::string& linkType="", const std::string& linkParams="",
          const std::string& srcOutput="", const std::string& destInput="",
          const size_t propagationDelay=0);
@@ -428,24 +412,15 @@ namespace nupic
      */
     static void unregisterCPPRegion(const std::string name);
 
+
   private:
 
 
     // Both constructors use this common initialization method
     void commonInit();
 
-    // Used by the path-based constructor
-    void load(const std::string& path);
-
-    void loadFromBundle(const std::string& path);
-
-    // save() always calls this internal method, which creates
-    // a .nta bundle
-    void saveToBundle(const std::string& bundleName);
-
     // internal method using region pointer instead of name
-    void
-    setPhases_(Region_Ptr_t r, std::set<UInt32>& phases);
+    void setPhases_(Region_Ptr_t r, std::set<UInt32>& phases);
 
     // default phase assignment for a new region
     void setDefaultPhase_(Region_Ptr_t region);

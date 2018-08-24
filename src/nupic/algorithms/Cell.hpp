@@ -25,6 +25,7 @@
 
 #include <vector>
 #include <nupic/types/Types.hpp>
+#include <nupic/types/Serializable.hpp>
 #include <nupic/algorithms/Segment.hpp>
 
 namespace nupic {
@@ -44,7 +45,7 @@ namespace nupic {
        * mismatches in unit testing when comparing the Python TP to the C++ down to the
        * segment level.
        */
-      class Cell
+      class Cell : public Serializable
       {
       private:
         std::vector< Segment >   _segments;     // both 'active' and 'inactive' segments
@@ -112,12 +113,15 @@ namespace nupic {
           return _segments[segIdx];
         }
 
-        //--------------------------------------------------------------------------------
-        Segment& getSegment(UInt segIdx)
-        {
-          NTA_ASSERT(segIdx < _segments.size());
-          return _segments[segIdx];
-        }
+  //----------------------------------------------------------------------
+  bool operator==(const Cell &other) const;
+  inline bool operator!=(const Cell &other) const { return !operator==(other); }
+
+  //--------------------------------------------------------------------------------
+  Segment &getSegment(UInt segIdx) {
+    NTA_ASSERT(segIdx < _segments.size());
+    return _segments[segIdx];
+  }
 
         //--------------------------------------------------------------------------------
         /**

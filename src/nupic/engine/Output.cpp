@@ -42,8 +42,12 @@ Output::Output(Region& region, NTA_BasicType type) :
   data_ = Array(type);
 }
 
-Output::~Output() 
-{
+Output::~Output() noexcept(false) {
+  // If we have any outgoing links, then there has been an
+  // error in the shutdown process. Not good to thow an exception
+  // from a destructor, but we need to catch this error, and it
+  // should never occur if nupic internal logic is correct.
+  NTA_CHECK(links_.size() == 0) << "Internal error in region deletion";
 }
 
 // allocate output buffer
@@ -101,5 +105,6 @@ Output::hasOutgoingLinks()
   return (!links_.empty());
 }
 
+NTA_BasicType Output::getDataType() const { return data_.getType(); }
 }
 

@@ -33,6 +33,7 @@
 #include <cstring> // strlen
 
 #include <nupic/engine/Region.hpp>
+#include <nupic/engine/Output.hpp>
 #include <nupic/engine/Spec.hpp>
 #include <nupic/regions/VectorFileSensor.hpp>
 #include <nupic/utils/Log.hpp>
@@ -85,9 +86,9 @@ VectorFileSensor::VectorFileSensor(BundleIO& bundle, Region* region) :
 void VectorFileSensor::initialize()
 {
   NTA_CHECK(region_ != nullptr);
-  dataOut_ = region_->getOutputData("dataOut");
-  categoryOut_ = region_->getOutputData("categoryOut");
-  resetOut_ = region_->getOutputData("resetOut");
+  dataOut_ = region_->getOutput("dataOut")->getData();
+  categoryOut_ = region_->getOutput("categoryOut")->getData();
+  resetOut_ = region_->getOutput("resetOut")->getData();
 
   if (dataOut_.getCount() != activeOutputCount_)
   {
@@ -462,22 +463,20 @@ size_t VectorFileSensor::getNodeOutputElementCount(const std::string& outputName
 
 void VectorFileSensor::serialize(BundleIO& bundle)
 {
-  std::ofstream & f = bundle.getOutputStream("vfs");
+  std::ostream & f = bundle.getOutputStream();
   f << repeatCount_ << " "
     << activeOutputCount_ << " "
     << filename_ << " "
     << scalingMode_ << " ";
-  f.close();
 }
 
 void VectorFileSensor::deserialize(BundleIO& bundle)
 {
-  std::ifstream& f = bundle.getInputStream("vfs");
+  std::istream& f = bundle.getInputStream();
   f >> repeatCount_
     >> activeOutputCount_
     >> filename_
     >> scalingMode_;
-  f.close();
 }
 
 Spec* VectorFileSensor::createSpec()

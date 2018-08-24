@@ -57,29 +57,6 @@ static UInt64 badSeeder()
 // When we have different algorithms RandomImpl will become an interface
 // class and subclasses will implement specific algorithms
 
-namespace nupic
-{
-  class RandomImpl
-  {
-  public:
-    RandomImpl(UInt64 seed);
-    ~RandomImpl() {};
-    UInt32 getUInt32();
-    // Note: copy constructor and operator= are needed
-    // The default is ok.
-  private:
-    friend std::ostream& operator<<(std::ostream& outStream, const RandomImpl& r);
-    friend std::istream& operator>>(std::istream& inStream, RandomImpl& r);
-    const static UInt32 VERSION = 2;
-    // internal state
-    static const int stateSize_ = 31;
-    static const int sep_ = 3;
-    UInt32 state_[stateSize_];
-    int rptr_;
-    int fptr_;
-
-  };
-};
 
 Random::Random(const Random& r)
 {
@@ -284,6 +261,18 @@ RandomImpl::RandomImpl(UInt64 seed)
 #endif
 }
 
+bool RandomImpl::operator==(const RandomImpl &o) const {
+    for (size_t i = 0; i < stateSize_; i++) {
+      if (state_[i] != o.state_[i]) return false;
+    }
+    if (rptr_ != o.rptr_)
+      return false;
+    if (fptr_ != o.fptr_)
+      return false;
+    return true;
+}
+
+
 
 
 namespace nupic
@@ -383,6 +372,8 @@ namespace nupic
     inStream >> r.fptr_;
     return inStream;
   }
+
+
 
   // helper function for seeding RNGs across the plugin barrier
   // Unless there is a logic error, should not be called if

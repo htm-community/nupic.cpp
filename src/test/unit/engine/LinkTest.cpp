@@ -292,7 +292,7 @@ TEST(LinkTest, DelayedLinkSerialization) {
     net.run(1);
 
     // confirm that the output still contains all 10's
-    // In other words, that our hacked up version of TestNode 
+    // In other words, that our hacked up version of TestNode
     // did not output anything that would clobber the output buffer.
     Real64 *idata = (Real64 *)out1->getData().getBuffer();
     // only test 4 instead of 64 to cut down on number of tests
@@ -336,7 +336,7 @@ TEST(LinkTest, DelayedLinkSerialization) {
   // We should have two delayed array values in queue: 10's and 100's
 
   // Serialize the current net
-  net.save("TestOutputDir/DelayedLinkSerialization.nta");
+  net.saveToFile("TestOutputDir/DelayedLinkSerialization.stream");
 
   {
     // Output values should still be all 100's
@@ -349,7 +349,8 @@ TEST(LinkTest, DelayedLinkSerialization) {
   }
 
   // De-serialize into a new net2
-  Network net2("TestOutputDir/DelayedLinkSerialization.nta");
+  Network net2;
+  net2.loadFromFile("TestOutputDir/DelayedLinkSerialization.stream");
 
   auto n2region1 = net2.getRegions().getByName("region1");
   auto n2region2 = net2.getRegions().getByName("region2");
@@ -716,10 +717,10 @@ TEST(LinkTest, L2L4WithDelayedLinksAndPhases) {
   //   R2.feedbackIn -> R2.out            [0,0] -> [5,0]    [5,5]   -> [10,5]    [11,10]  ->[16,11]
   // phase2:
   //   R3.feedforwardIn ->                [1,0]             [2,1]                [8,7]
-  //   R3.LateralIn     -> R3.out         [0,0,0]->[1,1,0]  [5,5,0]  ->[7,2,5]   [11,10,1]->[19,8,11] 
+  //   R3.LateralIn     -> R3.out         [0,0,0]->[1,1,0]  [5,5,0]  ->[7,2,5]   [11,10,1]->[19,8,11]
   //   R4.feedforwardIn ->                [5,0]             [10,5]               [16,11]
   //   R4.LateralIn     -> R4.out         [0,0,0]->[5,5,0]  [1,1,0]  ->[11,10,1] [7,2,5]  ->[23,16,7]
-  //   
+  //
 
   Network net;
 

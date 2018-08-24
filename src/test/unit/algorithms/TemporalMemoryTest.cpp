@@ -1660,37 +1660,6 @@ namespace {
     serializationTestVerify(tm2);
   }
 
-  TEST(TemporalMemoryTest, testWrite)
-  {
-    TemporalMemory tm1(
-      /*columnDimensions*/ {32},
-      /*cellsPerColumn*/ 4,
-      /*activationThreshold*/ 3,
-      /*initialPermanence*/ 0.21f,
-      /*connectedPermanence*/ 0.50f,
-      /*minThreshold*/ 2,
-      /*maxNewSynapseCount*/ 3,
-      /*permanenceIncrement*/ 0.10f,
-      /*permanenceDecrement*/ 0.10f,
-      /*predictedSegmentDecrement*/ 0.0f,
-      /*seed*/ 42
-      );
-
-    serializationTestPrepare(tm1);
-
-    // Write and read back the proto
-    stringstream ss;
-    //@todo
-    //tm1.write(ss);
-
-    TemporalMemory tm2;
-    //@todo
-    //tm2.read(ss);
-
-    //ASSERT_TRUE(tm1 == tm2);
-
-    //serializationTestVerify(tm2);
-  }
 
   // Uncomment these tests individually to save/load from a file.
   // This is useful for ad-hoc testing of backwards-compatibility.

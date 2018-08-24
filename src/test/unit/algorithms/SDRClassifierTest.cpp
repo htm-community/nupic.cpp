@@ -35,6 +35,22 @@
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>
 
+namespace nupic {
+namespace algorithms {
+namespace sdr_classifier {
+
+// SDRClassifier friend class used to access private members
+class SDRClassifierTest : public ::testing::Test {
+protected:
+  typedef std::vector<double>::iterator Iterator;
+  void softmax_(SDRClassifier *self, Iterator begin, Iterator end) {
+    self->softmax_(begin, end);
+  };
+};
+} // namespace sdr_classifier
+} // namespace algorithms
+} // namespace nupic
+
 using namespace std;
 using namespace nupic;
 using namespace nupic::algorithms::cla_classifier;
@@ -43,7 +59,7 @@ using namespace nupic::algorithms::sdr_classifier;
 namespace
 {
 
-  TEST(SDRClassifierTest, Basic)
+  TEST_F(SDRClassifierTest, Basic)
   {
     vector<UInt> steps;
     steps.push_back(1);
@@ -114,7 +130,7 @@ namespace
     }
   }
 
-  TEST(SDRClassifierTest, SingleValue)
+  TEST_F(SDRClassifierTest, SingleValue)
   {
     // Feed the same input 10 times, the corresponding probability should be
     // very high
@@ -155,7 +171,7 @@ namespace
 
   }
 
-  TEST(SDRClassifierTest, ComputeComplex)
+  TEST_F(SDRClassifierTest, ComputeComplex)
   {
     // More complex classification
     // This test is ported from the Python unit test
@@ -266,7 +282,7 @@ namespace
 
   }
 
-  TEST(SDRClassifierTest, MultipleCategory)
+  TEST_F(SDRClassifierTest, MultipleCategory)
   {
     // Test multiple category classification with single compute calls
     // This test is ported from the Python unit test
@@ -338,7 +354,7 @@ namespace
 
   }
 
-  TEST(SDRClassifierTest, SaveLoad)
+  TEST_F(SDRClassifierTest, SaveLoad)
   {
     vector<UInt> steps;
     steps.push_back(1);
@@ -372,52 +388,13 @@ namespace
     ASSERT_TRUE(result1 == result2);
   }
 
-  TEST(SDRClassifierTest, WriteRead)
-  {
-    vector<UInt> steps;
-    steps.push_back(1);
-    steps.push_back(2);
-    SDRClassifier c1 = SDRClassifier(steps, 0.1, 0.1, 0);
-    SDRClassifier c2 = SDRClassifier(steps, 0.1, 0.1, 0);
 
-    // Create a vector of input bit indices
-    vector<UInt> input1;
-    input1.push_back(1);
-    input1.push_back(5);
-    input1.push_back(9);
-    vector<UInt> bucketIdxList1;
-    bucketIdxList1.push_back(4);
-    vector<Real64> actValueList1;
-    actValueList1.push_back(34.7);
-    ClassifierResult trainResult1;
-    c1.compute(0, input1, bucketIdxList1, actValueList1, false, true, true, &trainResult1);
-
-        // Create a vector of input bit indices
-    vector<UInt> input2;
-    input2.push_back(0);
-    input2.push_back(8);
-    input2.push_back(9);
-    vector<UInt> bucketIdxList2;
-    bucketIdxList2.push_back(2);
-    vector<Real64> actValueList2;
-    actValueList2.push_back(24.7);
-    ClassifierResult trainResult2;
-    c1.compute(1, input2, bucketIdxList2, actValueList2, false, true, true, &trainResult2);
-
-    {
-      stringstream ss;
-      //@todo
-      //c1.write(ss);
-      //c2.read(ss);
-    }
-
-    //ASSERT_TRUE(c1 == c2);
-
-    //ClassifierResult result1, result2;
-    //c1.compute(2, input1, bucketIdxList1, actValueList1, false, true, true, &result1);
-    //c2.compute(2, input1, bucketIdxList1, actValueList1, false, true, true, &result2);
-
-    //ASSERT_TRUE(result1 == result2);
-  }
+TEST_F(SDRClassifierTest, testSoftmaxOverflow) {
+  SDRClassifier c = SDRClassifier({1}, 0.5, 0.5, 0);
+  std::vector<Real64> values = {numeric_limits<Real64>::max()};
+  softmax_(&c, values.begin(), values.end());
+  Real64 result = values[0];
+  ASSERT_FALSE(std::isnan(result));
+}
 
 } // end namespace

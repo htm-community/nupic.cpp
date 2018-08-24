@@ -99,9 +99,8 @@ UInt Cell::getFreeSegment(const Segment::InSynapses& synapses,
   NTA_ASSERT(not_in(segIdx, _freeSegments));
   NTA_ASSERT(_segments[segIdx].empty()); // important in case we push_back
 
-  _segments[segIdx] =
-  Segment(synapses, initFrequency, sequenceSegmentFlag,
-          permConnected, iteration);
+  _segments[segIdx] = Segment(synapses, initFrequency, sequenceSegmentFlag,
+                              permConnected, iteration);
 
   return segIdx;
 }
@@ -147,4 +146,10 @@ void Cell::load(std::istream& inStream)
     if (_segments[i].empty())
       _freeSegments.push_back(i);
   }
+}
+bool Cell::operator==(const Cell &other) const {
+  if (_freeSegments != other._freeSegments) {
+    return false;
+  }
+  return _segments == other._segments;
 }

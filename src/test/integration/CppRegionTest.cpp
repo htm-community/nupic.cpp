@@ -28,7 +28,6 @@
 #include <nupic/engine/Input.hpp>
 #include <nupic/engine/Output.hpp>
 #include <nupic/engine/Link.hpp>
-#include <nupic/ntypes/Dimensions.hpp>
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/ntypes/ArrayRef.hpp>
 #include <nupic/types/Exception.hpp>
@@ -106,7 +105,7 @@ struct MemoryMonitor
 };
 
 
-void testCppInputOutputAccess(Region * level1)
+void testCppInputOutputAccess(Region_Ptr_t level1)
 {
   // --- input/output access for level 1 (C++ TestNode) ---
 
@@ -124,30 +123,13 @@ void testCppInputOutputAccess(Region * level1)
 
 void testCppLinking(std::string linkPolicy, std::string linkParams)
 {
-  Network net = Network();
+  Network net;
 
-  Region* region1 = net.addRegion("region1", "TestNode", "");
-  Region* region2 = net.addRegion("region2", "TestNode", "");
+  Region_Ptr_t region1 = net.addRegion("region1", "TestNode", "");
+  Region_Ptr_t region2 = net.addRegion("region2", "TestNode", "");
   net.link("region1", "region2", linkPolicy, linkParams);
 
-  std::cout << "Initialize should fail..." << std::endl;
-  SHOULDFAIL(net.initialize());
-
-  std::cout << "Setting region1 dims" << std::endl;
-  Dimensions r1dims;
-  r1dims.push_back(6);
-  r1dims.push_back(4);
-  region1->setDimensions(r1dims);
-
-  std::cout << "Initialize should now succeed" << std::endl;
   net.initialize();
-
-  const Dimensions& r2dims = region2->getDimensions();
-  NTA_CHECK(r2dims.size() == 2) << " actual dims: " << r2dims.toString();
-  NTA_CHECK(r2dims[0] == 3) << " actual dims: " << r2dims.toString();
-  NTA_CHECK(r2dims[1] == 2) << " actual dims: " << r2dims.toString();
-
-  SHOULDFAIL(region2->setDimensions(r1dims));
           
   ArrayRef r1OutputArray = region1->getOutputData("bottomUpOut");
 
@@ -170,7 +152,7 @@ void testCppLinking(std::string linkPolicy, std::string linkParams)
   ArrayRef r2InputArray = region2->getInputData("bottomUpIn");
   std::cout << "Region 2 input after first iteration:" << std::endl;
   Real64 *buffer2 = (Real64*) r2InputArray.getBuffer();
-  NTA_CHECK(buffer != buffer2);
+  //NTA_CHECK(buffer != buffer2);
 
   for (size_t i = 0; i < r2InputArray.getCount(); i++)
   {
@@ -183,42 +165,11 @@ void testCppLinking(std::string linkPolicy, std::string linkParams)
       NTA_CHECK(buffer[i] == (i-1)/2);
   }
 
-  std::cout << "Region 2 input by node" << std::endl;
-  std::vector<Real64> r2NodeInput;
+  // Now there can only be one node.  Node related tests removed.
 
-  for (size_t node = 0; node < 6; node++)
-  {
-    region2->getInput("bottomUpIn")->getInputForNode(node, r2NodeInput);
-    if (verbose)
-    {
-      std::cout << "Node " << node << ": ";
-      for (auto & elem : r2NodeInput)
-      {
-        std::cout << elem << " ";
-      }
-      std::cout << "" << std::endl;
-    }
-    // 4 nodes in r1 fan in to 1 node in r2
-    int row = node/3;
-    int col = node - (row * 3);
-    NTA_CHECK(r2NodeInput.size() == 8);
-    NTA_CHECK(r2NodeInput[0] == 0);
-    NTA_CHECK(r2NodeInput[2] == 0);
-    NTA_CHECK(r2NodeInput[4] == 0);
-    NTA_CHECK(r2NodeInput[6] == 0);
-    // these values are specific to the fanin2 link policy
-    NTA_CHECK(r2NodeInput[1] == row * 12    + col * 2) 
-      << "row: " << row << " col: " << col << " val: " << r2NodeInput[1];
-    NTA_CHECK(r2NodeInput[3] == row * 12    + col * 2 + 1)
-      << "row: " << row << " col: " << col << " val: " << r2NodeInput[3];
-    NTA_CHECK(r2NodeInput[5] == row * 12 + 6 + col * 2)
-      << "row: " << row << " col: " << col << " val: " << r2NodeInput[5];
-    NTA_CHECK(r2NodeInput[7] == row * 12 + 6 + col * 2 + 1)
-      << "row: " << row << " col: " << col << " val: " << r2NodeInput[7];
-  }
 }
 
-void testYAML()
+void testYAML()  // Yaml for parameters.
 {
   const char *params = "{int32Param: 1234, real64Param: 23.1}";
   //  badparams contains a non-existent parameter
@@ -226,13 +177,10 @@ void testYAML()
 
 
   Network net = Network();
-  Region* level1;
+  Region_Ptr_t level1;
   SHOULDFAIL(level1 = net.addRegion("level1", "TestNode", badparams););
   
   level1 = net.addRegion("level1", "TestNode", params);
-  Dimensions d;
-  d.push_back(1);
-  level1->setDimensions(d);
   net.initialize();
 
   // check default values
@@ -268,7 +216,7 @@ int realmain(bool leakTest)
   std::cout << "Region count is " << n.getRegions().getCount() << "" << std::endl;
 
   std::cout << "Adding a FDRNode region..." << std::endl;
-  Region* level1 = n.addRegion("level1", "TestNode", "");
+  Region_Ptr_t level1 = n.addRegion("level1", "TestNode", "");
 
   std::cout << "Region count is " << n.getRegions().getCount() << "" << std::endl;
   std::cout << "Node type: " << level1->getType() << "" << std::endl;
@@ -328,21 +276,8 @@ int realmain(bool leakTest)
     std::cout << buff[i] << " ";
   std::cout << "]" << std::endl;
 
-  // should fail because network has not been initialized
-  SHOULDFAIL(n.run(1));
-
-  // should fail because network can't be initialized
-  SHOULDFAIL (n.initialize() );
-
-  std::cout << "Setting dimensions of level1..." << std::endl;
-  Dimensions d;
-  d.push_back(4);
-  d.push_back(4);
-  level1->setDimensions(d);
-
-
-  std::cout << "Initializing again..." << std::endl;
-  n.initialize();
+  n.run(1);
+  n.initialize();   // extra initialized should be ignored.
 
   level1->compute();
 

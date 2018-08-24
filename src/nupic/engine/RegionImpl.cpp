@@ -43,15 +43,9 @@ namespace nupic
   }
 
   // convenience method
-  const std::string& RegionImpl::getType() const
-  {
-    return region_->getType();
-  }
+  std::string RegionImpl::getType() const { return region_->getType(); }
 
-  const std::string& RegionImpl::getName() const
-  {
-    return region_->getName();
-  }
+  std::string RegionImpl::getName() const { return region_->getName(); }
 
 
 
@@ -63,7 +57,7 @@ namespace nupic
   //
   // Here we check the spec to see if that parameter name is defined
   // and for which type.  If the name and type are ok, then call
-  // getParameterFromBuffer() in case it is implemented using the 
+  // getParameterFromBuffer() in case it is implemented using the
   // old style.  If not found there, then issue an error.
 
 
@@ -118,49 +112,49 @@ namespace nupic
     setParameter<UInt64>(name, index, (UInt64)value, NTA_BasicType_Handle);
   }
 
-  
+
   template <typename T>
   T RegionImpl::getParameter(const std::string& name, Int64 index, NTA_BasicType type) {
-    if (! region_->getSpec()->parameters.contains(name))   
-      NTA_THROW << ": parameter \"" 
+    if (! region_->getSpec()->parameters.contains(name))
+      NTA_THROW << ": parameter \""
                 << name << "\" does not exist in nodespec for " << getType();
-    ParameterSpec p = region_->getSpec()->parameters.getByName(name); 
+    ParameterSpec p = region_->getSpec()->parameters.getByName(name);
     if (p.dataType != type)
       NTA_THROW << " parameter \"" << name << "\" is of type "
                 << BasicType::getName(p.dataType) << " not "
                 << BasicType::getName(type)
                 << " for " << getType();
-    WriteBuffer wb; 
-    getParameterFromBuffer(name, index, wb); 
-    ReadBuffer rb(wb.getData(), wb.getSize(), false /* copy */); 
-    T val; 
+    WriteBuffer wb;
+    getParameterFromBuffer(name, index, wb);
+    ReadBuffer rb(wb.getData(), wb.getSize(), false /* copy */);
+    T val;
     int rc = rb.read(val);
     if (rc != 0)
     {
-      NTA_THROW << "getParameter" << BasicType::getName(type) 
+      NTA_THROW << "getParameter" << BasicType::getName(type)
                 << " -- failure to get parameter '"
-                << name << "' on " << getType(); 
-    } 
+                << name << "' on " << getType();
+    }
     return val;
 
   }
 
   template <typename T>
   void RegionImpl::setParameter(const std::string& name, Int64 index, T value, NTA_BasicType type) {
-    if (! region_->getSpec()->parameters.contains(name))   
-      NTA_THROW << ": parameter \"" 
+    if (! region_->getSpec()->parameters.contains(name))
+      NTA_THROW << ": parameter \""
                 << name << "\" does not exist in nodespec for " << getType();
-    ParameterSpec p = region_->getSpec()->parameters.getByName(name); 
+    ParameterSpec p = region_->getSpec()->parameters.getByName(name);
     if (p.dataType != type)
       NTA_THROW << " parameter \"" << name << "\" is of type "
                 << BasicType::getName(p.dataType) << " not "
                 << BasicType::getName(type)
                 << " for " << getType();
 
-    WriteBuffer wb; 
-    wb.write((T)value); 
-    ReadBuffer rb(wb.getData(), wb.getSize(), false /* copy */); 
-    setParameterFromBuffer(name, index, rb); 
+    WriteBuffer wb;
+    wb.write((T)value);
+    ReadBuffer rb(wb.getData(), wb.getSize(), false /* copy */);
+    setParameterFromBuffer(name, index, rb);
   }
 
 
@@ -296,7 +290,7 @@ namespace nupic
   // To be compatable with existing Version 1 RegionImpl subclasses
   void RegionImpl::getParameterFromBuffer(const std::string& name,
                                Int64 index,
-                               IWriteBuffer& value) 
+                               IWriteBuffer& value)
   {
     NTA_THROW << "RegionImpl::getParameterFromBuffer  -- unknown name " << name;
   }

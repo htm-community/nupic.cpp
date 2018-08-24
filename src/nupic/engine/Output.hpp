@@ -27,14 +27,10 @@
 #ifndef NTA_OUTPUT_HPP
 #define NTA_OUTPUT_HPP
 
-#include <set>
-
-#include <yaml-cpp/yaml.h>
-
-#include <nupic/types/ptr_types.hpp>
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp> // temporary, while impl is in this file
+#include <set>
 namespace nupic {
 
 class Link;
@@ -58,8 +54,10 @@ public:
 
   /**
    * Destructor
+   * noexcept(false) : as C++11 forces noexcept(true) in destructors by default,
+   * we override that here to throw NTA_CHECK
    */
-  ~Output();
+  ~Output() noexcept(false);
 
   /**
    * Set the name for the output.
@@ -136,6 +134,10 @@ public:
    */
   Array &getData() { return data_; }
 
+  /**
+   *  Get the data type of the output
+   */
+  NTA_BasicType getDataType() const;
 
   /**
    *

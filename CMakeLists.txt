@@ -324,6 +324,7 @@ set(types_files
     ${nupic_src}/types/ptr_types.hpp
     ${nupic_src}/types/Types.h
     ${nupic_src}/types/Types.hpp
+    ${nupic_src}/types/Serializable.hpp
 )
 
 set(utils_files

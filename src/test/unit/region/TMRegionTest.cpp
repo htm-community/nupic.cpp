@@ -273,10 +273,10 @@ TEST(TMRegionTest, testLinking) {
 
   VERBOSE << "Checking data after first iteration..." << std::endl;
   VERBOSE << "  VectorFileSensor Output" << std::endl;
-  Array r1OutputArray = region1->getOutputData("dataOut");
+  ArrayRef r1OutputArray = region1->getOutputData("dataOut");
   EXPECT_EQ(r1OutputArray.getCount(), dataWidth);
   EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32);
-  Real32 *buffer1 = (Real32 *)r1OutputArray.getBuffer();
+  const Real32 *buffer1 = (const Real32 *)r1OutputArray.getBuffer();
 
   VERBOSE << "  TMRegion input" << std::endl;
   ArrayRef r2InputArray = region2->getInputData("bottomUpIn");
@@ -285,7 +285,7 @@ TEST(TMRegionTest, testLinking) {
       << r1OutputArray.getCount() << ", input to TPRegion is "
       << r2InputArray.getCount();
   EXPECT_TRUE(r2InputArray.getType() == NTA_BasicType_Real32);
-  Real32 *buffer2 = (Real32 *)r2InputArray.getBuffer();
+  const Real32 *buffer2 = (const Real32 *)r2InputArray.getBuffer();
   for (size_t i = 0; i < r2InputArray.getCount(); i++) {
     // VERBOSE << "  [" << i << "]=    " << buffer2[i] << "" << std::endl;
     ASSERT_TRUE(buffer2[i] == buffer1[i])
@@ -305,11 +305,11 @@ TEST(TMRegionTest, testLinking) {
   UInt32 columnCount = region2->getParameterUInt32("numberOfCols");
   UInt32 cellsPerColumn = region2->getParameterUInt32("cellsPerColumn");
   UInt32 nCells = columnCount * cellsPerColumn;
-  Array r2OutputArray = region2->getOutputData("bottomUpOut");
+  ArrayRef r2OutputArray = region2->getOutputData("bottomUpOut");
   ASSERT_TRUE(r2OutputArray.getCount() == nCells)
       << "Buffer length different. Output from TMRegion is "
       << r2OutputArray.getCount() << ", should be " << nCells;
-  Real32 *buffer3 = (Real32 *)r2OutputArray.getBuffer();
+  const Real32 *buffer3 = (const Real32 *)r2OutputArray.getBuffer();
   for (size_t i = 0; i < r2OutputArray.getCount(); i++) {
     // VERBOSE << "  [" << i << "]=    " << buffer3[i] << "" << std::endl;
     ASSERT_TRUE(buffer3[i] == 0.0f || buffer3[i] == 1.0f)
@@ -320,7 +320,7 @@ TEST(TMRegionTest, testLinking) {
   VERBOSE << "  VectorFileEffector input" << std::endl;
   ArrayRef r3InputArray = region3->getInputData("dataIn");
   ASSERT_TRUE(r3InputArray.getCount() == nCells);
-  Real32 *buffer4 = (Real32 *)r3InputArray.getBuffer();
+  const Real32 *buffer4 = (const Real32 *)r3InputArray.getBuffer();
   for (size_t i = 0; i < r3InputArray.getCount(); i++) {
     // VERBOSE << "  [" << i << "]=    " << buffer4[i] << "" << std::endl;
     ASSERT_TRUE(buffer3[i] == buffer4[i])
@@ -358,15 +358,17 @@ TEST(TMRegionTest, testSerialization) {
     n1region2->compute();
 
     // take a snapshot of everything in TMRegion at this point
+    // save to a bundle.
     std::map<std::string, std::string> parameterMap;
     EXPECT_TRUE(captureParameters(n1region2, parameterMap))
         << "Capturing parameters before save.";
 
     Directory::removeTree("TestOutputDir", true);
-    net1->save("TestOutputDir/tmRegionTest.nta");
+    net1->saveToFile("TestOutputDir/tmRegionTest.stream");
 
-    VERBOSE << "Restore into a second network and compare." << std::endl;
-    net2 = new Network("TestOutputDir/tmRegionTest.nta");
+    VERBOSE << "Restore from bundle into a second network and compare." << std::endl;
+    net2 = new Network();
+    net2->loadFromFile("TestOutputDir/tmRegionTest.stream");
 
     Region_Ptr_t n2region2 = net2->getRegions().getByName("region2");
     ASSERT_TRUE(n2region2->getType() == "TMRegion")
@@ -394,11 +396,13 @@ TEST(TMRegionTest, testSerialization) {
     parameterMap.clear();
     EXPECT_TRUE(captureParameters(n2region2, parameterMap))
         << "Capturing parameters before second save.";
-    net2->save("TestOutputDir/tmRegionTest.nta");
+    // serialize using a stream to a single file
+    net2->saveToFile("TestOutputDir/tmRegionTest.stream");
 
     VERBOSE << "Restore into a third network and compare changed parameters."
             << std::endl;
-    net3 = new Network("TestOutputDir/tmRegionTest.nta");
+    net3 = new Network();
+    net3->loadFromFile("TestOutputDir/tmRegionTest.stream");
     Region_Ptr_t n3region2 = net3->getRegions().getByName("region2");
     EXPECT_TRUE(n3region2->getType() == "TMRegion")
         << "Failure: Restored region does not have the right type. "

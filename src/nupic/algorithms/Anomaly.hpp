@@ -23,11 +23,10 @@
 #ifndef NUPIC_ALGORITHMS_ANOMALY_HPP
 #define NUPIC_ALGORITHMS_ANOMALY_HPP
 
-
-#include <vector>
 #include <memory> // Needed for smart pointer templates
-#include <nupic/utils/MovingAverage.hpp> // Needed for for smart pointer templates
 #include <nupic/types/Types.hpp>
+#include <nupic/utils/MovingAverage.hpp> // Needed for for smart pointer templates
+#include <vector>
 
 namespace nupic
 {

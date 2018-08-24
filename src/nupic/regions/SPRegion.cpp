@@ -1208,7 +1208,7 @@ void SPRegion::setParameterFromBuffer(const std::string &name, Int64 index,
 }
 
 void SPRegion::serialize(BundleIO &bundle) {
-  std::ofstream &f = bundle.getOutputStream("SPRegion");
+  std::ostream &f = bundle.getOutputStream();
   // There is more than one way to do this. We could serialize to YAML, which
   // would make a readable format, or we could serialize directly to the stream
   // Choose the fastest executing one.
@@ -1221,12 +1221,12 @@ void SPRegion::serialize(BundleIO &bundle) {
   f << logPathOutput_ << std::endl;
   f << logPathOutputDense_ << std::endl;
   f << "outputs [";
-  std::map<const std::string, Output *> outputs = region_->getOutputs();
+  std::map<std::string, Output *> outputs = region_->getOutputs();
   for (auto iter : outputs) {
     const Array &outputBuffer = iter.second->getData();
     if (outputBuffer.getCount() != 0) {
       f << iter.first << " ";
-      outputBuffer.binarySave(f);
+      outputBuffer.save(f);
     }
   }
   f << "] "; // end of all output buffers
@@ -1235,11 +1235,10 @@ void SPRegion::serialize(BundleIO &bundle) {
   f << init << " ";
   if (init)
     sp_->save(f);
-  f.close();
 }
 
 void SPRegion::deserialize(BundleIO &bundle) {
-  std::ifstream &f = bundle.getInputStream("SPRegion");
+  std::istream &f = bundle.getInputStream();
   // There is more than one way to do this. We could serialize to YAML, which
   // would make a readable format, or we could serialize directly to the stream
   // Choose the easier one.
@@ -1281,7 +1280,7 @@ void SPRegion::deserialize(BundleIO &bundle) {
     f.ignore(1);
     if (tag == "]")
       break;
-    getOutput(tag)->getData().binaryLoad(f);
+    getOutput(tag)->getData().load(f);
   }
   f >> init;
   f.ignore(1);
@@ -1290,7 +1289,6 @@ void SPRegion::deserialize(BundleIO &bundle) {
     sp_->load(f);
   } else
     sp_ = nullptr;
-  f.close();
 }
 
 } // namespace nupic

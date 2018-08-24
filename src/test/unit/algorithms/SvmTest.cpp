@@ -85,26 +85,7 @@ void check_eq(svm_parameter &obj1, svm_parameter &obj2) {
   check_eq(obj2.weight_label, obj2.weight_label);
 }
 
-TEST(SvmTest, svm_parameter_testWriteRead) {
-  const char *filename = "svm_parameter.bin";
-  svm_parameter svm1(0, false, 0, 0, 0, 0, 0);
-  svm_parameter svm2(0, false, 0, 0, 0, 0, 0);
 
-  setup(svm1);
-
-  std::ofstream os(filename, std::ios::binary);
-  //@todo
-  //svm1.write(os);
-  //os.close();
-
-  //std::ifstream is(filename, std::ios::binary);
-  //svm2.read(is);
-  //is.close();
-
-  //ASSERT_NO_FATAL_FAILURE(check_eq(svm1, svm2));
-  //int ret = ::remove(filename);
-  //ASSERT_TRUE(ret == 0) << "Failed to delete " << filename;
-}
 
 // svm_problem -----------------------------------------------------------------
 void setup(svm_problem &obj) {
@@ -123,26 +104,7 @@ void check_eq(svm_problem &obj1, svm_problem &obj2) {
   check_eq(obj1.y_, obj2.y_);
 }
 
-TEST(SvmTest, svm_problem_testWriteRead) {
-  const char *filename = "svm_problem.bin";
-  svm_problem svm1(0, false);
-  svm_problem svm2(0, false);
 
-  setup(svm1);
-
-  std::ofstream fout(filename, std::ios::binary);
-  //@todo
-  //svm1.write(fout);
-  //fout.close();
-
-  //std::ifstream fin(filename, std::ios::binary);
-  //svm2.read(fin);
-  //fin.close();
-
-  //ASSERT_NO_FATAL_FAILURE(check_eq(svm1, svm2));
-  //int ret = ::remove(filename);
-  //ASSERT_TRUE(ret == 0) << "Failed to delete " << filename;
-}
 
 // svm_problem01 ---------------------------------------------------------------
 void setup(svm_problem01 &obj) {
@@ -294,31 +256,4 @@ void check_eq(svm_01 &obj1, svm_01 &obj2) {
   check_eq(obj1.get_model(), obj2.get_model());
 }
 
-TEST(SvmTest, svm_01_testWriteRead) {
-  const char *filename = "svm_01.bin";
-  svm_01 svm1, svm2;
-
-  svm1.add_sample(0.5f, new float[1]{11.0f});
-  svm1.train(1.1f, 2.2f, 3.3f);
-
-  std::ofstream fout(filename, std::ios::binary);
-  //@todo
-  //svm1.write(fout);
-  //fout.close();
-
-  //std::ifstream fin(filename, std::ios::binary);
-  //svm2.read(fin);
-  //fin.close();
-
-  //ASSERT_NO_FATAL_FAILURE(check_eq(svm1, svm2));
-
-  //int ret = ::remove(filename);
-  //ASSERT_TRUE(ret == 0) << "Failed to delete " << filename;
-
-  //svm1.add_sample(0.75, new float[1]{7.0});
-  //svm1.train(7.1, 7.2, 7.3);
-  //svm2.add_sample(0.75, new float[1]{7.0});
-  //svm2.train(7.1, 7.2, 7.3);
-  //ASSERT_NO_FATAL_FAILURE(check_eq(svm1, svm2));
-}
 } // end anonymous namespace

@@ -104,7 +104,7 @@ void VectorFileEffector::compute()
               << filename_.c_str() << "\n";
   }
 
-  Real *inputVec = (Real*)(dataIn_.getBuffer());
+  Real *inputVec = (Real *)(dataIn_.getBuffer());
   NTA_CHECK(inputVec != nullptr);
   std::ofstream &outFile = *outFile_;
   for(Size offset = 0; offset < dataIn_.getCount(); ++offset)

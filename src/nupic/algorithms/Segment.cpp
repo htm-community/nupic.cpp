@@ -27,6 +27,7 @@
 #include <set>
 #include <sstream>
 #include <algorithm> // sort
+#include <tuple>
 
 #include <nupic/utils/Random.hpp>
 #include <nupic/utils/Log.hpp>
@@ -91,7 +92,20 @@ Segment& Segment::operator=(const Segment& o)
   return *this;
 }
 
-
+//--------------------------------------------------------------------------------
+bool Segment::operator==(const Segment &other) const {
+  if (_totalActivations != other._totalActivations ||
+      _positiveActivations != other._positiveActivations ||
+      _lastActiveIteration != other._lastActiveIteration ||
+      !nearlyEqual(_lastPosDutyCycle, other._lastPosDutyCycle) ||
+      _lastPosDutyCycleIteration  !=  other._lastPosDutyCycleIteration ||
+      _seqSegFlag != other._seqSegFlag || 
+      !nearlyEqual(_frequency, other._frequency) ||
+      _nConnected != other._nConnected) {
+    return false;
+  }
+  return _synapses == other._synapses;
+}
 
 //--------------------------------------------------------------------------------
 Segment::Segment(const Segment& o)
@@ -460,9 +474,9 @@ void Segment::print(std::ostream& outStream, UInt nCellsPerCol) const
   outStream << std::endl;
 }
 
-namespace nupic{
-  namespace algorithms {
-    namespace Cells4 {
+namespace nupic {
+namespace algorithms {
+namespace Cells4 {
 
       std::ostream& operator<<(std::ostream& outStream, const Segment& seg)
       {
@@ -476,8 +490,7 @@ namespace nupic{
         return outStream;
       }
 
-      std::ostream& operator<<(
-          std::ostream& outStream, const CStateIndexed& cstate)
+      std::ostream& operator<<( std::ostream& outStream, const CStateIndexed& cstate)
       {
         cstate.print(outStream);
         return outStream;

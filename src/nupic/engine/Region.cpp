@@ -53,7 +53,7 @@ class RegisteredRegionImpl;
 Region::Region(std::string name, const std::string &nodeType,
                const std::string &nodeParams, Network *network)
     : name_(std::move(name)), type_(nodeType), initialized_(false),
-      network_(network), profilingEnabled_(false) 
+      network_(network), profilingEnabled_(false)
 {
   // Set region info before creating the RegionImpl so that the
   // Impl has access to the region info in its constructor.
@@ -67,21 +67,15 @@ Region::Region(std::string name, const std::string &nodeType,
   createInputsAndOutputs_();
 }
 
-// Deserialize region
-Region::Region(std::string name, const std::string &nodeType,
-               BundleIO &bundle, Network *network)
-    : name_(std::move(name)), type_(nodeType), initialized_(false),
-      network_(network), profilingEnabled_(false) 
-{
-  // Set region info before creating the RegionImpl so that the
-  // Impl has access to the region info in its constructor.
-  RegionImplFactory &factory = RegionImplFactory::getInstance();
-  spec_ = factory.getSpec(nodeType);
+Region::Region(Network *net) {
+      network_ = net;
+      spec_ = nullptr;
+      impl_ = nullptr;
+      initialized_ = false;
+      profilingEnabled_ = false;
+    } // for deserialization of region.
 
-  createInputsAndOutputs_();
-  impl_ = factory.deserializeRegionImpl(nodeType, bundle, this);
 
-}
 
 Network *Region::getNetwork() { return network_; }
 
@@ -135,13 +129,13 @@ Region::~Region() {
   outputs_.clear();
 
   for (auto &elem : inputs_) {
-    delete elem
-        .second; // This is an Input object. Its destructor deletes the links.
+    delete elem.second; // This is an Input object. Its destructor deletes the links.
     elem.second = nullptr;
   }
   inputs_.clear();
 
-  delete impl_;
+  if (impl_)
+    delete impl_;
 
 }
 
@@ -154,13 +148,6 @@ void Region::initialize() {
   initialized_ = true;
 }
 
-bool Region::isInitialized() const { return initialized_; }
-
-const std::string &Region::getName() const { return name_; }
-
-const std::string &Region::getType() const { return type_; }
-
-const Spec *Region::getSpec() const { return spec_; }
 
 const Spec *Region::getSpecFromType(const std::string &nodeType) {
   RegionImplFactory &factory = RegionImplFactory::getInstance();
@@ -283,7 +270,104 @@ void Region::setPhases(std::set<UInt32> &phases) { phases_ = phases; }
 
 std::set<UInt32> &Region::getPhases() { return phases_; }
 
-void Region::serializeImpl(BundleIO &bundle) { impl_->serialize(bundle); }
+
+void Region::save(std::ostream &f) const {
+      f << "{\n";
+      f << "name: " << name_ << "\n";
+      f << "nodeType: " << type_ << "\n";
+    /**** remove
+	  f << "dimensions: [ " << dims_.size() << "\n";
+	  for (Size d : dims_) {
+	  	f << d << " ";
+	  }
+	  f << "]\n";
+	  ***/
+
+      f << "phases: [ " << phases_.size() << "\n";
+      for (const auto &phases_phase : phases_) {
+        f << phases_phase << " ";
+      }
+      f << "]\n";
+      f << "RegionImpl:\n";
+      // Now serialize the RegionImpl plugin.
+      BundleIO bundle(&f);
+      impl_->serialize(bundle);
+
+      f << "}\n";
+}
+
+void Region::load(std::istream &f) {
+  char bigbuffer[5000];
+  std::string tag;
+  Size count;
+
+  // Each region is a map -- extract the 4 values in the map
+  f >> tag;
+  NTA_CHECK(tag == "{") << "bad region entry (not a map)";
+
+  // 1. name
+  f >> tag;
+  NTA_CHECK(tag == "name:");
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  name_ = bigbuffer;
+
+  // 2. nodeType
+  f >> tag;
+  NTA_CHECK(tag == "nodeType:");
+  f.ignore(1);
+  f.getline(bigbuffer, sizeof(bigbuffer));
+  type_ = bigbuffer;
+  /**** remove
+  // 3. dimensions
+  f >> tag;
+  NTA_CHECK(tag == "dimensions");
+  f >> tag;
+  NTA_CHECK(tag == "[") << "Expecting a sequence.";
+  f >> count;
+  for (size_t i = 0; i < count; i++)
+  {
+  Size val;
+  f >> val;
+    dimensions_.push_back(val);
+  }
+  f >> tag;
+  NTA_CHECK(tag == "]") << "Expecting end of a sequence.";
+  ***/
+
+  // 3. phases
+  f >> tag;
+  NTA_CHECK(tag == "phases:");
+  f >> tag;
+  NTA_CHECK(tag == "[") << "Expecting a sequence.";
+  f >> count;
+  phases_.clear();
+  for (Size i = 0; i < count; i++)
+  {
+    UInt32 val;
+    f >> val;
+    phases_.insert(val);
+  }
+  f >> tag;
+  NTA_CHECK(tag == "]") << "Expected end of sequence of phases.";
+
+  // 4. impl
+  f >> tag;
+  NTA_CHECK(tag == "RegionImpl:") << "Expected beginning of RegionImpl.";
+  f.ignore(1);
+
+  RegionImplFactory &factory = RegionImplFactory::getInstance();
+  spec_ = factory.getSpec(type_);
+  createInputsAndOutputs_();
+
+  BundleIO bundle(&f);
+  impl_ = factory.deserializeRegionImpl(type_, bundle, this);
+
+  f >> tag;
+  NTA_CHECK(tag == "}") << "Expected end of region";
+}
+
+
 
 void Region::enableProfiling() { profilingEnabled_ = true; }
 

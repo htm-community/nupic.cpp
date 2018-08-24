@@ -25,10 +25,10 @@
 #else
 #include <string.h>
 #endif
+#include <fstream>
 #include <iostream>
 #include <iterator>
 #include <numeric> // std::accumulate
-#include <fstream>
 #include <sstream>
 
 #include <nupic/engine/TestNode.hpp>
@@ -673,11 +673,11 @@ namespace nupic
 
   void TestNode::serialize(BundleIO& bundle)
   {
+    // we are now only allowed one file for storing a RegionImpl.
+    // Just use the stream provided.
+    std::ostream& f = bundle.getOutputStream();
     {
-      std::ofstream& f = bundle.getOutputStream("main");
-      // There is more than one way to do this. We could serialize to YAML, which
-      // would make a readable format, or we could serialize directly to the stream
-      // Choose the easier one.
+      // There is more than one way to do this. We serialize directly to the stream
       f << "TestNode-v2" << " "
         << nodeCount_ << " "
         << int32Param_ << " "
@@ -709,40 +709,24 @@ namespace nupic
 
       // save the output buffers
       f << "outputs [";
-      std::map<const std::string, Output *> outputs = region_->getOutputs();
+      std::map<std::string, Output *> outputs = region_->getOutputs();
       for (auto iter : outputs) {
         const Array &outputBuffer = iter.second->getData();
         if (outputBuffer.getCount() != 0) {
           f << iter.first << " ";
-          outputBuffer.binarySave(f);
+          outputBuffer.save(f);
         }
       }
       f << "] "; // end of all output buffers
-      f.close();
     }  // main file
 
-
-    // auxilliary file using stream
-    {
-      std::ofstream& f = bundle.getOutputStream("aux");
-      f << "This is an auxilliary file!\n";
-      f.close();
-    }
-
-    // auxilliary file using path
-    {
-      std::string path = bundle.getPath("aux2");
-      std::ofstream f(path.c_str());
-      f << "This is another auxilliary file!\n";
-      f.close();
-    }
   }
 
 
   void TestNode::deserialize(BundleIO& bundle)
   {
+    std::istream& f = bundle.getInputStream();
     {
-      std::ifstream& f = bundle.getInputStream("main");
       // There is more than one way to do this. We could serialize to YAML, which
       // would make a readable format, or we could serialize directly to the stream
       // Choose the easier one.
@@ -775,10 +759,10 @@ namespace nupic
 
       f >> shouldCloneParam_;
 
-      std::string label;
-      f >> label;
-      if (label != "unclonedArray")
-        NTA_THROW << "Missing label for uncloned array. Got '" << label << "'";
+      std::string tag;
+      f >> tag;
+      if (tag != "unclonedArray")
+        NTA_THROW << "Missing label for uncloned array. Got '" << tag << "'";
       size_t vecsize;
       f >> vecsize;
       unclonedInt64ArrayParam_.clear();
@@ -790,50 +774,23 @@ namespace nupic
         arrayIn(f, unclonedInt64ArrayParam_[i], name.str());
       }
 
-      // Restore outputs
-      f >> label;
-      NTA_CHECK(label == "outputs");
-      f.ignore(1);
-      NTA_CHECK(f.get() == '['); // start of outputs
-      while (true) {
-        f >> label;
-        f.ignore(1);
-        if (label == "]")
-          break;
-        getOutput(label)->getData().binaryLoad(f);
-      }
+	    // Restore outputs
+	    f >> tag;
+	    NTA_CHECK(tag == "outputs");
+	    f.ignore(1);
+	    NTA_CHECK(f.get() == '['); // start of outputs
 
-      f.close();
-    }  // main file
+	    while (true) {
+	      f >> tag;
+	      f.ignore(1);
+	      if (tag == "]")
+	        break;
+	      getOutput(tag)->getData().load(f);
+	    }
+	  }
 
-    // auxilliary file using stream
-    {
-      std::ifstream& f = bundle.getInputStream("aux");
-      char line1[100];
-      f.read(line1, 100);
-      line1[f.gcount()] = '\0';
-      if (std::string(line1) != "This is an auxilliary file!\n")
-      {
-        NTA_THROW << "Invalid auxilliary serialization file for TestNode";
-      }
-      f.close();
-    }
-
-    // auxilliary file using path
-    {
-      std::string path = bundle.getPath("aux2");
-      std::ifstream f(path.c_str());
-      char line1[100];
-      f.read(line1, 100);
-      line1[f.gcount()] = '\0';
-      if (std::string(line1) != "This is another auxilliary file!\n")
-      {
-        NTA_THROW << "Invalid auxilliary2 serialization file for TestNode";
-      }
-
-      f.close();
-    }
   }
 
 
-}
+
+} // namespace nupic

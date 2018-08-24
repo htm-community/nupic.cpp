@@ -37,11 +37,12 @@
 #include <nupic/algorithms/Cell.hpp>
 #include <nupic/algorithms/Cells4.hpp>
 #include <nupic/algorithms/SegmentUpdate.hpp>
-#include <nupic/math/ArrayAlgo.hpp> // is_in
+#include <nupic/math/ArrayAlgo.hpp> // is_in, deque and vector ( ==, <<, >>)
 #include <nupic/math/StlIo.hpp>     // binary_save
 #include <nupic/os/Timer.hpp>
 #include <nupic/utils/Log.hpp>
 
+using namespace nupic;
 using namespace nupic::algorithms::Cells4;
 
 // Comment or uncomment to turn on timing
@@ -65,30 +66,61 @@ static nupic::Timer chooseCellsTimer;
 
 #endif
 
-Cells4::Cells4(UInt nColumns, UInt nCellsPerCol, UInt activationThreshold,
-               UInt minThreshold, UInt newSynapseCount,
-               UInt segUpdateValidDuration, Real permInitial,
-               Real permConnected, Real permMax, Real permDec, Real permInc,
-               Real globalDecay, bool doPooling, int seed, bool initFromCpp,
-               bool checkSynapseConsistency)
-    : _rng(seed) {
+Cells4::Cells4(      UInt nColumns,
+			         UInt nCellsPerCol,
+                     UInt activationThreshold,
+                     UInt minThreshold,
+                     UInt newSynapseCount,
+                     UInt segUpdateValidDuration,
+                     Real permInitial,
+                     Real permConnected,
+                     Real permMax,
+                     Real permDec,
+                     Real permInc,
+                     Real globalDecay,
+                     bool doPooling,
+                     int seed,
+                     bool initFromCpp,
+                     bool checkSynapseConsistency)
+  : _rng(seed < 0 ? rand() : seed)
+{
   _version = VERSION;
-  initialize(nColumns, nCellsPerCol, activationThreshold, minThreshold,
-             newSynapseCount, segUpdateValidDuration, permInitial,
-             permConnected, permMax, permDec, permInc, globalDecay, doPooling,
-             initFromCpp, checkSynapseConsistency);
+  _ownsMemory = true;
+  _cellConfidenceT  = nullptr;
+  _cellConfidenceT1 = nullptr;
+  _colConfidenceT   = nullptr;
+  _colConfidenceT1  = nullptr;
+  _cellConfidenceCandidate  = nullptr;
+  _colConfidenceCandidate  = nullptr;
+  _tmpInputBuffer  = nullptr;
+
+  initialize(nColumns,
+             nCellsPerCol,
+             activationThreshold,
+             minThreshold,
+             newSynapseCount,
+             segUpdateValidDuration,
+             permInitial,
+             permConnected,
+             permMax,
+             permDec,
+             permInc,
+             globalDecay,
+             doPooling,
+             initFromCpp,
+             checkSynapseConsistency);
 }
 
 Cells4::~Cells4() {
   if (_ownsMemory) {
-    delete[] _cellConfidenceT;
-    delete[] _cellConfidenceT1;
-    delete[] _colConfidenceT;
-    delete[] _colConfidenceT1;
+    if (_cellConfidenceT)       delete[] _cellConfidenceT;
+    if (_cellConfidenceT1)      delete[] _cellConfidenceT1;
+    if (_colConfidenceT)        delete[] _colConfidenceT;
+    if (_colConfidenceT1)       delete[] _colConfidenceT1;
   }
-  delete[] _cellConfidenceCandidate;
-  delete[] _colConfidenceCandidate;
-  delete[] _tmpInputBuffer;
+  if (_cellConfidenceCandidate) delete[] _cellConfidenceCandidate;
+  if (_colConfidenceCandidate)  delete[] _colConfidenceCandidate;
+  if (_tmpInputBuffer)          delete[] _tmpInputBuffer;
 }
 
 //--------------------------------------------------------------------------------
@@ -1390,7 +1422,7 @@ void Cells4::_updateAvgLearnedSeqLength(UInt prevSeqLength) {
               << " prevSeqLength = " << prevSeqLength << "\n";
   }
   _avgLearnedSeqLength =
-      (1.0f - alpha) * _avgLearnedSeqLength + alpha * prevSeqLength;
+      (1.0f - alpha) * _avgLearnedSeqLength + alpha * (Real)prevSeqLength;
   if (_verbosity >= 5) {
     std::cout << "   after = " << _avgLearnedSeqLength << "\n";
   }
@@ -1681,8 +1713,8 @@ void Cells4::adaptSegment(const SegmentUpdate &update) {
       // TODO: What's preventing numToFree from exceeding segment.size()? If you
       // know, add a comment explaining it. If it exceeds, it will cause memory
       // corruption in Segment::freeNSynapses.
-      UInt numToFree = (UInt)synapsesSet.size() + (UInt)segment.size() -
-                       (UInt)_maxSynapsesPerSegment;
+      UInt numToFree =
+          (UInt)(synapsesSet.size() + segment.size() - _maxSynapsesPerSegment);
       segment.freeNSynapses(numToFree, synToDec, inactiveSegmentIndices,
                             synToInc, activeSegmentIndices, removed, _verbosity,
                             _nCellsPerCol, _permMax);
@@ -1892,7 +1924,6 @@ struct self_t {
   Real globalDecay;
   bool doPooling;
   bool checkSynapseConsistency;
-  bool ownsMemory;
   bool resetCalled;
   UInt pamLength;
   UInt maxInfBacktrack;
@@ -1907,8 +1938,10 @@ struct self_t {
   Real avgInputDensity;
   UInt pamCounter;
 };
+// NOTE:  ownsMemory cannot be saved in serialization.
+//        It indicates who currently allocated the buffers.
 
-//--------------------------------------------------------------------------------
+
 
 //--------------------------------------------------------------------------------
 void Cells4::save(std::ostream &outStream) const {
@@ -1948,12 +1981,11 @@ void Cells4::save(std::ostream &outStream) const {
   self.maxSegmentsPerCell = _maxSegmentsPerCell;
   self.maxSynapsesPerSegment = _maxSynapsesPerSegment;
   self.checkSynapseConsistency = _checkSynapseConsistency;
-  self.ownsMemory = _ownsMemory;
   self.avgInputDensity = _avgInputDensity;
   self.pamCounter = _pamCounter;
   self.resetCalled = _resetCalled;
 
-  outStream << "Cells4 " << version() << " ";
+  outStream << "Cells4 " << _version << " ";
   outStream << "self " << sizeof(self) << " ";
   outStream.write((const char *)&self, sizeof(self));
   outStream << std::endl;
@@ -1963,66 +1995,74 @@ void Cells4::save(std::ostream &outStream) const {
 
   // capture the inferred states
   outStream << "infActiveStateT" << std::endl;
-  _infActiveStateT.binary_save(outStream);
+  _infActiveStateT.save(outStream);
   outStream << "infActiveStateT1" << std::endl;
-  _infActiveStateT1.binary_save(outStream);
+  _infActiveStateT1.save(outStream);
   outStream << "infPredictedStateT" << std::endl;
-  _infPredictedStateT.binary_save(outStream);
+  _infPredictedStateT.save(outStream);
   outStream << "infPredictedStateT1" << std::endl;
-  _infPredictedStateT1.binary_save(outStream);
+  _infPredictedStateT1.save(outStream);
 
   // capture the learn states
   outStream << "learnActiveStateT" << std::endl;
-  _learnActiveStateT.binary_save(outStream);
+  _learnActiveStateT.save(outStream);
   outStream << "learnActiveStateT1" << std::endl;
-  _learnActiveStateT1.binary_save(outStream);
+  _learnActiveStateT1.save(outStream);
   outStream << "learnPredictedStateT" << std::endl;
-  _learnPredictedStateT.binary_save(outStream);
+  _learnPredictedStateT.save(outStream);
   outStream << "learnPredictedStateT1" << std::endl;
-  _learnPredictedStateT1.binary_save(outStream);
+  _learnPredictedStateT1.save(outStream);
   outStream << std::endl;
 
+  // capture the prev states (for backtracking)
+  // (these are deque's of vectors of UInt, see StlIo.hpp)
+  outStream << "prevInfPatterns [ " << _prevInfPatterns.size() << "\n";
+  for(auto v : _prevInfPatterns) {
+    outStream << v.size() << " ";
+    binary_save(outStream, v);
+    outStream << "\n";
+  }
+  outStream << "]\n";
+
+  outStream << "prevLrnPatterns [ " << _prevLrnPatterns.size() << "\n";
+  for(auto v : _prevLrnPatterns) {
+    outStream << v.size() << " ";
+    binary_save(outStream, v);
+    outStream << "\n";
+  }
+  outStream << "]\n";
+
+  outStream << "cellConfidenceT [ " << _nCells << "\n";
+  outStream.write((const char*)_cellConfidenceT, _nCells * sizeof(Real));
+  outStream << "\n]\n";
+  outStream << "cellConfidenceT1 [ " << _nCells << "\n";
+  outStream.write((const char*)_cellConfidenceT1, _nCells * sizeof(Real));
+  outStream << "\n]\n";
+  outStream << "colConfidenceT [ " << _nColumns << "\n";
+  outStream.write((const char*)_colConfidenceT, _nColumns * sizeof(Real));
+  outStream << "\n]\n";
+  outStream << "colConfidenceT1 [ " << _nColumns << "\n";
+  outStream.write((const char*)_colConfidenceT1, _nColumns * sizeof(Real));
+  outStream << "\n]\n";
+
+
   // Capture the Segments
-  outStream << "Segments " << _segmentUpdates.size() << " ";
+  outStream << "Segments " << _segmentUpdates.size() << "\n";
   for (auto &elem : _segmentUpdates) {
     elem.save(outStream);
   }
+  outStream << "\n";
 
   // Capture the Cells
-  outStream << "Cells ";
+  outStream << "Cells " << _nCells << "\n";
   NTA_CHECK(_nCells == _cells.size());
   for (UInt i = 0; i != _nCells; ++i) {
     _cells[i].save(outStream);
     outStream << std::endl;
   }
+  outStream << "\n";
 
-  outStream << " out " << std::endl;
-}
-
-//----------------------------------------------------------------------------
-/**
- * Save the state to the given file  (must be binary file).
- */
-void Cells4::saveToFile(std::string filePath) const {
-  std::filesystem::path p(filePath.c_str());
-  std::filesystem::create_directories(p.parent_path());
-  std::ofstream out(filePath.c_str(),std::ios_base::out | std::ios_base::binary);
-  out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
-  out.precision(std::numeric_limits<double>::digits10 + 1);
-  out.precision(std::numeric_limits<float>::digits10 + 1);
-  save(out);
-  out.close();
-}
-
-//----------------------------------------------------------------------
-/**
- * Load the state from the given file (open as binary file)
- */
-void Cells4::loadFromFile(std::string filePath) {
-  std::ifstream in(filePath.c_str(), std::ios_base::in | std::ios_base::binary);
-  in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-  load(in);
-  in.close();
+  outStream << "out " << std::endl;
 }
 
 //------------------------------------------------------------------------------
@@ -2056,12 +2096,17 @@ void Cells4::load(std::istream &inStream) {
   inStream.ignore(1);
   inStream.read((char *)&self, len);
 
+  NTA_CHECK(self.nColumns > 0 && self.nCellsPerCol)
+      << "No columns or cellsPerCol defined.";
+
   // Initialize Cells4 class
   initialize(self.nColumns, self.nCellsPerCol, self.activationThreshold,
              self.minThreshold, self.newSynapseCount,
              self.segUpdateValidDuration, self.permInitial, self.permConnected,
              self.permMax, self.permDec, self.permInc, self.globalDecay,
-             self.doPooling, self.ownsMemory);
+             self.doPooling);
+  // Note: this will create the state buffers if Python has not
+  //       already provided buffers.
 
   _nIterations = self.nIterations;
   _nLrnIterations = self.nLrnIterations;
@@ -2077,7 +2122,6 @@ void Cells4::load(std::istream &inStream) {
   _maxSegmentsPerCell = self.maxSegmentsPerCell;
   _maxSynapsesPerSegment = self.maxSynapsesPerSegment;
   _checkSynapseConsistency = self.checkSynapseConsistency;
-  _ownsMemory = self.ownsMemory;
   _avgInputDensity = self.avgInputDensity;
   _pamCounter = self.pamCounter;
   _resetCalled = self.resetCalled;
@@ -2125,10 +2169,92 @@ void Cells4::load(std::istream &inStream) {
   inStream.ignore(1);
   _learnPredictedStateT1.load(inStream);
 
+  // restore the prev states (for backtracking)
+  // (these are deque's of vectors of UInt, see StlIo.hpp)
+  _prevInfPatterns.clear();
+  inStream >> tag;
+  NTA_CHECK(tag == "prevInfPatterns");
+  inStream >> tag;
+  NTA_CHECK(tag == "[");
+  inStream >> len;
+  for (size_t i = 0; i < len; i++) {
+    size_t count;
+    inStream >> count;
+    inStream.ignore(1);
+    std::vector<UInt> vec(count);
+    binary_load(inStream, vec);
+    _prevInfPatterns.push_back(vec);
+  }
+  inStream >> tag;
+  NTA_CHECK(tag == "]");
+
+  _prevLrnPatterns.clear();
+  inStream >> tag;
+  NTA_CHECK(tag == "prevLrnPatterns");
+  inStream >> tag;
+  NTA_CHECK(tag == "[");
+  inStream >> len;
+  for (size_t i = 0; i < len; i++) {
+    size_t count;
+    inStream >> count;
+    inStream.ignore(1);
+    std::vector<UInt> vec(count);
+    binary_load(inStream, vec);
+    _prevLrnPatterns.push_back(vec);
+  }
+  inStream >> tag;
+  NTA_CHECK(tag == "]");
+
+  inStream >> tag;
+  NTA_CHECK(tag == "cellConfidenceT");
+  inStream >> tag;
+  NTA_CHECK(tag == "[");
+  inStream >> len;
+  NTA_CHECK(len == _nCells);
+  inStream.ignore(1);
+  inStream.read((char *)_cellConfidenceT, _nCells * sizeof(Real));
+  inStream >> tag;
+  NTA_CHECK(tag == "]");
+
+
+  inStream >> tag;
+  NTA_CHECK(tag == "cellConfidenceT1");
+  inStream >> tag;
+  NTA_CHECK(tag == "[");
+  inStream >> len;
+  NTA_CHECK(len == _nCells);
+  inStream.ignore(1);
+  inStream.read((char *)_cellConfidenceT1, _nCells * sizeof(Real));
+  inStream >> tag;
+  NTA_CHECK(tag == "]");
+
+  inStream >> tag;
+  NTA_CHECK(tag == "colConfidenceT");
+  inStream >> tag;
+  NTA_CHECK(tag == "[");
+  inStream >> len;
+  NTA_CHECK(len == _nColumns);
+  inStream.ignore(1);
+  inStream.read((char *)_colConfidenceT, _nColumns* sizeof(Real));
+  inStream >> tag;
+  NTA_CHECK(tag == "]");
+
+  inStream >> tag;
+  NTA_CHECK(tag == "colConfidenceT1");
+  inStream >> tag;
+  NTA_CHECK(tag == "[");
+  inStream >> len;
+  NTA_CHECK(len == _nColumns);
+  inStream.ignore(1);
+  inStream.read((char *)_colConfidenceT1, _nColumns* sizeof(Real));
+  inStream >> tag;
+  NTA_CHECK(tag == "]");
+
   _segmentUpdates.clear();
   inStream >> tag;
   NTA_CHECK(tag == "Segments");
   inStream >> len;
+  inStream.ignore(1);
   for (UInt i = 0; i < len; ++i) {
     _segmentUpdates.push_back(SegmentUpdate());
     _segmentUpdates[i].load(inStream);
@@ -2136,6 +2262,9 @@ void Cells4::load(std::istream &inStream) {
 
   inStream >> tag;
   NTA_CHECK(tag == "Cells");
+  inStream >> len;
+  NTA_CHECK(len == _nCells) << "Not the number of cells expected.";
+  inStream.ignore(1);
   for (UInt i = 0; i != _nCells; ++i) {
     _cells[i].load(inStream);
   }
@@ -2291,6 +2420,8 @@ void Cells4::updateSegment(
  * Simple helper function for allocating our numerous state variables
  */
 template <typename It> void allocateState(It *&state, const UInt numElmts) {
+  if (state != nullptr)
+    delete[] state;
   state = new It[numElmts];
   memset(state, 0, numElmts * sizeof(It));
 }
@@ -2309,6 +2440,9 @@ void Cells4::initialize(UInt nColumns, UInt nCellsPerCol,
   _nColumns = nColumns;
   _nCellsPerCol = nCellsPerCol;
   _nCells = nColumns * nCellsPerCol;
+  if (_nCells == 0)
+    return;
+
   NTA_CHECK(_nCells <= _MAX_CELLS);
 
   _activationThreshold = activationThreshold;
@@ -2350,8 +2484,18 @@ void Cells4::initialize(UInt nColumns, UInt nCellsPerCol,
   // Python allocate numpy arrays and pass them to C++, or C++
   // allocate memory here (then Python gets pointers via
   // getStatePointers).
-  if (initFromCpp) {
-    _ownsMemory = true;
+  // Actually...we are going to ignore the 'initFromCpp' parameter.
+  //     At allocation of Cells4 we always allocate memory.
+  //     If Python wants to control the buffers, it
+  //     must call setStatePointers() after creating Cells4
+  //     and the previously allocated buffers are deleted.
+  //
+  //     When deserializing,
+  //      1) create Cells4 with 0 columns (the default).
+  //      2) call setStatePointers() if Python wants to control buffers.
+  //      3) call load()
+  //
+  if (_ownsMemory ) {
     _infActiveStateT.initialize(_nCells);
     _infActiveStateT1.initialize(_nCells);
     _infPredictedStateT.initialize(_nCells);
@@ -2360,8 +2504,6 @@ void Cells4::initialize(UInt nColumns, UInt nCellsPerCol,
     allocateState(_cellConfidenceT1, _nCells);
     allocateState(_colConfidenceT, _nColumns);
     allocateState(_colConfidenceT1, _nColumns);
-  } else {
-    _ownsMemory = false;
   }
 
   // Initialize the state variables that are always managed inside the class
@@ -2770,6 +2912,15 @@ void Cells4::printStates() {
   }
 }
 
+void Cells4::printConfidence(Real *confidence, size_t len) const {
+  std::cout << "[ ";
+  for (size_t i = 0; i < len; i++) {
+    std::cout << confidence[i] << " ";
+  }
+  std::cout << "]\n";
+}
+
+
 void Cells4::dumpSegmentUpdates() {
   std::cout << _segmentUpdates.size() << " updates" << std::endl;
   for (UInt i = 0; i != _segmentUpdates.size(); ++i) {
@@ -2800,9 +2951,100 @@ void Cells4::print(std::ostream &outStream) const {
   }
 }
 
-std::ostream &operator<<(std::ostream &outStream, const Cells4 &cells) {
-  cells.print(outStream);
+std::ostream &Cells4::operator<<(std::ostream &outStream) {
+  print(outStream);
   return outStream;
+}
+
+bool Cells4::operator==(const Cells4 &other) const {
+
+  if (_activationThreshold != other._activationThreshold ||
+      _avgInputDensity != other._avgInputDensity ||
+      _avgLearnedSeqLength != other._avgLearnedSeqLength ||
+      _checkSynapseConsistency != other._checkSynapseConsistency ||
+      _doPooling != other._doPooling || _globalDecay != other._globalDecay ||
+      _initSegFreq != other._initSegFreq ||
+      _learnedSeqLength != other._learnedSeqLength ||
+      _maxAge != other._maxAge || _maxInfBacktrack != other._maxInfBacktrack ||
+      _maxLrnBacktrack != other._maxLrnBacktrack ||
+      _maxSegmentsPerCell != other._maxSegmentsPerCell ||
+      _maxSeqLength != other._maxSeqLength ||
+      _maxSynapsesPerSegment != other._maxSynapsesPerSegment ||
+      _minThreshold != other._minThreshold || _nCells != other._nCells ||
+      _nCellsPerCol != other._nCellsPerCol || _nColumns != other._nColumns ||
+      _newSynapseCount != other._newSynapseCount ||
+      _nIterations != other._nIterations ||
+      _nLrnIterations != other._nLrnIterations ||
+      _ownsMemory != other._ownsMemory || _pamCounter != other._pamCounter ||
+      _pamLength != other._pamLength ||
+      _permConnected != other._permConnected || _permDec != other._permDec ||
+      _permInc != other._permInc || _permInitial != other._permInitial ||
+      _permMax != other._permMax || _resetCalled != other._resetCalled ||
+      _segUpdateValidDuration != other._segUpdateValidDuration ||
+      _verbosity != other._verbosity || _version != other._version) {
+    return false;
+  }
+  if (!_rng.equals(other._rng)) {
+    return false;
+  }
+  if (_cells != other._cells) {
+    return false;
+  }
+  if (_segmentUpdates != other._segmentUpdates) {
+    return false;
+  }
+  if (_learnActiveStateT != other._learnActiveStateT) {
+    return false;
+  }
+  if (_learnActiveStateT1 != other._learnActiveStateT1) {
+    return false;
+  }
+  if (_learnPredictedStateT != other._learnPredictedStateT) {
+    return false;
+  }
+  if (_learnPredictedStateT1 != other._learnPredictedStateT1) {
+    return false;
+  }
+  if (_infActiveStateT != other._infActiveStateT) {
+    return false;
+  }
+  if (_infActiveStateT1 != other._infActiveStateT1) {
+    return false;
+  }
+  if (_infPredictedStateT != other._infPredictedStateT) {
+    return false;
+  }
+  if (_infPredictedStateT1 != other._infPredictedStateT1) {
+    return false;
+  }
+  if (_prevInfPatterns != other._prevInfPatterns) {
+    return false;
+  }
+  if (_prevLrnPatterns != other._prevLrnPatterns) {
+    return false;
+  }
+  if (_nCells > 0) {
+    if (memcmp(_cellConfidenceT, other._cellConfidenceT,
+               _nCells * sizeof(Real)) != 0) {
+      return false;
+    }
+    if (memcmp(_cellConfidenceT1, other._cellConfidenceT1,
+               _nCells * sizeof(Real)) != 0) {
+      return false;
+    }
+  }
+  if (_nColumns > 0) {
+    if (memcmp(_colConfidenceT, other._colConfidenceT,
+               _nColumns * sizeof(Real)) != 0) {
+      return false;
+    }
+    if (memcmp(_colConfidenceT1, other._colConfidenceT1,
+               _nColumns * sizeof(Real)) != 0) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 //----------------------------------------------------------------------

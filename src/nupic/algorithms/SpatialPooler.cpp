@@ -575,7 +575,7 @@ void SpatialPooler::initialize(vector<UInt> inputDimensions,
 
   overlapDutyCycles_.assign(numColumns_, 0);
   activeDutyCycles_.assign(numColumns_, 0);
-  minOverlapDutyCycles_.assign(numColumns_, 0.0f);  
+  minOverlapDutyCycles_.assign(numColumns_, 0.0f);
   boostFactors_.assign(numColumns_, 1);
   overlaps_.resize(numColumns_);
   overlapsPct_.resize(numColumns_);
@@ -885,7 +885,7 @@ void SpatialPooler::updateMinDutyCycles_()
 }
 
 void SpatialPooler::updateMinDutyCyclesGlobal_()
-{  
+{
   Real maxOverlapDutyCycles = *max_element(overlapDutyCycles_.begin(),
                                            overlapDutyCycles_.end());
 
@@ -993,7 +993,7 @@ Real SpatialPooler::avgConnectedSpanForColumn2D_(UInt column)
   UInt rowSpan = *minmaxRows.second /*max*/ - *minmaxRows.first /*min*/ + 1;
 
   auto minmaxCols = minmax_element(cols.begin(), cols.end());
-  UInt colSpan = *minmaxCols.second - *minmaxCols.first + 1; 
+  UInt colSpan = *minmaxCols.second - *minmaxCols.first + 1;
 
   return (rowSpan + colSpan) / 2.0f;
 
@@ -1160,7 +1160,7 @@ void SpatialPooler::updateBoostFactorsLocal_()
     }
 
     Real targetDensity = localActivityDensity / numNeighbors;
-    boostFactors_[i] = exp((targetDensity - activeDutyCycles_[i]) 
+    boostFactors_[i] = exp((targetDensity - activeDutyCycles_[i])
                            * boostStrength_);
   }
 
@@ -1495,7 +1495,7 @@ void SpatialPooler::save(ostream& outStream) const
 void SpatialPooler::load(istream& inStream)
 {
   // NOTE: inStream must be opened in binary mode.  Cannot test for this.
-  //       This is not platform independent.  If written on windows x64 it should 
+  //       This is not platform independent.  If written on windows x64 it should
   //       be able to read on Windows x64.  Endedness and bitness must match.
   { // Pre-conditions
       NTA_CHECK(inStream.good()) << "SpatialPooler::load: Bad stream";
@@ -1699,7 +1699,7 @@ void SpatialPooler::load(istream& inStream)
     inStream.read((char*)&tieBreaker_[0], size * sizeof(Real));
     NTA_CHECK(inStream.get() == ']');
     inStream.ignore(1);
-    
+
     // Sparse matrix
     inStream >> marker;
     NTA_CHECK(marker == "potentialPools");

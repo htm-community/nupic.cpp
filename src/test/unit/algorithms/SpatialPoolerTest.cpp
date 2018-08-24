@@ -1205,7 +1205,7 @@ namespace {
        {1.0f, 1.0f, 1.0f, 1.0f, 1.0f},
        {0.5f, 0.5f, 0.5f, 0.5f, 0.5f},
        {0.5f, 3.0f/8, 1.0f/6,  0.0f,  0.0f},
-       { 1.0f/10,  1.0f/8,  1.0f/6,  1.0f/4,  1.0f/2}}; 
+       { 1.0f/10,  1.0f/8,  1.0f/6,  1.0f/4,  1.0f/2}};
 
     for (UInt i = 0; i < numColumns; i++)
     {
@@ -1774,7 +1774,7 @@ namespace {
     for (size_t i = 0; i < 8; i++)
       if (potential[i])
         ASSERT_LE(perm[i], synPermConnected);
-      else        
+      else
         ASSERT_LT(perm[i], 1e-5f);
 
     inputDim[0] = 100;
@@ -2242,28 +2242,5 @@ namespace {
     ASSERT_TRUE(ret == 0) << "Failed to delete " << filename;
   }
 
-  TEST(SpatialPoolerTest, testWriteRead)
-  {
-    const char* filename = "SpatialPoolerSerialization.tmp";
-    SpatialPooler sp1, sp2;
-    UInt numInputs = 6;
-    UInt numColumns = 12;
-    setup(sp1, numInputs, numColumns);
-
-    ofstream os(filename, ios::binary);
-    //@todo
-    //sp1.write(os);
-    //os.close();
-
-    //ifstream is(filename, ios::binary);
-    //sp2.read(is);
-    //is.close();
-
-    //ASSERT_NO_FATAL_FAILURE(
-    //  check_spatial_eq(sp1, sp2));
-
-    //int ret = ::remove(filename);
-    //ASSERT_TRUE(ret == 0) << "Failed to delete " << filename;
-  }
 
 } // end anonymous namespace

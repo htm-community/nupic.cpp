@@ -74,7 +74,7 @@ template <typename T> static UInt32 *nonzero(const T *dence_buffer, Size len) {
 
 static const UInt TM_VERSION = 3; // - 7/14/2018 keeney
 
-BacktrackingTMCpp::BacktrackingTMCpp() 
+BacktrackingTMCpp::BacktrackingTMCpp()
 {
     currentOutput_ = nullptr;
     currentOutputOwn_ = true;
@@ -89,7 +89,7 @@ BacktrackingTMCpp::BacktrackingTMCpp(
     Int32 verbosity, bool checkSynapseConsistency, UInt32 pamLength,
     UInt32 maxInfBacktrack, UInt32 maxLrnBacktrack, UInt32 maxAge,
     UInt32 maxSeqLength, Int32 maxSegmentsPerCell, Int32 maxSynapsesPerSegment,
-    const char *outputType) 
+    std::string outputType)
 {
   cells4_ = nullptr;
 
@@ -105,9 +105,9 @@ BacktrackingTMCpp::BacktrackingTMCpp(
         << ")";
   }
 
-  NTA_ASSERT(!strcmp(outputType, "normal") ||
-             !strcmp(outputType, "activeState") ||
-             !strcmp(outputType, "activeState1CellPerCol"));
+  NTA_ASSERT(outputType == "normal" ||
+             outputType == "activeState" ||
+             outputType == "activeState1CellPerCol");
 
   segUpdateValidDuration = (doPooling) ? segUpdateValidDuration : 1;
 
@@ -119,8 +119,7 @@ BacktrackingTMCpp::BacktrackingTMCpp(
   loc_.collectStats = collectStats;
   loc_.seed = seed;
 
-  memset(loc_.outputType, 0, sizeof(loc_.outputType));
-  strcpy_s(loc_.outputType, sizeof(loc_.outputType), outputType);
+  outputType_ = outputType;
 
   // Initialize local state data
   loc_.lrnIterationIdx = 0;
@@ -191,9 +190,9 @@ BacktrackingTMCpp::BacktrackingTMCpp(
   memset(confHistogram_.get(), 0, nCells * sizeof(Real));
 }
 
-BacktrackingTMCpp::~BacktrackingTMCpp() { 
+BacktrackingTMCpp::~BacktrackingTMCpp() {
   if (cells4_)
-    delete cells4_; 
+    delete cells4_;
   if (currentOutputOwn_)
     delete[] currentOutput_;
   confHistogram_.reset();
@@ -475,7 +474,7 @@ void BacktrackingTMCpp::_updateStatsInferEnd(
  *              for an output from the past.
  *   @details   if True, also include details of missing bits per pattern.
  *
- *   :returns: struct predictionResults_t 
+ *   :returns: struct predictionResults_t
  *               totalExtras,
  *               totalMissing,
  *               [conf_1, conf_2, ...],        a vector of structures
@@ -498,10 +497,10 @@ void BacktrackingTMCpp::_updateStatsInferEnd(
  *                     This list is only returned if details is true.
  **************************************************/
 std::shared_ptr<struct BacktrackingTMCpp::predictionResults_t> BacktrackingTMCpp::_checkPrediction(
-    std::vector<const UInt32 *> patternNZs, 
+    std::vector<const UInt32 *> patternNZs,
     const Byte *output,
-    const Real *colConfidence, 
-    bool details) 
+    const Real *colConfidence,
+    bool details)
 {
   std::shared_ptr<struct predictionResults_t> results(new struct predictionResults_t);
 
@@ -629,7 +628,7 @@ std::shared_ptr<struct BacktrackingTMCpp::predictionResults_t> BacktrackingTMCpp
 //    output is the boolean OR of 'activeState' and 'predictedState' at 't'.
 //    Stores 'currentOutput_'.
 Real32 *BacktrackingTMCpp::_computeOutput() {
-  if (!strcmp(loc_.outputType, "activeState1CellPerCol")) {
+  if (outputType_ == "activeState1CellPerCol") {
     // Fire only the most confident cell in columns that have 2 or more active
     // cells Don't turn on anything in columns which are not active at all
     Byte *active = cells4_->getInfActiveStateT();
@@ -648,17 +647,17 @@ Real32 *BacktrackingTMCpp::_computeOutput() {
         isColActive += active[cellIdx];
       }
       // set the most confident cell in this column if active.
-      if (c > 0 && isColActive) 
+      if (c > 0 && isColActive)
         currentOutput_[mostConfidentCell] = 1.0f;
     }
 
-  } else if (!strcmp(loc_.outputType, "activeState")) {
+  } else if (outputType_ == "activeState") {
     Byte *active = cells4_->getInfActiveStateT();
     for (Size i = 0; i < nCells; i++) {
       currentOutput_[i] = active[i];
     }
 
-  } else if (!strcmp(loc_.outputType, "normal")) {
+  } else if (outputType_ == "normal") {
     Byte *active = cells4_->getInfActiveStateT();
     Byte *predicted = cells4_->getInfPredictedStateT();
     for (Size i = 0; i < nCells; i++) {
@@ -666,7 +665,7 @@ Real32 *BacktrackingTMCpp::_computeOutput() {
     }
 
   } else {
-    NTA_THROW << "Unimplemented outputType '" << loc_.outputType << "' ";
+    NTA_THROW << "Unimplemented outputType '" << outputType_ << "' ";
   }
   return currentOutput_;
 }
@@ -805,72 +804,85 @@ std::shared_ptr<Real> BacktrackingTMCpp::getConfHistogram() {
 
 /////////////// saving dynamic state for predict() //////////////
 void BacktrackingTMCpp::_getTPDynamicState(tmSavedState_t &ss) {
-  deepcopySave_<Byte>(ss, "infActiveStateT", cells4_->getInfActiveStateT(),
+  deepcopySave_(ss, "infActiveStateT", cells4_->getInfActiveStateT(),
                       nCells);
-  deepcopySave_<Byte>(ss, "infActiveStateT1", cells4_->getInfActiveStateT1(),
+  deepcopySave_(ss, "infActiveStateT1", cells4_->getInfActiveStateT1(),
                       nCells);
-  deepcopySave_<Byte>(ss, "infPredictedStateT",
+  deepcopySave_(ss, "infPredictedStateT",
                       cells4_->getInfPredictedStateT(), nCells);
-  deepcopySave_<Byte>(ss, "infPredictedStateT1",
+  deepcopySave_(ss, "infPredictedStateT1",
                       cells4_->getInfPredictedStateT1(), nCells);
-  deepcopySave_<Byte>(ss, "learnActiveStateT", cells4_->getLearnActiveStateT(),
+  deepcopySave_(ss, "learnActiveStateT", cells4_->getLearnActiveStateT(),
                       nCells);
-  deepcopySave_<Byte>(ss, "learnActiveStateT1",
+  deepcopySave_(ss, "learnActiveStateT1",
                       cells4_->getLearnActiveStateT1(), nCells);
-  deepcopySave_<Byte>(ss, "learnPredictedStateT",
+  deepcopySave_(ss, "learnPredictedStateT",
                       cells4_->getLearnPredictedStateT(), nCells);
-  deepcopySave_<Byte>(ss, "learnPredictedStateT1",
+  deepcopySave_(ss, "learnPredictedStateT1",
                       cells4_->getLearnPredictedStateT1(), nCells);
-  deepcopySave_<Real>(ss, "cellConfidenceT", cells4_->getCellConfidenceT(),
+  deepcopySave_(ss, "cellConfidenceT", cells4_->getCellConfidenceT(),
                       nCells);
-  deepcopySave_<Real>(ss, "cellConfidenceT1", cells4_->getCellConfidenceT1(),
+  deepcopySave_(ss, "cellConfidenceT1", cells4_->getCellConfidenceT1(),
                       nCells);
-  deepcopySave_<Real>(ss, "colConfidenceT", cells4_->getColConfidenceT(),
+  deepcopySave_(ss, "colConfidenceT", cells4_->getColConfidenceT(),
                       loc_.numberOfCols);
-  deepcopySave_<Real>(ss, "colConfidenceT", cells4_->getColConfidenceT(),
+  deepcopySave_(ss, "colConfidenceT", cells4_->getColConfidenceT(),
                       loc_.numberOfCols);
 }
 
 void BacktrackingTMCpp::_setTPDynamicState(tmSavedState_t &ss) {
-  deepcopyRestore_<Byte>(ss, "infActiveStateT", cells4_->getInfActiveStateT(),
+  deepcopyRestore_(ss, "infActiveStateT", cells4_->getInfActiveStateT(),
                          nCells);
-  deepcopyRestore_<Byte>(ss, "infActiveStateT1", cells4_->getInfActiveStateT1(),
+  deepcopyRestore_(ss, "infActiveStateT1", cells4_->getInfActiveStateT1(),
                          nCells);
-  deepcopyRestore_<Byte>(ss, "infPredictedStateT",
+  deepcopyRestore_(ss, "infPredictedStateT",
                          cells4_->getInfPredictedStateT(), nCells);
-  deepcopyRestore_<Byte>(ss, "infPredictedStateT1",
+  deepcopyRestore_(ss, "infPredictedStateT1",
                          cells4_->getInfPredictedStateT1(), nCells);
-  deepcopyRestore_<Byte>(ss, "learnActiveStateT",
+  deepcopyRestore_(ss, "learnActiveStateT",
                          cells4_->getLearnActiveStateT(), nCells);
-  deepcopyRestore_<Byte>(ss, "learnActiveStateT1",
+  deepcopyRestore_(ss, "learnActiveStateT1",
                          cells4_->getLearnActiveStateT1(), nCells);
-  deepcopyRestore_<Byte>(ss, "learnPredictedStateT",
+  deepcopyRestore_(ss, "learnPredictedStateT",
                          cells4_->getLearnPredictedStateT(), nCells);
-  deepcopyRestore_<Byte>(ss, "learnPredictedStateT1",
+  deepcopyRestore_(ss, "learnPredictedStateT1",
                          cells4_->getLearnPredictedStateT1(), nCells);
-  deepcopyRestore_<Real>(ss, "cellConfidenceT", cells4_->getCellConfidenceT(),
+  deepcopyRestore_(ss, "cellConfidenceT", cells4_->getCellConfidenceT(),
                          nCells);
-  deepcopyRestore_<Real>(ss, "cellConfidenceT1", cells4_->getCellConfidenceT1(),
+  deepcopyRestore_(ss, "cellConfidenceT1", cells4_->getCellConfidenceT1(),
                          nCells);
-  deepcopyRestore_<Real>(ss, "colConfidenceT", cells4_->getColConfidenceT(),
+  deepcopyRestore_(ss, "colConfidenceT", cells4_->getColConfidenceT(),
                          loc_.numberOfCols);
-  deepcopyRestore_<Real>(ss, "colConfidenceT", cells4_->getColConfidenceT(),
+  deepcopyRestore_(ss, "colConfidenceT", cells4_->getColConfidenceT(),
                          loc_.numberOfCols);
 }
 
-template <typename T>
 void BacktrackingTMCpp::deepcopySave_(tmSavedState_t &ss, std::string name,
-                                      T *buf, Size count) {
-  std::shared_ptr<T> target(new T[count], std::default_delete<T[]>());
-  fastbuffercopy<T>(target.get(), buf, count);
-  ss[name] = target; // 'target' could be a shared_ptr<Byte> or shared_ptr<Real>
+                                      Byte *buf, Size count) {
+  std::shared_ptr<Byte> target(new Byte[count], std::default_delete<Byte[]>());
+  fastbuffercopy<Byte>(target.get(), buf, count);
+  struct ss_t val;
+  val.Byteptr = target;
+  ss[name] = val;
+}
+void BacktrackingTMCpp::deepcopySave_(tmSavedState_t &ss, std::string name,
+                                      Real *buf, Size count) {
+  std::shared_ptr<Real> target(new Real[count], std::default_delete<Real[]>());
+  fastbuffercopy<Real>(target.get(), buf, count);
+  struct ss_t val;
+  val.Realptr = target;
+  ss[name] = val;
 }
 
-template <typename T>
 void BacktrackingTMCpp::deepcopyRestore_(tmSavedState_t &ss, std::string name,
-                                         T *buf, Size count) {
-  auto source = std::any_cast<std::shared_ptr<T>>(ss[name]);
-  fastbuffercopy<T>(buf, source.get(), count);
+                                         Byte *buf, Size count) {
+  struct ss_t val = ss[name];
+  fastbuffercopy<Byte>(buf, val.Byteptr.get(), count);
+}
+void BacktrackingTMCpp::deepcopyRestore_(tmSavedState_t &ss, std::string name,
+                                         Real *buf, Size count) {
+  struct ss_t val = ss[name];
+  fastbuffercopy<Real>(buf, val.Realptr.get(), count);
 }
 
 template <typename T>
@@ -1136,20 +1148,19 @@ void BacktrackingTMCpp::printCell(Size c, Size i, bool onlyActiveSegments,
     vector<UInt32> segList = cells4_->getNonEmptySegList((UInt)c, (UInt)i);
     out << "Col " << c << ", Cell " << i << " ("
         << (c * loc_.cellsPerColumn + i) << ") : " << nSegs << " segment(s)\n";
-    std::vector<UInt32>::iterator it;
-    for (it = segList.begin(); it != segList.end(); ++it) {
-      Segment &seg = cells4_->getSegment((UInt)c, (UInt)i, *it);
-      bool isActive = _slowIsSegmentActive(seg, "t");
+    for (const auto segIdx : segList) {
+      Segment &seg = cells4_->getSegment((UInt)c, (UInt)i, segIdx);
+      const bool isActive = _slowIsSegmentActive(seg, "t");
       if (!onlyActiveSegments || isActive) {
         snprintf(buff, sizeof(buff), "%sSeg #%-3d %d %c %9.7f (%4d/%-4d) %4d ",
-                 ((isActive) ? "*" : " "), *it, (int)seg.size(),
+                 ((isActive) ? "*" : " "), segIdx, (int)seg.size(),
                  (seg.isSequenceSegment()) ? 'T' : 'F',
                  seg.dutyCycle(cells4_->getNLrnIterations(), false, true),
                  seg.getPositiveActivations(), seg.getTotalActivations(),
                  cells4_->getNLrnIterations() - seg.getLastActiveIteration());
         for (UInt idx = 0; idx < (UInt)seg.size(); idx++) {
-          Size len = sizeof(buff) - strlen(buff);
-          Size srcIdx = seg.getSrcCellIdx(idx);
+          const Size len = sizeof(buff) - strlen(buff);
+          const Size srcIdx = seg.getSrcCellIdx(idx);
           snprintf(buff + strlen(buff), len, "[%2d,%-2d]%4.2f ",
                    (int)_getCellCol(srcIdx), (int)_getCellIdx(srcIdx),
                    seg.getPermanence(idx));
@@ -1451,6 +1462,13 @@ bool BacktrackingTMCpp::tmDiff2(const BacktrackingTMCpp &tm1,
     return false;
   }
   if (checkStates) {
+    if (tm1.getNumCells() != tm2.getNumCells()) {
+      if (verbosity > 0)
+        out << "getNumCells() returns different counts.\n";
+      return false;
+    }
+
+    Size numCells = tm1.getNumCells();
     Byte *state1;
     Byte *state2;
 
@@ -1458,14 +1476,14 @@ bool BacktrackingTMCpp::tmDiff2(const BacktrackingTMCpp &tm1,
     // the cells starts diverging  (infActiveStateT)
     state1 = tm1.getActiveState();
     state2 = tm2.getActiveState();
-    if (memcmp(state1, state2, tm1.getNumCells())) {
+    if (memcmp(state1, state2, numCells)) {
       if (verbosity > 0)
         out << "Active states diverged (infActiveStateT)\n";
       result = false;
     }
     state1 = tm1.getPredictedState();
     state2 = tm2.getPredictedState();
-    if (memcmp(state1, state2, tm1.getNumCells())) {
+    if (memcmp(state1, state2, numCells)) {
       if (verbosity > 0)
         out << "Predicted states diverged (infPredictedStateT)\n";
       result = false;
@@ -1474,14 +1492,14 @@ bool BacktrackingTMCpp::tmDiff2(const BacktrackingTMCpp &tm1,
     if (checkLearn) {
       state1 = tm1.getLearnActiveStateT();
       state2 = tm2.getLearnActiveStateT();
-      if (memcmp(state1, state2, tm1.getNumCells())) {
+      if (memcmp(state1, state2, numCells)) {
         if (verbosity > 0)
           out << "Learn Active states diverged (lrnActiveStateT)\n";
         result = false;
       }
       state1 = tm1.getLearnPredictedStateT();
       state2 = tm2.getLearnPredictedStateT();
-      if (memcmp(state1, state2, tm1.getNumCells())) {
+      if (memcmp(state1, state2, numCells)) {
         if (verbosity > 0)
           out << "Learn Predicted states diverged (lrnPredictedStateT)\n";
         result = false;
@@ -1743,10 +1761,9 @@ BacktrackingTMCpp::getSegmentInfo(bool collectActiveData) const {
                 info.distPermValues[permanence] = 1;
             }
           }
-          Segment &segObj =
-              cells4_->getSegment((UInt)c, (UInt)i, segList[segIdx]);
-          Size age = loc_.iterationIdx - segObj.getLastActiveIteration();
-          Size ageBucket = age / ageBucketSize;
+          const Segment &segObj = cells4_->getSegment((UInt)c, (UInt)i, segList[segIdx]);
+          const Size age = loc_.iterationIdx - segObj.getLastActiveIteration();
+          const Size ageBucket = age / ageBucketSize;
           info.distAges[ageBucket].cnt += 1;
         }
       }
@@ -1756,20 +1773,6 @@ BacktrackingTMCpp::getSegmentInfo(bool collectActiveData) const {
 }
 
 //////////////////  Serialization ///////////////////////
-void BacktrackingTMCpp::saveToFile(std::string filePath) {
-  std::ofstream out(filePath.c_str(),
-                    std::ios_base::out | std::ios_base::binary);
-  out.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-  out.precision(std::numeric_limits<double>::digits10 + 1);
-  out.precision(std::numeric_limits<float>::digits10 + 1);
-  save(out);
-  out.close();
-}
-void BacktrackingTMCpp::loadFromFile(std::string filePath) {
-  std::ifstream in(filePath.c_str(), std::ios_base::in | std::ios_base::binary);
-  load(in);
-  in.close();
-}
 
 // Note: Most parts are saved in binary format. The file
 //       into which this is written must be opened in binary mode.
@@ -1782,6 +1785,7 @@ void BacktrackingTMCpp::save(std::ostream &out) const {
   out << "loc " << sizeof(loc_) << " ";
   out.write((const char *)&loc_, sizeof(loc_));
   out << std::endl;
+  out << outputType_ << std::endl;
 
   out << "CurrentOutput " << nCells << "[";
   out.write((const char*)currentOutput_, nCells * sizeof(UInt));
@@ -1815,10 +1819,11 @@ void BacktrackingTMCpp::load(std::istream &in) {
   NTA_ASSERT(len == sizeof(loc_));
   in.ignore(1);
   in.read((char *)&loc_, len);
+  in >> outputType_;
 
-  NTA_ASSERT(loc_.numberOfCols = cells4_->nColumns());
-  NTA_ASSERT(loc_.cellsPerColumn = cells4_->nCellsPerCol());
-    nCells = cells4_->nCells();
+  NTA_ASSERT(loc_.numberOfCols == cells4_->nColumns());
+  NTA_ASSERT(loc_.cellsPerColumn == cells4_->nCellsPerCol());
+  nCells = cells4_->nCells();
 
   // restore the currentOutput_
   if (currentOutputOwn_ && currentOutput_ == nullptr)

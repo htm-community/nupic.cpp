@@ -27,10 +27,12 @@
 #ifndef NTA_TEMPORAL_MEMORY_HPP
 #define NTA_TEMPORAL_MEMORY_HPP
 
-#include <vector>
-#include <nupic/types/Types.hpp>
-#include <nupic/utils/Random.hpp>
 #include <nupic/algorithms/Connections.hpp>
+#include <nupic/types/Types.hpp>
+#include <nupic/types/Serializable.hpp>
+#include <nupic/utils/Random.hpp>
+#include <vector>
+
 
 using namespace std;
 using namespace nupic;
@@ -62,7 +64,8 @@ namespace nupic {
        * convert a numpy array into a std::vector is to copy it, but you can
        * access a numpy array's internal C array directly.
        */
-      class TemporalMemory {
+    class TemporalMemory : public Serializable
+	  {
       public:
         TemporalMemory();
 
@@ -265,7 +268,7 @@ namespace nupic {
          *
          * @return (int) Number of cells
          */
-        UInt numberOfCells(void);
+        UInt numberOfCells(void) const;
 
         /**
         * Returns the indices of the active cells.
@@ -402,7 +405,7 @@ namespace nupic {
          *
          * @param cell Cell index
          */
-        bool _validateCell(CellIdx cell);
+        bool _validateCell(const CellIdx cell) const;
 
         /**
          * Save (serialize) the current state of the spatial pooler to the
@@ -448,7 +451,7 @@ namespace nupic {
          *
          * @return (int) Column index
          */
-        Int columnForCell(CellIdx cell);
+        UInt columnForCell(const CellIdx cell) const;
 
         /**
          * Print the given UInt array in a nice format

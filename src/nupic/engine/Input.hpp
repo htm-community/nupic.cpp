@@ -157,8 +157,7 @@ namespace nupic
      * @returns
      *         A reference to the data of the input as an @c Array
      */
-    Array &
-    getData();
+    Array& getData();
 
     /**
      *
@@ -167,8 +166,7 @@ namespace nupic
      * @returns
      *         The mutable reference to the Region that the input belongs to
      */
-    Region&
-    getRegion();
+    Region& getRegion();
 
     /**
      *
@@ -177,8 +175,7 @@ namespace nupic
      * @returns
      *         All the Link objects added to the input
      */
-    const std::vector<Link_Ptr_t>&
-    getLinks();
+    const std::vector<Link_Ptr_t>& getLinks();
 
 
 

@@ -24,6 +24,12 @@
  * Algorithms on arrays, dense or sparse. Contains speed-optimized asm
  * code that uses SIMD instructions provided by SSE in x86, only for darwin86
  * so far.
+ *
+ * Notes:
+ *	bind2nd() is depriciated in C++11 and removed in C++17 so
+ *            bind2nd is replaced with C++11 bind(). At some point we may
+ *            want to consider using C++14 generic lambda which they say is faster.
+ *  Compiles under Windows C++17 and Linux C++11.  Asm no used in Windows.
  */
 
 #ifndef NTA_ARRAY_ALGO_HPP
@@ -32,6 +38,7 @@
 #include <math.h>
 #include <iterator>
 #include <algorithm>
+#include <deque>
 
 #if defined(NTA_OS_WINDOWS) && defined(NTA_COMPILER_MSVC)
   #include <array>
@@ -963,6 +970,8 @@ namespace nupic {
   template <typename T1, typename T2>
   inline bool operator==(const std::map<T1,T2>& a, const std::map<T1,T2>& b)
   {
+    if (a.size() != b.size())
+      return false;
     typename std::map<T1,T2>::const_iterator ita = a.begin(), itb = b.begin();
     for (; ita != a.end(); ++ita, ++itb)
       if (ita->first != itb->first || ita->second != itb->second)
@@ -973,6 +982,26 @@ namespace nupic {
   //--------------------------------------------------------------------------------
   template <typename T1, typename T2>
   inline bool operator!=(const std::map<T1,T2>& a, const std::map<T1,T2>& b)
+  {
+    return !(a == b);
+  }
+
+  //--------------------------------------------------------------------------------
+  template <typename T1>
+  inline bool operator==(const std::deque<T1>& a, const std::deque<T1>& b)
+  {
+    if (a.size() != b.size())
+      return false;
+    typename std::deque<T1>::const_iterator ita = a.begin(), itb = b.begin();
+    for (; ita != a.end(); ++ita, ++itb)
+      if (*ita != *itb)
+        return false;
+    return true;
+  }
+
+  //--------------------------------------------------------------------------------
+  template <typename T1>
+  inline bool operator!=(const std::deque<T1>& a, const std::deque<T1>& b)
   {
     return !(a == b);
   }
@@ -3763,7 +3792,7 @@ namespace nupic {
    *
    * Doesn't work on win32.
    */
-  inline auto
+  inline int
   count_gt(nupic::Real32* begin, nupic::Real32* end, nupic::Real32 threshold)
   {
     NTA_ASSERT(begin <= end);
@@ -3904,10 +3933,10 @@ namespace nupic {
       return (int) count;
 
 #else
-      return std::count_if(begin, end, std::bind(std::greater<nupic::Real32>(), _1, threshold));
+      return (int)std::count_if(begin, end, std::bind(std::greater<nupic::Real32>(), _1, threshold));
 #endif
     } else {
-      return std::count_if(begin, end, std::bind(std::greater<nupic::Real32>(), _1, threshold));
+      return (int)std::count_if(begin, end, std::bind(std::greater<nupic::Real32>(), _1, threshold));
     }
   }
 
@@ -3921,12 +3950,12 @@ namespace nupic {
    * that are .astype(float32).
    *
    */
-  inline auto
+  inline int
   count_gte(nupic::Real32* begin, nupic::Real32* end, nupic::Real32 threshold)
   {
     NTA_ASSERT(begin <= end);
 
-    return std::count_if(begin, end,
+    return (int)std::count_if(begin, end,
        std::bind(std::greater_equal<nupic::Real32>(), _1, threshold));
   }
 

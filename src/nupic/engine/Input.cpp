@@ -140,8 +140,7 @@ namespace nupic
     }
   }
 
-  Array &
-  Input::getData()
+  Array &Input::getData()
   {
     NTA_CHECK(initialized_) << "Attempt to access an Input object but it is not initialized.";
     return data_;
@@ -162,7 +161,7 @@ namespace nupic
 
 
 
-  // Called after all links have been created and Output buffers have been allocated. 
+  // Called after all links have been created and Output buffers have been allocated.
   // Now we can calculate our input buffer size and offset and set up any data structures needed
   // for copying data over a link.
 
@@ -174,7 +173,7 @@ namespace nupic
     bool fanIn = (links_.size() > 1);
 
     // Calculate our size and the offset into the Input buffer used by each link.
-    // The first link starts at offset 0 
+    // The first link starts at offset 0
     // The next link starts at offset +  size of its source buffer.
     size_t offset = 0;
     for (std::vector<Link_Ptr_t>::const_iterator l = links_.begin(); l != links_.end(); l++)
