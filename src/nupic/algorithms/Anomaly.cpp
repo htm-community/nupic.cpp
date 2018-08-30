@@ -20,11 +20,11 @@
  * ---------------------------------------------------------------------
  */
 
-#include <vector>
-#include <numeric>
 #include <algorithm>
 #include <iterator>
+#include <numeric>
 #include <set>
+#include <vector>
 
 #include "nupic/algorithms/Anomaly.hpp"
 #include "nupic/utils/Log.hpp"
@@ -32,22 +32,18 @@
 
 using namespace std;
 
-namespace nupic
-{
+namespace nupic {
 
-namespace algorithms
-{
+namespace algorithms {
 
-namespace anomaly
-{
+namespace anomaly {
 
 
 Real computeRawAnomalyScore(const vector<UInt>& active,
                               const vector<UInt>& predicted)
 {
   // Return 0 if no active columns are present
-  if (active.size() == 0)
-  {
+  if (active.size() == 0) {
     return 0.0f;
   }
 
@@ -56,13 +52,11 @@ Real computeRawAnomalyScore(const vector<UInt>& active,
   vector<UInt> predictedActiveCols;
 
   // Calculate and return percent of active columns that were not predicted.
-  set_intersection(active_.begin(), active_.end(),
-                   predicted_.begin(), predicted_.end(),
-                   back_inserter(predictedActiveCols));
+  set_intersection(active_.begin(), active_.end(), predicted_.begin(),
+                   predicted_.end(), back_inserter(predictedActiveCols));
 
   return (active.size() - predictedActiveCols.size()) / Real(active.size());
 }
-
 
 Anomaly::Anomaly(UInt slidingWindowSize, AnomalyMode mode,
                  Real binaryAnomalyThreshold)
@@ -71,8 +65,7 @@ Anomaly::Anomaly(UInt slidingWindowSize, AnomalyMode mode,
   NTA_ASSERT(binaryAnomalyThreshold >= 0 && binaryAnomalyThreshold <= 1)
       << "binaryAnomalyThreshold must be within [0.0,1.0]";
   mode_ = mode;
-  if (slidingWindowSize > 0)
-  {
+  if (slidingWindowSize > 0) {
     movingAverage_.reset(new nupic::util::MovingAverage(slidingWindowSize));
   }
 }
@@ -99,13 +92,11 @@ Real Anomaly::compute(
       break;
   }
 
-  if (movingAverage_)
-  {
+  if (movingAverage_) {
     score = movingAverage_->compute(score);
   }
 
-  if (binaryThreshold_)
-  {
+  if (binaryThreshold_) {
     score = (score >= binaryThreshold_) ? 1.0 : 0.0;
   }
 
