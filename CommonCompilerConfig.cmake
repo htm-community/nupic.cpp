@@ -110,6 +110,10 @@ set(EXTERNAL_LINKER_FLAGS_OPTIMIZED)
 set(EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED)
 set(EXTERNAL_STATICLIB_CONFIGURE_DEFINITIONS_OPTIMIZED)
 
+##### Set parameters
+
+set(INTERNAL_CPP_STANDARD "-std=c++11")
+
 # Identify platform "bitness".
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   set(BITNESS 64)
@@ -117,6 +121,7 @@ else()
   set(BITNESS 32)
 endif()
 
+message(STATUS "INTERNAL_CPP_STANDARD=${INTERNAL_CPP_STANDARD}")
 message(STATUS "CMAKE BITNESS=${BITNESS}")
 
 
@@ -252,7 +257,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
 
 else()
   # LLVM Clang / Gnu GCC
-  set(cxx_flags_unoptimized "${cxx_flags_unoptimized} ${stdlib_cxx} -std=c++17 ")
+  set(cxx_flags_unoptimized "${cxx_flags_unoptimized} ${stdlib_cxx} ${INTERNAL_CPP_STANDARD}")
 
   if (${NUPIC_BUILD_PYEXT_MODULES})
     # Hide all symbols in DLLs except the ones with explicit visibility;

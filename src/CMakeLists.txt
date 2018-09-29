@@ -221,6 +221,8 @@ elseif("${PLATFORM}" STREQUAL "windows")
 endif()
 
 message(STATUS "src_common_os_libs        = ${src_common_os_libs}")
+message(STATUS "src_external_static_libs  = ${src_external_static_libs}")
+message(STATUS "EXTERNAL_INCLUDE_DIRS     = ${EXTERNAL_INCLUDE_DIRS}")
 
 
 #
@@ -317,6 +319,7 @@ add_library(${src_lib_static_nupiccore_solo} STATIC
 add_dependencies(${src_lib_static_nupiccore_solo}
                  ${YAML_CPP_STATIC_LIB_TARGET}
                  ${YAML_STATIC_LIB_TARGET}
+		 ${BOOST_FILESYSTEM_STATIC_LIB_TARGET}
 		 )
 set_target_properties(${src_lib_static_nupiccore_solo} PROPERTIES COMPILE_FLAGS
                       ${src_lib_static_nupiccore_compile_flags})
@@ -338,11 +341,7 @@ include(src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
 
 set(src_lib_static_nupiccore_combined nupic_core)
 
-set(src_external_static_libs
-    
-    ${YAML_CPP_STATIC_LIB_TARGET}
-    ${YAML_STATIC_LIB_TARGET}
-   )
+
 
 set(src_combined_nupiccore_source_archives
     ${src_lib_static_nupiccore_solo}

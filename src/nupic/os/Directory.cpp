@@ -25,7 +25,6 @@
 
 #include <string>
 #include <algorithm>
-#include <chrono>   // for sleep_for()
 #include <thread>
 
 #include <nupic/os/Directory.hpp>  // defines namespace fs
@@ -34,7 +33,6 @@
 #include <nupic/utils/Log.hpp>
 
 
-using namespace std::literals::chrono_literals;
 
 
 namespace nupic {
@@ -97,7 +95,7 @@ bool removeTree(const std::string &path, bool noThrow) {
   if (fs::exists(path)) {
     if (fs::is_directory(path, ec)) {
       fs::remove_all(path, ec);
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));  // need a yield.
+	  std::this_thread::yield();
     }
     if (!noThrow) {
       NTA_CHECK(!ec) << "removeTree: " << ec.message();
@@ -131,8 +129,13 @@ void create(const std::string &path, bool otherAccess, bool recursive) {
   }
   // Set permissions on directory.
 #if !defined(NTA_OS_WINDOWS)
+#ifdef USE_BOOST_FILESYSTEM
+  fs::perms prms(fs::perms::owner_all
+    | (otherAccess ? (fs::perms::group_all | fs::perms::others_read | fs::perms::others_exe) : fs::perms::no_perms));
+#else
   fs::perms prms(fs::perms::owner_all
     | (otherAccess ? (fs::perms::group_all | fs::perms::others_read | fs::perms::others_exec) : fs::perms::none));
+#endif
   fs::permissions(p, prms);
 #endif
 }
@@ -150,7 +153,7 @@ Iterator::Iterator(const std::string &path) {
 }
 void Iterator::reset() { current_ = fs::directory_iterator(p_); }
 Entry * Iterator::next(Entry & e) {
-  std::error_code ec;
+  er::error_code ec;
   if (current_ == end_)  return nullptr;
   e.type = (fs::is_directory(current_->path(), ec)) ? Entry::DIRECTORY :
            (fs::is_regular_file(current_->path(), ec)) ? Entry::FILE :

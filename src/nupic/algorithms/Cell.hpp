@@ -255,3 +255,4 @@ public:
 } // namespace algorithms
 } // namespace nupic
 #endif // NTA_CELL_HPP
+

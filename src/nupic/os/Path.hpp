@@ -241,6 +241,9 @@ private:
 Path operator/(const Path & p1, const Path & p2);
 Path operator/(const std::string & p1, const Path & p2);
 Path operator/(const Path & p1, const std::string & p2);
+Path operator+(const Path & p1, const Path & p2);
+Path operator+(const std::string & p1, const Path & p2);
+Path operator+(const Path & p1, const std::string & p2);
 
 } // namespace nupic
 

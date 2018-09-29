@@ -1,7 +1,7 @@
 FROM ubuntu:14.04
 
 RUN apt-get update && \
-    apt-get install -y \
+    boost install -y \
     curl \
     wget \
     git-core \
@@ -34,6 +34,5 @@ RUN pip install \
         --cache-dir /usr/local/src/nupic.core/pip-cache \
         --build /usr/local/src/nupic.core/pip-build \
         --no-clean \
-        pycapnp==0.6.3 \
         -r bindings/py/requirements.txt && \
     python setup.py bdist bdist_dumb bdist_wheel sdist

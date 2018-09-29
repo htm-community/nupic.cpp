@@ -30,6 +30,7 @@
 #include <nupic/utils/StringUtils.hpp>  // for trim
 
 #include <codecvt>
+#include <algorithm> // replace()
 #include <sstream>
 #include <string>
 #include <iterator>
@@ -130,10 +131,10 @@ std::string Path::normalize(const std::string &path) {
   if (trimmed_path.empty()) return ".";
   std::replace(trimmed_path.begin(), trimmed_path.end(), '\\', '/'); // in-place replace
   fs::path p(trimmed_path);
-//  p = p.lexically_normal();
-//  if (p.string().back() == Path::sep[0])
-//    p = p.parent_path(); // remove trailing sep if not root
-//  return p.string();
+  //  p = p.lexically_normal();
+  //  if (p.string().back() == Path::sep[0])
+  //    p = p.parent_path(); // remove trailing sep if not root
+  //  return p.string();
 
   std::vector<std::string> normal_p;
   // iterate the path and build a list of path elements.
@@ -165,15 +166,19 @@ std::string Path::makeAbsolute(const std::string &path) {
 }
 
 std::string Path::getParent(std::string path) {
+  //std::cerr << "Initial Path " << path << std::endl;
   path = normalize(path);
+  //std::cerr << "Normalized Path " << path << std::endl;
   if (path.empty() || path == ".") return "..";
   if (path.length() >= 2 && path.substr(path.length() - 2) == "..") {
     return (path + std::string(Path::sep) + "..");
   }
   fs::path p(path);
+  if (p.root_path() == p) return p.string();
   if (p.string().back() == Path::sep[0])
     p = p.parent_path(); // remove trailing sep if not root
   p = p.parent_path();
+  //std::cerr << "Parent Path " << p << std::endl;
   if (p.empty())
     return ".";
   return p.string();
@@ -181,13 +186,20 @@ std::string Path::getParent(std::string path) {
 
 
 std::string Path::getBasename(const std::string &path) {
-  if (path.empty()) return path;
-  fs::path p(path);
-  if (p.has_filename()) {
-    std::string name = p.filename().string();
-    return name;
+  std::string name = "";
+  if (!path.empty()) {
+    char last_ch = path[path.length() - 1];
+    if (last_ch == '/' || last_ch == '\\')
+      name = ".";
+    else {
+      fs::path p(path);
+      if (p.has_filename())
+        name = p.filename().string();
+    }
   }
-  return "";
+  //std::cerr << "Basename of " << path << " is " << name << std::endl;
+
+  return name;
 }
 
 
@@ -351,5 +363,8 @@ std::string Path::getExecutablePath()
 Path operator/(const Path & p1, const Path & p2) { return Path(std::string(*p1) + Path::sep + std::string(*p2)); }
 Path operator/(const std::string & p1, const Path & p2) { return Path(p1 + Path::sep + std::string(*p2)); }
 Path operator/(const Path & p1, const std::string & p2) { return Path(std::string(*p1) + Path::sep + p2); }
+Path operator+(const Path & p1, const Path & p2) { return Path(std::string(*p1) + std::string(*p2)); }
+Path operator+(const std::string & p1, const Path & p2) { return Path(p1 + std::string(*p2)); }
+Path operator+(const Path & p1, const std::string & p2) { return Path(std::string(*p1) + p2); }
 
 } // namespace nupic

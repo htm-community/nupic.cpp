@@ -190,7 +190,7 @@ TEST_F(PathTest, getBasename)
   EXPECT_STREQ(a.getBasename().c_str(), "1.txt");
 
   EXPECT_TRUE(Path("bar") == Path::getBasename("/foo/bar")) << "basename1";
-  EXPECT_TRUE(Path("") == Path::getBasename("/foo/bar/")) << "basename2";
+  EXPECT_TRUE(Path(".") == Path::getBasename("/foo/bar/")) << "basename2";
   EXPECT_TRUE(Path("bar.ext") == Path::getBasename("/this is a long dir / foo$/bar.ext")) << "basename3";
 }
 

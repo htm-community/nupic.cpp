@@ -34,29 +34,41 @@
 //    GCC 7 has <experimental/filesystem>, link with -libc++experimental or -lstdc++fs
 //    GCC 8 has <filesystem>   link with -lstdc++fs
 //    GCC 9   expected to support <filesystem>
+//    Clang 4 (XCode10) has no support for <filesystem>, partial C++17
 //    Clang 5 has complete <filesystem> support for C++17
 //    Visual Studio 2017 15.7 supports <filesystem> with C++17
 //    MinGW has no support for filesystem.
 //
-// determine if we have std::filesystem.
-// If not, use std::experimental::filesystem.
-// If we cannot find that, try boost::filesystem
-// For the boost version link with boost system, filesystem libraries.
-#if __has_include ( <filesystem> )
-  #include <filesystem>
-  namespace fs = std::filesystem;
-  namespace er = std;
+// If >= C++17 then
+//   use std::filesystem, if it exists
+//   else, use std::experimental::filesystem if it exists.
+//   else, use boost::filesystem
+// else use boost::filesystem
+// Note: For the boost version link with boost system, filesystem libraries.
+#if __cplusplus >= 201703L || (defined(_MSC_VER) && _MSC_VER >= 1914)
+  // C++17 or greater
+  #if __has_include ( <filesystem> )
+    #include <filesystem>
+    namespace fs = std::filesystem;
+    namespace er = std;
+  #else
+    #if __has_include ( <experimental/filesystem> )
+      #include <experimental/filesystem>
+      namespace fs = std::experimental::filesystem;
+      namespace er = std;
+    #else
+      #include <boost/filesystem.hpp>
+      namespace fs = boost::filesystem;
+      namespace er = boost::system;
+      #define USE_BOOST_FILESYSTEM 1
+    #endif
+  #endif
 #else
-#if __has_include ( <experimental/filesystem> )
-  #include <experimental/filesystem>
-  namespace fs = std::experimental::filesystem;
-  namespace er = std;
-#else
+  // C++11
   #include <boost/filesystem.hpp>
   namespace fs = boost::filesystem;
   namespace er = boost::system;
   #define USE_BOOST_FILESYSTEM 1
-#endif
 #endif
 
 //----------------------------------------------------------------------

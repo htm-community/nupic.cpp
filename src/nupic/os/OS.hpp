@@ -134,3 +134,4 @@ public:
 } // namespace nupic
 
 #endif // NTA_OS_HPP
+

@@ -59,10 +59,12 @@ void Cell::setSegmentOrder(bool matchPythonOrder) {
  * allocated ones that have been previously "freed" (but we kept
  * the memory allocated), or by allocating a new one.
  */
-UInt Cell::getFreeSegment(const Segment::InSynapses &synapses,
-                          Real initFrequency, bool sequenceSegmentFlag,
-                          Real permConnected, UInt iteration) {
-  NTA_ASSERT(!synapses.empty());
+UInt Cell::getFreeSegment(const Segment::InSynapses& synapses,
+                    Real initFrequency,
+                    bool sequenceSegmentFlag,
+                    Real permConnected,
+                    UInt iteration) {
+  NTA_ASSERT(! synapses.empty());
 
   UInt segIdx = 0;
 
@@ -114,7 +116,6 @@ void Cell::updateDutyCycle(UInt iterations) {
 
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
 void Cell::save(std::ostream &outStream) const {
   outStream << _segments.size() << ' ';
   // TODO: save only non-empty segments

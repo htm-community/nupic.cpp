@@ -82,6 +82,13 @@ include(CommonCompilerConfig)
 # Set up builds of external dependencies and get their exports.
 # (see individual external/*.cmake modules for exported settings and functions)
 add_subdirectory(external)
+set(src_external_static_libs
+    
+    ${YAML_CPP_STATIC_LIB_TARGET}
+    ${YAML_STATIC_LIB_TARGET}
+    ${BOOST_SYSTEM_STATIC_LIB_TARGET}
+    ${BOOST_FILESYSTEM_STATIC_LIB_TARGET}
+   )
 include_directories(SYSTEM ${EXTERNAL_INCLUDE_DIRS})
 
 # Now build nupic_core project.

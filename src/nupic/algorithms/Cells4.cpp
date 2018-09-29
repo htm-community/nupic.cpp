@@ -30,16 +30,14 @@
 #include <sstream>
 #include <vector>
 
-#include "cycle_counter.hpp"
 #include <assert.h>
 #include <cstring>
 #include <map>
 #include <nupic/algorithms/Cell.hpp>
 #include <nupic/algorithms/Cells4.hpp>
 #include <nupic/algorithms/SegmentUpdate.hpp>
-#include <nupic/math/ArrayAlgo.hpp> // is_in
+#include <nupic/math/ArrayAlgo.hpp> // is_in, deque and vector ( ==, <<, >>)
 #include <nupic/math/StlIo.hpp>     // binary_save
-#include <nupic/os/FStream.hpp>
 #include <nupic/os/Timer.hpp>
 #include <nupic/utils/Log.hpp>
 
@@ -67,13 +65,23 @@ static nupic::Timer chooseCellsTimer;
 
 #endif
 
-Cells4::Cells4(UInt nColumns, UInt nCellsPerCol, UInt activationThreshold,
-               UInt minThreshold, UInt newSynapseCount,
-               UInt segUpdateValidDuration, Real permInitial,
-               Real permConnected, Real permMax, Real permDec, Real permInc,
-               Real globalDecay, bool doPooling, int seed, bool initFromCpp,
-               bool checkSynapseConsistency)
-    : _rng(seed < 0 ? rand() : seed) {
+Cells4::Cells4(      UInt nColumns,
+			         UInt nCellsPerCol,
+                     UInt activationThreshold,
+                     UInt minThreshold,
+                     UInt newSynapseCount,
+                     UInt segUpdateValidDuration,
+                     Real permInitial,
+                     Real permConnected,
+                     Real permMax,
+                     Real permDec,
+                     Real permInc,
+                     Real globalDecay,
+                     bool doPooling,
+                     int seed,
+                     bool initFromCpp,
+                     bool checkSynapseConsistency)
+  : _rng(seed < 0 ? rand() : seed) {
   _version = VERSION;
   _ownsMemory = true;
   _cellConfidenceT  = nullptr;
@@ -904,6 +912,7 @@ void Cells4::updateLearningState(const std::vector<UInt> &activeColumns,
   }
   _learnedSeqLength++;
 
+  // =========================================================================
   // Phase 1 - turn on predicted cells in each column receiving bottom-up
 
   //---------------------------------------------------------------------------
@@ -978,6 +987,7 @@ void Cells4::updateLearningState(const std::vector<UInt> &activeColumns,
 
   // Done computing active state
 
+  // =========================================================================
   // Phase 2 - Compute new predicted state. When computing predictions for
   // phase 2, we predict at  most one cell per column (the one with the best
   // matching segment).
