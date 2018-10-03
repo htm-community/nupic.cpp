@@ -22,9 +22,12 @@
 cmake_minimum_required(VERSION 3.3)
 project(nupic_core CXX)
 
-set(CMAKE_VERBOSE_MAKEFILE OFF)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 include(GNUInstallDirs)
 
+message(STATUS "----- external -----")
+message(STATUS "REPOSITORY_DIR = ${REPOSITORY_DIR}")
+message(STATUS "EP_BASE    = ${EP_BASE}")
 set_directory_properties(PROPERTIES EP_BASE "${EP_BASE}")
 
 # Shorter aliases for static library prefix and suffix.
@@ -37,32 +40,31 @@ set(INCLUDE_PRE ${EP_BASE}/Install/include)
 # The full prefix path for binaries.
 set(BIN_PRE ${EP_BASE}/Install/bin)
 
-include(ExternalProject)
+
+# Identify platform name.
+string(TOLOWER ${CMAKE_SYSTEM_NAME} PLATFORM)
+
+# Define a platform suffix, eg ${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}
+if (MSYS OR MINGW)
+  set(PLATFORM_SUFFIX -gcc)
+endif()
+
+set(INTERNAL_CPP_STANDARD "c++11")
+
+
+# Determine common toolchain settings, compiler and link flags
+include(${REPOSITORY_DIR}/CommonCompilerConfig.cmake)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
+include(ExternalProject)
 
 include(Swig)
 
-include(YamlLib)
-set(YAML_STATIC_LIB_TARGET ${YAML_STATIC_LIB_TARGET} PARENT_SCOPE)
-
 include(YamlCppLib)
-set(YAML_CPP_STATIC_LIB_TARGET ${YAML_CPP_STATIC_LIB_TARGET} PARENT_SCOPE)
-set(YAML_CPP_STATIC_LIB_INC_DIR ${YAML_CPP_STATIC_LIB_INC_DIR} PARENT_SCOPE)
-list(APPEND EXTERNAL_INCLUDE_DIRS ${YAML_CPP_STATIC_LIB_INC_DIR})
 
-include(Boost)
-set(BOOST_SYSTEM_STATIC_LIB_TARGET     ${BOOST_SYSTEM_STATIC_LIB_TARGET} PARENT_SCOPE)
-set(BOOST_FILESYSTEM_STATIC_LIB_TARGET ${BOOST_FILESYSTEM_STATIC_LIB_TARGET} PARENT_SCOPE)
-set(BOOST_ROOT ${BOOST_ROOT} PARENT_SCOPE)
-set(Boost_INCLUDE_DIR ${Boost_INCLUDE_DIR} PARENT_SCOPE)
-set(Boost_LIBRARIES ${Boost_LIBRARIES} PARENT_SCOPE)
-set(Boost_LIBRARY_DIRS ${Boost_LIBRARY_DIRS} PARENT_SCOPE)
-list(APPEND EXTERNAL_INCLUDE_DIRS ${Boost_INCLUDE_DIR})
-
-# Add vendored prebuilt library include paths.
-list(APPEND EXTERNAL_INCLUDE_DIRS
-     "${PROJECT_SOURCE_DIR}/common/include")
+if(${NEEDS_BOOST})
+    include(Boost)
+endif()
 
 
-set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} PARENT_SCOPE)
+

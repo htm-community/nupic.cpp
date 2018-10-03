@@ -35,17 +35,17 @@ void setUpSegment(Segment &segment, vector<UInt> &inactiveSegmentIndices,
                   vector<UInt> &activeSegmentIndices,
                   vector<UInt> &activeSynapseIndices,
                   vector<UInt> &inactiveSynapseIndices) {
-  vector<double> permanences = {0.2, 0.9, 0.9, 0.7, 0.4,  // active synapses
-                                0.8, 0.1, 0.2, 0.3, 0.2}; // inactive synapses
+  vector<float> permanences = {0.2f, 0.9f, 0.9f, 0.7f, 0.4f,  // active synapses
+                               0.8f, 0.1f, 0.2f, 0.3f, 0.2f}; // inactive synapses
 
   set<UInt> srcCells;
-  for (UInt i = 0; i < permanences.size(); i++) {
+  for (Size i = 0; i < permanences.size(); i++) {
     srcCells.clear();
     srcCells.insert(i);
 
-    segment.addSynapses(srcCells, permanences[i], 0.5);
+    segment.addSynapses(srcCells, permanences[i], 0.5f);
 
-    if (i < 5) {
+    if (i < 5u) {
       inactiveSegmentIndices.push_back(i);
       inactiveSynapseIndices.push_back(0);
     } else {
@@ -71,15 +71,15 @@ TEST(SegmentTest, freeNSynapsesInactiveFirst) {
   setUpSegment(segment, inactiveSegmentIndices, activeSegmentIndices,
                activeSynapseIndices, inactiveSynapseIndices);
 
-  ASSERT_EQ(segment.size(), 10);
+  ASSERT_EQ(segment.size(), 10u);
 
   segment.freeNSynapses(2, inactiveSynapseIndices, inactiveSegmentIndices,
                         activeSynapseIndices, activeSegmentIndices, removed, 0,
-                        10, 1.0);
+                        10, 1.0f);
 
-  ASSERT_EQ(segment.size(), 8);
+  ASSERT_EQ(segment.size(), 8u);
 
-  vector<UInt> removed_expected = {0, 4};
+  vector<UInt> removed_expected = {0u, 4u};
   sort(removed.begin(), removed.end());
   ASSERT_EQ(removed, removed_expected);
 }
@@ -101,13 +101,13 @@ TEST(SegmentTest, freeNSynapsesActiveFallback) {
   setUpSegment(segment, inactiveSegmentIndices, activeSegmentIndices,
                activeSynapseIndices, inactiveSynapseIndices);
 
-  ASSERT_EQ(segment.size(), 10);
+  ASSERT_EQ(segment.size(), 10u);
 
   segment.freeNSynapses(6, inactiveSynapseIndices, inactiveSegmentIndices,
                         activeSynapseIndices, activeSegmentIndices, removed, 0,
                         10, 1.0);
 
-  vector<UInt> removed_expected = {0, 1, 2, 3, 4, 6};
+  vector<UInt> removed_expected = {0u, 1u, 2u, 3u, 4u, 6u};
   sort(removed.begin(), removed.end());
   ASSERT_EQ(removed, removed_expected);
 }
@@ -128,13 +128,13 @@ TEST(SegmentTest, freeNSynapsesStableSort) {
   setUpSegment(segment, inactiveSegmentIndices, activeSegmentIndices,
                activeSynapseIndices, inactiveSynapseIndices);
 
-  ASSERT_EQ(segment.size(), 10);
+  ASSERT_EQ(segment.size(), 10u);
 
   segment.freeNSynapses(7, inactiveSynapseIndices, inactiveSegmentIndices,
                         activeSynapseIndices, activeSegmentIndices, removed, 0,
-                        10, 1.0);
+                        10, 1.0f);
 
-  vector<UInt> removed_expected = {0, 1, 2, 3, 4, 6, 7};
+  vector<UInt> removed_expected = {0u, 1u, 2u, 3u, 4u, 6u, 7u};
   sort(removed.begin(), removed.end());
   ASSERT_EQ(removed, removed_expected);
 }

@@ -36,15 +36,15 @@ namespace {
  */
 TEST(SegmentMatrixAdapterTest, addRows) {
   SegmentMatrixAdapter<SparseMatrix<>> ssm(2048, 1000);
-  EXPECT_EQ(0, ssm.matrix.nRows());
+  EXPECT_EQ(0u, ssm.matrix.nRows());
 
   ssm.createSegment(42);
-  EXPECT_EQ(1, ssm.matrix.nRows());
+  EXPECT_EQ(1u, ssm.matrix.nRows());
 
-  UInt32 cells[] = {42, 43, 44};
+  UInt32 cells[] = {42u, 43u, 44u};
   UInt32 segmentsOut[3];
   ssm.createSegments(cells, cells + 3, segmentsOut);
-  EXPECT_EQ(4, ssm.matrix.nRows());
+  EXPECT_EQ(4u, ssm.matrix.nRows());
 }
 
 /**
@@ -62,7 +62,7 @@ TEST(SegmentMatrixAdapterTest, noRowLeaks) {
   UInt32 cells1[] = {42, 43, 44, 45, 46};
   vector<UInt32> created(5);
   ssm.createSegments(cells1, cells1 + 5, created.data());
-  ASSERT_EQ(5, ssm.matrix.nRows());
+  ASSERT_EQ(5u, ssm.matrix.nRows());
 
   // Destroy 3 segments, covering both destroy APIs
   ssm.destroySegment(created[1]);
@@ -79,7 +79,7 @@ TEST(SegmentMatrixAdapterTest, noRowLeaks) {
   UInt32 segmentsOut[3];
   ssm.createSegments(cells2, cells2 + 3, segmentsOut);
 
-  EXPECT_EQ(6, ssm.matrix.nRows());
+  EXPECT_EQ(6u, ssm.matrix.nRows());
 }
 
 /**
@@ -128,11 +128,19 @@ TEST(SegmentMatrixAdapterTest, sortSegmentsByCell) {
   UInt32 segment4 = ssm.createSegment(45);
   UInt32 segment5 = ssm.createSegment(0);
   UInt32 segment6 = ssm.createSegment(2047);
-  const vector<UInt32> sorted = {segment5, segment2, segment1,
-                                 segment4, segment3, segment6};
+  const vector<UInt32> sorted = {  segment5,
+                                   segment2,
+                                   segment1,
+                                   segment4,
+                                   segment3,
+                                   segment6};
 
-  vector<UInt32> mySegments = {segment1, segment2, segment3,
-                               segment4, segment5, segment6};
+  vector<UInt32> mySegments = {  segment1,
+                                 segment2,
+                                 segment3,
+                                 segment4,
+                                 segment5,
+                                 segment6};
   ssm.sortSegmentsByCell(mySegments.begin(), mySegments.end());
 
   EXPECT_EQ(sorted, mySegments);
@@ -149,24 +157,31 @@ TEST(SegmentMatrixAdapterTest, filterSegmentsByCell) {
   const vector<UInt32> cellsWithSegments = {47, 42, 46, 43, 42, 48, 42};
 
   vector<UInt32> createdSegments(cellsWithSegments.size());
-  ssm.createSegments(cellsWithSegments.begin(), cellsWithSegments.end(),
+  ssm.createSegments(cellsWithSegments.begin(),
+                     cellsWithSegments.end(),
                      createdSegments.begin());
   ssm.sortSegmentsByCell(createdSegments.begin(), createdSegments.end());
 
   // Include everything
   const vector<UInt32> everything = {42, 42, 42, 43, 46, 47, 48};
   EXPECT_EQ(createdSegments, ssm.filterSegmentsByCell(
-                                 createdSegments.begin(), createdSegments.end(),
-                                 everything.begin(), everything.end()));
+                                 createdSegments.begin(),
+								 createdSegments.end(),
+                                 everything.begin(),
+								 everything.end()));
 
   // Subset, one cell with multiple segments
   const vector<UInt32> subset1 = {42, 43, 48};
-  const vector<UInt32> expected1 = {createdSegments[0], createdSegments[1],
-                                    createdSegments[2], createdSegments[3],
+  const vector<UInt32> expected1 = {createdSegments[0],
+                                    createdSegments[1],
+                                    createdSegments[2],
+									createdSegments[3],
                                     createdSegments[6]};
   EXPECT_EQ(expected1, ssm.filterSegmentsByCell(
-                           createdSegments.begin(), createdSegments.end(),
-                           subset1.begin(), subset1.end()));
+                                    createdSegments.begin(),
+									createdSegments.end(),
+                                    subset1.begin(),
+									subset1.end()));
 
   // Subset, some cells without segments
   const vector<UInt32> subset2 = {43, 44, 45, 48};

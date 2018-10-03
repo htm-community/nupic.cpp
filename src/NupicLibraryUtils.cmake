@@ -131,7 +131,7 @@ function(MERGE_STATIC_LIBRARIES LIB_TARGET STATIC_LIBS)
              -DLIST_SEPARATOR=${lib_locations_separator}
              -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"
              -DCMAKE_AR="${CMAKE_AR}"
-             -P ${CMAKE_SOURCE_DIR}/src/CombineUnixArchives.cmake
+             -P ${REPOSITORY_DIR}/src/CombineUnixArchives.cmake
       COMMENT "Combining ${target_location_gen} for target ${LIB_TARGET} from ${static_lib_locations}."
     )
 

@@ -405,7 +405,7 @@ TEST_F(ArrayTest, testBufferAssignment) {
           testCase->first +
           " - setting a buffer when one is already set should not raise an "
           "exception";
-    ASSERT_EQ(a.getCount(), testCase->second.allocationSize)
+    ASSERT_EQ(a.getCount(), (size_t)testCase->second.allocationSize)
         << "Buffer size should be the requested amount.";
   }
 }

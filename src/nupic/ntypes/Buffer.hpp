@@ -69,7 +69,7 @@ typedef std::vector<nupic::IReadBuffer *> ReadBufferVec;
  */
 class ReadBuffer : public IReadBuffer, public NTA_ReadBuffer {
 public:
-  ReadBuffer(const Byte *value, Size size, bool copy = true);
+  ReadBuffer(const nupic::Byte *value, Size size, bool copy = true);
   ReadBuffer(const ReadBuffer &);
   ReadBuffer &operator=(const ReadBuffer &);
   void assign(const ReadBuffer &);
@@ -93,9 +93,11 @@ public:
   Int32 read(Real64 *value, Size size) const override;
   Int32 read(bool &value) const override;
   Int32 read(bool *value, Size size) const override;
-  Int32 readString(NTA_Byte *&value, NTA_UInt32 &size,
-                   NTA_Byte *(*fAlloc)(NTA_UInt32 size) = nullptr,
-                   void (*fDealloc)(NTA_Byte *) = nullptr) const override;
+  Int32 readString(Byte *&value,
+                   UInt32 &size,
+                   Byte *(*fAlloc)(UInt32 size) = nullptr,
+                   void (*fDealloc)(Byte *) = nullptr
+				   ) const override;
 
   template <typename T> Int32 readT(T &value) const {
     ReadBuffer *r = const_cast<ReadBuffer *>(this);
@@ -125,7 +127,7 @@ public:
   }
 
 private:
-  boost::shared_array<Byte> bytes_;
+  std::shared_ptr<char> bytes_;
   mutable IMemStream memStream_;
 };
 

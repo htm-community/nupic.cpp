@@ -43,7 +43,7 @@ VectorFileEffector::VectorFileEffector(const ValueMap &params, Region *region)
     : RegionImpl(region), dataIn_(NTA_BasicType_Real32), filename_(""),
       outFile_(nullptr) {
   if (params.contains("outputFile"))
-    filename_ = *params.getString("outputFile");
+    filename_ = params.getString("outputFile");
   else
     filename_ = "";
 }

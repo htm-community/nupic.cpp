@@ -33,7 +33,7 @@
 #include <iomanip>
 #include <vector>
 
-#include <boost/unordered_set.hpp>
+#include <unordered_set>
 
 #include <nupic/math/ArrayAlgo.hpp>
 #include <nupic/math/Math.hpp>
@@ -112,11 +112,7 @@ struct SparseMatrixAlgorithms;
 template <typename UI = nupic::UInt32, typename Real_stor = nupic::Real32,
           typename I = nupic::Int32, typename Real_prec = nupic::Real64,
           typename DTZ = nupic::DistanceToZero<Real_stor>>
-class SparseMatrix
-{
-  // TODO find boost config flag to enable ullong as UnsignedInteger
-  // BOOST_CLASS_REQUIRE(UI, boost, UnsignedIntegerConcept);
-  // BOOST_CLASS_REQUIRE(I, boost, SignedIntegerConcept);
+class SparseMatrix {
 
 public:
   typedef UI size_type;              // unsigned integral for sizes
@@ -928,7 +924,8 @@ protected:
    *   @li Columns must be sorted
    */
   template <typename InputIterator>
-  inline size_type nZerosInRowOnColumns_(size_type row, InputIterator col_begin,
+  inline size_type nZerosInRowOnColumns_(size_type row,
+                                         InputIterator col_begin,
                                          InputIterator col_end) {
     { // Pre-conditions
       ASSERT_INPUT_ITERATOR(InputIterator);
@@ -979,10 +976,13 @@ protected:
    */
   template <typename InputIterator, typename Random>
   inline void
-  insertRandomNonZerosIntoColumns_(size_type row, InputIterator col_begin,
-                                   InputIterator col_end, size_type numToInsert,
+  insertRandomNonZerosIntoColumns_(size_type row,
+                                   InputIterator col_begin,
+                                   InputIterator col_end,
+								   size_type numToInsert,
                                    size_type numZerosAvailable,
-                                   value_type value, Random &rng) {
+                                   value_type value,
+								   Random &rng) {
     { // Pre-conditions
       ASSERT_INPUT_ITERATOR(InputIterator);
       NTA_ASSERT(numToInsert <= numZerosAvailable);
@@ -1109,13 +1109,13 @@ public:
         nz_mem_(nullptr), ind_(nullptr), nz_(nullptr), indb_(nullptr),
         nzb_(nullptr), isZero_() {
     { // Pre-conditions
-      NTA_CHECK(nrows >= 0)
-          << "SparseMatrix::SparseMatrix(nrows, ncols): "
-          << "Invalid number of rows: " << nrows << " - Should be >= 0";
+      NTA_CHECK(nrows >= 0) << "SparseMatrix::SparseMatrix(nrows, ncols): "
+                            << "Invalid number of rows: " << nrows
+                            << " - Should be >= 0";
 
-      NTA_CHECK(ncols >= 0)
-          << "SparseMatrix::SparseMatrix(nrows, ncols): "
-          << "Invalid number of columns: " << ncols << " - Should be >= 0";
+      NTA_CHECK(ncols >= 0) << "SparseMatrix::SparseMatrix(nrows, ncols): "
+                            << "Invalid number of columns: " << ncols
+                            << " - Should be >= 0";
     } // End pre-conditions
 
     allocate_(nrows, ncols);
@@ -1210,8 +1210,17 @@ public:
   inline SparseMatrix(const SparseMatrix &other, InputIterator take,
                       InputIterator take_end,
                       int rowCol = 1) // cols
-      : nrows_(0), nrows_max_(0), ncols_(0), nnzr_(0), ind_mem_(0), nz_mem_(0),
-        ind_(0), nz_(0), indb_(0), nzb_(0), isZero_() {
+      : nrows_(0),
+        nrows_max_(0),
+        ncols_(0),
+        nnzr_(0),
+        ind_mem_(0),
+        nz_mem_(0),
+        ind_(0),
+        nz_(0),
+        indb_(0),
+        nzb_(0),
+        isZero_() {
     { // Pre-conditions
       NTA_ASSERT(rowCol == 0 || rowCol == 1)
           << "SparseMatrix: constructor from set of rows/cols: "
@@ -1655,10 +1664,11 @@ public:
    *  @li O(number of nonzeros on the specified rows)
    */
   template <typename InputIterator, typename OutputIterator>
-  inline void
-  nNonZerosPerRowOnCols(InputIterator rows_begin, InputIterator rows_end,
-                        InputIterator cols_begin, InputIterator cols_end,
-                        OutputIterator out_begin) const {
+  inline void nNonZerosPerRowOnCols(InputIterator rows_begin,
+                                    InputIterator rows_end,
+                                    InputIterator cols_begin,
+                                    InputIterator cols_end,
+                                    OutputIterator out_begin) const {
     { // Pre-conditions
       assert_valid_row_it_range_(rows_begin, rows_end, "nNonZerosPerRowOnCols");
       assert_valid_sorted_index_range_(nCols(), cols_begin, cols_end,
@@ -3512,11 +3522,11 @@ public:
               << "SparseMatrix::deleteCols(): "
               << "Invalid column index: " << *d
               << " - Col indices should be between 0 and " << nCols();
-          NTA_ASSERT(*d < *d_next)
-              << "SparseMatrix::deleteCols(): "
-              << "Invalid column indices " << *d << " and " << *d_next
-              << " - Col indices need to be passed "
-              << "in strictly increasing order";
+          NTA_ASSERT(*d < *d_next) << "SparseMatrix::deleteCols(): "
+                                   << "Invalid column indices " << *d << " and "
+                                   << *d_next
+                                   << " - Col indices need to be passed "
+                                   << "in strictly increasing order";
           ++d;
           ++d_next;
         }
@@ -4451,7 +4461,7 @@ public:
         }
       }
 
-      const size_type nnzr = indb_it - indb_;
+      const size_type nnzr = static_cast<size_type>(indb_it - indb_);
 
       if (nnzr > nnzr_[*row]) {
         // It changed. Commit the changes.
@@ -4657,9 +4667,13 @@ public:
       size_type numActualNewNonZeros =
           std::min(numDesiredNewNonZeros, numZeros);
       if (numActualNewNonZeros > 0) {
-        insertRandomNonZerosIntoColumns_(*row, col_begin, col_end,
+        insertRandomNonZerosIntoColumns_(*row,
+		                                 col_begin,
+										 col_end,
                                          (size_type)numActualNewNonZeros,
-                                         numZeros, initialValue, rng);
+                                         numZeros,
+										 initialValue,
+										 rng);
       }
     }
   }
@@ -5392,7 +5406,7 @@ public:
       // check that column indices in strictly increasing order
     }
 
-    boost::unordered_set<size_type> skip(it, end);
+    std::unordered_set<size_type> skip(it, end);
 
     ITERATE_ON_ALL_ROWS {
       size_type k = 0;

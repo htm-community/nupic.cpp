@@ -35,38 +35,50 @@
 #include <set>
 #include <vector>
 
-#include <boost/concept_check.hpp>
 
 #include <nupic/math/Utils.hpp>
 #include <nupic/types/Types.hpp>
 
+// NOTE: TODO: replace Functors.  They are depreciated in C++11 and removed in C++17
+
 //--------------------------------------------------------------------------------
 /**
  * Macros to make it easier to work with Boost concept checks
+ * But we are not going to use boost when using C++17
  */
+#if __cplusplus >= 201703L || (defined(_MSC_VER) && _MSC_VER >= 1914)
+	// C++17
+	#define ASSERT_INPUT_ITERATOR(It)
+	#define ASSERT_OUTPUT_ITERATOR(It, T)
+	#define ASSERT_UNARY_PREDICATE(UnaryPredicate, Arg1)
+	#define ASSERT_UNARY_FUNCTION(UnaryFunction, Ret, Arg1)
+	#define ASSERT_BINARY_FUNCTION(BinaryFunction, Ret, Arg1, Arg2)
+#else
+	#include <boost/concept_check.hpp>
 
-// Assert that It obeys the STL forward iterator concept
-#define ASSERT_INPUT_ITERATOR(It)                                              \
-  boost::function_requires<boost::InputIteratorConcept<It>>();
+	// Assert that It obeys the STL forward iterator concept
+	#define ASSERT_INPUT_ITERATOR(It) \
+	  boost::function_requires<boost::InputIteratorConcept<It>>();
 
-// Assert that It obeys the STL forward iterator concept
-#define ASSERT_OUTPUT_ITERATOR(It, T)                                          \
-  boost::function_requires<boost::OutputIteratorConcept<It, T>>();
+	// Assert that It obeys the STL forward iterator concept
+	#define ASSERT_OUTPUT_ITERATOR(It, T) \
+	  boost::function_requires<boost::OutputIteratorConcept<It, T>>();
 
-// Assert that UnaryPredicate obeys the STL unary predicate concept
-#define ASSERT_UNARY_PREDICATE(UnaryPredicate, Arg1)                           \
-  boost::function_requires<                                                    \
-      boost::UnaryPredicateConcept<UnaryPredicate, Arg1>>();
+	// Assert that UnaryPredicate obeys the STL unary predicate concept
+	#define ASSERT_UNARY_PREDICATE(UnaryPredicate, Arg1) \
+	  boost::function_requires< \
+	      boost::UnaryPredicateConcept<UnaryPredicate, Arg1>>();
 
-// Assert that UnaryFunction obeys the STL unary function concept
-#define ASSERT_UNARY_FUNCTION(UnaryFunction, Ret, Arg1)                        \
-  boost::function_requires<                                                    \
-      boost::UnaryFunctionConcept<UnaryFunction, Ret, Arg1>>();
+	// Assert that UnaryFunction obeys the STL unary function concept
+	#define ASSERT_UNARY_FUNCTION(UnaryFunction, Ret, Arg1) \
+	  boost::function_requires< \
+	      boost::UnaryFunctionConcept<UnaryFunction, Ret, Arg1>>();
 
-// Assert that BinaryFunction obeys the STL binary function concept
-#define ASSERT_BINARY_FUNCTION(BinaryFunction, Ret, Arg1, Arg2)                \
-  boost::function_requires<                                                    \
-      boost::BinaryFunctionConcept<BinaryFunction, Ret, Arg1, Arg2>>();
+	// Assert that BinaryFunction obeys the STL binary function concept
+	#define ASSERT_BINARY_FUNCTION(BinaryFunction, Ret, Arg1, Arg2) \
+	  boost::function_requires< \
+	      boost::BinaryFunctionConcept<BinaryFunction, Ret, Arg1, Arg2>>();
+#endif
 
 //--------------------------------------------------------------------------------
 namespace nupic {
@@ -568,21 +580,13 @@ template <typename T> struct Log2 : public std::unary_function<T, T> {};
 
 template <> struct Log2<float> : public std::unary_function<float, float> {
   inline float operator()(const float &x) const {
-#if defined(NTA_OS_WINDOWS)
-    return (float)(log(x) / log(2.0));
-#else
     return log2f(x);
-#endif
   }
 };
 
 template <> struct Log2<double> : public std::unary_function<double, double> {
   inline double operator()(const double &x) const {
-#if defined(NTA_OS_WINDOWS)
-    return log(x) / log(2.0);
-#else
     return log2(x);
-#endif
   }
 };
 
@@ -590,21 +594,13 @@ template <typename T> struct Log10 : public std::unary_function<T, T> {};
 
 template <> struct Log10<float> : public std::unary_function<float, float> {
   inline float operator()(const float &x) const {
-#if defined(NTA_OS_WINDOWS)
-    return (float)(log(x) / log(10.0));
-#else
     return log10f(x);
-#endif
   }
 };
 
 template <> struct Log10<double> : public std::unary_function<double, double> {
   inline double operator()(const double &x) const {
-#if defined(NTA_OS_WINDOWS)
-    return log(x) / log(10.0);
-#else
     return log10(x);
-#endif
   }
 };
 
@@ -612,21 +608,13 @@ template <typename T> struct Log1p : public std::unary_function<T, T> {};
 
 template <> struct Log1p<float> : public std::unary_function<float, float> {
   inline float operator()(const float &x) const {
-#if defined(NTA_OS_WINDOWS)
-    return (float)log(1.0 + x);
-#else
     return log1pf(x);
-#endif
   }
 };
 
 template <> struct Log1p<double> : public std::unary_function<double, double> {
   inline double operator()(const double &x) const {
-#if defined(NTA_OS_WINDOWS)
-    return log(1.0 + x);
-#else
     return log1p(x);
-#endif
   }
 };
 
@@ -754,9 +742,7 @@ template <typename T> struct Gaussian : public std::unary_function<T, T> {
 /**
  * 2D Gaussian
  */
-template <typename T>
-struct Gaussian2D // : public std::binary_function<T, T, T> (SWIG pb)
-{
+template <typename T> struct Gaussian2D {
   T c_x, c_y, s00, s01, s10, s11, s2, k1;
 
   inline Gaussian2D(T c_x_, T c_y_, T s00_, T s01_, T s10_, T s11_)
@@ -819,6 +805,10 @@ struct unary_compose : public std::unary_function<typename F1::argument_type,
 
 //--------------------------------------------------------------------------------
 /**
+ * This is a 'C++ function object' or Functor.  An object that can be passed as
+ * if it were a C function. It is created by having a class containing an
+ * overload of the () operator.
+ *
  * Compose an order predicate and a binary selector, so that we can write:
  * sort(x.begin(), x.end(), compose<less<float>, select2nd<pair<int, float> >
  * >()); to sort pairs in increasing order of their second element.
@@ -830,8 +820,8 @@ struct predicate_compose
   typedef bool result_type;
   typedef typename S::argument_type argument_type;
 
-  O o;
-  S s;
+  O o; // operation function object
+  S s; // selection function object
 
   inline result_type operator()(const argument_type &x,
                                 const argument_type &y) const {

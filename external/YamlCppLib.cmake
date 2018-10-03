@@ -27,6 +27,7 @@
 #                               of yaml-cpp library objects.
 #   YAML_CPP_STATIC_LIB_INC_DIR: directory of installed yaml-cpp lib headers
 
+message(STATUS "---- YamlCppLib External Project ------")
 include(../src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
 
 
@@ -38,18 +39,12 @@ set(yamlcpplib_url "${REPOSITORY_DIR}/external/common/share/yaml-cpp/yaml-cpp-re
 set(yamlcpplib_install_prefix "${EP_BASE}/Install/YamlCppStaticLib")
 set(yamlcpplib_install_lib_dir "${yamlcpplib_install_prefix}/lib")
 
-# Export directory of installed yaml-cpp lib headers to parent
-set(YAML_CPP_STATIC_LIB_INC_DIR "${yamlcpplib_install_prefix}/include")
-
-# Path to static yaml-cpp installed by external project
-set(yamlcpplib_built_archive_file
-    "${yamlcpplib_install_lib_dir}/${STATIC_PRE}yaml-cpp${STATIC_SUF}")
 
 set(c_flags "${EXTERNAL_C_FLAGS_OPTIMIZED} ${COMMON_COMPILER_DEFINITIONS_STR}")
 set(cxx_flags "${EXTERNAL_CXX_FLAGS_OPTIMIZED} ${COMMON_COMPILER_DEFINITIONS_STR}")
 
 ExternalProject_Add(YamlCppStaticLib
-    DEPENDS YamlStaticLib
+#    DEPENDS YamlStaticLib
 
     URL ${yamlcpplib_url}
 
@@ -58,18 +53,14 @@ ExternalProject_Add(YamlCppStaticLib
     CMAKE_GENERATOR ${CMAKE_GENERATOR}
 
     CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-        -DBUILD_SHARED_LIBS=OFF
-        -DYAML_CPP_BUILD_TOOLS=OFF
+	-DBUILD_SHARED_LIBS=OFF
+	-DYAML_CPP_BUILD_TOOLS=OFF
 	-DYAML_CPP_BUILD_TESTS=OFF # causes build errors with gtest (as of YamlCpp 0.6.2)
         -DYAML_CPP_BUILD_CONTRIB=OFF
-        -DCMAKE_C_FLAGS=${c_flags}
-        -DCMAKE_CXX_FLAGS=${cxx_flags}
-        -DCMAKE_INSTALL_PREFIX=${yamlcpplib_install_prefix}
-        ${EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED}
+	-DCMAKE_C_FLAGS=${c_flags}
+	-DCMAKE_CXX_FLAGS=${cxx_flags}
+	-DCMAKE_INSTALL_PREFIX=${yamlcpplib_install_prefix}
+	${EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED}
 )
+message(STATUS "YAML_CPP_LIBARAIES = ${yamlcpplib_install_lib_dir}/${STATIC_PRE}yaml-cpp${STATIC_SUF}")
 
-
-# Wrap external project-generated static library in an `add_library` target.
-merge_static_libraries(${YAML_CPP_STATIC_LIB_TARGET}
-                       "${yamlcpplib_built_archive_file}")
-add_dependencies(${YAML_CPP_STATIC_LIB_TARGET} YamlCppStaticLib)

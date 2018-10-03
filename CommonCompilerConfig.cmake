@@ -28,10 +28,10 @@
 # INPUTS:
 #
 # PLATFORM: lowercase ${CMAKE_SYSTEM_NAME}
+# INTERNAL_CPP_STANDARD:  C++11 or C++17
+# BITNESS: Platform bitness: 32 or 64
 
 # OUTPUTS:
-#
-# BITNESS: Platform bitness: 32 or 64
 #
 # COMMON_COMPILER_DEFINITIONS: list of -D define flags for the compilation of
 #                               source files; e.g., for cmake `add_definitions()`
@@ -82,6 +82,8 @@
 
 # NOTE much of the code below was factored out from src/CMakeLists.txt
 
+
+
 if(NOT DEFINED PLATFORM)
     message(FATAL_ERROR "PLATFORM property not defined: PLATFORM=${PLATFORM}")
 endif()
@@ -110,19 +112,12 @@ set(EXTERNAL_LINKER_FLAGS_OPTIMIZED)
 set(EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED)
 set(EXTERNAL_STATICLIB_CONFIGURE_DEFINITIONS_OPTIMIZED)
 
-##### Set parameters
-
-set(INTERNAL_CPP_STANDARD "-std=c++11")
-
 # Identify platform "bitness".
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   set(BITNESS 64)
 else()
   set(BITNESS 32)
 endif()
-
-message(STATUS "INTERNAL_CPP_STANDARD=${INTERNAL_CPP_STANDARD}")
-message(STATUS "CMAKE BITNESS=${BITNESS}")
 
 
 # Check memory limits (in megabytes)
@@ -247,7 +242,7 @@ set(allow_link_with_undefined_symbols_flags "")
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
   # MS Visual C
-  set(shared_compile_flags "${shared_compile_flags} /Zc:wchar_t /Gm- /fp:precise /errorReport:prompt /W1 /WX- /GR /Gd /GS /Oy- /EHs /analyze- /nologo /std:c++17")
+  set(shared_compile_flags "${shared_compile_flags} /Zc:wchar_t /Gm- /fp:precise /errorReport:prompt /W1 /WX- /GR /Gd /GS /Oy- /EHs /analyze- /nologo /std=${INTERNAL_CPP_STANDARD}")
   set(shared_linker_flags_unoptimized "${shared_linker_flags_unoptimized} /NOLOGO /SAFESEH:NO /NODEFAULTLIB:LIBCMT")
   if("${BITNESS}" STREQUAL "32")
     set(shared_linker_flags_unoptimized "${shared_linker_flags_unoptimized} /MACHINE:X86")
@@ -257,7 +252,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
 
 else()
   # LLVM Clang / Gnu GCC
-  set(cxx_flags_unoptimized "${cxx_flags_unoptimized} ${stdlib_cxx} ${INTERNAL_CPP_STANDARD}")
+  set(cxx_flags_unoptimized "${cxx_flags_unoptimized} ${stdlib_cxx} -std=${INTERNAL_CPP_STANDARD}")
 
   if (${NUPIC_BUILD_PYEXT_MODULES})
     # Hide all symbols in DLLs except the ones with explicit visibility;
@@ -316,8 +311,7 @@ endif()
 # Compatibility with gcc >= 4.9 which requires the use of gcc's own wrappers for
 # ar and ranlib in combination with LTO works also with LTO disabled
 IF(UNIX AND CMAKE_COMPILER_IS_GNUCXX AND (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug") AND
-      (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9" OR
-       CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "4.9"))
+      (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "4.9"))
     set(CMAKE_AR "gcc-ar")
     set(CMAKE_RANLIB "gcc-ranlib")
     # EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED duplicates settings for

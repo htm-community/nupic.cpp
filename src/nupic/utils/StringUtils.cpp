@@ -29,7 +29,9 @@
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/StringUtils.hpp>
 #include <cstring>
+#ifndef __MINGW32__
 #include <codecvt>
+#endif
 
 
 using namespace nupic;
@@ -426,13 +428,31 @@ std::shared_ptr<Byte> StringUtils::toByteArray(const std::string &s,  Size bitCo
 // So we will continue to use it until an alternative is available.
 std::wstring StringUtils::utf8ToUnicode(const std::string &str)
 {
+#ifdef __MINGW32__
+	// MinGW C++11 does not support <codecvt>
+	std::wstring ws(str.size(), L' '); // overestimate number of code points
+	ws.resize(std::mbstowcs(&ws[0], str.c_str(), str.size())); // shink to fit
+#else
 	std::wstring_convert<std::codecvt_utf8<wchar_t> > conv;
-	return conv.from_bytes(str);
+	std::wstring ws = conv.from_bytes(str);
+#endif
+	return ws;
 }
 
-std::string StringUtils::unicodeToUtf8(const std::wstring &str)
+std::string StringUtils::unicodeToUtf8(const std::wstring &wstr)
 {
+#ifdef __MINGW32__
+	// MinGW C++11 does not support <codecvt>
+	size_t size = 0;
+	_local_t lc = _create_locale(LC_ALL, "en_US.UTF-8");
+	std::string str(wstr.size()*3, " ");  // overestimate number of bytes
+	size = wcstombs(&str[0], &wstr[0], wstr.size());
+	_free_locale(lc);
+	str.resize(size);
+#else
 	std::wstring_convert<std::codecvt_utf8<wchar_t> > conv;
-	return conv.to_bytes(str);
+	std::string str = conv.to_bytes(wstr);
+#endif
+	return str;
 }
 

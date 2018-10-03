@@ -33,21 +33,21 @@ using namespace nupic::math::topology;
 
 namespace {
 TEST(TopologyTest, IndexFromCoordinates) {
-  EXPECT_EQ(0, indexFromCoordinates({0}, {100}));
-  EXPECT_EQ(50, indexFromCoordinates({50}, {100}));
-  EXPECT_EQ(99, indexFromCoordinates({99}, {100}));
+  EXPECT_EQ(0u, indexFromCoordinates({0}, {100}));
+  EXPECT_EQ(50u, indexFromCoordinates({50}, {100}));
+  EXPECT_EQ(99u, indexFromCoordinates({99}, {100}));
 
-  EXPECT_EQ(0, indexFromCoordinates({0, 0}, {100, 80}));
-  EXPECT_EQ(10, indexFromCoordinates({0, 10}, {100, 80}));
-  EXPECT_EQ(80, indexFromCoordinates({1, 0}, {100, 80}));
-  EXPECT_EQ(90, indexFromCoordinates({1, 10}, {100, 80}));
+  EXPECT_EQ(0u, indexFromCoordinates({0, 0}, {100, 80}));
+  EXPECT_EQ(10u, indexFromCoordinates({0, 10}, {100, 80}));
+  EXPECT_EQ(80u, indexFromCoordinates({1, 0}, {100, 80}));
+  EXPECT_EQ(90u, indexFromCoordinates({1, 10}, {100, 80}));
 
-  EXPECT_EQ(0, indexFromCoordinates({0, 0, 0}, {100, 10, 8}));
-  EXPECT_EQ(7, indexFromCoordinates({0, 0, 7}, {100, 10, 8}));
-  EXPECT_EQ(8, indexFromCoordinates({0, 1, 0}, {100, 10, 8}));
-  EXPECT_EQ(80, indexFromCoordinates({1, 0, 0}, {100, 10, 8}));
-  EXPECT_EQ(88, indexFromCoordinates({1, 1, 0}, {100, 10, 8}));
-  EXPECT_EQ(89, indexFromCoordinates({1, 1, 1}, {100, 10, 8}));
+  EXPECT_EQ(0u, indexFromCoordinates({0, 0, 0}, {100, 10, 8}));
+  EXPECT_EQ(7u, indexFromCoordinates({0, 0, 7}, {100, 10, 8}));
+  EXPECT_EQ(8u, indexFromCoordinates({0, 1, 0}, {100, 10, 8}));
+  EXPECT_EQ(80u, indexFromCoordinates({1, 0, 0}, {100, 10, 8}));
+  EXPECT_EQ(88u, indexFromCoordinates({1, 1, 0}, {100, 10, 8}));
+  EXPECT_EQ(89u, indexFromCoordinates({1, 1, 1}, {100, 10, 8}));
 }
 
 TEST(TopologyTest, CoordinatesFromIndex) {
@@ -73,11 +73,12 @@ TEST(TopologyTest, CoordinatesFromIndex) {
 // ==========================================================================
 
 void expectNeighborhoodIndices(const vector<UInt> &centerCoords,
-                               const vector<UInt> &dimensions, UInt radius,
+                               const vector<UInt> &dimensions,
+							   UInt radius,
                                const vector<UInt> &expected) {
   const UInt centerIndex = indexFromCoordinates(centerCoords, dimensions);
 
-  int i = 0;
+  size_t i = 0;
   for (UInt index : Neighborhood(centerIndex, radius, dimensions)) {
     EXPECT_EQ(expected[i], index);
     i++;
@@ -87,11 +88,12 @@ void expectNeighborhoodIndices(const vector<UInt> &centerCoords,
 }
 
 void expectNeighborhoodCoords(const vector<UInt> &centerCoords,
-                              const vector<UInt> &dimensions, UInt radius,
+                              const vector<UInt> &dimensions,
+							  UInt radius,
                               const vector<vector<UInt>> &expected) {
   const UInt centerIndex = indexFromCoordinates(centerCoords, dimensions);
 
-  int i = 0;
+  UInt i = 0;
   for (UInt index : Neighborhood(centerIndex, radius, dimensions)) {
     EXPECT_EQ(indexFromCoordinates(expected[i], dimensions), index);
     i++;
@@ -113,9 +115,10 @@ TEST(TopologyTest, NeighborhoodOfOrigin2D) {
       /*centerCoords*/ {0, 0},
       /*dimensions*/ {100, 80},
       /*radius*/ 2,
-      /*expected*/
-      {{0, 0}, {0, 1}, {0, 2}, {1, 0}, {1, 1}, {1, 2}, {2, 0}, {2, 1}, {2, 2}});
-}
+      /*expected*/ {{0, 0}, {0, 1}, {0, 2},
+                    {1, 0}, {1, 1}, {1, 2},
+                    {2, 0}, {2, 1}, {2, 2}});
+  }
 
 TEST(TopologyTest, NeighborhoodOfOrigin3D) {
   expectNeighborhoodCoords(
@@ -180,8 +183,10 @@ TEST(TopologyTest, NeighborhoodWiderThanWorld) {
       /*centerCoords*/ {0, 0},
       /*dimensions*/ {3, 2},
       /*radius*/ 3,
-      /*expected*/ {{0, 0}, {0, 1}, {1, 0}, {1, 1}, {2, 0}, {2, 1}});
-}
+      /*expected*/ {{0, 0}, {0, 1},
+                    {1, 0}, {1, 1},
+                    {2, 0}, {2, 1}});
+  }
 
 TEST(TopologyTest, NeighborhoodRadiusZero) {
   expectNeighborhoodIndices(
@@ -227,7 +232,7 @@ void expectWrappingNeighborhoodIndices(const vector<UInt> &centerCoords,
                                        const vector<UInt> &expected) {
   const UInt centerIndex = indexFromCoordinates(centerCoords, dimensions);
 
-  int i = 0;
+  UInt i = 0;
   for (UInt index : WrappingNeighborhood(centerIndex, radius, dimensions)) {
     EXPECT_EQ(expected[i], index);
     i++;
@@ -242,7 +247,7 @@ void expectWrappingNeighborhoodCoords(const vector<UInt> &centerCoords,
                                       const vector<vector<UInt>> &expected) {
   const UInt centerIndex = indexFromCoordinates(centerCoords, dimensions);
 
-  int i = 0;
+  UInt i = 0;
   for (UInt index : WrappingNeighborhood(centerIndex, radius, dimensions)) {
     EXPECT_EQ(indexFromCoordinates(expected[i], dimensions), index);
     i++;

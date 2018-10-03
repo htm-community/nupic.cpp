@@ -61,7 +61,7 @@ VectorFileSensor::VectorFileSensor(const ValueMap &params, Region *region)
   if (params.contains("hasResetOut"))
     hasResetOut_ = params.getScalar("hasResetOut")->getValue<NTA_UInt32>() == 1;
   if (params.contains("inputFile"))
-    filename_ = *params.getString("inputFile");
+    filename_ = params.getString("inputFile");
   if (params.contains("repeatCount"))
     repeatCount_ = params.getScalar("repeatCount")->getValue<NTA_UInt32>();
 }
@@ -426,7 +426,7 @@ VectorFileSensor::getNodeOutputElementCount(const std::string &outputName) {
 
 void VectorFileSensor::serialize(BundleIO &bundle) {
   std::ostream & f = bundle.getOutputStream();
-  f << repeatCount_ << " " << activeOutputCount_ << " " 
+  f << repeatCount_ << " " << activeOutputCount_ << " "
     << ((filename_ == "")?std::string("empty"):filename_) << " "
     << ((scalingMode_ == "")?std::string("empty"):scalingMode_) << " ";
 }

@@ -42,7 +42,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/shared_array.hpp>
 
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>
@@ -137,7 +136,7 @@ template <typename T> inline void swapBytes(T *pxOut, Size n, const T *pxIn) {
  * @param isNumeric (bool&) set to true on exit if type name is a number.
  * @retval Number of bytes per element of the specified type.
  */
-extern size_t GetTypeSize(const std::string &name, bool &isNumeric);
+//extern size_t GetTypeSize(const std::string &name, bool &isNumeric);
 
 /**
  * Calculates sizeof() types named by string names of types in
@@ -156,7 +155,7 @@ extern size_t GetTypeSize(const std::string &name, bool &isNumeric);
  * @param isNumeric (bool&) set to true on exit if type name is a number.
  * @retval Number of bytes per element of the specified type.
  */
-extern size_t GetTypeSize(NTA_BasicType type, bool &isNumeric);
+//extern size_t GetTypeSize(NTA_BasicType type, bool &isNumeric);
 
 /**
  * Return a string representation of an NTA_BasicType
@@ -164,7 +163,7 @@ extern size_t GetTypeSize(NTA_BasicType type, bool &isNumeric);
  * @param type the NTA_BasicType enum
  * @retval name of the type as a string
  */
-extern std::string GetTypeName(NTA_BasicType type);
+//extern std::string GetTypeName(NTA_BasicType type);
 
 /**
  * Utility routine used by PrintVariableArray to print array of a certain type
@@ -352,12 +351,14 @@ private:                                                                       \
           for (UInt m = 0; m < R; ++m)                                         \
             for (UInt n = 0; n < S; ++n)
 
-/**
- * Function object that takes a single argument, a pair (or at least
- * a class with the same interface as pair), and returns the pair's
- * first element. This is not part of the C++ standard, but usually
- * provided by implementations of STL.
- */
+  /**
+   * This is a 'C++ function object' or Functor.  An object that can be passed
+   * as if it were a C function. It is created by having a class containing an
+   * overload of the () operator.
+   *
+   * Function object that takes a single argument, a pair (or at least
+   * a class with the same interface as pair), and returns the pair's
+   */
 template <class Pair>
 struct select1st : public std::unary_function<Pair, typename Pair::first_type> {
   inline const typename Pair::first_type &operator()(const Pair &x) const {
@@ -365,12 +366,18 @@ struct select1st : public std::unary_function<Pair, typename Pair::first_type> {
   }
 };
 
-/**
- * Function object that takes a single argument, a pair (or at least
- * a class with the same interface as pair), and returns the pair's
- * second element. This is not part of the C++ standard, but usually
- * provided by implementations of STL.
- */
+  /**
+   * This is a 'C++ function object' or Functor.  An object that can be passed
+   * as if it were a C function. It is created by having a class containing an
+   * overload of the () operator.
+   *
+   * It is a Function object that takes a single argument,
+   * a pair (or at least a class with the same interface as pair), and returns the
+   * pair's second element.
+   *
+   * second element. This is not part of the C++ standard, but usually
+   * provided by implementations of STL.
+   */
 template <class Pair>
 struct select2nd
     : public std::unary_function<Pair, typename Pair::second_type> {

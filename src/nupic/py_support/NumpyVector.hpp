@@ -27,8 +27,9 @@
  * Contains the NumpyArray class, a wrapper for Python numpy arrays.
  */
 
-#include <algorithm>                           // For std::copy.
-#include <boost/type_index/stl_type_index.hpp> // for 'type_id'
+
+#include <algorithm>                            // For std::copy.
+#include <typeinfo>							// for std::type_index
 #include <nupic/py_support/NumpyArrayObject.hpp>
 #include <nupic/types/Types.hpp> // For nupic::Real.
 #include <nupic/utils/Log.hpp>   // For NTA_ASSERT
@@ -408,9 +409,7 @@ public:
     }
     if (!PyArray_EquivTypenums(PyArray_TYPE(this->pyArray_),
                                LookupNumpyDType((const T *)0))) {
-      boost::typeindex::stl_type_index expectedType =
-          boost::typeindex::stl_type_index::type_id<T>();
-      NTA_THROW << "Expecting '" << expectedType.pretty_name() << "' "
+      NTA_THROW << "Expecting '" << typeid(T).name() << "' "
                 << "but got '" << PyArray_DTYPE(this->pyArray_)->type << "'";
     }
   }

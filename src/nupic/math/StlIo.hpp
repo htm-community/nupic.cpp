@@ -21,8 +21,7 @@
  */
 
 /** @file STL IO
- * This file contains functions to print out and save/load various STL data
- * structures.
+ * This file contains functions to print out and save/load various STL data structures.
  */
 
 #ifndef NTA_STL_IO_HPP
@@ -33,7 +32,6 @@
 #include <set>
 #include <vector>
 
-#include <boost/type_traits.hpp>
 #include <iomanip>
 #include <iostream>
 
@@ -62,12 +60,23 @@ struct IOControl {
 
   bool bit_vector; // output 0/1 vector compactly
 
-  inline IOControl(int a = -1, bool s = true, bool pp = false,
-                   const char *psep = " ", SPARSE_IO_TYPE smio = CSR,
-                   bool cts = false, bool cfs = false, bool bv = false)
-      : abbr(a), output_n_elts(s), pair_paren(pp), pair_sep(psep),
-        convert_to_sparse(cts), convert_from_sparse(cfs), sparse_io(smio),
-        bit_vector(bv) {}
+    inline IOControl(int a =-1,
+					 bool s =true,
+					 bool pp =false,
+					 const char* psep =" ",
+                     SPARSE_IO_TYPE smio =CSR,
+                     bool cts =false,
+                     bool cfs =false,
+                     bool bv =false)
+      : abbr(a),
+        output_n_elts(s),
+        pair_paren(pp),
+        pair_sep(psep),
+        convert_to_sparse(cts),
+        convert_from_sparse(cfs),
+        sparse_io(smio),
+        bit_vector(bv)
+    {}
 
   inline void reset() {
     abbr = -1;
@@ -84,24 +93,23 @@ struct IOControl {
 extern IOControl io_control;
 
 template <typename CharT, typename Traits, typename T>
-inline std::basic_ostream<CharT, Traits> &operator,(
-    std::basic_ostream<CharT, Traits> &out_stream, const T &a) {
-  return out_stream << ' ' << a;
+inline std::basic_ostream<CharT,Traits>&
+  operator,(std::basic_ostream<CharT,Traits>& out_stream, const T& a) {
+    return out_stream << ' ' << a;
 }
 
 template <typename CharT, typename Traits, typename T>
-inline std::basic_istream<CharT, Traits> &operator,(
-    std::basic_istream<CharT, Traits> &in_stream, T &a) {
-  return in_stream >> a;
+inline std::basic_istream<CharT,Traits>&
+  operator,(std::basic_istream<CharT,Traits>& in_stream, T& a) {
+    return in_stream >> a;
 }
 
 template <typename CharT, typename Traits>
-inline std::basic_ostream<CharT, Traits> &operator,(
-    std::basic_ostream<CharT, Traits> &out_stream,
-    std::basic_ostream<CharT, Traits> &(*pf)(
-        std::basic_ostream<CharT, Traits> &)) {
-  pf(out_stream);
-  return out_stream;
+inline std::basic_ostream<CharT,Traits>&
+  operator,(std::basic_ostream<CharT,Traits>& out_stream,
+        std::basic_ostream<CharT,Traits>& (*pf)(std::basic_ostream<CharT,Traits>&)) {
+pf(out_stream);
+return out_stream;
 }
 
 template <typename CharT, typename Traits>
@@ -260,8 +268,7 @@ template <typename T1> struct is_positive_checker {
 
 template <typename CharT, typename Traits, typename T1>
 inline std::basic_istream<CharT, Traits> &
-operator>>(std::basic_istream<CharT, Traits> &in_stream,
-           is_positive_checker<T1> cp) {
+operator>>(std::basic_istream<CharT, Traits> &in_stream, is_positive_checker<T1> cp) {
   cp.do_check(in_stream);
   return in_stream;
 }
@@ -314,8 +321,7 @@ inline void binary_load(std::istream &in_stream, std::vector<T> &v) {
 // std::pair
 //--------------------------------------------------------------------------------
 template <typename T1, typename T2>
-inline std::ostream &operator<<(std::ostream &out_stream,
-                                const std::pair<T1, T2> &p) {
+inline std::ostream &operator<<(std::ostream &out_stream, const std::pair<T1, T2> &p) {
   if (io_control.pair_paren)
     out_stream << "(";
   out_stream << p.first;
@@ -395,7 +401,7 @@ template <typename T> struct vector_loader<T, false> {
  */
 template <typename T>
 inline void vector_load(size_t n, std::istream &in_stream, std::vector<T> &v) {
-  vector_loader<T, boost::is_fundamental<T>::value> loader;
+  vector_loader<T, std::is_fundamental<T>::value > loader;
   loader.load(n, in_stream, v);
 }
 
@@ -409,8 +415,7 @@ template <typename T, bool> struct vector_saver {
  * Partial specialization for primitive types.
  */
 template <typename T> struct vector_saver<T, true> {
-  inline void save(size_t n, std::ostream &out_stream,
-                   const std::vector<T> &v) {
+  inline void save(size_t n, std::ostream &out_stream, const std::vector<T> &v) {
     if (io_control.output_n_elts)
       out_stream << n << ' ';
 
@@ -456,8 +461,7 @@ inline std::ostream &operator<<(std::ostream &out_stream,
  * Partial specialization for non-primitive types.
  */
 template <typename T> struct vector_saver<T, false> {
-  inline void save(size_t n, std::ostream &out_stream,
-                   const std::vector<T> &v) {
+  inline void save(size_t n, std::ostream &out_stream,  const std::vector<T> &v) {
     if (io_control.output_n_elts)
       out_stream << n << ' ';
 
@@ -480,9 +484,8 @@ template <typename T> struct vector_saver<T, false> {
  * T is a primitive type or not.
  */
 template <typename T>
-inline void vector_save(size_t n, std::ostream &out_stream,
-                        const std::vector<T> &v) {
-  vector_saver<T, boost::is_fundamental<T>::value> saver;
+inline void vector_save(size_t n, std::ostream &out_stream, const std::vector<T> &v) {
+  vector_saver<T, std::is_fundamental<T>::value> saver;
   saver.save(n, out_stream, v);
 }
 
@@ -491,8 +494,7 @@ inline void vector_save(size_t n, std::ostream &out_stream,
  * Saves the size of the vector.
  */
 template <typename T>
-inline std::ostream &operator<<(std::ostream &out_stream,
-                                const std::vector<T> &v) {
+inline std::ostream &operator<<(std::ostream &out_stream, const std::vector<T> &v) {
   vector_save(v.size(), out_stream, v);
   return out_stream;
 }
@@ -537,8 +539,7 @@ inline std::istream &operator>>(std::istream &in_stream, Buffer<T> &b) {
 // std::set
 //--------------------------------------------------------------------------------
 template <typename T1>
-inline std::ostream &operator<<(std::ostream &out_stream,
-                                const std::set<T1> &m) {
+inline std::ostream &operator<<(std::ostream &out_stream, const std::set<T1> &m) {
   typename std::set<T1>::const_iterator it = m.begin(), end = m.end();
 
   while (it != end) {
@@ -598,13 +599,13 @@ template <typename T1, typename T2>
 // MISCELLANEOUS
 //--------------------------------------------------------------------------------
 template <typename T>
-inline void show_all_differences(const std::vector<T> &x,
-                                 const std::vector<T> &y) {
+inline void show_all_differences(const std::vector<T> &x, const std::vector<T> &y) {
   std::vector<size_t> diffs;
   find_all_differences(x, y, diffs);
   std::cout << diffs.size() << " differences: " << std::endl;
   for (size_t i = 0; i != diffs.size(); ++i)
-    std::cout << "(at:" << diffs[i] << " y=" << x[diffs[i]]
+    std::cout << "(at:" << diffs[i]
+	          << " y=" << x[diffs[i]]
               << ", ans=" << y[diffs[i]] << ")";
   std::cout << std::endl;
 }

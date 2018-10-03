@@ -27,7 +27,7 @@
 #
 #   BOOST_ROOT_DIR: directory where boost is installed
 #   BOOST_INCLUDE_DIR: directory where boost includes are located
-message(STATUS "  configuring boost build")
+message(STATUS "----- Boost External Project ------")
 
 
 # Set some parameters
@@ -44,9 +44,7 @@ set(BOOST_HASH "da3411ea45622579d419bfda66f45cd0f8c32a181d84adfa936f5688388995cf
 set(bootstrap "./bootstrap.sh")
 endif()
 
-set(BOOST_COMPONENTS "system filesystem")
 set(BOOST_ROOT "${EP_BASE}/Install/boost")
-set(Boost_INCLUDE_DIR ${BOOST_ROOT}/include)
 
 
 
@@ -57,6 +55,9 @@ ExternalProject_Add( Boost
 	URL ${BOOST_URL}
 	URL_HASH SHA256=${BOOST_HASH}
 	UPDATE_COMMAND ""
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+	           -DCMAKE_C_FLAGS=${c_flags}
+                   -DCMAKE_CXX_FLAGS=${cxx_flags}
 	CONFIGURE_COMMAND ${bootstrap}
 		--with-libraries=filesystem 
 		--with-libraries=system
@@ -70,19 +71,8 @@ ExternalProject_Add( Boost
 	LOG_BUILD 1
 )
 
-
-# Wrap external project-generated static library in an `add_library` target.
-# Output static library target for linking and dependencies
-include(../src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
-
-set(BOOST_SYSTEM_STATIC_LIB_TARGET boost-system)
-merge_static_libraries(${BOOST_SYSTEM_STATIC_LIB_TARGET}
-                       "${BOOST_ROOT}/lib/${STATIC_PRE}boost_system${STATIC_SUF}")
-add_dependencies(${BOOST_SYSTEM_STATIC_LIB_TARGET} Boost)
-
-set(BOOST_FILESYSTEM_STATIC_LIB_TARGET boost-filesystem)
-merge_static_libraries(${BOOST_FILESYSTEM_STATIC_LIB_TARGET}
-                       "${BOOST_ROOT}/lib/${STATIC_PRE}boost_filesystem${STATIC_SUF}")
-add_dependencies(${BOOST_FILESYSTEM_STATIC_LIB_TARGET} Boost)
+message(STATUS "Boost at installed at BOOST_ROOT = ${BOOST_ROOT}")
+message(STATUS "Boost_system = ${BOOST_ROOT}/lib/${STATIC_PRE}boost_system${STATIC_SUF}")
+message(STATUS "Boost_filesystem = ${BOOST_ROOT}/lib/${STATIC_PRE}boost_filesystem${STATIC_SUF}")
 
 

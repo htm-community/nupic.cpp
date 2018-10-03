@@ -22,6 +22,8 @@
 cmake_minimum_required(VERSION 3.3)
 project(nupic_core CXX)
 
+message(STATUS "----- SuperBuild for nupic_core -----")
+
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
 
 set(CMAKE_VERBOSE_MAKEFILE OFF)
@@ -44,31 +46,70 @@ if( POLICY CMP0054 )
   cmake_policy(SET CMP0054 OLD)
 endif()
 
-
+##############################################
+# Compiler support for <filesystem> in C++17:
+# https://en.cppreference.com/w/cpp/compiler_support
+#    GCC 7.1 has <experimental/filesystem>, link with -libc++experimental or -lstdc++fs
+#    GCC 8 has <filesystem>   link with -lstdc++fs
+#    GCC 9   expected to support <filesystem>
+#    Clang 4 (XCode10) has no support for <filesystem>, partial C++17
+#    Clang 7 has complete <filesystem> support for C++17
+#    Visual Studio 2017 15.7 (v19.14)supports <filesystem> with C++17
+#    MinGW has no support for filesystem.
 #
+# If we have support for <filesystem> and C++17, turn on the C++17 standard flag, 
+# else set standard to C++11 and install boost filesystem
+# Also allow external library for <filesystem>
+
+set(extra_lib_for_filesystem)
+set(INTERNAL_CPP_STANDARD "c++11")
+set(NEEDS_BOOST ON)
+
+### comment this out and save for next PR
+#if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
+#    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "9")
+#         set(INTERNAL_CPP_STANDARD "c++17")
+#	 set(NEEDS_BOOST OFF)
+#    elseif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8")
+#         set(INTERNAL_CPP_STANDARD "c++17")
+#	 set(extra_lib_for_filesystem "-lstdc++fs")
+#	 set(NEEDS_BOOST "OFF")
+#    endif()	 
+#elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+#    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "7")
+#         set(INTERNAL_CPP_STANDARD "c++17")
+#	 set(NEEDS_BOOST OFF)
+#    endif()
+#elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
+#      if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.14")
+#            set(INTERNAL_CPP_STANDARD "c++17")
+#	    set(NEEDS_BOOST OFF)
+#      endif()
+#endif()
+
+
+##############################################
 # Global NuPIC CMake options
 #
 option(NUPIC_BUILD_PYEXT_MODULES
        "Turn on building of python extension modules for nupic.bindings; turn off to build only static nupic_core lib with full symbol visibility."
        ON)
 
+message(STATUS "REPOSITORY_DIR        = ${REPOSITORY_DIR}")
+message(STATUS "CMAKE_SOURCE_DIR      = ${CMAKE_SOURCE_DIR}")
+message(STATUS "CMAKE_BINARY_DIR      = ${CMAKE_BINARY_DIR}")
 message(STATUS "NUPIC_BUILD_PYEXT_MODULES = ${NUPIC_BUILD_PYEXT_MODULES}")
-message(STATUS "PY_EXTENSIONS_DIR         = ${PY_EXTENSIONS_DIR}")
+message(STATUS "PY_EXTENSIONS_DIR     = ${PY_EXTENSIONS_DIR}")
 
 message(STATUS "CMAKE_CXX_COMPILER_ID = ${CMAKE_CXX_COMPILER_ID}")
+message(STATUS "CMAKE_CXX_COMPILER_VERSION = ${CMAKE_CXX_COMPILER_VERSION}")
 message(STATUS "CMAKE_C_COMPILER      = ${CMAKE_C_COMPILER}")
 message(STATUS "CMAKE_CXX_COMPILER    = ${CMAKE_CXX_COMPILER}")
+message(STATUS "CMAKE_SYSTEM_NAME     = ${CMAKE_SYSTEM_NAME}")
+message(STATUS "INTERNAL_CPP_STANDARD = ${INTERNAL_CPP_STANDARD}")
+message(STATUS "extra_lib_for_filesystem = ${extra_lib_for_filesystem}")
 message(STATUS "CMAKE_BUILD_TYPE      = ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_INSTALL_PREFIX  = ${CMAKE_INSTALL_PREFIX}")
-
-
-# Identify platform name.
-string(TOLOWER ${CMAKE_SYSTEM_NAME} PLATFORM)
-
-# Define a platform suffix, eg ${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}
-if (MSYS OR MINGW)
-  set(PLATFORM_SUFFIX -gcc)
-endif()
 
 
 # Make sure we can link against any specified paths.
@@ -76,20 +117,49 @@ include_directories(SYSTEM ${CMAKE_INCLUDE_PATH})
 
 set(EP_BASE ${CMAKE_BINARY_DIR}/ThirdParty)
 
-# Determine common toolchain settings, compiler and link flags
-include(CommonCompilerConfig)
+include(ExternalProject)
 
 # Set up builds of external dependencies and get their exports.
 # (see individual external/*.cmake modules for exported settings and functions)
-add_subdirectory(external)
-set(src_external_static_libs
-    
-    ${YAML_CPP_STATIC_LIB_TARGET}
-    ${YAML_STATIC_LIB_TARGET}
-    ${BOOST_SYSTEM_STATIC_LIB_TARGET}
-    ${BOOST_FILESYSTEM_STATIC_LIB_TARGET}
-   )
-include_directories(SYSTEM ${EXTERNAL_INCLUDE_DIRS})
+# contains an ExternalProject for each dependancy.
+#add_subdirectory(external)
+ExternalProject_Add(external
+	PREFIX ${REPOSITORY_DIR}
+	SOURCE_DIR ${REPOSITORY_DIR}/external
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+		-DREPOSITORY_DIR=${REPOSITORY_DIR}
+		-DNEEDS_BOOST=${NEEDS_BOOST}
+		-DEP_BASE=${EP_BASE}
+		-DNUPIC_BUILD_PYEXT_MODULES=${NUPIC_BUILD_PYEXT_MODULES}
+	BINARY_DIR ${CMAKE_BINARY_DIR}/external
+	STAMP_DIR  ${CMAKE_BINARY_DIR}
+	TMP_DIR /tmp/nupic
+	INSTALL_COMMAND ""
+	)
 
 # Now build nupic_core project.
-add_subdirectory(src)
+# NOTE: since this is a SuperBuild, 
+#       our nupic_core target could also be an ExternalProject_Add
+#	When we move Python interface outside of the nupic_core build 
+#	it will be another ExternalProject.
+#
+ExternalProject_Add(nupic_core
+	PREFIX ${REPOSITORY_DIR}
+	DEPENDS external
+	SOURCE_DIR ${REPOSITORY_DIR}/src
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+		-DREPOSITORY_DIR=${REPOSITORY_DIR}
+		-DINTERNAL_CPP_STANDARD=${INTERNAL_CPP_STANDARD}
+		-DNEEDS_BOOST=${NEEDS_BOOST}
+		-Dextra_lib_for_filesystem=${extra_lib_for_filesystem}
+		-DEP_BASE=${EP_BASE}
+		-DPY_EXTENSIONS_DIR=${PY_EXTENSIONS_DIR}
+		-DNUPIC_BUILD_PYEXT_MODULES=${NUPIC_BUILD_PYEXT_MODULES}
+		-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+	BINARY_DIR ${CMAKE_BINARY_DIR}/src
+	STAMP_DIR  ${CMAKE_BINARY_DIR}
+	TMP_DIR /tmp/nupic
+	INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
+	)
+
+

@@ -29,7 +29,7 @@
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/StringUtils.hpp>  // for trim
 
-#include <codecvt>
+//#include <codecvt>
 #include <algorithm> // replace()
 #include <sstream>
 #include <string>

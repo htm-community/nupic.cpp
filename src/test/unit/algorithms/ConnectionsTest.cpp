@@ -51,26 +51,26 @@ void setupSampleConnections(Connections &connections) {
   // - 2 connected synapses: 2 active
   // - 3 matching synapses: 3 active
   const Segment segment2_1 = connections.createSegment(20);
-  connections.createSynapse(segment2_1, 80, 0.85);
-  connections.createSynapse(segment2_1, 81, 0.85);
-  Synapse synapse = connections.createSynapse(segment2_1, 82, 0.85);
-  connections.updateSynapsePermanence(synapse, 0.15);
+  connections.createSynapse(segment2_1, 80, 0.85f);
+  connections.createSynapse(segment2_1, 81, 0.85f);
+  Synapse synapse = connections.createSynapse(segment2_1, 82, 0.85f);
+  connections.updateSynapsePermanence(synapse, 0.15f);
 
   // Segment with:
   // - 2 connected synapses: 1 active, 1 inactive
   // - 3 matching synapses: 2 active, 1 inactive
   // - 1 non-matching synapse: 1 active
   const Segment segment2_2 = connections.createSegment(20);
-  connections.createSynapse(segment2_2, 50, 0.85);
-  connections.createSynapse(segment2_2, 51, 0.85);
-  connections.createSynapse(segment2_2, 52, 0.15);
-  connections.createSynapse(segment2_2, 53, 0.05);
+  connections.createSynapse(segment2_2, 50, 0.85f);
+  connections.createSynapse(segment2_2, 51, 0.85f);
+  connections.createSynapse(segment2_2, 52, 0.15f);
+  connections.createSynapse(segment2_2, 53, 0.05f);
 
   // Cell with one segment.
   // Segment with:
   // - 1 non-matching synapse: 1 active
   const Segment segment3_1 = connections.createSegment(30);
-  connections.createSynapse(segment3_1, 53, 0.05);
+  connections.createSynapse(segment3_1, 53, 0.05f);
 }
 
 void computeSampleActivity(Connections &connections) {
@@ -98,7 +98,7 @@ TEST(ConnectionsTest, testCreateSegment) {
   ASSERT_EQ(cell, connections.cellForSegment(segment2));
 
   vector<Segment> segments = connections.segmentsForCell(cell);
-  ASSERT_EQ(segments.size(), 2);
+  ASSERT_EQ(segments.size(), (size_t)2);
 
   ASSERT_EQ(segment1, segments[0]);
   ASSERT_EQ(segment2, segments[1]);
@@ -113,24 +113,24 @@ TEST(ConnectionsTest, testCreateSynapse) {
   UInt32 cell = 10;
   Segment segment = connections.createSegment(cell);
 
-  Synapse synapse1 = connections.createSynapse(segment, 50, 0.34);
+  Synapse synapse1 = connections.createSynapse(segment, 50, 0.34f);
   ASSERT_EQ(segment, connections.segmentForSynapse(synapse1));
 
-  Synapse synapse2 = connections.createSynapse(segment, 150, 0.48);
+  Synapse synapse2 = connections.createSynapse(segment, 150, 0.48f);
   ASSERT_EQ(segment, connections.segmentForSynapse(synapse2));
 
   vector<Synapse> synapses = connections.synapsesForSegment(segment);
-  ASSERT_EQ(synapses.size(), 2);
+  ASSERT_EQ(synapses.size(), 2u);
 
   ASSERT_EQ(synapse1, synapses[0]);
   ASSERT_EQ(synapse2, synapses[1]);
 
   SynapseData synapseData1 = connections.dataForSynapse(synapses[0]);
-  ASSERT_EQ(50, synapseData1.presynapticCell);
+  ASSERT_EQ((UInt32)50, synapseData1.presynapticCell);
   ASSERT_NEAR((Permanence)0.34, synapseData1.permanence, EPSILON);
 
   SynapseData synapseData2 = connections.dataForSynapse(synapses[1]);
-  ASSERT_EQ(synapseData2.presynapticCell, 150);
+  ASSERT_EQ(synapseData2.presynapticCell, (UInt32)150);
   ASSERT_NEAR((Permanence)0.48, synapseData2.permanence, EPSILON);
 }
 
@@ -146,17 +146,17 @@ TEST(ConnectionsTest, testDestroySegment) {
   /*      segment3*/ connections.createSegment(20);
   /*      segment4*/ connections.createSegment(30);
 
-  connections.createSynapse(segment2, 80, 0.85);
-  connections.createSynapse(segment2, 81, 0.85);
-  connections.createSynapse(segment2, 82, 0.15);
+  connections.createSynapse(segment2, 80, 0.85f);
+  connections.createSynapse(segment2, 81, 0.85f);
+  connections.createSynapse(segment2, 82, 0.15f);
 
-  ASSERT_EQ(4, connections.numSegments());
-  ASSERT_EQ(3, connections.numSynapses());
+  ASSERT_EQ(4u, connections.numSegments());
+  ASSERT_EQ(3u, connections.numSynapses());
 
   connections.destroySegment(segment2);
 
-  ASSERT_EQ(3, connections.numSegments());
-  ASSERT_EQ(0, connections.numSynapses());
+  ASSERT_EQ(3u, connections.numSegments());
+  ASSERT_EQ(0u, connections.numSynapses());
 
   vector<UInt32> numActiveConnectedSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
@@ -166,8 +166,8 @@ TEST(ConnectionsTest, testDestroySegment) {
                               numActivePotentialSynapsesForSegment,
                               {80, 81, 82}, 0.5);
 
-  ASSERT_EQ(0, numActiveConnectedSynapsesForSegment[segment2]);
-  ASSERT_EQ(0, numActivePotentialSynapsesForSegment[segment2]);
+  ASSERT_EQ(0u, numActiveConnectedSynapsesForSegment[segment2]);
+  ASSERT_EQ(0u, numActivePotentialSynapsesForSegment[segment2]);
 }
 
 /**
@@ -178,16 +178,16 @@ TEST(ConnectionsTest, testDestroySynapse) {
   Connections connections(1024);
 
   Segment segment = connections.createSegment(20);
-  /*      synapse1*/ connections.createSynapse(segment, 80, 0.85);
-  Synapse synapse2 = connections.createSynapse(segment, 81, 0.85);
-  /*      synapse3*/ connections.createSynapse(segment, 82, 0.15);
+  /*      synapse1*/ connections.createSynapse(segment, 80, 0.85f);
+  Synapse synapse2 = connections.createSynapse(segment, 81, 0.85f);
+  /*      synapse3*/ connections.createSynapse(segment, 82, 0.15f);
 
-  ASSERT_EQ(3, connections.numSynapses());
+  ASSERT_EQ(3u, connections.numSynapses());
 
   connections.destroySynapse(synapse2);
 
-  ASSERT_EQ(2, connections.numSynapses());
-  ASSERT_EQ(2, connections.synapsesForSegment(segment).size());
+  ASSERT_EQ(2u, connections.numSynapses());
+  ASSERT_EQ(2u, connections.synapsesForSegment(segment).size());
 
   vector<UInt32> numActiveConnectedSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
@@ -197,8 +197,8 @@ TEST(ConnectionsTest, testDestroySynapse) {
                               numActivePotentialSynapsesForSegment,
                               {80, 81, 82}, 0.5);
 
-  ASSERT_EQ(1, numActiveConnectedSynapsesForSegment[segment]);
-  ASSERT_EQ(2, numActivePotentialSynapsesForSegment[segment]);
+  ASSERT_EQ(1u, numActiveConnectedSynapsesForSegment[segment]);
+  ASSERT_EQ(2u, numActivePotentialSynapsesForSegment[segment]);
 }
 
 /**
@@ -213,26 +213,26 @@ TEST(ConnectionsTest, PathsNotInvalidatedByOtherDestroys) {
   /*      segment2*/ connections.createSegment(12);
 
   Segment segment3 = connections.createSegment(13);
-  Synapse synapse1 = connections.createSynapse(segment3, 201, 0.85);
-  /*      synapse2*/ connections.createSynapse(segment3, 202, 0.85);
-  Synapse synapse3 = connections.createSynapse(segment3, 203, 0.85);
-  /*      synapse4*/ connections.createSynapse(segment3, 204, 0.85);
-  Synapse synapse5 = connections.createSynapse(segment3, 205, 0.85);
+  Synapse synapse1 = connections.createSynapse(segment3, 201, 0.85f);
+  /*      synapse2*/ connections.createSynapse(segment3, 202, 0.85f);
+  Synapse synapse3 = connections.createSynapse(segment3, 203, 0.85f);
+  /*      synapse4*/ connections.createSynapse(segment3, 204, 0.85f);
+  Synapse synapse5 = connections.createSynapse(segment3, 205, 0.85f);
 
   /*      segment4*/ connections.createSegment(14);
   Segment segment5 = connections.createSegment(15);
 
-  ASSERT_EQ(203, connections.dataForSynapse(synapse3).presynapticCell);
+  ASSERT_EQ(203u, connections.dataForSynapse(synapse3).presynapticCell);
   connections.destroySynapse(synapse1);
-  EXPECT_EQ(203, connections.dataForSynapse(synapse3).presynapticCell);
+  EXPECT_EQ(203u, connections.dataForSynapse(synapse3).presynapticCell);
   connections.destroySynapse(synapse5);
-  EXPECT_EQ(203, connections.dataForSynapse(synapse3).presynapticCell);
+  EXPECT_EQ(203u, connections.dataForSynapse(synapse3).presynapticCell);
 
   connections.destroySegment(segment1);
-  EXPECT_EQ(3, connections.synapsesForSegment(segment3).size());
+  EXPECT_EQ(3u, connections.synapsesForSegment(segment3).size());
   connections.destroySegment(segment5);
-  EXPECT_EQ(3, connections.synapsesForSegment(segment3).size());
-  EXPECT_EQ(203, connections.dataForSynapse(synapse3).presynapticCell);
+  EXPECT_EQ(3u, connections.synapsesForSegment(segment3).size());
+  EXPECT_EQ(203u, connections.dataForSynapse(synapse3).presynapticCell);
 }
 
 /**
@@ -245,21 +245,21 @@ TEST(ConnectionsTest, DestroySegmentWithDestroyedSynapses) {
   Segment segment1 = connections.createSegment(11);
   Segment segment2 = connections.createSegment(12);
 
-  /*      synapse1_1*/ connections.createSynapse(segment1, 101, 0.85);
-  Synapse synapse2_1 = connections.createSynapse(segment2, 201, 0.85);
-  /*      synapse2_2*/ connections.createSynapse(segment2, 202, 0.85);
+  /*      synapse1_1*/ connections.createSynapse(segment1, 101, 0.85f);
+  Synapse synapse2_1 = connections.createSynapse(segment2, 201, 0.85f);
+  /*      synapse2_2*/ connections.createSynapse(segment2, 202, 0.85f);
 
-  ASSERT_EQ(3, connections.numSynapses());
+  ASSERT_EQ(3u, connections.numSynapses());
 
   connections.destroySynapse(synapse2_1);
 
-  ASSERT_EQ(2, connections.numSegments());
-  ASSERT_EQ(2, connections.numSynapses());
+  ASSERT_EQ(2u, connections.numSegments());
+  ASSERT_EQ(2u, connections.numSynapses());
 
   connections.destroySegment(segment2);
 
-  EXPECT_EQ(1, connections.numSegments());
-  EXPECT_EQ(1, connections.numSynapses());
+  EXPECT_EQ(1u, connections.numSegments());
+  EXPECT_EQ(1u, connections.numSynapses());
 }
 
 /**
@@ -272,18 +272,18 @@ TEST(ConnectionsTest, ReuseSegmentWithDestroyedSynapses) {
 
   Segment segment = connections.createSegment(11);
 
-  Synapse synapse1 = connections.createSynapse(segment, 201, 0.85);
-  /*      synapse2*/ connections.createSynapse(segment, 202, 0.85);
+  Synapse synapse1 = connections.createSynapse(segment, 201, 0.85f);
+  /*      synapse2*/ connections.createSynapse(segment, 202, 0.85f);
 
   connections.destroySynapse(synapse1);
 
-  ASSERT_EQ(1, connections.numSynapses(segment));
+  ASSERT_EQ(1u, connections.numSynapses(segment));
 
   connections.destroySegment(segment);
   Segment reincarnated = connections.createSegment(11);
 
-  EXPECT_EQ(0, connections.numSynapses(reincarnated));
-  EXPECT_EQ(0, connections.synapsesForSegment(reincarnated).size());
+  EXPECT_EQ(0u, connections.numSynapses(reincarnated));
+  EXPECT_EQ(0u, connections.synapsesForSegment(reincarnated).size());
 }
 
 /**
@@ -293,12 +293,12 @@ TEST(ConnectionsTest, ReuseSegmentWithDestroyedSynapses) {
 TEST(ConnectionsTest, testUpdateSynapsePermanence) {
   Connections connections(1024);
   Segment segment = connections.createSegment(10);
-  Synapse synapse = connections.createSynapse(segment, 50, 0.34);
+  Synapse synapse = connections.createSynapse(segment, 50, 0.34f);
 
-  connections.updateSynapsePermanence(synapse, 0.21);
+  connections.updateSynapsePermanence(synapse, 0.21f);
 
   SynapseData synapseData = connections.dataForSynapse(synapse);
-  ASSERT_NEAR(synapseData.permanence, (Real)0.21, EPSILON);
+  ASSERT_NEAR(synapseData.permanence, 0.21f, EPSILON);
 }
 
 /**
@@ -314,18 +314,18 @@ TEST(ConnectionsTest, testComputeActivity) {
   // - 1 connected synapse: active
   // - 2 matching synapses: active
   const Segment segment1_1 = connections.createSegment(10);
-  connections.createSynapse(segment1_1, 150, 0.85);
-  connections.createSynapse(segment1_1, 151, 0.15);
+  connections.createSynapse(segment1_1, 150, 0.85f);
+  connections.createSynapse(segment1_1, 151, 0.15f);
 
   // Cell with 1 segments.
   // Segment with:
   // - 2 connected synapses: 2 active
   // - 3 matching synapses: 3 active
   const Segment segment2_1 = connections.createSegment(20);
-  connections.createSynapse(segment2_1, 80, 0.85);
-  connections.createSynapse(segment2_1, 81, 0.85);
-  Synapse synapse = connections.createSynapse(segment2_1, 82, 0.85);
-  connections.updateSynapsePermanence(synapse, 0.15);
+  connections.createSynapse(segment2_1, 80, 0.85f);
+  connections.createSynapse(segment2_1, 81, 0.85f);
+  Synapse synapse = connections.createSynapse(segment2_1, 82, 0.85f);
+  connections.updateSynapsePermanence(synapse, 0.15f);
 
   vector<UInt32> input = {50, 52, 53, 80, 81, 82, 150, 151};
 
@@ -334,13 +334,13 @@ TEST(ConnectionsTest, testComputeActivity) {
   vector<UInt32> numActivePotentialSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
   connections.computeActivity(numActiveConnectedSynapsesForSegment,
-                              numActivePotentialSynapsesForSegment, input, 0.5);
+                              numActivePotentialSynapsesForSegment, input, 0.5f);
 
-  ASSERT_EQ(1, numActiveConnectedSynapsesForSegment[segment1_1]);
-  ASSERT_EQ(2, numActivePotentialSynapsesForSegment[segment1_1]);
+  ASSERT_EQ(1u, numActiveConnectedSynapsesForSegment[segment1_1]);
+  ASSERT_EQ(2u, numActivePotentialSynapsesForSegment[segment1_1]);
 
-  ASSERT_EQ(2, numActiveConnectedSynapsesForSegment[segment2_1]);
-  ASSERT_EQ(3, numActivePotentialSynapsesForSegment[segment2_1]);
+  ASSERT_EQ(2u, numActiveConnectedSynapsesForSegment[segment2_1]);
+  ASSERT_EQ(3u, numActivePotentialSynapsesForSegment[segment2_1]);
 }
 
 /**
@@ -356,8 +356,9 @@ TEST(ConnectionsTest, testMapSegmentsToCells) {
   const vector<Segment> segments = {segment1, segment2, segment3, segment1};
   vector<CellIdx> cells(segments.size());
 
-  connections.mapSegmentsToCells(
-      segments.data(), segments.data() + segments.size(), cells.data());
+  connections.mapSegmentsToCells(segments.data(),
+                                 segments.data() + segments.size(),
+                                 cells.data());
 
   const vector<CellIdx> expected = {42, 42, 43, 42};
   ASSERT_EQ(expected, cells);
@@ -368,8 +369,10 @@ bool TEST_EVENT_HANDLER_DESTRUCTED = false;
 class TestConnectionsEventHandler : public ConnectionsEventHandler {
 public:
   TestConnectionsEventHandler()
-      : didCreateSegment(false), didDestroySegment(false),
-        didCreateSynapse(false), didDestroySynapse(false),
+      : didCreateSegment(false),
+	    didDestroySegment(false),
+        didCreateSynapse(false),
+		didDestroySynapse(false),
         didUpdateSynapsePermanence(false) {}
 
   virtual ~TestConnectionsEventHandler() {
@@ -410,11 +413,11 @@ TEST(ConnectionsTest, subscribe) {
   EXPECT_TRUE(handler->didCreateSegment);
 
   ASSERT_FALSE(handler->didCreateSynapse);
-  Synapse synapse = connections.createSynapse(segment, 41, 0.50);
+  Synapse synapse = connections.createSynapse(segment, 41, 0.50f);
   EXPECT_TRUE(handler->didCreateSynapse);
 
   ASSERT_FALSE(handler->didUpdateSynapsePermanence);
-  connections.updateSynapsePermanence(synapse, 0.60);
+  connections.updateSynapsePermanence(synapse, 0.60f);
   EXPECT_TRUE(handler->didUpdateSynapsePermanence);
 
   ASSERT_FALSE(handler->didDestroySynapse);
@@ -449,7 +452,7 @@ TEST(ConnectionsTest, testNumSegments) {
   Connections connections(1024);
   setupSampleConnections(connections);
 
-  ASSERT_EQ(4, connections.numSegments());
+  ASSERT_EQ(4u, connections.numSegments());
 }
 
 /**
@@ -460,7 +463,7 @@ TEST(ConnectionsTest, testNumSynapses) {
   Connections connections(1024);
   setupSampleConnections(connections);
 
-  ASSERT_EQ(10, connections.numSynapses());
+  ASSERT_EQ(10u, connections.numSynapses());
 }
 
 /**
@@ -474,7 +477,7 @@ TEST(ConnectionsTest, testSaveLoad) {
 
   auto segment = c1.createSegment(10);
 
-  c1.createSynapse(segment, 400, 0.5);
+  c1.createSynapse(segment, 400, 0.5f);
   c1.destroySegment(segment);
 
   computeSampleActivity(c1);
@@ -488,4 +491,4 @@ TEST(ConnectionsTest, testSaveLoad) {
   ASSERT_EQ(c1, c2);
 }
 
-} // namespace
+} // namespace nupic

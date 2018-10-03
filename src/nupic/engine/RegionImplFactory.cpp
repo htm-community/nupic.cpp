@@ -182,7 +182,7 @@ public:
 
 private:
   std::string rootDir_;
-  boost::shared_ptr<DynamicLibrary> pynodeLibrary_;
+  std::shared_ptr<DynamicLibrary> pynodeLibrary_;
   initPythonFunc initPython_;
   finalizePythonFunc finalizePython_;
   createSpecFunc createSpec_;

@@ -31,12 +31,13 @@
 #include <nupic/os/Path.hpp>
 
 // Compiler support for <filesystem> in C++17:
-//    GCC 7 has <experimental/filesystem>, link with -libc++experimental or -lstdc++fs
+// https://en.cppreference.com/w/cpp/compiler_support
+//    GCC 7.1 has <experimental/filesystem>, link with -libc++experimental or -lstdc++fs
 //    GCC 8 has <filesystem>   link with -lstdc++fs
 //    GCC 9   expected to support <filesystem>
 //    Clang 4 (XCode10) has no support for <filesystem>, partial C++17
-//    Clang 5 has complete <filesystem> support for C++17
-//    Visual Studio 2017 15.7 supports <filesystem> with C++17
+//    Clang 7 has complete <filesystem> support for C++17
+//    Visual Studio 2017 15.7 (v19.14)supports <filesystem> with C++17
 //    MinGW has no support for filesystem.
 //
 // If >= C++17 then

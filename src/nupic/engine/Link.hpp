@@ -28,8 +28,7 @@
 #define NTA_LINK_HPP
 
 #include <string>
-
-#include <boost/circular_buffer.hpp>
+#include <deque>
 
 #include <nupic/engine/Input.hpp> // needed for splitter map
 #include <nupic/engine/LinkPolicy.hpp>
@@ -49,8 +48,7 @@ class Input;
  * @nosubgrouping
  *
  */
-class Link
-{
+class Link {
 public:
   /**
    * @name Initialization
@@ -468,8 +466,8 @@ private:
   size_t srcOffset_;
   size_t srcSize_;
 
-  // Circular buffer for delayed source data buffering
-  boost::circular_buffer<Array> srcBuffer_;
+  // Queue buffer for delayed source data buffering
+  std::deque<Array> propagationDelayBuffer_;
   // Number of delay slots
   size_t propagationDelay_;
 

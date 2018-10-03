@@ -24,14 +24,8 @@
  * Implementation of unit tests for SDRClassifier
  */
 
-#include <cmath> // isnan
 #include <iostream>
-#include <limits> // numeric_limits
 #include <sstream>
-#include <stdio.h>
-#include <string>
-#include <vector>
-
 #include <gtest/gtest.h>
 
 #include <nupic/algorithms/ClassifierResult.hpp>
@@ -74,8 +68,7 @@ TEST_F(SDRClassifierTest, Basic) {
   vector<Real64> actValueList1;
   actValueList1.push_back(34.7);
   ClassifierResult result1;
-  c.compute(0, input1, bucketIdxList1, actValueList1, false, true, true,
-            &result1);
+  c.compute(0, input1, bucketIdxList1, actValueList1, false, true, true, &result1);
 
   // Create a vector of input bit indices
   vector<UInt> input2;
@@ -87,8 +80,7 @@ TEST_F(SDRClassifierTest, Basic) {
   vector<Real64> actValueList2;
   actValueList2.push_back(34.7);
   ClassifierResult result2;
-  c.compute(1, input2, bucketIdxList2, actValueList2, false, true, true,
-            &result2);
+  c.compute(1, input2, bucketIdxList2, actValueList2, false, true, true, &result2);
 
   {
     bool foundMinus1 = false;
@@ -99,7 +91,7 @@ TEST_F(SDRClassifierTest, Basic) {
         ASSERT_EQ(false, foundMinus1)
             << "Already found key -1 in classifier result";
         foundMinus1 = true;
-        ASSERT_EQ(5, it->second->size())
+        ASSERT_EQ(5u, it->second->size())
             << "Expected five buckets since it has only seen bucket 4 (so it "
             << "Has buckets 0-4).";
         ASSERT_TRUE(fabs(it->second->at(4) - 34.7) < 0.000001)
@@ -108,7 +100,7 @@ TEST_F(SDRClassifierTest, Basic) {
         // Check the one-step prediction
         ASSERT_EQ(false, found1) << "Already found key 1 in classifier result";
         found1 = true;
-        ASSERT_EQ(5, it->second->size()) << "Expected five bucket predictions";
+        ASSERT_EQ(5u, it->second->size()) << "Expected five bucket predictions";
         ASSERT_LT(fabs(it->second->at(0) - 0.2), 0.000001)
             << "Incorrect prediction for bucket 0";
         ASSERT_LT(fabs(it->second->at(1) - 0.2), 0.000001)
@@ -145,8 +137,7 @@ TEST_F(SDRClassifierTest, SingleValue) {
   ClassifierResult result1;
   for (UInt i = 0; i < 10; ++i) {
     ClassifierResult result1;
-    c.compute(i, input1, bucketIdxList, actValueList, false, true, true,
-              &result1);
+    c.compute(i, input1, bucketIdxList, actValueList, false, true, true, &result1);
   }
 
   {
@@ -210,24 +201,19 @@ TEST_F(SDRClassifierTest, ComputeComplex) {
   actValueList5.push_back(34.7);
 
   ClassifierResult result1;
-  c.compute(0, input1, bucketIdxList1, actValueList1, false, true, true,
-            &result1);
+  c.compute(0, input1, bucketIdxList1, actValueList1, false, true, true, &result1);
 
   ClassifierResult result2;
-  c.compute(1, input2, bucketIdxList2, actValueList2, false, true, true,
-            &result2);
+  c.compute(1, input2, bucketIdxList2, actValueList2, false, true, true, &result2);
 
   ClassifierResult result3;
-  c.compute(2, input3, bucketIdxList3, actValueList3, false, true, true,
-            &result3);
+  c.compute(2, input3, bucketIdxList3, actValueList3, false, true, true, &result3);
 
   ClassifierResult result4;
-  c.compute(3, input1, bucketIdxList4, actValueList4, false, true, true,
-            &result4);
+  c.compute(3, input1, bucketIdxList4, actValueList4, false, true, true,  &result4);
 
   ClassifierResult result5;
-  c.compute(4, input1, bucketIdxList5, actValueList5, false, true, true,
-            &result5);
+  c.compute(4, input1, bucketIdxList5, actValueList5, false, true, true, &result5);
 
   {
     bool foundMinus1 = false;
@@ -240,7 +226,7 @@ TEST_F(SDRClassifierTest, ComputeComplex) {
         ASSERT_EQ(false, foundMinus1)
             << "Already found key -1 in classifier result";
         foundMinus1 = true;
-        ASSERT_EQ(6, it->second->size())
+        ASSERT_EQ(6u, it->second->size())
             << "Expected six buckets since it has only seen bucket 4-5 (so it "
             << "has buckets 0-5).";
         ASSERT_TRUE(fabs(it->second->at(4) - 35.520000457763672) < 0.000001)
@@ -252,7 +238,7 @@ TEST_F(SDRClassifierTest, ComputeComplex) {
         ASSERT_EQ(false, found1) << "Already found key 1 in classifier result";
         found1 = true;
 
-        ASSERT_EQ(6, it->second->size()) << "Expected six bucket predictions";
+        ASSERT_EQ(6u, it->second->size()) << "Expected six bucket predictions";
         ASSERT_LT(fabs(it->second->at(0) - 0.034234), 0.000001)
             << "Incorrect prediction for bucket 0";
         ASSERT_LT(fabs(it->second->at(1) - 0.034234), 0.000001)
@@ -359,8 +345,7 @@ TEST_F(SDRClassifierTest, SaveLoad) {
   vector<Real64> actValueList1;
   actValueList1.push_back(34.7);
   ClassifierResult result;
-  c1.compute(0, input1, bucketIdxList1, actValueList1, false, true, true,
-             &result);
+  c1.compute(0, input1, bucketIdxList1, actValueList1, false, true, true, &result);
 
   {
     stringstream ss;
@@ -371,10 +356,8 @@ TEST_F(SDRClassifierTest, SaveLoad) {
   ASSERT_TRUE(c1 == c2);
 
   ClassifierResult result1, result2;
-  c1.compute(1, input1, bucketIdxList1, actValueList1, false, true, true,
-             &result1);
-  c2.compute(1, input1, bucketIdxList1, actValueList1, false, true, true,
-             &result2);
+  c1.compute(1, input1, bucketIdxList1, actValueList1, false, true, true, &result1);
+  c2.compute(1, input1, bucketIdxList1, actValueList1, false, true, true, &result2);
 
   ASSERT_TRUE(result1 == result2);
 }

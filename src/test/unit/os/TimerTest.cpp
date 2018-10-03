@@ -56,15 +56,15 @@ TEST(TimerTest, Basic) {
   Timer t2(/* startme= */ true);
 
   ASSERT_FALSE(t1.isStarted());
-  ASSERT_EQ(t1.getElapsed(), 0.0);
-  ASSERT_EQ(t1.getStartCount(), 0);
+  ASSERT_EQ(t1.getElapsed(), 0.0f);
+  ASSERT_EQ(t1.getStartCount(), 0u);
   EXPECT_STREQ("[Elapsed: 0 Starts: 0]", t1.toString().c_str());
 
 
   nap();
 
   ASSERT_TRUE(t2.isStarted());
-  ASSERT_EQ(t2.getStartCount(), 1);
+  ASSERT_EQ(t2.getStartCount(), 1u);
   ASSERT_GT(t2.getElapsed(), 0);
   Real64 t2elapsed = t2.getElapsed();
 
@@ -73,20 +73,20 @@ TEST(TimerTest, Basic) {
   t1.stop();
 
   t2.stop();
-  ASSERT_EQ(t1.getStartCount(), 1);
+  ASSERT_EQ(t1.getStartCount(), 1u);
   ASSERT_GT(t1.getElapsed(), 0);
   ASSERT_GT(t2.getElapsed(), t2elapsed);
   ASSERT_GT(t2.getElapsed(), t1.getElapsed());
 
   t1.start();
   t1.stop();
-  ASSERT_EQ(t1.getStartCount(), 2);
+  ASSERT_EQ(t1.getStartCount(), 2u);
 }
 
 TEST(TimerTest, Drift) {
 // Test start/stop delay accumulation
   Timer t;
-  const UInt EPOCHS = 1000000; // 1M
+  const UInt EPOCHS = 1000000u; // 1M
   const UInt EPSILON = 5; // tolerate 5us drift on 1M restarts
   for(UInt i=0; i<EPOCHS; i++){
     t.start();
