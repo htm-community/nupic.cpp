@@ -23,32 +23,25 @@
 #include <stdexcept>
 
 
+#include <nupic/encoders/ScalarSensor.hpp>
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/RegionImpl.hpp>
 #include <nupic/engine/RegionImplFactory.hpp>
 #include <nupic/engine/RegisteredRegionImpl.hpp>
 #include <nupic/engine/Spec.hpp>
+#include <nupic/engine/TestNode.hpp>
 #include <nupic/engine/YAMLUtils.hpp>
 #include <nupic/ntypes/BundleIO.hpp>
 #include <nupic/ntypes/Value.hpp>
+#include <nupic/os/DynamicLibrary.hpp>
 #include <nupic/os/Env.hpp>
 #include <nupic/os/OS.hpp>
 #include <nupic/os/Path.hpp>
-#include <nupic/utils/Log.hpp>
-#include <nupic/utils/StringUtils.hpp>
-
 #include <nupic/regions/PyRegion.hpp>
-#include <nupic/os/DynamicLibrary.hpp>
-
-
-// Built-in Plugins
-#include <nupic/engine/TestNode.hpp>
-#include <nupic/encoders/ScalarSensor.hpp>
 #include <nupic/regions/VectorFileEffector.hpp>
 #include <nupic/regions/VectorFileSensor.hpp>
-//#include <nupic/regions/SPregion.hpp>
-//#include <nupic/regions/TMregion.hpp>
-
+#include <nupic/utils/Log.hpp>
+#include <nupic/utils/StringUtils.hpp>
 
 // from http://stackoverflow.com/a/9096509/1781435
 #define stringify(x) #x

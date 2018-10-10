@@ -20,7 +20,8 @@ matrix:
             - python-pip-whl
             - python2.7 
       env:
-        - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
+#        - MATRIX_EVAL="CC=gcc-4.8 && CXX=g++-4.8"
+        - MATRIX_EVAL="CC=gcc-7.3 && CXX=g++-7.3"
         - PLATFORM="linux"
 #    ## OSX builds take very long to start on OSX
 #    # moved to CircleCI for OSX

@@ -30,10 +30,9 @@
 #include <nupic/os/Env.hpp>
 #include <nupic/utils/LoggingException.hpp>
 #include <nupic/utils/Random.hpp>
-
+#include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sstream>
 
 using namespace nupic;
 

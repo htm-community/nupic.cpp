@@ -362,7 +362,6 @@ TEST_F(SDRClassifierTest, SaveLoad) {
   ASSERT_TRUE(result1 == result2);
 }
 
-
 TEST_F(SDRClassifierTest, testSoftmaxOverflow) {
   SDRClassifier c = SDRClassifier({1}, 0.5, 0.5, 0);
   std::vector<Real64> values = {numeric_limits<Real64>::max()};
