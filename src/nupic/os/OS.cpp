@@ -39,7 +39,9 @@ extern "C" {
 //We only run on Win 7 and above
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
+#ifndef PSAPI_VERSION
 #define PSAPI_VERSION 2  // so that Win 7 can use the new function names K32QueryWorkingSet
+#endif
 #include <Windows.h>
 #include <psapi.h>
 #endif
@@ -102,7 +104,7 @@ void OS::getProcessMemoryUsage(size_t &realMem, size_t &virtualMem) {
 
   unsigned int privateWorkingSet = 0;
 
-  for (auto i = 0; i < actualPages; i++) {
+  for (UInt64 i = 0; i < actualPages; i++) {
     if (!pWSI->WorkingSetInfo[i].Shared) {
       privateWorkingSet += si.dwPageSize;
     }

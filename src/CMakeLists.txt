@@ -29,7 +29,7 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "EP_BASE                  = ${EP_BASE}")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(CMAKE_VERBOSE_MAKEFILE OFF) # toggle for cmake debug
+set(CMAKE_VERBOSE_MAKEFILE ON) # toggle for cmake debug
 
 
 if( POLICY CMP0046 )
@@ -85,7 +85,7 @@ endif()
 #
 # Compiler definitions specific to nupic.core code
 #
-
+string(TOLOWER ${CMAKE_SYSTEM_NAME} PLATFORM)
 string(TOUPPER ${CMAKE_SYSTEM_NAME} platform_uppercase)
 
 # Define a platform suffix, eg ${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}
@@ -101,9 +101,7 @@ set(src_compiler_definitions
     -DHAVE_CONFIG_H
     -DNTA_INTERNAL
     -DBOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
-    -DBOOST_NO_WREGEX
-    -DAPR_DECLARE_STATIC
-    -DAPU_DECLARE_STATIC)
+    -DBOOST_NO_WREGEX)
 
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
   set(src_compiler_definitions
@@ -130,7 +128,7 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MinGW")
       -D_hypot=hypot)
 endif()
 
-
+message(STATUS "src_compiler_definitions=${src_compiler_definitions}")
 add_definitions(${src_compiler_definitions})
 
 
@@ -209,16 +207,6 @@ set(src_py_support_files
 include_directories(${REPOSITORY_DIR}/external/common/include)
 set(src_external_static_libs)
 
-#find_package(yaml REQUIRED
-#	HINTS   ${EP_BASE}/Install/YamlStaticLib
-#		${EP_BASE}/Stamp/YamlstaticLib
-#)
-#if(yaml_FOUND)
-#	include_directories(${YamlLib_INCLUDE_DIRS})
-#	list(APPEND src_external_static_libs ${YamlLib_LIBRARIES})
-#endif()
-#message(STATUS "YamlLib_INCLUDE_DIRS= ${YamlLib_INCLUDE_DIRS}")
-#message(STATUS "YamlLib_LIBRARIES   = ${YamlLib_LIBRARIES}")
 
 set(YAMLCPP_STATIC_LIBRARY TRUE)
 find_package(yaml-cpp REQUIRED
@@ -234,14 +222,19 @@ message(STATUS "YAML_CPP_INCLUDE_DIR = ${YAML_CPP_INCLUDE_DIR}")
 message(STATUS "YAML_CPP_LIBRARIES   = ${YAML_CPP_LIBRARIES}")
 
 if(${NEEDS_BOOST})
-  message(STATUS "Expect some warnings from Boost about missing dependancies.  It is ok.")
   set(BOOST_ROOT ${EP_BASE}/Install/boost)
+  message(STATUS "Hints for find_package()")
+  message(STATUS "  BOOST_ROOT  = ${BOOST_ROOT}")
+
+  message(STATUS "Expect some warnings from Boost about missing dependancies.  It is ok.")
   find_package(Boost REQUIRED COMPONENTS system filesystem)
   if(${Boost_FOUND})
 	include_directories(${Boost_INCLUDE_DIRS})
 	list(APPEND src_external_static_libs ${Boost_LIBRARIES})
-	message(STATUS "Boost_INCLUDE_DIRS        = ${Boost_INCLUDE_DIRS}")
-	message(STATUS "Boost_LIBRARIES           = ${Boost_LIBRARIES}")
+	message(STATUS "  Boost_INCLUDE_DIRS        = ${Boost_INCLUDE_DIRS}")
+	message(STATUS "  Boost_LIBRARIES           = ${Boost_LIBRARIES}")
+  else()
+  	message(STATUS "Boost not found.")
   endif()
 endif()
 
@@ -354,8 +347,7 @@ set(src_lib_static_nupiccore_srcs
 set(src_lib_static_nupiccore_compile_flags
     "${src_compile_flags} -I${src_numpy_core}/include")
 
-message(STATUS "src_compile_flags = ${src_compile_flags}")
-message(STATUS "src_lib_static_nupiccore_compile_flags = ${src_lib_static_nupiccore_compile_flags}")
+message(STATUS "FOR SOLO: src_lib_static_nupiccore_compile_flags = ${src_lib_static_nupiccore_compile_flags}")
 
 add_library(${src_lib_static_nupiccore_solo} STATIC
             ${src_lib_static_nupiccore_srcs})
@@ -635,7 +627,8 @@ if (NUPIC_BUILD_PYEXT_MODULES)
   # Common dependencies for our python extensions for use with
   # SWIG_MODULE_name_EXTRA_DEPS
   # Make sure we don't execute the swig executable before it is built
-  set(_SRC_SWIG_EXTRA_DEPS Swig)
+  set(_SRC_SWIG_EXTRA_DEPS ${src_lib_static_nupiccore_solo}) 
+  #    No longer need to make Swig executable a dependancy since we are using superbuilds for externals.
 
   # NOTE Windows DLLs are shared executables with their own main; they require
   # all symbols to resolve at link time, so we have to add libpython for this
@@ -706,6 +699,7 @@ if (NUPIC_BUILD_PYEXT_MODULES)
       COMPILE_FLAGS ${src_swig_generated_file_compile_flags})
 
     swig_link_libraries(${MODULE_NAME} ${_SRC_SWIG_LINK_LIBRARIES})
+    #target_link_libraries(${MODULE_NAME} ${_SRC_SWIG_LINK_LIBRARIES})
 
     prepend_boilerplate_to_python_proxy_module(${MODULE_NAME})
 
@@ -773,10 +767,12 @@ if (NUPIC_BUILD_PYEXT_MODULES)
 
 endif() # NUPIC_BUILD_PYEXT_MODULES
 
-
+###################################################################
 #
 # Install targets into CMAKE_INSTALL_PREFIX
 #
+###################################################################
+
 install(TARGETS
         ${src_lib_static_nupiccore_combined}
         ${src_lib_static_gtest}

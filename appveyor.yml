@@ -77,7 +77,7 @@ environment:
 matrix:
   allow_failures:
     # Checking if Visual Studio build is possible
-    - NC_CMAKE_GENERATOR: "Visual Studio 14 2015 Win64"
+    - NC_CMAKE_GENERATOR: "Visual Studio 15 2017 Win64"
 
 
 #---------------------------------#

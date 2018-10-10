@@ -88,7 +88,7 @@ TEST_F(SDRClassifierTest, Basic) {
     for (auto it = result2.begin(); it != result2.end(); ++it) {
       if (it->first == -1) {
         // The -1 key is used for the actual values
-        ASSERT_EQ(false, foundMinus1)
+        ASSERT_FALSE(foundMinus1)
             << "Already found key -1 in classifier result";
         foundMinus1 = true;
         ASSERT_EQ(5u, it->second->size())
@@ -98,7 +98,7 @@ TEST_F(SDRClassifierTest, Basic) {
             << "Incorrect actual value for bucket 4";
       } else if (it->first == 1) {
         // Check the one-step prediction
-        ASSERT_EQ(false, found1) << "Already found key 1 in classifier result";
+        ASSERT_FALSE(found1) << "Already found key 1 in classifier result";
         found1 = true;
         ASSERT_EQ(5u, it->second->size()) << "Expected five bucket predictions";
         ASSERT_LT(fabs(it->second->at(0) - 0.2), 0.000001)
@@ -223,7 +223,7 @@ TEST_F(SDRClassifierTest, ComputeComplex) {
           << "Result vector should only have -1 or 1 as key";
       if (it->first == -1) {
         // The -1 key is used for the actual values
-        ASSERT_EQ(false, foundMinus1)
+        ASSERT_FALSE(foundMinus1)
             << "Already found key -1 in classifier result";
         foundMinus1 = true;
         ASSERT_EQ(6u, it->second->size())
@@ -235,7 +235,7 @@ TEST_F(SDRClassifierTest, ComputeComplex) {
             << "Incorrect actual value for bucket 5";
       } else if (it->first == 1) {
         // Check the one-step prediction
-        ASSERT_EQ(false, found1) << "Already found key 1 in classifier result";
+        ASSERT_FALSE(found1) << "Already found key 1 in classifier result";
         found1 = true;
 
         ASSERT_EQ(6u, it->second->size()) << "Expected six bucket predictions";

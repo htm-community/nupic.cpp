@@ -193,7 +193,7 @@ TEST(YAMLUtilsTest, ParameterSpec) {
   EXPECT_TRUE(vm.contains("boolParam"))
       << "assertion vm.contains(\"boolParam\") failed at "
 	  << __FILE__ << ":" << __LINE__;
-  ASSERT_EQ(false, vm.getScalarT<bool>("boolParam"));
+  ASSERT_FALSE(vm.getScalarT<bool>("boolParam"));
 
   // disabled until we fix default string params
   // TEST(vm.contains("stringParam"));

@@ -61,7 +61,7 @@ endif()
 # else set standard to C++11 and install boost filesystem
 # Also allow external library for <filesystem>
 
-set(extra_lib_for_filesystem)
+set(extra_lib_for_filesystem)   # sometimes -libc++experimental or -lstdc++fs
 set(INTERNAL_CPP_STANDARD "c++11")
 set(NEEDS_BOOST ON)
 
@@ -94,6 +94,17 @@ set(NEEDS_BOOST ON)
 option(NUPIC_BUILD_PYEXT_MODULES
        "Turn on building of python extension modules for nupic.bindings; turn off to build only static nupic_core lib with full symbol visibility."
        ON)
+
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif()
+if(NOT PY_EXTENSIONS_DIR)
+	set(PY_EXTENSIONS_DIR ${REPOSITORY_DIR}/bindings/py/src/nupic/bindings)
+endif()
+if(NOT ${CMAKE_INSTALL_PREFIX})
+	set(CMAKE_INSTALL_PREFIX "${REPOSITORY_DIR}/build/${CMAKE_BUILD_TYPE}")
+endif()
+
 
 message(STATUS "REPOSITORY_DIR        = ${REPOSITORY_DIR}")
 message(STATUS "CMAKE_SOURCE_DIR      = ${CMAKE_SOURCE_DIR}")
@@ -162,4 +173,6 @@ ExternalProject_Add(nupic_core
 	INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
 	)
 
+##################################
+Install(CODE "MESSAGE(\"Installation Complete\")")
 
