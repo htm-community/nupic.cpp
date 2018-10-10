@@ -437,10 +437,10 @@ std::wstring StringUtils::utf8ToUnicode(const std::string &str)
 std::string StringUtils::unicodeToUtf8(const std::wstring &wstr)
 {
 	size_t size = 0;
-	char * lc = std::setlocale(LC_ALL, "en_US.utf8"); // determines code page generated
+	char * lc = ::setlocale(LC_ALL, "en_US.utf8"); // determines code page generated
 	std::string str(wstr.size()*3, ' ');  // overestimate number of bytes and create space
 	size = std::wcstombs(&str[0], &wstr[0], wstr.size());
-	std::setlocale(LC_ALL, lc); // restore locale
+	::setlocale(LC_ALL, lc); // restore locale
 	str.resize(size);
 	return str;
 }
