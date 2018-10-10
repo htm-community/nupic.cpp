@@ -30,8 +30,7 @@
 #include <nupic/os/Path.hpp>
 #include <nupic/utils/Log.hpp>
 
-#define VERBOSE if(verbose)std::cerr << "[          ] "
-static bool verbose = true;  // turn this on to print extra stuff for debugging the test.
+#define VERBOSE std::cerr << "[          ] "
 
 
 #if defined(NTA_OS_WINDOWS)
