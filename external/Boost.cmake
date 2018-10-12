@@ -41,7 +41,7 @@
 # 3) Objects in the library by default are .o extension  but we need .obj so that 
 #    COMBINE_UNIT_ARCHIVES() will work. Static libraries still have the .a extension.
 #
-#
+# We will be eventually replace MinGW with Visual Studio as the Windows build.
 ######################################################################
 
 message(STATUS "----- Boost External Project ------")
@@ -62,7 +62,6 @@ if (MSVC OR MSYS OR MINGW)
   if (MSYS OR MINGW)
     set(bootstrap bootstrap.bat gcc)
     set(toolset toolset=gcc architecture=x86)
-    set(cxx_flags ${cxx_flags})
   elseif(MSVC)
     set(bootstrap bootstrap.bat vc141)
     set(toolset toolset=msvc-15.0 architecture=x86 runtime-link=shared)

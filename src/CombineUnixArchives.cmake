@@ -75,15 +75,13 @@ function(COMBINE_UNIX_ARCHIVES
     endif()
 
     # Accumulate objects
-    if(UNIX)
-      # Linux or OS X; all ELF format objects
-      set(globbing "${working_dir}/*.o")
-    elseif(MSVC)
+    if(MSVC)
       # Windows; all COFF format objects
       set(globbing "${working_dir}/*.obj")
     else()
-      # i.e., MSYS & MINGW toolchain; could be .o or .obj
-      set(globbing "${working_dir}/*.o*")
+      # Linux or OS X; all ELF format objects
+      set(globbing "${working_dir}/*.o")
+      # Note: MinGW not supported.  It can generate both .o and .obj in same project.
     endif()
 
     file(GLOB_RECURSE objects "${globbing}")
@@ -107,23 +105,6 @@ function(COMBINE_UNIX_ARCHIVES
       # Use relative paths to work around too-long command failure when building
       # on Windows in AppVeyor
       file(RELATIVE_PATH new_obj_file_path ${scratch_dir} ${new_obj_file_path})
-      
-      ####### remove this section if we no longer support MINGW
-      get_filename_component(ext ${new_obj_file_path} EXT)
-      if (MINGW AND ${ext} STREQUAL ".o")
-        # This is a hack to get around a problem of some objects being generated
-	# as ELF format .o files when they need to be .obj COFF/PE format
-	get_filename_component(fn ${new_obj_file_path} NAME_WE) 
-	set(conv_prog "${REPOSITORY_DIR}/external/windows64-gcc/bin/objconv.exe")
-	execute_process(COMMAND ${conv_prog} -fCOFF64 ${new_obj_file_path} ${fn}.obj
-	    WORKING_DIRECTORY ${scratch_dir} RESULT_VARIABLE exe_result)
-        if(NOT "${exe_result}" STREQUAL "0")
-             message(FATAL_ERROR "COMBINE_UNIX_ARCHIVES: Cannot convert .o to .obj; exe_result='${exe_result}'")
-        endif()
-        set(new_obj_file_path ${fn}.obj)
-      endif()
-      ##########
-      
       list(APPEND all_object_locations ${new_obj_file_path})
     endforeach()
   endforeach()
