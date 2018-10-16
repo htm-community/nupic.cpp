@@ -29,7 +29,7 @@ message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "EP_BASE                  = ${EP_BASE}")
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(CMAKE_VERBOSE_MAKEFILE ON) # toggle for cmake debug
+set(CMAKE_VERBOSE_MAKEFILE OFF) # toggle for cmake debug
 
 
 if( POLICY CMP0046 )

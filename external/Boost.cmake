@@ -24,6 +24,7 @@
 #       However, MinGW and MSYS will use this so will need a few fixes.
 #
 #  Documentation: https://boostorg.github.io/build/manual/develop/index.html
+#                 https://boostorg.github.io/build/tutorial.html
 #
 ######################################################################
 # MinGW Notes: MinGW needs special handling.
@@ -49,11 +50,9 @@ message(STATUS "----- Boost External Project ------")
 
 set(BOOST_ROOT "${EP_BASE}/Install/boost")
 
-set(c_flags "${EXTERNAL_C_FLAGS_OPTIMIZED} ${COMMON_COMPILER_DEFINITIONS_STR}")
 set(cxx_flags "${EXTERNAL_CXX_FLAGS_OPTIMIZED} ${COMMON_COMPILER_DEFINITIONS_STR}")
 string(TOLOWER ${CMAKE_BUILD_TYPE} variant)
 
-message(STATUS "Boost: c_flags=${c_flags}")
 message(STATUS "Boost: cxx_flags=${cxx_flags}")
 
 # Set some parameters
@@ -84,10 +83,10 @@ ExternalProject_Add( Boost
 	CMAKE_GENERATOR ${CMAKE_GENERATOR}
 	UPDATE_COMMAND ""
         CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
-		-DCMAKE_C_FLAGS=${c_flags}
 		-DCMAKE_CXX_FLAGS=${cxx_flags} 
-	CONFIGURE_COMMAND ${bootstrap}
-	BUILD_COMMAND ./b2  
+	CONFIGURE_COMMAND ${bootstrap};
+		
+	BUILD_COMMAND ./b2 
 		--prefix=${BOOST_ROOT}
 		--with-filesystem 
 		--with-system
@@ -97,6 +96,7 @@ ExternalProject_Add( Boost
 		threading=multi
 		link=static ${toolset}
 		variant=${variant}
+		cxxflags=${cxx_flags}
 		install
 	BUILD_IN_SOURCE 1
 	INSTALL_COMMAND ""
