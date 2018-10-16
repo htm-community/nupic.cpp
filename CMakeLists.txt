@@ -101,8 +101,9 @@ endif()
 if(NOT PY_EXTENSIONS_DIR)
 	set(PY_EXTENSIONS_DIR ${REPOSITORY_DIR}/bindings/py/src/nupic/bindings)
 endif()
-if(NOT ${CMAKE_INSTALL_PREFIX})
-	set(CMAKE_INSTALL_PREFIX "${REPOSITORY_DIR}/build/${CMAKE_BUILD_TYPE}")
+if(NOT CMAKE_INSTALL_PREFIX)
+	string(TOLOWER ${CMAKE_BUILD_TYPE} dir)
+	set(CMAKE_INSTALL_PREFIX "${REPOSITORY_DIR}/build/${dir}")
 endif()
 
 
