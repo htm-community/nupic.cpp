@@ -84,7 +84,7 @@ ExternalProject_Add( Boost
 	UPDATE_COMMAND ""
         CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 		-DCMAKE_CXX_FLAGS=${cxx_flags} 
-	CONFIGURE_COMMAND ${bootstrap};
+	CONFIGURE_COMMAND ${bootstrap}
 		
 	BUILD_COMMAND ./b2 
 		--prefix=${BOOST_ROOT}

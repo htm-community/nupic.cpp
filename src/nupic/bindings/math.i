@@ -95,10 +95,10 @@ _MATH = _math
     return nupic::lgamma(x);
   }
 
-  nupic::Real64 digamma(nupic::Real64 x)
-  {
-    return nupic::digamma(x);
-  }
+//  nupic::Real64 digamma(nupic::Real64 x)
+//  {
+//    return nupic::digamma(x);
+//  }
 
   nupic::Real64 beta(nupic::Real64 x, nupic::Real64 y)
   {

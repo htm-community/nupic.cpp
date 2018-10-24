@@ -25,11 +25,11 @@
  */
 
 #include <cstring> // memset
+#include <cmath>
 #include <cstdio> //fopen
 #include <iostream>
 #include <math.h>
 #include <nupic/math/Utils.hpp> // For isSystemLittleEndian and utils::swapBytesInPlace.
-#include <nupic/os/FStream.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/regions/VectorFile.hpp>
 #include <nupic/utils/Log.hpp>
@@ -71,7 +71,8 @@ void VectorFile::clear(bool clearScaling) {
 
 //----------------------------------------------------------------------------
 void VectorFile::appendFile(const string &fileName,
-                            NTA_Size expectedElementCount, UInt32 fileFormat) {
+                            Size expectedElementCount,
+							UInt32 fileFormat) {
   bool handled = false;
   switch (fileFormat) {
   case 4: // Little-endian.
@@ -90,7 +91,7 @@ void VectorFile::appendFile(const string &fileName,
 
   if (!handled) {
     // Open up the vector file
-    IFStream inFile(fileName.c_str());
+    std::ifstream inFile(fileName.c_str());
     if (!inFile) {
       NTA_THROW << "VectorFile::appendFile - unable to open file: " << fileName;
     }
@@ -107,7 +108,7 @@ void VectorFile::appendFile(const string &fileName,
       } else {
         // Read in space separated text file
         string sLine;
-        NTA_Size elementCount = expectedElementCount;
+        Size elementCount = expectedElementCount;
         if (fileFormat != 2) {
           inFile >> elementCount;
           getline(inFile, sLine);
@@ -120,8 +121,7 @@ void VectorFile::appendFile(const string &fileName,
           }
         }
 
-        // If format is 'labeled', read in the next line, which is a label per
-        // elmnt
+        // If format is 'labeled', read in the next line, which is a label per elemnt
         if (fileFormat == 1) {
           getline(inFile, sLine);
 
@@ -150,7 +150,7 @@ void VectorFile::appendFile(const string &fileName,
             inFile >> vectorLabel;
           }
 
-          auto b = new NTA_Real[elementCount];
+          auto b = new Real[elementCount];
           for (Size i = 0; i < elementCount; ++i) {
             inFile >> b[i];
           }
@@ -176,7 +176,8 @@ void VectorFile::appendFile(const string &fileName,
 
   // Reset scaling only if the vector lengths changed
   if (scaleVector_.size() != expectedElementCount) {
-    NTA_INFO << "appendFile - need to reset scale and offset vectors.";
+    if (scaleVector_.size() > 0)
+      NTA_INFO << "appendFile - Vectors read: " << scaleVector_.size() << ". Expected " << expectedElementCount << ". Needed to reset scale and offset vectors.";
     resetScaling((UInt)expectedElementCount);
   }
 }
@@ -186,9 +187,9 @@ void VectorFile::appendFile(const string &fileName,
 // False otherwise.
 // This is a bit of a hack - if a string contains 13 or 10 it should not count,
 // but we don't support strings in files anyway.
-static bool dosEndings(IFStream &inFile) {
+static bool dosEndings(std::istream &inFile) {
   bool unixLines = true;
-  int pos = inFile.tellg();
+  std::streampos pos = inFile.tellg();
   while (!inFile.eof()) {
     int c = inFile.get();
     if (c == 10) {
@@ -373,7 +374,11 @@ void VectorFile::saveVectors(ostream &out, Size nColumns, UInt32 fileFormat,
 class AutoReleaseFile {
 public:
   FILE *file_;
-  AutoReleaseFile(const string &filename) : file_(fopen(filename.c_str(), "rb")) {
+  AutoReleaseFile(const string &filename) {
+    if (Path::getExtension(filename) == ".zip")
+      NTA_THROW << "Reading ZIPed files is no longer supported. " << filename;
+
+    file_ = fopen(filename.c_str(), "rb");
     if (!file_)
       throw runtime_error("Unable to open file '" + filename + "'.");
   }
@@ -382,8 +387,8 @@ public:
     file_ = nullptr;
   }
   void read(void *out, size_t objSize, int n) {
-    int result = fread(out, objSize, n, file_); //TODO remove this class? use fstream instead of cstdio::fread
-    if (result < n)
+    size_t result = fread(out, objSize, n, file_); //TODO remove this class? use fstream instead of cstdio::fread
+    if ((int)result < n)
       throw runtime_error("Failed to read requested bytes from file.");
   }
 };
@@ -477,7 +482,7 @@ void VectorFile::appendFloat32File(const string &filename,
 //    23,24,
 //    23,"42,d",55
 
-void VectorFile::appendCSVFile(IFStream &inFile, Size expectedElements) {
+void VectorFile::appendCSVFile(istream &inFile, Size expectedElements) {
   // Read in csv file one line at a time. If that line contains any errors,
   // skip it and move onto the next one.
   try {
@@ -543,8 +548,9 @@ void convert(T2 *pOut, const T1 *pIn, TSize n, TSize fill) {
     ::memset(pOut, 0, fill * sizeof(T2));
 }
 
-void VectorFile::appendIDXFile(const string &filename, int expectedElements,
-                               bool bigEndian) {
+void VectorFile::appendIDXFile( const string &filename,
+								int expectedElements,
+                                bool bigEndian) {
   const bool needSwap = (nupic::isSystemLittleEndian() == bigEndian);
   AutoReleaseFile file(filename);
 
@@ -658,7 +664,7 @@ void VectorFile::appendIDXFile(const string &filename, int expectedElements,
       }
       break;
     }
-    case 0x0D: // 32-bit float. //TODO this is super-ugly code! use templates to avoid the switch! 
+    case 0x0D: // 32-bit float. //TODO this is super-ugly code! use templates to avoid the switch!
     {
       float *pRead = reinterpret_cast<float *>(readBuffer);
       for (int row = 0; row < nRows; ++row) {
@@ -715,8 +721,7 @@ void VectorFile::appendIDXFile(const string &filename, int expectedElements,
   // Don't delete block, as it is owned by fileVectors_ now.
 }
 
-/// Reset scaling to have no effect (unitary scaling vector and zero offset
-/// vector)
+/// Reset scaling to have no effect (unitary scaling vector and zero offset vector)
 void VectorFile::resetScaling(UInt nElements) {
   if (nElements != 0) {
     scaleVector_.resize(nElements);
@@ -732,8 +737,7 @@ size_t VectorFile::getElementCount() const { return scaleVector_.size(); }
 
 /// Retrieve the i'th vector and copy into output without scaling
 /// output must have size at least elementCount
-void VectorFile::getRawVector(const UInt v, Real *out, UInt offset,
-                              Size count) {
+void VectorFile::getRawVector(const UInt v, Real *out, UInt offset, Size count) {
   if (v >= vectorCount())
     NTA_THROW << "Requested non-existent vector: " << v;
 

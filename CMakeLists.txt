@@ -101,12 +101,9 @@ endif()
 if(NOT PY_EXTENSIONS_DIR)
 	set(PY_EXTENSIONS_DIR ${REPOSITORY_DIR}/bindings/py/src/nupic/bindings)
 endif()
-if(NOT CMAKE_INSTALL_PREFIX)
-	string(TOLOWER ${CMAKE_BUILD_TYPE} dir)
-	set(CMAKE_INSTALL_PREFIX "${REPOSITORY_DIR}/build/${dir}")
-endif()
 
 
+message(STATUS "CMAKE_SYSTEM          = ${CMAKE_SYSTEM}")
 message(STATUS "REPOSITORY_DIR        = ${REPOSITORY_DIR}")
 message(STATUS "CMAKE_SOURCE_DIR      = ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_BINARY_DIR      = ${CMAKE_BINARY_DIR}")
@@ -123,6 +120,13 @@ message(STATUS "extra_lib_for_filesystem = ${extra_lib_for_filesystem}")
 message(STATUS "CMAKE_BUILD_TYPE      = ${CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_INSTALL_PREFIX  = ${CMAKE_INSTALL_PREFIX}")
 
+##### to display all variables
+#get_cmake_property(_variableNames VARIABLES)
+#list (SORT _variableNames)
+#foreach (_variableName ${_variableNames})
+#  message(STATUS "${_variableName} = ${${_variableName}}")
+#endforeach()
+######
 
 # Make sure we can link against any specified paths.
 include_directories(SYSTEM ${CMAKE_INCLUDE_PATH})

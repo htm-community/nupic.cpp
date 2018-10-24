@@ -69,15 +69,24 @@ class SpatialPooler : public Serializable
 {
 public:
   SpatialPooler();
-  SpatialPooler(vector<UInt> inputDimensions, vector<UInt> columnDimensions,
-                UInt potentialRadius = 16, Real potentialPct = 0.5,
-                bool globalInhibition = true, Real localAreaDensity = -1.0,
-                UInt numActiveColumnsPerInhArea = 10,
-                UInt stimulusThreshold = 0, Real synPermInactiveDec = 0.008,
-                Real synPermActiveInc = 0.05, Real synPermConnected = 0.1,
-                Real minPctOverlapDutyCycles = 0.001,
-                UInt dutyCyclePeriod = 1000, Real boostStrength = 0.0,
-                Int seed = 1, UInt spVerbosity = 0, bool wrapAround = true);
+  SpatialPooler(vector<UInt> inputDimensions,
+                vector<UInt> columnDimensions,
+                UInt potentialRadius=16,
+                Real potentialPct=0.5,
+                bool globalInhibition=true,
+                Real localAreaDensity=-1.0,
+                UInt numActiveColumnsPerInhArea=10,
+                UInt stimulusThreshold=0,
+                Real synPermInactiveDec=0.008,
+                Real synPermActiveInc=0.05,
+                Real synPermConnected=0.1,
+                Real minPctOverlapDutyCycles=0.001,
+                UInt dutyCyclePeriod=1000,
+                Real boostStrength=0.0,
+                Int seed=1,
+                UInt spVerbosity=0,
+                bool wrapAround=true);
+
 
   virtual ~SpatialPooler() {}
 
@@ -203,14 +212,23 @@ public:
 
    */
   virtual void
-  initialize(vector<UInt> inputDimensions, vector<UInt> columnDimensions,
-             UInt potentialRadius = 16, Real potentialPct = 0.5,
-             bool globalInhibition = true, Real localAreaDensity = -1.0,
-             UInt numActiveColumnsPerInhArea = 10, UInt stimulusThreshold = 0,
-             Real synPermInactiveDec = 0.01, Real synPermActiveInc = 0.1,
-             Real synPermConnected = 0.1, Real minPctOverlapDutyCycles = 0.001,
-             UInt dutyCyclePeriod = 1000, Real boostStrength = 0.0,
-             Int seed = 1, UInt spVerbosity = 0, bool wrapAround = true);
+  initialize(vector<UInt> inputDimensions,
+             vector<UInt> columnDimensions,
+             UInt potentialRadius = 16,
+			 Real potentialPct = 0.5,
+             bool globalInhibition = true,
+			 Real localAreaDensity = -1.0,
+             UInt numActiveColumnsPerInhArea = 10,
+			 UInt stimulusThreshold = 0,
+             Real synPermInactiveDec = 0.01,
+			 Real synPermActiveInc = 0.1,
+             Real synPermConnected = 0.1,
+			 Real minPctOverlapDutyCycles = 0.001,
+             UInt dutyCyclePeriod = 1000,
+			 Real boostStrength = 0.0,
+             Int seed = 1,
+			 UInt spVerbosity = 0,
+			 bool wrapAround = true);
 
   /**
   This is the main workshorse method of the SpatialPooler class. This
@@ -354,8 +372,7 @@ public:
   /**
   Sets global inhibition.
 
-  @param globalInhibition boolen varable of whether global inhibition is
-  enabled.
+  @param globalInhibition boolen varable of whether global inhibition is enabled.
   */
   void setGlobalInhibition(bool globalInhibition);
 

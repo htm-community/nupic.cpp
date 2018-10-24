@@ -104,7 +104,7 @@ void OS::getProcessMemoryUsage(size_t &realMem, size_t &virtualMem) {
 
   unsigned int privateWorkingSet = 0;
 
-  for (UInt64 i = 0; i < actualPages; i++) {
+  for (auto i = 0; i < actualPages; i++) {
     if (!pWSI->WorkingSetInfo[i].Shared) {
       privateWorkingSet += si.dwPageSize;
     }

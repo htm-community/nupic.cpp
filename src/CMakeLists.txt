@@ -24,6 +24,7 @@ project(nupic_core CXX)
 
 
 message(STATUS "------- nupic_core -------")
+message(STATUS "CMAKE_SYSTEM             = ${CMAKE_SYSTEM}")
 message(STATUS "CMAKE_BINARY_DIR         = ${CMAKE_BINARY_DIR}")
 message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
 message(STATUS "EP_BASE                  = ${EP_BASE}")

@@ -26,7 +26,6 @@
 #ifndef NTA_BUFFER_HPP
 #define NTA_BUFFER_HPP
 
-#include <boost/shared_array.hpp>
 #include <nupic/ntypes/MemStream.hpp>
 #include <nupic/ntypes/ObjectModel.h>
 #include <nupic/ntypes/ObjectModel.hpp>
@@ -34,6 +33,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace nupic {
 typedef std::vector<nupic::IReadBuffer *> ReadBufferVec;

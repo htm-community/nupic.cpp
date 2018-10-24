@@ -24,6 +24,8 @@
  * Implementation of ArrayBase test
  */
 
+#define UNUSED(x) (void)(x)
+
 #include <nupic/utils/Log.hpp>
 
 #include <nupic/ntypes/ArrayBase.hpp>
@@ -198,6 +200,7 @@ TEST_F(ArrayTest, testMemory) {
       }
       ownedBufferLocation[9] = '\0';
     } catch ( std::exception& e) {
+      UNUSED(e);
       wasAbleToWriteToBuffer = false;
     }
     EXPECT_TRUE(wasAbleToWriteToBuffer) <<  "Write to full length of allocated buffer should have succeeded.";
@@ -270,6 +273,7 @@ TEST_F(ArrayTest, testArrayCreation) {
       try {
         arrayP.reset(new ArrayBase(testCase->second.dataType));
       } catch (nupic::Exception& e) {
+        UNUSED(e);
         caughtException = true;
       }
 
@@ -330,6 +334,7 @@ TEST_F(ArrayTest, testBufferAllocation) {
     try {
       a.allocateBuffer((size_t)(testCase->second.allocationSize));
     } catch (std::exception &e) {
+      UNUSED(e);
       caughtException = true;
     }
 
@@ -352,6 +357,7 @@ TEST_F(ArrayTest, testBufferAllocation) {
       }
       catch(nupic::Exception& e)
       {
+        UNUSED(e);
         caughtException = true;
       }
 
@@ -397,6 +403,7 @@ TEST_F(ArrayTest, testBufferAssignment) {
     }
     catch(nupic::Exception& e)
     {
+      UNUSED(e);
       caughtException = true;
     }
 

@@ -31,9 +31,9 @@
 
 //----------------------------------------------------------------------
 
-#include <nupic/os/FStream.hpp>
-#include <nupic/types/Types.hpp>
 #include <vector>
+#include <fstream>
+#include <nupic/types/Types.hpp>
 
 namespace nupic {
 /**
@@ -49,33 +49,34 @@ public:
 
   static Int32 maxFormat() { return 6; }
 
-  /// Read in vectors from the given filename. All vectors are expected to
-  /// have the same size (i.e. same number of elements).
-  /// If a list already exists, new vectors are expected to have the same size
-  /// and will be appended to the end of the list
-  /// appendFile will NOT change the scaling vectors as long as the
-  /// expectedElementCount is the same as previously stored vectors. The
-  /// fileFormat number corresponds to the file formats in VectorFileSensor:
-  ///           0        # Reads in unlabeled file with first number = element
-  ///           count 1        # Reads in a labeled file with first number =
-  ///           element count 2        # Reads in unlabeled file without element
-  ///           count 3        # Reads in a csv file 4        # Reads in a
-  ///           little-endian float32 binary file 5        # Reads in a
-  ///           big-endian float32 binary file 6        # Reads in a big-endian
-  ///           IDX binary file
-  void appendFile(const std::string &fileName, NTA_Size expectedElementCount,
-                  UInt32 fileFormat);
+    /// Read in vectors from the given filename. All vectors are expected to
+    /// have the same size (i.e. same number of elements).
+    /// If a list already exists, new vectors are expected to have the same size
+    /// and will be appended to the end of the list
+    /// appendFile will NOT change the scaling vectors as long as the expectedElementCount
+    /// is the same as previously stored vectors.
+    /// The fileFormat number corresponds to the file formats in VectorFileSensor:
+    ///           0        # Reads in unlabeled file with first number = element count
+    ///           1        # Reads in a labeled file with first number = element count
+    ///           2        # Reads in unlabeled file without element count
+    ///           3        # Reads in a csv file
+    ///           4        # Reads in a little-endian float32 binary file
+    ///           5        # Reads in a big-endian float32 binary file
+    ///           6        # Reads in a big-endian IDX binary file
+    void appendFile(const std::string &fileName,
+                    Size expectedElementCount,
+                    UInt32 fileFormat);
 
-  /// Retrieve i'th vector, apply scaling and copy result into output
-  /// output must have size of at least 'count' elements
-  void getScaledVector(const UInt i, Real *out, UInt offset, Size count);
+    /// Retrieve i'th vector, apply scaling and copy result into output
+    /// output must have size of at least 'count' elements
+    void getScaledVector(const UInt i, Real *out, UInt offset, Size count);
 
-  /// Retrieve the i'th vector and copy into output without scaling
-  /// output must have size at least 'count' elements
-  void getRawVector(const UInt i, Real *out, UInt offset, Size count);
+    /// Retrieve the i'th vector and copy into output without scaling
+    /// output must have size at least 'count' elements
+    void getRawVector(const UInt i, Real *out, UInt offset, Size count);
 
-  /// Return the number of stored vectors
-  size_t vectorCount() const { return fileVectors_.size(); }
+    /// Return the number of stored vectors
+    size_t vectorCount() const { return fileVectors_.size(); }
 
   /// Return the size of each vevtor (number of elements per vector)
   size_t getElementCount() const;
@@ -128,12 +129,11 @@ private:
   std::vector<Real> scaleVector_;   // the scaling vector
   std::vector<Real> offsetVector_;  // the offset vector
 
-  std::vector<std::string>
-      elementLabels_; // string denoting the meaning of each element
+  std::vector<std::string> elementLabels_; // string denoting the meaning of each element
   std::vector<std::string> vectorLabels_; // a string label for each vector
 
   //------------------- Utility routines
-  void appendCSVFile(IFStream &inFile, Size expectedElementCount);
+  void appendCSVFile(std::istream &inFile, Size expectedElementCount);
 
   /// Read vectors from a binary file.
   void appendFloat32File(const std::string &filename, Size expectedElements,

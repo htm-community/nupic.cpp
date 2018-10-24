@@ -95,7 +95,6 @@ bool removeTree(const std::string &path, bool noThrow) {
   if (fs::exists(path)) {
     if (fs::is_directory(path, ec)) {
       fs::remove_all(path, ec);
-	  // not supported by minGW, maybe not needed.     std::this_thread::yield();
     }
     if (!noThrow) {
       NTA_CHECK(!ec) << "removeTree: " << ec.message();

@@ -78,13 +78,16 @@ function(COMBINE_UNIX_ARCHIVES
     if(MSVC)
       # Windows; all COFF format objects
       set(globbing "${working_dir}/*.obj")
+      message(STATUS "this is MSVC")
     elseif(MINGW)
       # Note: MinGW can generate both .o and .obj in same project.
       #       they must be converted to COFF/PE format objects.
       set(globbing "${working_dir}/*.o*")
+      message(STATUS "this is MINGW")
     else()
       # Linux or OS X; all ELF format objects
       set(globbing "${working_dir}/*.o")
+      message(STATUS "this is Linux like or OSx")
     endif()
 
     file(GLOB_RECURSE objects "${globbing}")
