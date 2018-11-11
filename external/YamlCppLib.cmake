@@ -27,6 +27,7 @@
 #                               of yaml-cpp library objects.
 #   YAML_CPP_STATIC_LIB_INC_DIR: directory of installed yaml-cpp lib headers
 
+message(STATUS "---- YamlCppLib External Project ------")
 include(../src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
 
 
@@ -47,9 +48,8 @@ set(yamlcpplib_built_archive_file
 
 set(c_flags "${EXTERNAL_C_FLAGS_OPTIMIZED} ${COMMON_COMPILER_DEFINITIONS_STR}")
 set(cxx_flags "${EXTERNAL_CXX_FLAGS_OPTIMIZED} ${COMMON_COMPILER_DEFINITIONS_STR}")
-
+message(STATUS "FOR YamlCpp: cxx_flags = ${cxx_flags}")
 ExternalProject_Add(YamlCppStaticLib
-    DEPENDS YamlStaticLib
 
     URL ${yamlcpplib_url}
 
@@ -67,9 +67,9 @@ ExternalProject_Add(YamlCppStaticLib
         -DCMAKE_INSTALL_PREFIX=${yamlcpplib_install_prefix}
         ${EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED}
 )
-
+# use find_package() to locate library.
 
 # Wrap external project-generated static library in an `add_library` target.
-merge_static_libraries(${YAML_CPP_STATIC_LIB_TARGET}
-                       "${yamlcpplib_built_archive_file}")
-add_dependencies(${YAML_CPP_STATIC_LIB_TARGET} YamlCppStaticLib)
+#merge_static_libraries(${YAML_CPP_STATIC_LIB_TARGET}
+#                       "${yamlcpplib_built_archive_file}")
+#add_dependencies(${YAML_CPP_STATIC_LIB_TARGET} YamlCppStaticLib)

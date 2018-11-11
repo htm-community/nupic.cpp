@@ -78,11 +78,11 @@ function(MERGE_STATIC_LIBRARIES LIB_TARGET STATIC_LIBS)
       get_target_property(link_iface ${lib} INTERFACE_LINK_LIBRARIES)
       if (link_iface)
         list(APPEND link_libs ${link_iface})
-        message(STATUS "MERGE_STATIC_LIBRARIES: "
-                "INTERFACE_LINK_LIBRARIES[${lib}] = ${link_iface}.")
-      else()
-        message(STATUS "MERGE_STATIC_LIBRARIES: "
-                "Link interface not specified in source lib ${lib}.")
+        ##message(STATUS "MERGE_STATIC_LIBRARIES: "
+        ##        "INTERFACE_LINK_LIBRARIES[${lib}] = ${link_iface}.")
+      ##else()
+        ##message(STATUS "MERGE_STATIC_LIBRARIES: "
+        ##        "Link interface not specified in source lib ${lib}.")
       endif()
     endif()
   endforeach()
@@ -131,7 +131,7 @@ function(MERGE_STATIC_LIBRARIES LIB_TARGET STATIC_LIBS)
              -DLIST_SEPARATOR=${lib_locations_separator}
              -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"
              -DCMAKE_AR="${CMAKE_AR}"
-             -P ${CMAKE_SOURCE_DIR}/src/CombineUnixArchives.cmake
+             -P ${REPOSITORY_DIR}/src/CombineUnixArchives.cmake
       COMMENT "Combining ${target_location_gen} for target ${LIB_TARGET} from ${static_lib_locations}."
     )
 

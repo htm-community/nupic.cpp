@@ -119,6 +119,8 @@ TEST(WatcherTest, SampleNetwork) {
 
   // test to make sure data is flushed when Watcher is deleted
   delete w2;
+  std::cerr << "At end" << std::endl;
+
 }
 
 TEST(WatcherTest, FileTest1) {

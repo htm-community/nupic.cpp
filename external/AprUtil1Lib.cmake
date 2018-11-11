@@ -28,7 +28,9 @@
 #                               of the aprutil-1 library objects.
 #   APRUTIL1_STATIC_LIB_INC_DIR: directory of installed aprutil-1 lib headers
 
-include(../src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
+message(STATUS " --- APRUTIL1 external ----")
+
+include("${REPOSITORY_DIR}/src/NupicLibraryUtils.cmake") # for MERGE_STATIC_LIBRARIES
 
 
 # Output static library target for linking and dependencies
@@ -127,7 +129,7 @@ else()
         COMMAND
             ${CMAKE_COMMAND} -DGLOBBING_EXPR=${APRUTIL1_STATIC_LIB_INC_DIR}/*.h
                 -DDEST_DIR_PATH=${APRUTIL1_STATIC_LIB_INC_DIR}/apr-1
-                -P ${CMAKE_SOURCE_DIR}/external/MoveFilesToNewDir.cmake
+                -P ${REPOSITORY_DIR}/external/MoveFilesToNewDir.cmake
 
     )
 endif()
@@ -138,7 +140,7 @@ endif()
 #
 
 # Patch file path
-set(aprutillib_patch_file "${CMAKE_SOURCE_DIR}/external/common/share/apr-util/apru.patch")
+set(aprutillib_patch_file "${REPOSITORY_DIR}/external/common/share/apr-util/apru.patch")
 
 ExternalProject_Add_Step(AprUtil1StaticLib patch_sources
     COMMENT "Patching aprutil-1 sources in <SOURCE_DIR> via ${aprutillib_patch_file}"
@@ -152,8 +154,10 @@ ExternalProject_Add_Step(AprUtil1StaticLib patch_sources
         patch -f -p1 --directory=<SOURCE_DIR> --input=${aprutillib_patch_file}
 )
 
+set(aprutillib_built_archive_file ${aprutillib_built_archive_file} CACHE STRING  "Returning results through Cache." FORCE)
+set(APRUTIL1_STATIC_LIB_INC_DIR ${APRUTIL1_STATIC_LIB_INC_DIR} CACHE STRING  "Returning results through Cache." FORCE)
 
 # Wrap external project-generated static library in an `add_library` target.
-merge_static_libraries(${APRUTIL1_STATIC_LIB_TARGET}
-                       ${aprutillib_built_archive_file})
-add_dependencies(${APRUTIL1_STATIC_LIB_TARGET} AprUtil1StaticLib)
+#merge_static_libraries(${APRUTIL1_STATIC_LIB_TARGET}
+#                       ${aprutillib_built_archive_file})
+#add_dependencies(${APRUTIL1_STATIC_LIB_TARGET} AprUtil1StaticLib)

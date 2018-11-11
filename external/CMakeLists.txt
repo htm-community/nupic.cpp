@@ -19,13 +19,21 @@
 # http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.7)
 project(nupic_core CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 include(GNUInstallDirs)
 
+message(STATUS "----- external -----")
+message(STATUS "REPOSITORY_DIR = ${REPOSITORY_DIR}")
+message(STATUS "EP_BASE    = ${EP_BASE}")
 set_directory_properties(PROPERTIES EP_BASE "${EP_BASE}")
+
+# Determine common toolchain settings, compiler and link flags
+set(INTERNAL_CPP_STANDARD C++11)
+include("${REPOSITORY_DIR}/CommonCompilerConfig.cmake")
+
 
 # Shorter aliases for static library prefix and suffix.
 set(STATIC_PRE ${CMAKE_STATIC_LIBRARY_PREFIX})
@@ -44,33 +52,16 @@ set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
 include(Swig)
 
 include(Apr1Lib)
-set(APR1_STATIC_LIB_TARGET ${APR1_STATIC_LIB_TARGET} PARENT_SCOPE)
-set(APR1_STATIC_LIB_INC_DIR ${APR1_STATIC_LIB_INC_DIR} PARENT_SCOPE)
-list(APPEND EXTERNAL_INCLUDE_DIRS
-     ${APR1_STATIC_LIB_INC_DIR}
-     "${APR1_STATIC_LIB_INC_DIR}/apr-1"
-)
 
 # AprUtil1Lib MUST be imported after Apr1Lib due to depencies on exported
 # properties
 include(AprUtil1Lib)
-set(APRUTIL1_STATIC_LIB_TARGET ${APRUTIL1_STATIC_LIB_TARGET} PARENT_SCOPE)
-set(APRUTIL1_STATIC_LIB_INC_DIR ${APRUTIL1_STATIC_LIB_INC_DIR} PARENT_SCOPE)
-list(APPEND EXTERNAL_INCLUDE_DIRS ${APRUTIL1_STATIC_LIB_INC_DIR})
 
 include(YamlLib)
-set(YAML_STATIC_LIB_TARGET ${YAML_STATIC_LIB_TARGET} PARENT_SCOPE)
 
 include(YamlCppLib)
-set(YAML_CPP_STATIC_LIB_TARGET ${YAML_CPP_STATIC_LIB_TARGET} PARENT_SCOPE)
-set(YAML_CPP_STATIC_LIB_INC_DIR ${YAML_CPP_STATIC_LIB_INC_DIR} PARENT_SCOPE)
-list(APPEND EXTERNAL_INCLUDE_DIRS ${YAML_CPP_STATIC_LIB_INC_DIR})
 
-# Add vendored prebuilt library include paths.
-list(APPEND EXTERNAL_INCLUDE_DIRS
-     "${PROJECT_SOURCE_DIR}/common/include")
+if(${NEEDS_BOOST})
+  include(Boost)
+endif()
 
-# Convenience variable that wraps all external include directories.
-list(APPEND EXTERNAL_INCLUDE_DIRS ${CAPNP_INCLUDE_DIRS})
-
-set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} PARENT_SCOPE)

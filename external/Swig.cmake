@@ -27,6 +27,7 @@
 #   SWIG_DIR: the directory where swig is installed (.i files, etc.) as defined
 #             by FindSWIG.
 
+message(STATUS "---- SWIG External Project ----")
 set(swig_path "${REPOSITORY_DIR}/external/common/src/swig-3.0.2.tar.gz")
 set(swigwin_path "${REPOSITORY_DIR}/external/common/src/swigwin-3.0.2.zip")
 set(pcre_path "${REPOSITORY_DIR}/external/common/src/pcre-8.37.tar.gz")
@@ -59,5 +60,3 @@ else()
   set(swig_dir ${EP_BASE}/Install/share/swig/3.0.2)
 endif()
 
-set(SWIG_EXECUTABLE ${swig_executable} PARENT_SCOPE)
-set(SWIG_DIR ${swig_dir} PARENT_SCOPE)

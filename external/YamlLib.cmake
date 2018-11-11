@@ -61,8 +61,9 @@ ExternalProject_Add(YamlStaticLib
         ${EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED}
 )
 
+set(yamllib_built_archive_file ${yamllib_built_archive_file} CACHE STRING  "Return results via cache." FORCE)
 
 # Wrap external project-generated static library in an `add_library` target.
-merge_static_libraries(${YAML_STATIC_LIB_TARGET}
-                       "${yamllib_built_archive_file}")
-add_dependencies(${YAML_STATIC_LIB_TARGET} YamlStaticLib)
+#merge_static_libraries(${YAML_STATIC_LIB_TARGET}
+#                       "${yamllib_built_archive_file}")
+#add_dependencies(${YAML_STATIC_LIB_TARGET} YamlStaticLib)

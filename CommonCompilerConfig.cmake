@@ -27,11 +27,12 @@
 
 # INPUTS:
 #
-# PLATFORM: lowercase ${CMAKE_SYSTEM_NAME}
+# PLATFORM: defaults to ${CMAKE_SYSTEM_NAME}
+# INTERNAL_CPP_STANDARD:  C++11 (default) or C++17
+# BITNESS: Platform bitness: 32 or 64
+# NUPIC_BUILD_PYEXT_MODULES: ON OFF
 
 # OUTPUTS:
-#
-# BITNESS: Platform bitness: 32 or 64
 #
 # COMMON_COMPILER_DEFINITIONS: list of -D define flags for the compilation of
 #                               source files; e.g., for cmake `add_definitions()`
@@ -110,14 +111,24 @@ set(EXTERNAL_LINKER_FLAGS_OPTIMIZED)
 set(EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED)
 set(EXTERNAL_STATICLIB_CONFIGURE_DEFINITIONS_OPTIMIZED)
 
-# Identify platform "bitness".
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-  set(BITNESS 64)
-else()
-  set(BITNESS 32)
-endif()
 
-message(STATUS "CMAKE BITNESS=${BITNESS}")
+# Identify platform "bitness".
+if(NOT BITNESS)
+  if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(BITNESS 64)
+  else()
+    set(BITNESS 32)
+  endif()
+endif()
+if(NOT INTERNAL_CPP_STANDARD)
+  set(INTERNAL_CPP_STANDARD c++11)
+else()
+  string(TOLOWER ${INTERNAL_CPP_STANDARD} INTERNAL_CPP_STANDARD)
+endif()
+if (NOT PLATFORM)
+  string(TOLOWER ${CMAKE_SYSTEM_NAME} PLATFORM)
+endif()
+string(TOLOWER ${PLATFORM} PLATFORM)
 
 
 # Check memory limits (in megabytes)
@@ -182,7 +193,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-  if (${NUPIC_BUILD_PYEXT_MODULES} AND "${PLATFORM}" STREQUAL "linux")
+  set(stdlib_cxx "${stdlib_cxx}")
+  
+  if (NUPIC_BUILD_PYEXT_MODULES AND "${PLATFORM}" STREQUAL "linux")
     # NOTE When building manylinux python extensions, we want the static
     # libstdc++ due to differences in c++ ABI between the older toolchain in the
     # manylinux Docker image and libstdc++ in newer linux distros that is
@@ -193,7 +206,7 @@ if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 
     # NOTE We need to use shared libgcc to be able to throw and catch exceptions
     # across different shared libraries, as may be the case when our python
-    # extensions runtime-link to capnproto symbols in pycapnp's extension.
+    # extensions runtime-link to in the C++ extension.
     set(stdlib_common "${stdlib_common} -shared-libgcc")
   else()
     set(stdlib_common "${stdlib_common} -static-libgcc")
@@ -240,7 +253,7 @@ set(allow_link_with_undefined_symbols_flags "")
 
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
   # MS Visual C
-  set(shared_compile_flags "${shared_compile_flags} /Zc:wchar_t /Gm- /fp:precise /errorReport:prompt /W1 /WX- /GR /Gd /GS /Oy- /EHs /analyze- /nologo")
+  set(shared_compile_flags "${shared_compile_flags} /Zc:wchar_t /Gm- /fp:precise /errorReport:prompt /W1 /WX- /GR /Gd /GS /Oy- /EHs /analyze- /nologo /std=${INTERNAL_CPP_STANDARD}")
   set(shared_linker_flags_unoptimized "${shared_linker_flags_unoptimized} /NOLOGO /SAFESEH:NO /NODEFAULTLIB:LIBCMT")
   if("${BITNESS}" STREQUAL "32")
     set(shared_linker_flags_unoptimized "${shared_linker_flags_unoptimized} /MACHINE:X86")
@@ -250,7 +263,7 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL "MSVC")
 
 else()
   # LLVM Clang / Gnu GCC
-  set(cxx_flags_unoptimized "${cxx_flags_unoptimized} ${stdlib_cxx} -std=c++11")
+  set(cxx_flags_unoptimized "${cxx_flags_unoptimized} ${stdlib_cxx} -std=${INTERNAL_CPP_STANDARD}")
 
   if (${NUPIC_BUILD_PYEXT_MODULES})
     # Hide all symbols in DLLs except the ones with explicit visibility;
@@ -261,7 +274,7 @@ else()
 
   set(shared_compile_flags "${shared_compile_flags} ${stdlib_common} -fdiagnostics-show-option")
   set (internal_compiler_warning_flags "${internal_compiler_warning_flags} -Werror -Wextra -Wreturn-type -Wunused -Wno-unused-variable -Wno-unused-parameter -Wno-missing-field-initializers")
-  set (external_compiler_warning_flags "${external_compiler_warning_flags} -Wno-unused-variable -Wno-unused-parameter -Wno-incompatible-pointer-types -Wno-deprecated-declarations")
+  set (external_compiler_warning_flags "${external_compiler_warning_flags} -Wno-unused-variable -Wno-unused-parameter -Wno-deprecated-declarations")
 
   CHECK_CXX_COMPILER_FLAG(-m${BITNESS} compiler_supports_machine_option)
   if (compiler_supports_machine_option)
@@ -309,8 +322,7 @@ endif()
 # Compatibility with gcc >= 4.9 which requires the use of gcc's own wrappers for
 # ar and ranlib in combination with LTO works also with LTO disabled
 IF(UNIX AND CMAKE_COMPILER_IS_GNUCXX AND (NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug") AND
-      (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9" OR
-       CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "4.9"))
+      (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "4.9"))
     set(CMAKE_AR "gcc-ar")
     set(CMAKE_RANLIB "gcc-ranlib")
     # EXTERNAL_STATICLIB_CMAKE_DEFINITIONS_OPTIMIZED duplicates settings for

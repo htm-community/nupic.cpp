@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2013-2015, Numenta, Inc.  Unless you have purchased from
+# Copyright (C) 2013-2018, Numenta, Inc.  Unless you have purchased from
 # Numenta, Inc. a separate commercial license for this software code, the
 # following terms and conditions apply:
 #
@@ -19,11 +19,18 @@
 # http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.7)
 project(nupic_core CXX)
 
+
+message(STATUS "------- nupic_core C++ library -------")
+message(STATUS "CMAKE_SYSTEM             = ${CMAKE_SYSTEM}")
+message(STATUS "CMAKE_BINARY_DIR         = ${CMAKE_BINARY_DIR}")
+message(STATUS "CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "EP_BASE                  = ${EP_BASE}")
+
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-set(CMAKE_VERBOSE_MAKEFILE OFF) # toggle for cmake debug
+set(CMAKE_VERBOSE_MAKEFILE OFF) # toggle for CMake debug
 
 
 if( POLICY CMP0046 )
@@ -39,6 +46,22 @@ if( POLICY CMP0054 )
   # dereference variables or interpret keywords that have been quoted or bracketed.
   cmake_policy(SET CMP0054 OLD)
 endif()
+
+# Determine common toolchain settings, compiler and link flags
+include("${REPOSITORY_DIR}/CommonCompilerConfig.cmake")
+
+
+# To obtain values from the ExternalProjects for the dependencies
+# we load the cache from the 'external' ExternalProject.
+load_cache("${CMAKE_BINARY_DIR}/../external"
+	READ_WITH_PREFIX external_
+	BOOST_ROOT
+	APR1_STATIC_LIB_INC_DIR
+	APRUTIL1_STATIC_LIB_INC_DIR
+	yamllib_built_archive_file
+	aprlib_built_archive_file
+	aprutillib_built_archive_file
+	)
 
 
 #
@@ -78,9 +101,9 @@ endif()
 
 string(TOUPPER ${PLATFORM} platform_uppercase)
 
+
 set(src_compiler_definitions
     ${COMMON_COMPILER_DEFINITIONS}
-    ${CAPNP_COMPILER_DEFINITIONS}
     -DNTA_OS_${platform_uppercase}
     -DNTA_ARCH_${BITNESS}
     -DHAVE_CONFIG_H
@@ -115,7 +138,7 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "MinGW")
       -D_hypot=hypot)
 endif()
 
-
+message(STATUS "src_compiler_definitions = ${src_compiler_definitions}")
 add_definitions(${src_compiler_definitions})
 
 
@@ -142,12 +165,6 @@ if("${PROJECT_BUILD_ARTIFACTS_DIR}" STREQUAL "")
   set(PROJECT_BUILD_ARTIFACTS_DIR "${PROJECT_BINARY_DIR}/artifacts")
 endif()
 
-include_directories(SYSTEM
-                    ${src_numpy_core}/include
-                    ${PROJECT_BINARY_DIR})
-
-include_directories(${PROJECT_SOURCE_DIR})
-
 #
 # Let CMake know where all of the external files are.
 #
@@ -165,19 +182,9 @@ execute_process(COMMAND git rev-parse HEAD
                 OUTPUT_VARIABLE NUPIC_CORE_VERSION
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 configure_file(
-  "${PROJECT_SOURCE_DIR}/nupic/Version.hpp.in"
+  "${REPOSITORY_DIR}/src/nupic/Version.hpp.in"
   "${PROJECT_BINARY_DIR}/Version.hpp")
 
-#
-# Setup gtest
-#
-set(src_lib_static_gtest gtest)
-add_library(${src_lib_static_gtest}
-            STATIC
-            ${REPOSITORY_DIR}/external/common/src/gtest/gtest-all.cpp)
-set_target_properties(${src_lib_static_gtest}
-                      PROPERTIES COMPILE_FLAGS "${src_compile_flags}"
-                      LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
 
 #
 # Locate Python artifacts
@@ -203,6 +210,95 @@ set(src_py_support_files
 )
 
 
+include_directories(${REPOSITORY_DIR}/external/common/include)
+set(src_external_static_libs)
+
+
+##################################################
+#  BOOST
+#  Boost must be pre-installed if it is needed.
+if(NEEDS_BOOST)
+  set(BOOST_ROOT ${external_BOOST_ROOT})
+  message(STATUS "Hints for Boost find_package()")
+  message(STATUS "  BOOST_ROOT  = ${BOOST_ROOT}")  
+  message(STATUS "Expect some warnings from Boost about missing dependancies.  It is ok.")
+
+  #set(Boost_USE_STATIC_RUNTIME OFF)  
+  #set(Boost_USE_STATIC_LIBS        ON)  # only find static libs
+  #set(Boost_USE_MULTITHREADED      ON)
+  #set(Boost_DEBUG ON)
+  #set(Boost_DETAILED_FAILURE_MSG ON)
+  # info about "--layout versioned" https://stackoverflow.com/questions/32991736/boost-lib-naming-are-missing/52208574#52208574
+  # filenames created by boost: https://www.boost.org/doc/libs/1_68_0/more/getting_started/unix-variants.html#library-naming
+  # We already found or created Boost in Boost.cmake, so just take whatever we find in ${BOOST_ROOT}.
+  
+  find_package(Boost COMPONENTS system filesystem REQUIRED)
+  if(Boost_FOUND)
+	ADD_DEFINITIONS( "-DHAS_BOOST" )
+	message(STATUS "  Boost_INCLUDE_DIRS = ${Boost_INCLUDE_DIRS}")
+	message(STATUS "  Boost_LIBRARIES = ${Boost_LIBRARIES}")
+  else()
+  	message(FATAL_ERROR "Fatal Error: Boost not found.")
+  endif()
+endif()
+
+##################################################
+#     Yaml-cpp
+# The build is included with this distribution so it should be found.
+set(YAMLCPP_STATIC_LIBRARY TRUE)
+find_package(yaml-cpp REQUIRED
+	HINTS ${EP_BASE}/Install/YamlCppLib
+)
+if(yaml-cpp_FOUND)
+	message(STATUS "Found Yaml")
+	message(STATUS "  YAML_CPP_INCLUDE_DIR = ${YAML_CPP_INCLUDE_DIR}")
+	message(STATUS "  YAML_CPP_LIBRARIES   = ${YAML_CPP_LIBRARIES}")
+else()
+	message(FATAL_ERROR "Did not find YamlCppLib")
+	# Should have been built by external/YamlCppLib.cmake
+endif()
+
+##################################################
+#   gather all of the external stuff
+include_directories(SYSTEM
+                    ${src_numpy_core}/include
+		    ${REPOSITORY_DIR}/external/common/include
+                    ${PROJECT_BINARY_DIR}
+		    ${PROJECT_SOURCE_DIR}
+		    ${YAML_CPP_INCLUDE_DIR}
+		    ${Boost_INCLUDE_DIR}
+		    ${external_APR1_STATIC_LIB_INC_DIR}
+		    ${external_APR1_STATIC_LIB_INC_DIR}/apr-1
+		    ${external_APRUTIL1_STATIC_LIB_INC_DIR}
+		    )
+
+
+#list(APPEND src_external_static_libs 
+set(src_external_static_libs 
+			${YAML_CPP_LIBRARIES}
+			${Boost_LIBRARIES}
+			${external_yamllib_built_archive_file}
+			${external_aprlib_built_archive_file}
+			${external_aprutillib_built_archive_file}
+                        )
+
+#################################################
+
+
+#
+# Setup gtest
+#
+set(src_lib_static_gtest gtest)
+add_library(${src_lib_static_gtest}
+            STATIC
+            ${REPOSITORY_DIR}/external/common/src/gtest/gtest-all.cpp)
+set_target_properties(${src_lib_static_gtest}
+                      PROPERTIES COMPILE_FLAGS "${src_compile_flags}"
+                      LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
+
+
+set(SWIG_EXECUTABLE ${EP_BASE}/Install/bin/swig)
+set(SWIG_DIR ${EP_BASE}/Install/share/swig/3.0.2)
 message(STATUS "SWIG_EXECUTABLE           = ${SWIG_EXECUTABLE}")
 message(STATUS "SWIG_DIR                  = ${SWIG_DIR}")
 
@@ -303,90 +399,47 @@ set(src_nupiccore_srcs
     nupic/utils/Watcher.cpp)
 
 set(src_lib_static_nupiccore_srcs
-    ${src_py_support_files}
-    ${src_nupiccore_srcs})
+    ${src_nupiccore_srcs}
+    ${src_py_support_files})
 
-set(src_lib_static_nupiccore_compile_flags
-    "${src_compile_flags} -I${src_numpy_core}/include")
 
-message(STATUS "src_compile_flags = ${src_compile_flags}")
-message(STATUS "src_lib_static_nupiccore_compile_flags = ${src_lib_static_nupiccore_compile_flags}")
+message(STATUS "FOR SOLO: src_compile_flags = ${src_compile_flags}")
 
 add_library(${src_lib_static_nupiccore_solo} STATIC
             ${src_lib_static_nupiccore_srcs})
-# nupic_core_solo sources depend on headers installed by these external projects
-add_dependencies(${src_lib_static_nupiccore_solo}
-                 ${YAML_CPP_STATIC_LIB_TARGET}
-                 ${YAML_STATIC_LIB_TARGET}
-                 ${APR1_STATIC_LIB_TARGET}
-                 ${APRUTIL1_STATIC_LIB_TARGET}
-		 )
 set_target_properties(${src_lib_static_nupiccore_solo} PROPERTIES COMPILE_FLAGS
-                      ${src_lib_static_nupiccore_compile_flags})
+                      ${src_compile_flags})
 if(${NUPIC_IWYU})
-  # TODO: Create a target that doesn't include the generated capnp schema files
-  # since we don't want to run iwyu on them and iwyu can only be applied to
-  # CMake targets (not source files directly).
   set_target_properties(${src_lib_static_nupiccore_solo}
     PROPERTIES CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()
 
 
-#
+##########
 # Create the nupic_core "combined" static library by merging nupic_core_solo
 # with our external static libraries
 #
-
-include(src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
-
-set(src_lib_static_nupiccore_combined nupic_core)
-
-set(src_external_static_libs
-    
-    ${YAML_CPP_STATIC_LIB_TARGET}
-    ${YAML_STATIC_LIB_TARGET}
-    ${APR1_STATIC_LIB_TARGET}
-    ${APRUTIL1_STATIC_LIB_TARGET}
-   )
-
-set(src_combined_nupiccore_source_archives
-    ${src_lib_static_nupiccore_solo}
-    ${src_external_static_libs})
-
-# Create a top-level library target for the combined static lib
-merge_static_libraries(${src_lib_static_nupiccore_combined}
-                       "${src_combined_nupiccore_source_archives}")
+set(static_libs
+	${src_external_static_libs}
+	${src_lib_static_nupiccore_solo}
+	)
+include(${REPOSITORY_DIR}/src/NupicLibraryUtils.cmake) # for MERGE_STATIC_LIBRARIES
+set(src_lib_static_nupiccore nupic_core)
+merge_static_libraries(${src_lib_static_nupiccore} "${static_libs}" )
 
 
-#
+###########
 # Build tests of the nupic_core "combined" static library
 #
 
 # Common libs for test executables
 set(src_common_test_exe_libs
-    ${src_lib_static_nupiccore_combined}
+    ${src_lib_static_nupiccore}
     ${PYTHON_LIBRARIES}
     ${src_common_os_libs})
 
 message(STATUS "src_common_test_exe_libs = ${src_common_test_exe_libs}")
 
-
-## Example custom executable 
-#
-## Setup test_py_region
-#
-#set(src_executable_pyregiontest py_region_test)
-#add_executable(${src_executable_pyregiontest} test/integration/PyRegionTest.cpp)
-#target_link_libraries(${src_executable_pyregiontest} ${src_common_test_exe_libs})
-#set_target_properties(${src_executable_pyregiontest}
-#                      PROPERTIES COMPILE_FLAGS ${src_compile_flags})
-#set_target_properties(${src_executable_pyregiontest}
-#                      PROPERTIES LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
-#add_custom_target(tests_py_region
-#                  COMMAND ${src_executable_pyregiontest}
-#                  DEPENDS ${src_executable_pyregiontest}
-#                  COMMENT "Executing test ${src_executable_pyregiontest}"
-#                  VERBATIM)
 
 #
 # Setup gtests
@@ -397,12 +450,12 @@ add_executable(${src_executable_gtests}
                test/unit/algorithms/Cells4Test.cpp
                test/unit/algorithms/CondProbTableTest.cpp
                test/unit/algorithms/ConnectionsTest.cpp
-	       test/unit/algorithms/ConnectionsPerformanceTest.cpp
-	       test/unit/algorithms/HelloSPTPTest.cpp
+	      # test/unit/algorithms/ConnectionsPerformanceTest.cpp
+	      # test/unit/algorithms/HelloSPTPTest.cpp
                test/unit/algorithms/NearestNeighborUnitTest.cpp
                test/unit/algorithms/SDRClassifierTest.cpp
                test/unit/algorithms/SegmentTest.cpp
-	       test/unit/algorithms/Serialization.cpp
+	      # test/unit/algorithms/Serialization.cpp
                test/unit/algorithms/SpatialPoolerTest.cpp
                test/unit/algorithms/TemporalMemoryTest.cpp
                test/unit/encoders/ScalarEncoderTest.cpp
@@ -478,7 +531,7 @@ add_custom_target(tests_all
                   VERBATIM)
 
 
-#
+#################################
 # Use SWIG to generate Python extensions.
 #
 if (NUPIC_BUILD_PYEXT_MODULES)
@@ -568,7 +621,7 @@ if (NUPIC_BUILD_PYEXT_MODULES)
     #
     # :param MODULE_NAME: the custom command will be added to the target
     #   corresponding to this Swig module name.
-    set(preamble_filepath "${CMAKE_SOURCE_DIR}/src/nupic/bindings/swig_proxy_preamble.py")
+    set(preamble_filepath "${REPOSITORY_DIR}/src/nupic/bindings/swig_proxy_preamble.py")
     set(module_filepath "${CMAKE_SWIG_OUTDIR}/${MODULE_NAME}.py")
 
     add_custom_command(
@@ -579,7 +632,7 @@ if (NUPIC_BUILD_PYEXT_MODULES)
             -DSRC_FILE_1=${preamble_filepath}
             -DSRC_FILE_2=${module_filepath}
             -DTARGET_FILE=${module_filepath}
-            -P ${CMAKE_SOURCE_DIR}/src/ConcatTwoFiles.cmake
+            -P ${REPOSITORY_DIR}/src/ConcatTwoFiles.cmake
       COMMENT "Prepending ${preamble_filepath} to swig-generated module ${module_filepath}"
     )
   endfunction(PREPEND_BOILERPLATE_TO_PYTHON_PROXY_MODULE)
@@ -682,15 +735,12 @@ if (NUPIC_BUILD_PYEXT_MODULES)
 endif() # NUPIC_BUILD_PYEXT_MODULES
 
 
-#
+###########################
 # Install targets into CMAKE_INSTALL_PREFIX
 #
 install(TARGETS
-        ${src_lib_static_nupiccore_combined}
-        ${src_lib_static_gtest}
-        ${src_executable_cppregiontest}
-        ${src_executable_pyregiontest}
-        ${src_executable_connectionsperformancetest}
+        ${src_lib_static_nupiccore}
+#        ${src_lib_static_gtest}
         ${src_executable_gtests}
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib

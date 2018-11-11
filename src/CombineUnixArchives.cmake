@@ -76,10 +76,10 @@ function(COMBINE_UNIX_ARCHIVES
 
     # Accumulate objects
     if(UNIX)
-      # Linux or OS X
+      # Linux or OSx
       set(globbing_ext "o")
     else()
-      # i.e., Windows with MINGW toolchain
+      # i.e., MSVC or Windows with MINGW toolchain
       set(globbing_ext "obj")
     endif()
 

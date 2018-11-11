@@ -27,8 +27,8 @@
 #   APR1_STATIC_LIB_TARGET: name of static library target that contains all
 #                           of the apr-1 library objects.
 #   APR1_STATIC_LIB_INC_DIR: directory of installed apr-1 lib headers
-
-include(../src/NupicLibraryUtils) # for MERGE_STATIC_LIBRARIES
+message(STATUS " --- APR1 external ----")
+include("${REPOSITORY_DIR}/src/NupicLibraryUtils.cmake") # for MERGE_STATIC_LIBRARIES
 
 
 # Output static library target for linking and dependencies
@@ -124,7 +124,7 @@ else()
         COMMAND
             ${CMAKE_COMMAND} -DGLOBBING_EXPR=${APR1_STATIC_LIB_INC_DIR}/*.h
                 -DDEST_DIR_PATH=${APR1_STATIC_LIB_INC_DIR}/apr-1
-                -P ${CMAKE_SOURCE_DIR}/external/MoveFilesToNewDir.cmake
+                -P ${REPOSITORY_DIR}/external/MoveFilesToNewDir.cmake
         # Copy <SOURCE_DIR>/include/arch to ${APR1_STATIC_LIB_INC_DIR}/apr-1 as
         # expected by nupic.core
         COMMAND
@@ -143,7 +143,7 @@ endif()
 #
 
 # Patch file path
-set(aprlib_patch_file "${CMAKE_SOURCE_DIR}/external/common/share/apr/apr.patch")
+set(aprlib_patch_file "${REPOSITORY_DIR}/external/common/share/apr/apr.patch")
 
 ExternalProject_Add_Step(Apr1StaticLib patch_sources
     COMMENT "Patching apr-1 sources in <SOURCE_DIR> via ${aprlib_patch_file}"
@@ -156,9 +156,11 @@ ExternalProject_Add_Step(Apr1StaticLib patch_sources
     COMMAND
         patch -f -p1 --directory=<SOURCE_DIR> --input=${aprlib_patch_file}
 )
+set(aprlib_built_archive_file ${aprlib_built_archive_file} CACHE STRING  "Returning results through Cache." FORCE)
+set(APR1_STATIC_LIB_INC_DIR ${APR1_STATIC_LIB_INC_DIR} CACHE STRING  "Returning results through Cache." FORCE)
 
 
 # Wrap external project-generated static library in an `add_library` target.
-merge_static_libraries(${APR1_STATIC_LIB_TARGET}
-                       ${aprlib_built_archive_file})
-add_dependencies(${APR1_STATIC_LIB_TARGET} Apr1StaticLib)
+#merge_static_libraries(${APR1_STATIC_LIB_TARGET}
+#                       ${aprlib_built_archive_file})
+#add_dependencies(${APR1_STATIC_LIB_TARGET} Apr1StaticLib)
