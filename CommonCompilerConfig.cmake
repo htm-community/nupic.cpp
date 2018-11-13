@@ -365,7 +365,7 @@ endif()
 # Settings for internal nupic.core code
 set(INTERNAL_CXX_FLAGS_OPTIMIZED "${build_type_specific_compile_flags} ${shared_compile_flags} ${cxx_flags_unoptimized} ${internal_compiler_warning_flags} ${optimization_flags_cc}")
 
-set(complete_linker_flags_unoptimized "${build_type_specific_linker_flags} ${shared_linker_flags_unoptimized}")
+set(complete_linker_flags_unoptimized "${build_type_specific_linker_flags} ${shared_linker_flags_unoptimized} -lboost_system -lboost_filesystem") #required for Boost SYTEM/FS linking, https://stackoverflow.com/questions/18200300/undefined-reference-to-boostsystemgeneric-category 
 set(complete_linker_flags_unoptimized "${complete_linker_flags_unoptimized} ${fail_link_on_undefined_symbols_flags}")
 set(INTERNAL_LINKER_FLAGS_OPTIMIZED "${complete_linker_flags_unoptimized} ${optimization_flags_lt}")
 

@@ -380,7 +380,7 @@ add_library(${src_lib_static_gtest}
             ${REPOSITORY_DIR}/external/common/src/gtest/gtest-all.cpp)
 set_target_properties(${src_lib_static_gtest}
                       PROPERTIES COMPILE_FLAGS "${src_compile_flags}"
-                      LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED}")
+                      LINK_FLAGS "${INTERNAL_LINKER_FLAGS_OPTIMIZED} -lboost_system -lboost_filesystem")
 
 
 # Common libs for test executables
