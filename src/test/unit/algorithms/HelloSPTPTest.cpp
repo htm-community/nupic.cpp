@@ -87,8 +87,8 @@ TEST(HelloSPTPTest, performance) {
       cout << "Epoch = " << e << endl;
       VectorHelpers::print_vector(VectorHelpers::binaryToSparse<UInt>(outSP), ",", "SP= ");
       VectorHelpers::print_vector(VectorHelpers::binaryToSparse<UInt>(VectorHelpers::cellsToColumns(outTP, CELLS)), ",", "TP= ");
-      ASSERT_EQ(outSP[69], 0) << "A value in SP computed incorrectly";
-      ASSERT_EQ(outTP[42], 0) << "Incorrect value in TP";
+      ASSERT_EQ(outSP[69], (UInt)0) << "A value in SP computed incorrectly";
+      ASSERT_EQ(outTP[42], (UInt)0) << "Incorrect value in TP";
     }
   }
 
