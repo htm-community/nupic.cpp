@@ -1153,6 +1153,7 @@ TEST(SpatialPoolerTest, testCalculateOverlapPct) {
   }
 }
 
+
 TEST(SpatialPoolerTest, testIsWinner) {
   UInt numInputs = 10;
   UInt numColumns = 5;
@@ -1285,6 +1286,7 @@ TEST(SpatialPoolerTest, testAddToWinners) {
   ASSERT_TRUE(winners[5].first == 22);
   ASSERT_TRUE(almost_eq(winners[5].second, 1.0f));
 }
+
 
 TEST(SpatialPoolerTest, testInhibitColumns) {
   SpatialPooler sp;

@@ -95,18 +95,24 @@ option(NUPIC_BUILD_PYEXT_MODULES
        "Turn on building of python extension modules for nupic.bindings; turn off to build only static nupic_core lib with full symbol visibility."
        ON)
 
-if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE Release)
-endif()
-if(NOT PY_EXTENSIONS_DIR)
-	set(PY_EXTENSIONS_DIR ${REPOSITORY_DIR}/bindings/py/src/nupic/bindings)
-endif()
-
-
 message(STATUS "CMAKE_SYSTEM          = ${CMAKE_SYSTEM}")
 message(STATUS "REPOSITORY_DIR        = ${REPOSITORY_DIR}")
 message(STATUS "CMAKE_SOURCE_DIR      = ${CMAKE_SOURCE_DIR}")
 message(STATUS "CMAKE_BINARY_DIR      = ${CMAKE_BINARY_DIR}")
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+   # By convention, default the install folder to be 'release' even if the build time is Debug.
+   set(CMAKE_INSTALL_PREFIX "${PROJECT_SOURCE_DIR}/build/release" CACHE PATH "Default Install location" FORCE)
+endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+if(NOT CMAKE_BUILD_TYPE)
+	set(CMAKE_BUILD_TYPE Release)
+endif()
+
+if(NOT PY_EXTENSIONS_DIR)
+	set(PY_EXTENSIONS_DIR ${REPOSITORY_DIR}/bindings/py/src/nupic/bindings)
+endif()
+
 message(STATUS "NUPIC_BUILD_PYEXT_MODULES = ${NUPIC_BUILD_PYEXT_MODULES}")
 message(STATUS "PY_EXTENSIONS_DIR     = ${PY_EXTENSIONS_DIR}")
 

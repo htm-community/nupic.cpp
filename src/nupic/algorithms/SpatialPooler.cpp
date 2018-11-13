@@ -28,6 +28,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 #include <nupic/algorithms/SpatialPooler.hpp>
 #include <nupic/math/Math.hpp>
@@ -394,6 +395,7 @@ void SpatialPooler::initialize(vector<UInt> inputDimensions,
   numInputs_ = 1;
   inputDimensions_.clear();
   for (auto &inputDimension : inputDimensions) {
+    NTA_CHECK(inputDimension > 0) << "Input dimensions must be positive integers!";
     numInputs_ *= inputDimension;
     inputDimensions_.push_back(inputDimension);
   }
@@ -401,6 +403,7 @@ void SpatialPooler::initialize(vector<UInt> inputDimensions,
   numColumns_ = 1;
   columnDimensions_.clear();
   for (auto &columnDimension : columnDimensions) {
+    NTA_CHECK(columnDimension > 0) << "Column dimensions must be positive integers!"; 
     numColumns_ *= columnDimension;
     columnDimensions_.push_back(columnDimension);
   }
@@ -982,36 +985,6 @@ void SpatialPooler::inhibitColumns_(const vector<Real> &overlaps,
   }
 }
 
-bool SpatialPooler::isWinner_(const Real score, const vector<pair<UInt, Real> >& winners,
-                              const UInt numWinners) const {
-  if (score < stimulusThreshold_) { //does not pass threshold, cannot win
-    return false;
-  }
-
-  NTA_ASSERT(numWinners > 0);
-  if (winners.size() < numWinners) { //we haven't populated enough winners yet, accept everybody
-    return true;
-  }
-
-  if (!winners.empty() && score >= winners.back().second) { //winners full, see if better than last accepted, replace
-    return true;
-  }
-
-  return false;
-}
-
-void SpatialPooler::addToWinners_(const UInt index, const Real score,
-                                  vector<pair<UInt, Real>> &winners) const {
-  const pair<UInt, Real> val = make_pair(index, score);
-  for (auto it = winners.begin(); it != winners.end(); it++) {
-    if (score >= it->second) {
-      winners.insert(it, val);
-      return;
-    }
-  }
-  winners.push_back(val);
-}
-
 void SpatialPooler::inhibitColumnsGlobal_(const vector<Real> &overlaps,
                                           Real density,
                                           vector<UInt> &activeColumns) {
@@ -1019,17 +992,31 @@ void SpatialPooler::inhibitColumnsGlobal_(const vector<Real> &overlaps,
   const UInt numDesired = (UInt)(density * numColumns_);
   NTA_CHECK(numDesired > 0) << "Not enough columns (" << numColumns_ << ") "
                             << "for desired density (" << density << ").";
-  vector<pair<UInt, Real>> winners;
-  for (UInt i = 0; i < numColumns_; i++) {
-    if (isWinner_(overlaps[i], winners, numDesired)) {
-      addToWinners_(i, overlaps[i], winners);
-    }
-  }
-
-  const UInt numActual = min(numDesired, (UInt)winners.size());
-  for (UInt i = 0; i < numActual; i++) {
-    activeColumns.push_back(winners[i].first);
-  }
+  // Sort the columns by the amount of overlap.  First make a list of all of the
+  // column indexes.
+  activeColumns.reserve(numColumns_);
+  for(UInt i = 0; i < numColumns_; i++)
+    activeColumns.push_back(i);
+  // Compare the column indexes by their overlap.
+  auto compare = [&overlaps](const UInt &a, const UInt &b) -> bool
+    {return overlaps[a] > overlaps[b];};
+  // Do a partial sort to divide the winners from the losers.  This sort is
+  // faster than a regular sort because it stops after it partitions the
+  // elements about the Nth element, with all elements on their correct side of
+  // the Nth element.
+  std::nth_element(
+    activeColumns.begin(),
+    activeColumns.begin() + numDesired,
+    activeColumns.end(),
+    compare);
+  // Remove the columns which lost the competition.
+  activeColumns.resize(numDesired);
+  // Finish sorting the winner columns by their overlap.
+  std::sort(activeColumns.begin(), activeColumns.end(), compare);
+  // Remove sub-threshold winners
+  while( !activeColumns.empty() &&
+         overlaps[activeColumns.back()] < stimulusThreshold_)
+      activeColumns.pop_back();
 }
 
 void SpatialPooler::inhibitColumnsLocal_(const vector<Real> &overlaps,
