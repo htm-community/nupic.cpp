@@ -121,7 +121,7 @@ install:
   - unzip boost_1_68_0.zip
   - cd boost_1_68_0
   - bootstrap.bat gcc
-  - b2 --with-system --with-filesystem runtime-link=shared threading=multi link=static
+  - b2 --with-system --with-filesystem runtime-link=shared threading=multi link=static toolset=gcc 
 
   #
   # Install Wheel, and NumPy
