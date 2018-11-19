@@ -354,7 +354,7 @@ TEST(LinkTest, DelayedLinkSerialization) {
     for (UInt i = 0; i < 4; i++)
       ASSERT_EQ(0, idata[i]);
   }
-  
+
 
 
   // At this point:
@@ -378,7 +378,7 @@ TEST(LinkTest, DelayedLinkSerialization) {
       ASSERT_EQ(100, idata[i]);
     }
   }
-  
+
   // What is serialized in the Delay buffer should be
   // all 0's for first row and all 10's for the second.
   // The stored output buffer would be all 100's.
@@ -391,8 +391,8 @@ TEST(LinkTest, DelayedLinkSerialization) {
 
   net2.initialize();
 
-  auto n2region1 = net2.getRegions().getByName("region1");
-  auto n2region2 = net2.getRegions().getByName("region2");
+  auto n2region1 = net2.getRegion("region1");
+  auto n2region2 = net2.getRegion("region2");
 
   Input *n2in1 = n2region1->getInput("bottomUpIn");
   Input *n2in2 = n2region2->getInput("bottomUpIn");
@@ -403,7 +403,7 @@ TEST(LinkTest, DelayedLinkSerialization) {
   ASSERT_TRUE(n2in2->getData() == in2->getData())   << "Deserialized bottomUpIn region2 does not match";
   ASSERT_TRUE(n2out1->getData() == out1->getData()) << "Deserialized bottomUpOut region1 does not match";
   ASSERT_EQ(n2in2->getData().getCount(), 64);
-  
+
   {
 	  Link* link = n2in2->findLink("region1", "bottomUpOut");
     VERBOSE << "Input2: " << *link;

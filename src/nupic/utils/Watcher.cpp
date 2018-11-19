@@ -101,6 +101,13 @@ void Watcher::watcherCallback(Network *net, UInt64 iteration, void *dataIn) {
     watchData watch = elem;
     std::string value;
     std::stringstream out;
+	// make sure the region pointer is good.
+	try {
+		watch.region = net->getRegion(watch.regionName);
+	}
+	catch(std::exception e) {
+		continue; // watched region no longer exists.
+	}
     if (watch.wType == parameter) {
       if (watch.isArray) // currently don't support uncloned arrays
       {
@@ -386,8 +393,12 @@ void Watcher::attachToNetwork(Network& net)
 
   for (UInt i = 0; i < data_.watches.size(); i++) {
     watch = data_.watches.at(i);
-    const Collection<Region *> &regions = net.getRegions();
-    watch.region = regions.getByName(watch.regionName);
+    const RegionMap &regions = net.getRegions();
+    RegionMap::const_iterator itr;
+	itr = regions.find(watch.regionName);
+	if (itr == regions.end()) continue;  // not being watched
+
+    watch.region = itr->second.get();
 
       //output general information for each watch
       out << watch.watchID << ", ";

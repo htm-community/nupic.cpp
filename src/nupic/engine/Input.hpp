@@ -65,7 +65,7 @@ public:
    * @param isSparse
    *        Whether the input is sparse. Default false
    */
-  Input(Region &region, NTA_BasicType type, bool isRegionLevel,
+  Input(Region *region, NTA_BasicType type, bool isRegionLevel,
         bool isSparse = false);
 
   /**
@@ -171,7 +171,7 @@ public:
    * @returns
    *         The mutable reference to the Region that the input belongs to
    */
-  Region &getRegion();
+  Region *getRegion();
 
   /**
    *
@@ -255,7 +255,9 @@ public:
   bool isSparse();
 
 private:
-  Region &region_;
+  Region *region_;  // Do not delete
+
+
   // buffer is concatenation of input buffers (after prepare), or,
   // if zeroCopyEnabled it points to the connected output
   bool isRegionLevel_;

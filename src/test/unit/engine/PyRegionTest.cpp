@@ -155,7 +155,7 @@ void testPynodeArrayParameters(Region *level2) {
 
 void testPynodeLinking() {
   std::cerr << "testPynodeLinking \n";
-  Network net = Network();
+  Network net;
 
   Region *region1 = net.addRegion("region1", "TestNode", "");
   Region *region2 = net.addRegion("region2", "py.TestNode", "");
@@ -370,9 +370,9 @@ void testWriteRead() {
   n1.save(ss);
   n2.load(ss);
 
-  const Collection<Region *> &regions = n2.getRegions();
-  const std::pair<std::string, Region *> &regionPair = regions.getByIndex(0);
-  Region *region2 = regionPair.second;
+  const RegionMap &regions = n2.getRegions();
+  RegionMap::const_iterator itr = regions.cbegin();
+  const Region *region2 = itr->second.get();
 
   NTA_CHECK(region2->getParameterInt32("int32Param") == int32Param);
   NTA_CHECK(region2->getParameterUInt32("uint32Param") == uint32Param);
@@ -416,14 +416,14 @@ int realmain(bool leakTest) {
   std::cout << "Creating network..." << std::endl;
   Network n;
 
-  std::cout << "Region count is " << n.getRegions().getCount() << ""
+  std::cout << "Region count is " << n.getRegions().size() << ""
             << std::endl;
 
   std::cout << "Adding a PyNode region..." << std::endl;
   Network::registerPyRegion("nupic.bindings.regions.TestNode", "TestNode");
   Region *level2 = n.addRegion("level2", "py.TestNode", "{int32Param: 444}");
 
-  std::cout << "Region count is " << n.getRegions().getCount() << ""
+  std::cout << "Region count is " << n.getRegions().size() << ""
             << std::endl;
   std::cout << "Node type: " << level2->getType() << "" << std::endl;
   std::cout << "Nodespec is:\n"

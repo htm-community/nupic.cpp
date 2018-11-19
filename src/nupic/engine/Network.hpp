@@ -29,14 +29,17 @@
 
 #include <iostream>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
 
+#include <nupic/types/Types.hpp>
 #include <nupic/ntypes/Collection.hpp>
+#include <nupic/engine/Region.hpp>
+#include <nupic/engine/Link.hpp>
 
 #include <nupic/types/Serializable.hpp>
-#include <nupic/types/Types.hpp>
 
 namespace nupic {
 
@@ -44,13 +47,14 @@ class Region;
 class Dimensions;
 class GenericRegisteredRegionImpl;
 class Link;
+typedef std::map<const std::string, std::unique_ptr<Region>> RegionMap;
 
 /**
  * Represents an HTM network. A network is a collection of regions.
  *
  * @nosubgrouping
  */
-  class Network : public Serializable
+class Network : public Serializable
 {
 public:
   /**
@@ -64,7 +68,14 @@ public:
    *
    * @note Creating a Network will auto-initialize NuPIC.
    */
-  Network();
+  explicit Network();
+
+  /**
+   * This class contains RegionMap which is a map containing unique_ptr.
+   * The unique_ptr cannot be copied. This means this class cannot be copied.
+   */
+  Network(const Network&) = delete;  // cannot copy
+  Network& operator=(const Network&) = delete;  // cannot copy
 
 
   /**
@@ -219,14 +230,15 @@ public:
    *
    * @returns A Collection of Region objects in the network
    */
-  const Collection<Region *> &getRegions() const;
+  const RegionMap &getRegions() const { return regions_; }
+  Region *getRegion(const std::string name) { return regions_.at(name).get();}
 
   /**
    * Get all links between regions
    *
    * @returns A Collection of Link objects in the network
    */
-  Collection<Link *> getLinks();
+    Collection<Link*> getLinks();
 
   /**
    * Set phases for a region.
@@ -406,7 +418,13 @@ private:
   void resetEnabledPhases_();
 
   bool initialized_;
-  Collection<Region *> regions_;
+
+  // The list of active regions.
+  // This is the owner of the Region objects.
+  // It is a map containing unique_ptr<Region>, indexed by region name.
+  // When the Network class goes out of scope, all regions are deleted.
+  // Since unique_ptr is not copyable, the Network class is not copyable.
+  RegionMap regions_;
 
   UInt32 minEnabledPhase_;
   UInt32 maxEnabledPhase_;

@@ -75,51 +75,49 @@ Network::~Network() {
    */
 
   // 1. uninitialize
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    Region *r = regions_.getByIndex(i).second;
-    r->uninitialize();
+  for (auto &regionTuple : regions_) {
+    regionTuple.second->uninitialize();
   }
 
   // 2. remove all links
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    Region *r = regions_.getByIndex(i).second;
-    r->removeAllIncomingLinks();
+  for (auto &regionTuple : regions_) {
+    regionTuple.second->removeAllIncomingLinks();
   }
 
   // 3. delete the regions
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    std::pair<std::string, Region *> &item = regions_.getByIndex(i);
-    delete item.second;
-    item.second = nullptr;
-  }
+  // The RegionMap container contains a smart pointer to the region
+  // so when the container is deleted, the regions are deleted.
 }
 
 Region *Network::addRegion(const std::string &name, const std::string &nodeType,
                            const std::string &nodeParams) {
-  if (regions_.contains(name))
+  if (regions_.find(name) != regions_.end())
     NTA_THROW << "Region with name '" << name << "' already exists in network";
-
-  auto r = new Region(name, nodeType, nodeParams, this);
-  regions_.add(name, r);
+  // note: std::make_unique() not available until C++13
+  std::unique_ptr<Region> uptr(new Region(name, nodeType, nodeParams, this));
+  Region *r = uptr.get();
+  regions_.insert(std::make_pair(name, std::move(uptr)));
   initialized_ = false;
 
   setDefaultPhase_(r);
   return r;
 }
 
-Region * Network::addRegion( std::istream &stream, std::string name) {
-    Region *r = new Region(this);
-    r->load(stream);
-    if (!name.empty())
-      r->name_ = name;
-    regions_.add(r->getName(), r);
+Region*  Network::addRegion( std::istream &stream, std::string name) {
+  // note: std::make_unique() not available until C++13
+  std::unique_ptr<Region> uptr(new Region(this));
+  Region *r = uptr.get();
+  r->load(stream);
+  if (!name.empty())
+    r->name_ = name;
+  regions_.insert(std::make_pair(r->getName(), std::move(uptr)));
 
-    // We must make a copy of the phases set here because
-    // setPhases_ will be passing this back down into
-    // the region.
-    std::set<UInt32> phases = r->getPhases();
-    setPhases_(r, phases);
-    return r;
+  // We must make a copy of the phases set here because
+  // setPhases_ will be passing this back down into
+  // the region.
+  std::set<UInt32> phases = r->getPhases();
+  setPhases_(r, phases);
+  return r;
 }
 void Network::setDefaultPhase_(Region *region) {
   UInt32 newphase = (UInt32)phaseInfo_.size();
@@ -175,18 +173,20 @@ void Network::resetEnabledPhases_() {
 }
 
 void Network::setPhases(const std::string &name, std::set<UInt32> &phases) {
-  if (!regions_.contains(name))
+  RegionMap::iterator itr = regions_.find(name);
+  if (itr == regions_.end())
     NTA_THROW << "setPhases -- no region exists with name '" << name << "'";
 
-  Region *r = regions_.getByName(name);
+  Region* r = itr->second.get();
   setPhases_(r, phases);
 }
 
 std::set<UInt32> Network::getPhases(const std::string &name) const {
-  if (!regions_.contains(name))
+  RegionMap::const_iterator itr = regions_.find(name);
+  if (itr == regions_.end())
     NTA_THROW << "setPhases -- no region exists with name '" << name << "'";
 
-  Region *r = regions_.getByName(name);
+  Region *r = itr->second.get();
 
   std::set<UInt32> phases;
   // construct the set of phases enabled for this region
@@ -199,10 +199,11 @@ std::set<UInt32> Network::getPhases(const std::string &name) const {
 }
 
 void Network::removeRegion(const std::string &name) {
-  if (!regions_.contains(name))
+  RegionMap::const_iterator itr = regions_.find(name);
+  if (itr == regions_.end())
     NTA_THROW << "removeRegion: no region named '" << name << "'";
 
-  Region *r = regions_.getByName(name);
+  Region *r = itr->second.get();
   if (r->hasOutgoingLinks())
     NTA_THROW << "Unable to remove region '" << name
               << "' because it has one or more outgoing links";
@@ -214,7 +215,6 @@ void Network::removeRegion(const std::string &name) {
 
   // Must uninitialize the region prior to removing incoming links
   r->uninitialize();
-  regions_.remove(name);
 
   auto phase = phaseInfo_.begin();
   for (; phase != phaseInfo_.end(); phase++) {
@@ -232,8 +232,11 @@ void Network::removeRegion(const std::string &name) {
   }
   resetEnabledPhases_();
 
-  // Region destructor cleans up all incoming links
-  delete r;
+  regions_.erase(itr);
+  // Note: the regions_ container holds unique_ptr's to Regions.
+  //       When a region is removed from the map, its pointer is deleted.
+  //       When the Region object is deleted its implementation instance
+  //       is deleted in the Region's destructor.
 
   return;
 }
@@ -246,15 +249,16 @@ void Network::link(const std::string &srcRegionName,
                    const size_t propagationDelay) {
 
   // Find the regions
-  if (!regions_.contains(srcRegionName))
-    NTA_THROW << "Network::link -- source region '" << srcRegionName
-              << "' does not exist";
-  Region *srcRegion = regions_.getByName(srcRegionName);
+  RegionMap::const_iterator itr;
+  itr = regions_.find(srcRegionName);
+  if (itr == regions_.end())
+    NTA_THROW << "Network::link -- source region '" << srcRegionName << "' does not exist";
+  const Region *srcRegion = itr->second.get();
 
-  if (!regions_.contains(destRegionName))
-    NTA_THROW << "Network::link -- dest region '" << destRegionName
-              << "' does not exist";
-  Region *destRegion = regions_.getByName(destRegionName);
+  itr = regions_.find(destRegionName);
+  if (itr == regions_.end())
+    NTA_THROW << "Network::link -- dest region '" << destRegionName << "' does not exist";
+  const Region *destRegion = itr->second.get();
 
   // Find the inputs/outputs
   const Spec *srcSpec = srcRegion->getSpec();
@@ -309,15 +313,16 @@ void Network::removeLink(const std::string &srcRegionName,
                          const std::string &srcOutputName,
                          const std::string &destInputName) {
   // Find the regions
-  if (!regions_.contains(srcRegionName))
-    NTA_THROW << "Network::unlink -- source region '" << srcRegionName
-              << "' does not exist";
-  Region *srcRegion = regions_.getByName(srcRegionName);
+  RegionMap::const_iterator itr;
+  itr = regions_.find(srcRegionName);
+  if (itr == regions_.end())
+    NTA_THROW << "Network::unlink -- source region '" << srcRegionName << "' does not exist";
+  const Region *srcRegion = itr->second.get();
 
-  if (!regions_.contains(destRegionName))
-    NTA_THROW << "Network::unlink -- dest region '" << destRegionName
-              << "' does not exist";
-  Region *destRegion = regions_.getByName(destRegionName);
+  itr = regions_.find(destRegionName);
+  if (itr == regions_.end())
+    NTA_THROW << "Network::unlink -- dest region '" << destRegionName << "' does not exist";
+  const Region *destRegion = itr->second.get();
 
   // Find the inputs
   const Spec *srcSpec = srcRegion->getSpec();
@@ -378,8 +383,8 @@ void Network::run(int n) {
 
     // Refresh all links in the network at the end of every timestamp so that
     // data in delayed links appears to change atomically between iterations
-    for (size_t i = 0; i < regions_.getCount(); i++) {
-      const Region *r = regions_.getByIndex(i).second;
+    for (const auto &regionTuple : regions_) {
+      const Region* r = regionTuple.second.get();
 
       for (const auto &inputTuple : r->getInputs()) {
         for (const auto pLink : inputTuple.second->getLinks()) {
@@ -394,6 +399,7 @@ void Network::run(int n) {
 }
 
 void Network::initialize() {
+  RegionMap::const_iterator itr;
 
   /*
    * Do not reinitialize if already initialized.
@@ -425,11 +431,11 @@ void Network::initialize() {
     nLinksRemainingPrev = nLinksRemaining;
     nLinksRemaining = 0;
 
-    for (size_t i = 0; i < regions_.getCount(); i++) {
+    for (const auto &regionTuple : regions_) {
+      Region* r = regionTuple.second.get();
       // evaluateLinks returns the number
       // of links which still need to be
       // evaluated.
-      Region *r = regions_.getByIndex(i).second;
       nLinksRemaining += r->evaluateLinks();
     }
   }
@@ -439,8 +445,8 @@ void Network::initialize() {
     std::stringstream ss;
     ss << "Network::initialize() -- unable to evaluate all links\n"
        << "The following links could not be evaluated:\n";
-    for (size_t i = 0; i < regions_.getCount(); i++) {
-      Region *r = regions_.getByIndex(i).second;
+    for (const auto &regionTuple : regions_) {
+      const Region* r = regionTuple.second.get();
       std::string errors = r->getLinkErrors();
       if (errors.size() == 0)
         continue;
@@ -450,8 +456,8 @@ void Network::initialize() {
   }
 
   // Make sure all regions now have dimensions
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    Region *r = regions_.getByIndex(i).second;
+  for (const auto &regionTuple : regions_) {
+    const Region* r = regionTuple.second.get();
     const Dimensions &d = r->getDimensions();
     if (d.isUnspecified()) {
       NTA_THROW << "Network::initialize() -- unable to complete initialization "
@@ -470,8 +476,8 @@ void Network::initialize() {
    * 2. initialize outputs:
    *   - . Delegated to regions
    */
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    Region *r = regions_.getByIndex(i).second;
+  for (const auto &regionTuple : regions_) {
+    Region* r = regionTuple.second.get();
     r->initOutputs();
   }
 
@@ -479,16 +485,16 @@ void Network::initialize() {
    * 3. initialize inputs
    *    - Delegated to regions
    */
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    Region *r = regions_.getByIndex(i).second;
+  for (const auto &regionTuple : regions_) {
+    const Region* r = regionTuple.second.get();
     r->initInputs();
   }
 
   /*
    * 4. initialize region/impl
    */
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    Region *r = regions_.getByIndex(i).second;
+  for (const auto &regionTuple : regions_) {
+    Region* r = regionTuple.second.get();
     r->initialize();
   }
 
@@ -503,7 +509,6 @@ void Network::initialize() {
   initialized_ = true;
 }
 
-const Collection<Region *> &Network::getRegions() const { return regions_; }
 
 Collection<Link *> Network::getLinks() {
   Collection<Link *> links;
@@ -575,36 +580,28 @@ void Network::save(std::ostream &f) const {
   f << "Network " << getSerializableVersion() << std::endl;
   f << "{\n";
   f << "iteration: " << iteration_ << "\n";
-  f << "Regions: " << "[ " << regions_.getCount() << "\n";
+  f << "Regions: " << "[ " << regions_.size() << "\n";
 
-  for (size_t regionIndex = 0; regionIndex < regions_.getCount(); regionIndex++)
-  {
-      const std::pair<std::string, Region*>& info = regions_.getByIndex(regionIndex);
-      Region* r = info.second;
+  Size count = 0;
+  for (const auto &regionTuple : regions_) {
+      const Region* r = regionTuple.second.get();
       r->save(f);
+
+      // While we are here, lets get a count of links.
+      const std::map<std::string, Input*> inputs = r->getInputs();
+      for (const auto & inputs_input : inputs)
+      {
+        const std::vector<Link*>& links = inputs_input.second->getLinks();
+        count += links.size();
+      }
   }
   f << "]\n"; // end of regions
-
-  // Save the Links
-  // determine the number of links to save.
-  Size count = 0;
-  for (size_t regionIndex = 0; regionIndex < regions_.getCount(); regionIndex++)
-  {
-    Region* r = regions_.getByIndex(regionIndex).second;
-    const std::map<std::string, Input*> inputs = r->getInputs();
-    for (const auto & inputs_input : inputs)
-    {
-      const std::vector<Link*>& links = inputs_input.second->getLinks();
-      count += links.size();
-    }
-  }
 
   f << "Links: [ " << count << "\n";
 
   // Now serialize the links
-  for (size_t regionIndex = 0; regionIndex < regions_.getCount(); regionIndex++)
-  {
-    Region* r = regions_.getByIndex(regionIndex).second;
+  for (const auto &regionTuple : regions_) {
+    const Region* r = regionTuple.second.get();
     const std::map<std::string, Input*> inputs = r->getInputs();
     for (const auto & inputs_input : inputs)
     {
@@ -634,9 +631,8 @@ void Network::load(std::istream &f) {
   Size count;
 
   // Remove all existing regions and links
-  for (size_t regionIndex = 0; regionIndex < regions_.getCount(); regionIndex++)
-  {
-    Region* r = regions_.getByIndex(regionIndex).second;
+  for (const auto &regionTuple : regions_) {
+      const Region* r = regionTuple.second.get();
     removeRegion(r->getName());
   }
   initialized_ = false;
@@ -661,9 +657,10 @@ void Network::load(std::istream &f) {
   f >> count;
   for (Size n = 0; n < count; n++)
   {
-    Region* r = new Region(this);
+    std::unique_ptr<Region> uptr(new Region(this));
+	Region *r = uptr.get();
     r->load(f);
-    regions_.add(r->getName(), r);
+    regions_.insert(std::make_pair(r->getName(), std::move(uptr)));
 
     // We must make a copy of the phases set here because
     // setPhases_ will be passing this back down into
@@ -691,14 +688,14 @@ void Network::load(std::istream &f) {
 
   // Now connect the links to the regions
     const std::string srcRegionName = newLink->getSrcRegionName();
-    NTA_CHECK(regions_.contains(srcRegionName)) << "Invalid network structure file -- link specifies source region '"
+    NTA_CHECK(regions_.find(srcRegionName) != regions_.end()) << "Invalid network structure file -- link specifies source region '"
           << srcRegionName << "' but no such region exists";
-    Region* srcRegion = regions_.getByName(srcRegionName);
+    Region *srcRegion = regions_[srcRegionName].get();
 
     const std::string destRegionName = newLink->getDestRegionName();
-    NTA_CHECK(regions_.contains(destRegionName)) << "Invalid network structure file -- link specifies destination region '"
+    NTA_CHECK(regions_.find(destRegionName) != regions_.end()) << "Invalid network structure file -- link specifies destination region '"
                 << destRegionName << "' but no such region exists";
-    Region* destRegion = regions_.getByName(destRegionName);
+    Region *destRegion = regions_[destRegionName].get();
 
     const std::string srcOutputName = newLink->getSrcOutputName();
     Output *srcOutput = srcRegion->getOutput(srcOutputName);
@@ -733,11 +730,11 @@ void Network::load(std::istream &f) {
   //
   //       Input buffers are not saved, they are restored by
   //       copying from their source output buffers via links.
-  //       If an input is manually set then the input would be
-  //       lost after restore.
+  //       If an input is manually set (as in some unit tests)
+  //       then the input would be lost after restore.
 
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    Region* r = regions_.getByIndex(i).second;
+  for (const auto &regionTuple : regions_) {
+    Region* r = regionTuple.second.get();
 
     // If a propogation Delay is specified, the Link serialization
 	// saves the current input buffer at the top of the
@@ -759,18 +756,21 @@ void Network::load(std::istream &f) {
 }
 
 void Network::enableProfiling() {
-  for (size_t i = 0; i < regions_.getCount(); i++)
-    regions_.getByIndex(i).second->enableProfiling();
+  for (const auto &regionTuple : regions_) {
+      regionTuple.second->enableProfiling();
+  }
 }
 
 void Network::disableProfiling() {
-  for (size_t i = 0; i < regions_.getCount(); i++)
-    regions_.getByIndex(i).second->disableProfiling();
+  for (const auto &regionTuple : regions_) {
+      regionTuple.second->disableProfiling();
+  }
 }
 
 void Network::resetProfiling() {
-  for (size_t i = 0; i < regions_.getCount(); i++)
-    regions_.getByIndex(i).second->resetProfiling();
+  for (const auto &regionTuple : regions_) {
+      regionTuple.second->resetProfiling();
+  }
 }
 
 void Network::registerPyRegion(const std::string module,
@@ -796,13 +796,18 @@ bool Network::operator==(const Network &o) const {
   if (initialized_ != o.initialized_ || iteration_ != o.iteration_ ||
       minEnabledPhase_ != o.minEnabledPhase_ ||
       maxEnabledPhase_ != o.maxEnabledPhase_ ||
-      regions_.getCount() != o.regions_.getCount()) {
+      regions_.size() != o.regions_.size()) {
     return false;
   }
 
-  for (size_t i = 0; i < regions_.getCount(); i++) {
-    Region *r1 = regions_.getByIndex(i).second;
-    Region *r2 = o.regions_.getByIndex(i).second;
+  RegionMap::const_iterator itr2;
+  for (const auto &regionTuple : regions_) {
+    const Region* r1 = regionTuple.second.get();
+
+    itr2 = o.regions_.find(r1->getName());
+    if (itr2 == o.regions_.end())
+      return false;
+    const Region *r2 = itr2->second.get();
     if (*r1 != *r2) {
       return false;
     }

@@ -426,7 +426,7 @@ public:
    *
    * @see setParameterString()
    */
-  std::string getParameterString(const std::string &name);
+  const std::string getParameterString(const std::string &name) const;
 
   /**
    * Tells whether the parameter is shared.

@@ -90,7 +90,7 @@ void Region::createInputsAndOutputs_() {
     const std::pair<std::string, OutputSpec> &p = spec_->outputs.getByIndex(i);
     std::string outputName = p.first;
     const OutputSpec &os = p.second;
-    auto output = new Output(*this, os.dataType, os.regionLevel, os.sparse);
+    auto output = new Output(this, os.dataType, os.regionLevel, os.sparse);
     outputs_[outputName] = output;
     // keep track of name in the output also -- see note in Region.hpp
     output->setName(outputName);
@@ -102,7 +102,7 @@ void Region::createInputsAndOutputs_() {
     std::string inputName = p.first;
     const InputSpec &is = p.second;
 
-    auto input = new Input(*this, is.dataType, is.regionLevel, is.sparse);
+    auto input = new Input(this, is.dataType, is.regionLevel, is.sparse);
     inputs_[inputName] = input;
     // keep track of name in the input also -- see note in Region.hpp
     input->setName(inputName);

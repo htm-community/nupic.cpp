@@ -89,12 +89,12 @@ TEST(NetworkTest, RegionAccess) {
 
   ASSERT_TRUE(l1->getNetwork() == &net);
 
-  EXPECT_THROW(net.getRegions().getByName("nosuchregion"), std::exception);
+  EXPECT_THROW(net.getRegion("nosuchregion"), std::exception);
 
   // Make sure partial matches don't work
-  EXPECT_THROW(net.getRegions().getByName("level"), std::exception);
+  EXPECT_THROW(net.getRegion("level"), std::exception);
 
-  Region *l1a = net.getRegions().getByName("level1");
+  Region *l1a = net.getRegion("level1");
   ASSERT_TRUE(l1a == l1);
 
   // Should not be able to add a second region with the same name
@@ -125,7 +125,7 @@ TEST(NetworkTest, InitializationNoRegions) {
   Region *l2 = net.addRegion("level2", "TestNode", "");
   EXPECT_THROW(net.initialize(), std::exception) << "no dimensions";
   EXPECT_THROW(net.run(1), std::exception) << "no dimensions";
-  EXPECT_THROW(net.initialize(), std::exception) << "no dimensions"; 
+  EXPECT_THROW(net.initialize(), std::exception) << "no dimensions";
   l2->setDimensions(d);
   net.run(1);
 }
@@ -155,14 +155,14 @@ TEST(NetworkTest, Modification) {
 
   net.link("level1", "level2", "TestFanIn2", "");
 
-  const Collection<Region *> &regions = net.getRegions();
+  const RegionMap &regions = net.getRegions();
 
-  ASSERT_EQ((UInt32)2, regions.getCount());
+  ASSERT_EQ((UInt32)2, regions.size());
 
   // Should succeed since dimensions are now set
   net.initialize();
   net.run(1);
-  Region *l2 = regions.getByName("level2");
+  Region *l2 = net.getRegion("level2");
   Dimensions d2 = l2->getDimensions();
   ASSERT_EQ((UInt32)2, d2.size());
   ASSERT_EQ((UInt32)2, d2[0]);
@@ -172,11 +172,9 @@ TEST(NetworkTest, Modification) {
 
   net.removeRegion("level2");
   // net now only contains level1
-  ASSERT_EQ((UInt32)1, regions.getCount());
-  EXPECT_THROW(regions.getByName("level2"), std::exception);
+  ASSERT_EQ((UInt32)1, regions.size());
 
 
-  ASSERT_TRUE(l1 == regions.getByName("level1"));
   l2 = net.addRegion("level2", "TestNode", "");
 
   // should have been added at phase1
@@ -193,8 +191,7 @@ TEST(NetworkTest, Modification) {
   // network can be initialized now
   net.run(1);
 
-  ASSERT_EQ((UInt32)2, regions.getCount());
-  ASSERT_TRUE(l2 == regions.getByName("level2"));
+  ASSERT_EQ((UInt32)2, regions.size());
 
   d2 = l2->getDimensions();
   ASSERT_EQ((UInt32)2, d2.size());
@@ -209,7 +206,7 @@ TEST(NetworkTest, Modification) {
   ASSERT_EQ((UInt32)1, phases.size());
   ASSERT_TRUE(phases.find(2) != phases.end());
 
-  ASSERT_EQ((UInt32)3, regions.getCount());
+  ASSERT_EQ((UInt32)3, regions.size());
 
   // network requires initialization, but can't be initialized
   // because level3 is not initialized
@@ -226,17 +223,17 @@ TEST(NetworkTest, Modification) {
   // this should fail because it would leave the network
   // unrunnable
   EXPECT_THROW(net.removeRegion("level2"), std::exception);
-  ASSERT_EQ((UInt32)3, regions.getCount());
+  ASSERT_EQ((UInt32)3, regions.size());
   EXPECT_THROW(net.removeRegion("level1"), std::exception);
-  ASSERT_EQ((UInt32)3, regions.getCount());
+  ASSERT_EQ((UInt32)3, regions.size());
 
   // this should be ok
   net.removeRegion("level3");
-  ASSERT_EQ((UInt32)2, regions.getCount());
-
+  ASSERT_EQ((UInt32)2, regions.size());
+  ASSERT_FALSE(l2->hasOutgoingLinks()) << "Level3 should have removed the link from Level2 to Level3 but did not.";
   net.removeRegion("level2");
   net.removeRegion("level1");
-  ASSERT_EQ((UInt32)0, regions.getCount());
+  ASSERT_EQ((UInt32)0, regions.size());
 
   // build up the network again -- slightly differently with
   // l1->l2 and l1->l3
@@ -280,11 +277,11 @@ TEST(NetworkTest, Unlinking) {
   Dimensions d;
   d.push_back(4);
   d.push_back(2);
-  net.getRegions().getByName("level1")->setDimensions(d);
+  net.getRegion("level1")->setDimensions(d);
 
   net.link("level1", "level2", "TestFanIn2", "");
   ASSERT_TRUE(
-      net.getRegions().getByName("level2")->getDimensions().isUnspecified());
+      net.getRegion("level2")->getDimensions().isUnspecified());
 
   EXPECT_THROW(
       net.removeLink("level1", "level2", "outputdoesnotexist", "bottomUpIn"),
@@ -298,7 +295,7 @@ TEST(NetworkTest, Unlinking) {
   // remove the link from the uninitialized network
   net.removeLink("level1", "level2");
   ASSERT_TRUE(
-      net.getRegions().getByName("level2")->getDimensions().isUnspecified());
+      net.getRegion("level2")->getDimensions().isUnspecified());
 
   EXPECT_THROW(net.removeLink("level1", "level2"), std::exception);
 
@@ -317,7 +314,7 @@ TEST(NetworkTest, Unlinking) {
   net.link("level1", "level2", "TestFanIn2", "");
   net.initialize();
 
-  d = net.getRegions().getByName("level2")->getDimensions();
+  d = net.getRegion("level2")->getDimensions();
   ASSERT_EQ((UInt32)2, d.size());
   ASSERT_EQ((UInt32)2, d[0]);
   ASSERT_EQ((UInt32)1, d[1]);
@@ -337,9 +334,10 @@ callbackData mydata;
 void testCallback(Network *net, UInt64 iteration, void *data) {
   callbackData &thedata = *(static_cast<callbackData *>(data));
   // push region names onto callback data
-  const nupic::Collection<Region *> &regions = net->getRegions();
-  for (size_t i = 0; i < regions.getCount(); i++) {
-    thedata.push_back(regions.getByIndex(i).first);
+  const RegionMap& regions = net->getRegions();
+  RegionMap::const_iterator itr;
+  for (itr = regions.begin(); itr != regions.end(); itr++) {
+    thedata.push_back(itr->first);
   }
 }
 
@@ -520,9 +518,9 @@ TEST(NetworkTest, Callback) {
   n.addRegion("level3", "TestNode", "");
   Dimensions d;
   d.push_back(1);
-  n.getRegions().getByName("level1")->setDimensions(d);
-  n.getRegions().getByName("level2")->setDimensions(d);
-  n.getRegions().getByName("level3")->setDimensions(d);
+  n.getRegion("level1")->setDimensions(d);
+  n.getRegion("level2")->setDimensions(d);
+  n.getRegion("level3")->setDimensions(d);
 
   Collection<Network::callbackItem> &callbacks = n.getCallbacks();
   Network::callbackItem callback(testCallback, (void *)(&mydata));

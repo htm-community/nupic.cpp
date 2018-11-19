@@ -131,7 +131,7 @@ void Region::setParameterString(const std::string &name, const std::string &s) {
   impl_->setParameterString(name, (Int64)-1, s);
 }
 
-std::string Region::getParameterString(const std::string &name) {
+const std::string Region::getParameterString(const std::string &name) const {
   return impl_->getParameterString(name, (Int64)-1);
 }
 

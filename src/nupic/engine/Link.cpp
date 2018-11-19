@@ -56,8 +56,8 @@ Link::Link(const std::string &linkType, const std::string &linkParams,
 Link::Link(const std::string &linkType, const std::string &linkParams,
            Output *srcOutput, Input *destInput, const size_t propagationDelay)
     : srcBuffer_(0) {
-  commonConstructorInit_(linkType, linkParams, srcOutput->getRegion().getName(),
-                         destInput->getRegion().getName(), srcOutput->getName(),
+  commonConstructorInit_(linkType, linkParams, srcOutput->getRegion()->getName(),
+                         destInput->getRegion()->getName(), srcOutput->getName(),
                          destInput->getName(), propagationDelay);
 
   connectToNetwork(srcOutput, destInput);
@@ -154,29 +154,29 @@ void Link::initialize(size_t destinationOffset) {
 
   if (src_->isRegionLevel()) {
     Dimensions d;
-    for (size_t i = 0; i < src_->getRegion().getDimensions().size(); i++) {
+    for (size_t i = 0; i < src_->getRegion()->getDimensions().size(); i++) {
       d.push_back(1);
     }
 
     NTA_CHECK(srcD.isDontcare() || srcD == d);
-  } else if (src_->getRegion().getDimensions() == oneD) {
+  } else if (src_->getRegion()->getDimensions() == oneD) {
     Dimensions d;
     for (size_t i = 0; i < srcD.size(); i++) {
       d.push_back(1);
     }
     NTA_CHECK(srcD.isDontcare() || srcD == d);
   } else {
-    NTA_CHECK(srcD.isDontcare() || srcD == src_->getRegion().getDimensions());
+    NTA_CHECK(srcD.isDontcare() || srcD == src_->getRegion()->getDimensions());
   }
 
   if (dest_->isRegionLevel()) {
     Dimensions d;
-    for (size_t i = 0; i < dest_->getRegion().getDimensions().size(); i++) {
+    for (size_t i = 0; i < dest_->getRegion()->getDimensions().size(); i++) {
       d.push_back(1);
     }
 
     NTA_CHECK(destD.isDontcare() || destD.isOnes());
-  } else if (dest_->getRegion().getDimensions() == oneD) {
+  } else if (dest_->getRegion()->getDimensions() == oneD) {
     Dimensions d;
     for (size_t i = 0; i < destD.size(); i++) {
       d.push_back(1);
@@ -184,7 +184,7 @@ void Link::initialize(size_t destinationOffset) {
     NTA_CHECK(destD.isDontcare() || destD == d);
   } else {
     NTA_CHECK(destD.isDontcare() ||
-              destD == dest_->getRegion().getDimensions());
+              destD == dest_->getRegion()->getDimensions());
   }
 
   // Validate sparse link
@@ -216,7 +216,7 @@ void Link::setSrcDimensions(Dimensions &dims) {
   size_t nodeElementCount = src_->getNodeOutputElementCount();
   if (nodeElementCount == 0) {
     nodeElementCount =
-        src_->getRegion().getNodeOutputElementCount(src_->getName());
+        src_->getRegion()->getNodeOutputElementCount(src_->getName());
   }
   impl_->setNodeOutputElementCount(nodeElementCount);
 
@@ -230,7 +230,7 @@ void Link::setDestDimensions(Dimensions &dims) {
   size_t nodeElementCount = src_->getNodeOutputElementCount();
   if (nodeElementCount == 0) {
     nodeElementCount =
-        src_->getRegion().getNodeOutputElementCount(src_->getName());
+        src_->getRegion()->getNodeOutputElementCount(src_->getName());
   }
   impl_->setNodeOutputElementCount(nodeElementCount);
 
@@ -269,12 +269,12 @@ const std::string Link::toString() const {
   std::stringstream ss;
   ss << "[" << getSrcRegionName() << "." << getSrcOutputName();
   if (src_) {
-    ss << " (region dims: " << src_->getRegion().getDimensions().toString()
+    ss << " (region dims: " << src_->getRegion()->getDimensions().toString()
        << ") ";
   }
   ss << " to " << getDestRegionName() << "." << getDestInputName();
   if (dest_) {
-    ss << " (region dims: " << dest_->getRegion().getDimensions().toString()
+    ss << " (region dims: " << dest_->getRegion()->getDimensions().toString()
        << ") ";
   }
   ss << " type: " << linkType_ << "]";
@@ -593,7 +593,7 @@ void Link::deserialize(std::istream &f) {
   f >> tag;
   NTA_CHECK(tag == "}");
   f.ignore(1);
-  
+
   if (_LINK_DEBUG)
     NTA_DEBUG << "Restored Link: " << *this;
 }

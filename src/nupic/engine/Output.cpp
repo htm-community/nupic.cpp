@@ -33,7 +33,7 @@
 
 namespace nupic {
 
-Output::Output(Region &region, NTA_BasicType type, bool isRegionLevel,
+Output::Output(Region *region, NTA_BasicType type, bool isRegionLevel,
                bool isSparse)
     : region_(region), isRegionLevel_(isRegionLevel), name_("Unnamed"),
       nodeOutputElementCount_(0), isSparse_(isSparse) {
@@ -67,7 +67,7 @@ void Output::initialize(size_t count) {
   if (isRegionLevel_)
     dataCount = count;
   else
-    dataCount = count * region_.getDimensions().getCount();
+    dataCount = count * region_->getDimensions().getCount();
   if (dataCount != 0) {
     data_.allocateBuffer(dataCount);
     // Zero the buffer because unitialized outputs can screw up inspectors,
@@ -101,7 +101,7 @@ void Output::removeLink(Link *link) {
 
 bool Output::isRegionLevel() const { return isRegionLevel_; }
 
-Region &Output::getRegion() const { return region_; }
+Region *Output::getRegion() const { return region_; }
 bool Output::isSparse() const { return isSparse_; }
 
 void Output::setName(const std::string &name) { name_ = name; }

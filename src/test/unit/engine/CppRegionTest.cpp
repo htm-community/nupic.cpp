@@ -44,6 +44,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <memory>
 
 
 namespace testing {
@@ -55,13 +56,13 @@ bool verbose = false;
 
 
 struct MemoryMonitor {
-  MemoryMonitor(const size_t count) { 
+  MemoryMonitor(const size_t count) {
 	    NTA_ASSERT(count > 1 && count < minCount)
-    << "Run count of " << count << " specified\n" 
+    << "Run count of " << count << " specified\n"
     << "When run in leak detection mode, count must be at least "
     << minCount << "\n";
 
-	  OS::getProcessMemoryUsage(initial_vmem, initial_rmem); 
+	  OS::getProcessMemoryUsage(initial_vmem, initial_rmem);
   }
 
   ~MemoryMonitor() {
@@ -135,7 +136,7 @@ void helperCppInputOutputAccess(Region *level1) {
 
 
 TEST(CppRegionTest, testCppLinkingFanIn) {
-  Network net = Network();
+  Network net;
 
   Region *region1 = net.addRegion("region1", "TestNode", "");
   Region *region2 = net.addRegion("region2", "TestNode", "");
@@ -222,7 +223,7 @@ TEST(CppRegionTest, testCppLinkingFanIn) {
 
 
 TEST(CppRegionTest, testCppLinkingUniformLink) {
-  Network net = Network();
+  Network net;
 
   Region *region1 = net.addRegion("region1", "TestNode", "");
   Region *region2 = net.addRegion("region2", "TestNode", "");
@@ -313,8 +314,8 @@ TEST(CppRegionTest, testYAML) {
   //  badparams contains a non-existent parameter
   const char *badparams = "{int32Param: 1234, real64Param: 23.1, badParam: 4}";
 
-  Network net = Network();
-  Region *level1 = nullptr; 
+  Network net;
+  Region *level1 = nullptr;
   EXPECT_THROW(net.addRegion("level1", "TestNode", badparams), exception);
 
   EXPECT_NO_THROW({level1 = net.addRegion("level1", "TestNode", params);});
@@ -345,21 +346,20 @@ TEST(CppRegionTest, testYAML) {
 
 
 
-Network helperRealmain() {
+void helperRealmain(Network& n) {
   // verbose == true turns on extra output that is useful for
   // debugging the test (e.g. when the TestNode compute()
   // algorithm changes)
 
   std::cout << "Creating network..." << std::endl;
-  Network n;
 
-  std::cout << "Region count is " << n.getRegions().getCount() << ""
+  std::cout << "Region count is " << n.getRegions().size() << ""
             << std::endl;
 
   std::cout << "Adding a FDRNode region..." << std::endl;
   Region *level1 = n.addRegion("level1", "TestNode", "");
 
-  std::cout << "Region count is " << n.getRegions().getCount() << ""
+  std::cout << "Region count is " << n.getRegions().size() << ""
             << std::endl;
   std::cout << "Node type: " << level1->getType() << "" << std::endl;
   std::cout << "Nodespec is:\n"
@@ -421,12 +421,12 @@ Network helperRealmain() {
     std::cout << buff[i] << " ";
   std::cout << "]" << std::endl;
 
-  return n;
 }
 
 
 TEST(CppRegionTest, realmain) {
-  Network n = helperRealmain();
+  Network n;
+  helperRealmain(n);
 
   // should fail because network has not been initialized
   EXPECT_THROW(n.run(1), exception);
@@ -438,7 +438,7 @@ TEST(CppRegionTest, realmain) {
   Dimensions d;
   d.push_back(4);
   d.push_back(4);
-  Region* level1 = n.getRegions().getByName("level1");
+  Region* level1 = n.getRegion("level1");
   level1->setDimensions(d);
 
   std::cout << "Initializing again..." << std::endl;
@@ -468,14 +468,15 @@ TEST(DISABLED_CppRegionTest, memLeak) { //FIXME this mem leak test is newly fixe
   MemoryMonitor m(count);
   for (size_t i = 0; i < count; i++) {
 	//call main
-  Network n = helperRealmain();
+  Network n;
+  helperRealmain(n);
 
   //cannot use EXPECT_THROW in EXPECT_THROW
   std::cout << "Setting dimensions of level1..." << std::endl;
   Dimensions d;
   d.push_back(4);
   d.push_back(4);
-  Region* level1 = n.getRegions().getByName("level1");
+  Region* level1 = n.getRegion("level1");
   level1->setDimensions(d);
 
   std::cout << "Initializing again..." << std::endl;
