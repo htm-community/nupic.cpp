@@ -33,9 +33,7 @@
 using namespace std;
 
 namespace nupic {
-
 namespace algorithms {
-
 namespace anomaly {
 
 
@@ -58,12 +56,10 @@ Real computeRawAnomalyScore(const vector<UInt>& active,
   return (active.size() - predictedActiveCols.size()) / Real(active.size());
 }
 
-Anomaly::Anomaly(UInt slidingWindowSize, AnomalyMode mode,
-                 Real binaryAnomalyThreshold)
+Anomaly::Anomaly(UInt slidingWindowSize, AnomalyMode mode, Real binaryAnomalyThreshold)
     : binaryThreshold_(binaryAnomalyThreshold)
 {
-  NTA_ASSERT(binaryAnomalyThreshold >= 0 && binaryAnomalyThreshold <= 1)
-      << "binaryAnomalyThreshold must be within [0.0,1.0]";
+  NTA_CHECK(binaryAnomalyThreshold >= 0 && binaryAnomalyThreshold <= 1) << "binaryAnomalyThreshold must be within [0.0,1.0]";
   mode_ = mode;
   if (slidingWindowSize > 0) {
     movingAverage_.reset(new nupic::util::MovingAverage(slidingWindowSize));
@@ -71,8 +67,7 @@ Anomaly::Anomaly(UInt slidingWindowSize, AnomalyMode mode,
 }
 
 
-Real Anomaly::compute(
-    const vector<UInt>& active, const vector<UInt>& predicted, int timestamp)
+Real Anomaly::compute(const vector<UInt>& active, const vector<UInt>& predicted, int timestamp)
 {
   Real anomalyScore = computeRawAnomalyScore(active, predicted);
   Real likelihood = 0.5;
@@ -104,7 +99,5 @@ Real Anomaly::compute(
 }
 
 } // namespace anomaly
-
 } // namespace algorithms
-
 } // namespace nupic
