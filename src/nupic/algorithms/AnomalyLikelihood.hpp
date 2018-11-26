@@ -24,10 +24,10 @@
 
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/MovingAverage.hpp>
+#include <nupic/utils/SlidingWindow.hpp>
 #include <nupic/utils/Log.hpp>
 
 #include <string>
-#include <boost/circular_buffer.hpp>
 #include <vector>
 #include <cmath>
 
@@ -220,9 +220,9 @@ class AnomalyLikelihood {
     int initialTimestamp_ = -1;
 
     nupic::util::MovingAverage averagedAnomaly_; // running average of anomaly scores
-    boost::circular_buffer<Real> runningLikelihoods_; // sliding window of the likelihoods
-    boost::circular_buffer<Real> runningRawAnomalyScores_;
-    boost::circular_buffer<Real> runningAverageAnomalies_; //sliding window of running averages of anomaly scores
+    nupic::util::SlidingWindow<Real> runningLikelihoods_; // sliding window of the likelihoods
+    nupic::util::SlidingWindow<Real> runningRawAnomalyScores_;
+    nupic::util::SlidingWindow<Real> runningAverageAnomalies_; //sliding window of running averages of anomaly scores
 
 };
 

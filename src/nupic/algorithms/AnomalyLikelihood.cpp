@@ -33,12 +33,11 @@ using namespace nupic::util;
 using namespace nupic::algorithms::anomaly;
 
 namespace nupic {
-  namespace algorithms {
-    namespace anomaly {
+namespace algorithms {
+namespace anomaly {
 
-      Real compute_mean(const vector<Real>& v); //forward declaration
-      Real compute_var(const vector<Real>& v, Real mean); 
-   static std::vector<Real> circularBufferToVector(boost::circular_buffer<Real> cb); //TODO replace with SlidingWindow
+   Real compute_mean(const vector<Real>& v); //forward declaration
+   Real compute_var(const vector<Real>& v, Real mean); 
    static UInt calcSkipRecords_(UInt numIngested, UInt windowSize, UInt learningPeriod);
 
 
@@ -46,19 +45,18 @@ AnomalyLikelihood::AnomalyLikelihood(UInt learningPeriod, UInt estimationSamples
     learningPeriod(learningPeriod),
     reestimationPeriod(reestimationPeriod),
     probationaryPeriod(learningPeriod+estimationSamples),
-    averagedAnomaly_(aggregationWindow) { //FIXME discuss aggregationWindow (python aggregates 20(window5)->4, here 20(w5)->20smooth
+    averagedAnomaly_(aggregationWindow),
+    runningLikelihoods_(historicWindowSize),
+    runningRawAnomalyScores_(historicWindowSize),
+    runningAverageAnomalies_(historicWindowSize)
+    { //FIXME discuss aggregationWindow (python aggregates 20(window5)->4, here 20(w5)->20smooth
         iteration_ = 0;
         NTA_CHECK(historicWindowSize >= estimationSamples); // cerr << "estimationSamples exceeds historicWindowSize";
         NTA_CHECK(aggregationWindow < reestimationPeriod && reestimationPeriod < historicWindowSize);
-        
-        runningAverageAnomalies_.set_capacity(historicWindowSize); 
-        runningLikelihoods_.set_capacity(historicWindowSize);
-        runningRawAnomalyScores_.set_capacity(historicWindowSize);
-        NTA_CHECK(runningLikelihoods_.capacity() == historicWindowSize);
     }
 
 
-Real AnomalyLikelihood::anomalyProbability(Real anomalyScore, int timestamp) {  //FIXME even timestamp is not really used, remove too? 
+Real AnomalyLikelihood::anomalyProbability(Real anomalyScore, int timestamp) {
     Real likelihood = DEFAULT_ANOMALY;
 
     //time handling:
@@ -72,37 +70,36 @@ Real AnomalyLikelihood::anomalyProbability(Real anomalyScore, int timestamp) {  
       initialTimestamp_ = timestamp;
     }
     //if timestamp is not used (-1), this is iteration_
-    UInt timeElapsed = (UInt)(timestamp - initialTimestamp_);  //this will be used, relative time since first timestamp (the "first" can be reseted)
+    const UInt timeElapsed = (UInt)(timestamp - initialTimestamp_);  //this will be used, relative time since first timestamp (the "first" can be reseted)
 
     // store into relevant variables
-    this->runningRawAnomalyScores_.push_back(anomalyScore);
+    this->runningRawAnomalyScores_.append(anomalyScore);
     auto newAvg = this->averagedAnomaly_.compute(anomalyScore);
-    this->runningAverageAnomalies_.push_back(newAvg);
+    this->runningAverageAnomalies_.append(newAvg);
     this->iteration_++;
  
     // We ignore the first probationaryPeriod data points - as we cannot reliably compute distribution statistics for estimating likelihood
     if (timeElapsed < this->probationaryPeriod) {
-      this->runningLikelihoods_.push_back(likelihood); //after that, pushed below with real likelihood; here just 0.5
+      this->runningLikelihoods_.append(likelihood); //after that, pushed below with real likelihood; here just 0.5
       return DEFAULT_ANOMALY;
     } //else {
 
-    auto anomalies = circularBufferToVector(this->runningAverageAnomalies_); 
+    const auto anomalies = this->runningAverageAnomalies_.getData(); 
     
       // On a rolling basis we re-estimate the distribution
       if ((timeElapsed >= initialTimestamp_ + reestimationPeriod)   || distribution_.name == "unknown" ) {
-
-        auto numSkipRecords = calcSkipRecords_(this->iteration_, this->runningAverageAnomalies_.capacity(), this->learningPeriod); //FIXME this erase (numSkipRecords) is a problem when we use sliding window (as opposed to vector)! - should we skip only once on beginning, or on each call of this fn?
+        auto numSkipRecords = calcSkipRecords_(this->iteration_, this->runningAverageAnomalies_.size(), this->learningPeriod); //FIXME this erase (numSkipRecords) is a problem when we use sliding window (as opposed to vector)! - should we skip only once on beginning, or on each call of this fn?
         estimateAnomalyLikelihoods_(anomalies, numSkipRecords);  // called to update this->distribution_; 
         if  (timeElapsed >= initialTimestamp_ + reestimationPeriod)  { initialTimestamp_ = -1; } //reset init T
       }
     
-    auto likelihoods = updateAnomalyLikelihoods_(anomalies);
+    const auto likelihoods = updateAnomalyLikelihoods_(anomalies);
 
-      NTA_CHECK(likelihoods.size() > 0); 
+      NTA_ASSERT(likelihoods.size() > 0); 
       likelihood = 1.0 - likelihoods[0]; 
-      NTA_CHECK(likelihood >= 0.0 && likelihood <= 1.0);
+      NTA_ASSERT(likelihood >= 0.0 && likelihood <= 1.0);
 
-    this->runningLikelihoods_.push_back(likelihood);
+    this->runningLikelihoods_.append(likelihood);
     NTA_ASSERT(runningLikelihoods_.size()==runningRawAnomalyScores_.size() &&
              runningLikelihoods_.size()==runningAverageAnomalies_.size());
 
@@ -236,7 +233,8 @@ vector<Real>  AnomalyLikelihood::updateAnomalyLikelihoods_(const vector<Real>& a
   // as well as likelihood for these scores using the old estimator 
   vector<Real> likelihoods;
   likelihoods.reserve(runningAverageAnomalies_.size()); 
-  for (auto newAverage : runningAverageAnomalies_) { //TODO we could use transform() here (? or would it be less clear?) 
+  for (size_t i = 0; i < runningAverageAnomalies_.size(); i++) { //TODO we could use transform() here (? or would it be less clear?) 
+    auto newAverage = runningAverageAnomalies_[i];
     likelihoods.push_back(tailProbability_(newAverage)); 
   }
 
@@ -316,18 +314,6 @@ Real compute_var(const vector<Real>& v, Real mean)  {
 }
 
 
-static std::vector<Real> circularBufferToVector(boost::circular_buffer<Real> cb) {
-  cb.linearize();
-  auto d1 = cb.array_one();
-  vector<Real> data(d1.first, d1.first+d1.second);
-  auto d2 = cb.array_two();
-  data.insert(end(data), d2.first, d2.first+d2.second);
-
-  NTA_ASSERT(data.size() == cb.size() && data.front() == cb.front() && data.back() == cb.back() );
-  return data;
-}
-
-
 static UInt calcSkipRecords_(UInt numIngested, UInt windowSize, UInt learningPeriod)  {
     /** Return the value of skipRecords for passing to estimateAnomalyLikelihoods
 
@@ -348,6 +334,5 @@ static UInt calcSkipRecords_(UInt numIngested, UInt windowSize, UInt learningPer
     UInt numShiftedOut = max(0, diff);
     return min(numIngested, max((UInt)0, learningPeriod - numShiftedOut));
 }
-
 
 }}} //ns
