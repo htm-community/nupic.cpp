@@ -86,9 +86,10 @@ bool Segment::operator==(const Segment &other) const {
   if (_totalActivations != other._totalActivations ||
       _positiveActivations != other._positiveActivations ||
       _lastActiveIteration != other._lastActiveIteration ||
-      _lastPosDutyCycle != other._lastPosDutyCycle ||
-      _lastPosDutyCycleIteration != other._lastPosDutyCycleIteration ||
-      _seqSegFlag != other._seqSegFlag || _frequency != other._frequency ||
+      !nearlyEqual(_lastPosDutyCycle, other._lastPosDutyCycle) ||
+      _lastPosDutyCycleIteration  !=  other._lastPosDutyCycleIteration ||
+      _seqSegFlag != other._seqSegFlag ||
+      !nearlyEqual(_frequency, other._frequency) ||
       _nConnected != other._nConnected) {
     return false;
   }
@@ -164,7 +165,7 @@ Real Segment::dutyCycle(UInt iteration, bool active, bool readOnly) {
   }
 
   // Update duty cycle
-  dutyCycle = pow((Real64)(1.0 - alpha), (Real64)age) * _lastPosDutyCycle;
+  dutyCycle = (Real)pow((Real64)(1.0 - alpha), (Real64)age) * _lastPosDutyCycle;
   if (active)
     dutyCycle += alpha;
 
@@ -327,8 +328,8 @@ void Segment::freeNSynapses(UInt numToFree,
                             std::vector<UInt> &activeSegmentIndices,
                             std::vector<UInt> &removed, UInt verbosity,
                             UInt nCellsPerCol, Real permMax) {
-  NTA_CHECK(inactiveSegmentIndices.size() == inactiveSynapseIndices.size());
-  NTA_CHECK(activeSegmentIndices.size() == activeSynapseIndices.size());
+  NTA_ASSERT(inactiveSegmentIndices.size() == inactiveSynapseIndices.size());
+  NTA_ASSERT(activeSegmentIndices.size() == activeSynapseIndices.size());
   NTA_ASSERT(numToFree <= _synapses.size());
   NTA_ASSERT(numToFree <=
              (inactiveSegmentIndices.size() + activeSegmentIndices.size()));
@@ -421,9 +422,10 @@ void Segment::print(std::ostream &outStream, UInt nCellsPerCol) const {
     } else {
       outStream << _synapses[i];
     }
-    if (i < _synapses.size() - 1)
-      std::cout << " ";
+    if (i < _synapses.size() -1)
+      outStream << " ";
   }
+  outStream << std::endl;
 }
 
 namespace nupic {

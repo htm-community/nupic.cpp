@@ -97,7 +97,7 @@ Real Anomaly::compute(
   }
 
   if (binaryThreshold_) {
-    score = (score >= binaryThreshold_) ? 1.0 : 0.0;
+    score = (score >= binaryThreshold_) ? 1.0f : 0.0f;
   }
 
   return score;
