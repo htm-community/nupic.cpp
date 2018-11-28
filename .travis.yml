@@ -16,13 +16,13 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - build-essential 
-            - g++-8
+            - g++-7
             - cmake
             - cmake-data
             - xsltproc #only for doc transform to html , can be removed
             - libboost-all-dev
       env:
-        - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
+        - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
         - PLATFORM="linux"
 #    ## OSX builds take very long to start on OSX
 #    # moved to CircleCI for OSX
