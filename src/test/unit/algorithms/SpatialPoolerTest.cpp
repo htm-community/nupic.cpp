@@ -1451,8 +1451,12 @@ TEST(SpatialPoolerTest, testRaisePermanencesToThreshold) {
       }
     }
     sp.raisePermanencesToThreshold_(perm, potential);
-    for( UInt syn = 0; syn < perm.size(); syn++ )
+    UInt connectedCount = 0;
+    for( UInt syn = 0; syn < perm.size(); syn++ ) {
       ASSERT_NEAR( truePerm[i][syn], perm[syn], synPermBelowStimulusInc );
+      connectedCount += (perm[syn] >= synPermConnected);
+    }
+    ASSERT_GE( connectedCount, stimulusThreshold );
   }
 }
 

@@ -616,28 +616,28 @@ UInt SpatialPooler::countConnected_(const vector<Real> &perm) const {
 }
 
 
-UInt SpatialPooler::raisePermanencesToThreshold_(
+void SpatialPooler::raisePermanencesToThreshold_(
                       vector<Real>& perm,
                       const vector<UInt>& potential) const {
 
   if( stimulusThreshold_ == 0 )
-    return -1;
+    return;
 
   // Sort the potential pool by permanence values, and look for the synapse with
   // the N'th greatest permanence, where N is the desired minimum number of
   // connected synapses.  Then calculate how much to increase the N'th synapses
   // permance by such that it becomes a connected synapse.
 
-  vector<UInt> index(potential.begin(), potential.end()); // Sort a copy, not the original!
-  auto minPermSyn = index.begin() + stimulusThreshold_ - 1;
-  // Do a partial sort, it's faster than a full sort. Only minPermSyn is in its
-  // final sorted position.
-  nth_element(index.begin(), minPermSyn, index.end(),
+  vector<UInt> index(potential.begin(), potential.end()); // Sort a copy, since original is const.
+  auto minPermSynPtr = index.begin() + stimulusThreshold_ - 1;
+  // Do a partial sort, it's faster than a full sort. Only minPermSynPtr is in
+  // its final sorted position.
+  nth_element(index.begin(), minPermSynPtr, index.end(),
       [&](UInt &A, UInt &B) { return perm[A] > perm[B]; });
 
-  Real increment = synPermConnected_ - perm[ *minPermSyn ];
+  const Real increment = synPermConnected_ - perm[ *minPermSynPtr ];
   if( increment <= 0 )    // Enough synapses are already connected.
-    return -1;
+    return;
 
   // Raise the permance of all synapses in the potential pool uniformly.
   for( auto &elem : potential ) {
@@ -645,7 +645,7 @@ UInt SpatialPooler::raisePermanencesToThreshold_(
   }
 
   clip_(perm, false);
-  return -1;
+  return;
 }
 
 
