@@ -1441,8 +1441,6 @@ TEST(SpatialPoolerTest, testRaisePermanencesToThreshold) {
       {0.17, 0.106, 0, 0, 0.128},          // increment 5 times
       {0, 0.101, 0.11, 0.18, 0}};          // increment 4 times
 
-  UInt trueConnectedCount[7] = {3, 3, 4, 3, 5, 3, 3};
-
   for (UInt i = 0; i < numColumns; i++) {
     vector<Real> perm;
     vector<UInt> potential;
