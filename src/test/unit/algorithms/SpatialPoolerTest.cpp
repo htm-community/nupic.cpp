@@ -1452,7 +1452,7 @@ TEST(SpatialPoolerTest, testRaisePermanencesToThreshold) {
         potential.push_back(j);
       }
     }
-    UInt connected = sp.raisePermanencesToThreshold_(perm, potential);
+    sp.raisePermanencesToThreshold_(perm, potential);
     for( UInt syn = 0; syn < perm.size(); syn++ )
       ASSERT_NEAR( truePerm[i][syn], perm[syn], synPermBelowStimulusInc );
   }
