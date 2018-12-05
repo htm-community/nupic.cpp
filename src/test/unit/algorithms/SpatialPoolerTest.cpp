@@ -1453,8 +1453,8 @@ TEST(SpatialPoolerTest, testRaisePermanencesToThreshold) {
       }
     }
     UInt connected = sp.raisePermanencesToThreshold_(perm, potential);
-    ASSERT_TRUE(check_vector_eq(truePerm[i], perm));
-    ASSERT_TRUE(connected == trueConnectedCount[i]);
+    for( UInt syn = 0; syn < perm.size(); syn++ )
+      ASSERT_NEAR( truePerm[i][syn], perm[syn], synPermBelowStimulusInc );
   }
 }
 
