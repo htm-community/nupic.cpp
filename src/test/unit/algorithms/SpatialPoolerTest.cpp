@@ -27,6 +27,7 @@
 #include <cstring>
 #include <fstream>
 #include <stdio.h>
+#include <regex>
 
 #include "gtest/gtest.h"
 #include <nupic/algorithms/SpatialPooler.hpp>
@@ -1925,6 +1926,45 @@ TEST(SpatialPoolerTest, ZeroOverlap_StimulusThreshold_LocalInhibition) {
 
   EXPECT_EQ(0, countNonzero(activeColumns));
 }
+
+
+TEST(SpatialPoolerTest, ExactOutput) {
+  string gold = "SDR( 200 ) 93, 31, 40, 68, 169, 164, 87, 132, 34, 120";
+
+  SDR inputs({ 1000 });
+  SDR columns({ 200 });
+  SpatialPooler sp({inputs.dimensions}, {columns.dimensions},
+                   /*potentialRadius*/ 99999,
+                   /*potentialPct*/ 0.5f,
+                   /*globalInhibition*/ true,
+                   /*localAreaDensity*/ 0.05f,
+                   /*numActiveColumnsPerInhArea*/ -1,
+                   /*stimulusThreshold*/ 3u,
+                   /*synPermInactiveDec*/ 0.008f,
+                   /*synPermActiveInc*/ 0.05f,
+                   /*synPermConnected*/ 0.1f,
+                   /*minPctOverlapDutyCycles*/ 0.001f,
+                   /*dutyCyclePeriod*/ 200,
+                   /*boostStrength*/ 10.0f,
+                   /*seed*/ 42,
+                   /*spVerbosity*/ 0,
+                   /*wrapAround*/ true);
+
+  for(UInt i = 0; i < 1000; i++) {
+    Random rng(i);
+    inputs.randomize( 0.15f, rng );
+    sp.compute(inputs, true, columns);
+  }
+  stringstream outStream;
+  columns.print(outStream);
+  string output = outStream.str();
+  // Remove trailing whitespace from both strings before comparing.
+  regex rstrip("\\s*$");
+  output = regex_replace(output, rstrip, "");
+  gold   = regex_replace(gold, rstrip, "");
+  ASSERT_EQ( output, gold );
+}
+
 
 TEST(SpatialPoolerTest, testSaveLoad) {
   const char *filename = "SpatialPoolerSerialization.tmp";
