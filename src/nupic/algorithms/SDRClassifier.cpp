@@ -229,13 +229,21 @@ vector<Real64> SDRClassifier::calculateError_(const vector<UInt> &bucketIdxList,
 void SDRClassifier::softmax_(vector<Real64>::iterator begin,
                              vector<Real64>::iterator end) {
   vector<Real64>::iterator maxItr = max_element(begin, end);
+  cout << "max="<<*maxItr<<std::endl;
   for (auto itr = begin; itr != end; ++itr) {
+    cout<<"in="<<*itr<<std::endl;
     *itr -= *maxItr;
   }
   range_exp(1.0, begin, end);
+  for(auto itr=begin; itr<end; ++itr) {
+    cout << "exp="<<*itr<<std::endl;
+  }
   Real64 sum = accumulate(begin, end, 0.0);
+    cout<<"sum="<<sum<<std::endl;
+  
   for (auto itr = begin; itr != end; ++itr) {
     *itr /= sum;
+    cout<<"div="<<*itr<<std::endl;
   }
 }
 
