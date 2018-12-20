@@ -64,15 +64,40 @@ message(STATUS "COMMON_OS_LIBS       = ${COMMON_OS_LIBS}")
 message(STATUS "PYTHON2_BUILD        = ${PYTHON2_BUILD}")
 message(STATUS "PYTHON3_BUILD        = ${PYTHON3_BUILD}")
 
+# Now build nupic_netapi project.
+set(HTM_LIB_INCLUDES     ${REPOSITORY_DIR}/htm/src)    # for htm/src/nupic/xxx/*.hpp 
+set(NETAPI_LIB_INCLUDES  ${REPOSITORY_DIR}/netapi/src)  # for netapi/nupic/xxx/*.hpp
+set(core_library   nupic_core)
 
 
 # Set up builds of external dependencies and get their exports.
 # (see individual external/*.cmake modules for exported settings and functions)
 add_subdirectory(external)
 
-# Now build nupic_core project.
-add_subdirectory(src)
+# Now build HTM project.
+add_subdirectory(htm/src)
+
+# build NetworkAPI project
+add_subdirectory(netapi/src)
 
 if (PYTHON2_BUILD OR PYTHON3_BUILD)
-  add_subdirectory(bindings/py/cpp_src)
+  add_subdirectory(bindings/py/src)
 endif()
+
+
+#
+# tests_all just calls other targets
+#
+# TODO This doesn't seem to have any effect; it's probably because the DEPENDS
+# of add_custom_target must be files, not other high-level targets. If really
+# need to run these tests during build, then either the individual
+# add_custom_target of the individual test runners should be declared with the
+# ALL option, or tests_all target whould be declared without DEPENDS, and
+# add_dependencies should be used to set it's dependencies on the custom targets
+# of the inidividual test runners.
+add_custom_target(tests_all
+                  DEPENDS ${htm_tests_executable} ${netapi_tests_executable}
+                  COMMENT "Running all tests"
+                  VERBATIM)
+                  
+
