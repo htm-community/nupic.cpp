@@ -39,3 +39,5 @@ bool raisePerm = true)`  due to SP implementation now using Connections. PR #153
 
 * When building with MS Visual Studio 2017, it will build bindings only for Python 3.4 and above.  
 (i.e. No Python 2.7 under Windows)
+
+* Removed methods `Cells4::dumpTiming()` and `Cells4::resetTimers()`.

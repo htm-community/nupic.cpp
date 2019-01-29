@@ -31,33 +31,11 @@
 #include <nupic/algorithms/SegmentUpdate.hpp>
 #include <nupic/math/ArrayAlgo.hpp> // is_in
 #include <nupic/math/StlIo.hpp>     // binary_save
-#include <nupic/os/Timer.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/Random.hpp>
 
 using namespace nupic;
 using namespace nupic::algorithms::Cells4;
-
-// Comment or uncomment to turn on timing
-//#define CELLS4_TIMING
-
-// Various timers and instrumentation contingent on above flag
-#ifdef CELLS4_TIMING
-
-#define TIMER(code) (code)
-
-static nupic::Timer computeTimer, inferenceTimer, learningTimer;
-static nupic::Timer learnPhase1Timer, learnPhase2Timer, learnBacktrackTimer;
-static nupic::Timer infPhase1Timer, infPhase2Timer, infBacktrackTimer;
-static nupic::Timer forwardLearnPropTimer, forwardInfPropTimer;
-static nupic::Timer getNewCellTimer, adaptSegmentTimer;
-static nupic::Timer chooseCellsTimer;
-
-#else
-
-#define TIMER(code)
-
-#endif
 
 Cells4::Cells4(UInt nColumns, UInt nCellsPerCol,
                      UInt activationThreshold,
@@ -291,8 +269,6 @@ void Cells4::inferBacktrack(const std::vector<UInt> &activeColumns) {
   // it is also evaluated as a potential starting point
   if (_prevInfPatterns.empty()) return;
 
-  TIMER(infBacktrackTimer.start());
-
   // This is an easy to use label for the current time step
   UInt currentTimeStepsOffset = (UInt)_prevInfPatterns.size() - 1;
 
@@ -439,9 +415,6 @@ void Cells4::inferBacktrack(const std::vector<UInt> &activeColumns) {
 
   // Restore the original predicted state
   _infPredictedStateT1 = _infPredictedBackup;
-
-  // Turn off timer
-  TIMER(infBacktrackTimer.stop());
 }
 
 //--------------------------------------------------------------------------------
@@ -526,10 +499,7 @@ bool Cells4::learnBacktrackFrom(UInt startOffset, bool readOnly) {
       std::cout << "\n";
     }
 
-    // Call learnPhase2, but turn off backtrack timer to help isolate timing
-    TIMER(learnBacktrackTimer.stop());
     learnPhase2(readOnly);
-    TIMER(learnBacktrackTimer.start());
   } // offset < numPrevPatterns
 
   return inSequence;
@@ -630,7 +600,6 @@ UInt Cells4::learnBacktrack() {
  * for adding a new segment.
  */
 UInt Cells4::getCellForNewSegment(UInt colIdx) {
-  TIMER(getNewCellTimer.start());
   UInt candidateCellIdx = 0;
 
   // Not fixed size CLA, just choose a cell randomly
@@ -641,7 +610,6 @@ UInt Cells4::getCellForNewSegment(UInt colIdx) {
     } else {
       candidateCellIdx = 0;
     }
-    TIMER(getNewCellTimer.stop());
     return getCellIdx(colIdx, candidateCellIdx);
   }
 
@@ -678,7 +646,6 @@ UInt Cells4::getCellForNewSegment(UInt colIdx) {
                 << "] chosen for new segment, # of segs is "
                 << _cells[candidateCellIdx].size() << "\n";
     }
-    TIMER(getNewCellTimer.stop());
     return candidateCellIdx;
   }
 
@@ -722,8 +689,6 @@ UInt Cells4::getCellForNewSegment(UInt colIdx) {
   cleanUpdatesList(candidateCellIdx, candidateSegmentIdx);
   _cells[candidateCellIdx].releaseSegment(candidateSegmentIdx);
 
-  TIMER(getNewCellTimer.stop());
-
   return candidateCellIdx;
 }
 
@@ -734,8 +699,6 @@ UInt Cells4::getCellForNewSegment(UInt colIdx) {
  */
 bool Cells4::learnPhase1(const std::vector<UInt> & activeColumns, bool readOnly)
 {
-  TIMER(learnPhase1Timer.start());
-
   // Save previous active state (where?) and start out on a clean slate
   _learnActiveStateT.resetAll();
 
@@ -817,9 +780,6 @@ bool Cells4::learnPhase1(const std::vector<UInt> & activeColumns, bool readOnly)
     }
   } // for each active column
 
-  // Turn off timer before we return
-  TIMER(learnPhase1Timer.stop());
-
   //----------------------------------------------------------------------
   // Determine if we are out of sequence or not and reset our PAM counter
   // if we are in sequence
@@ -832,11 +792,8 @@ bool Cells4::learnPhase1(const std::vector<UInt> & activeColumns, bool readOnly)
  */
 void Cells4::learnPhase2(bool readOnly) {
   // Compute number of active synapses per segment based on forward propagation
-  TIMER(forwardLearnPropTimer.start());
   computeForwardPropagation(_learnActiveStateT);
-  TIMER(forwardLearnPropTimer.stop());
 
-  TIMER(learnPhase2Timer.start());
 
   // Clear out predicted state to start with
   _learnPredictedStateT.resetAll();
@@ -866,9 +823,6 @@ void Cells4::learnPhase2(bool readOnly) {
       // Leave out pooling logic for now
     }
   }
-
-  // Turn off timer before we return
-  TIMER(learnPhase2Timer.stop());
 }
 
 //--------------------------------------------------------------------------------
@@ -953,9 +907,7 @@ void Cells4::updateLearningState(const std::vector<UInt> &activeColumns,
     // Backtrack to an earlier starting point, if we find one
     UInt backsteps = 0;
     if (!_resetCalled) {
-      TIMER(learnBacktrackTimer.start());
       backsteps = learnBacktrack();
-      TIMER(learnBacktrackTimer.stop());
     }
 
     // Start over in the current time step if reset was called, or we couldn't
@@ -1055,7 +1007,6 @@ void Cells4::updateInferenceState(const std::vector<UInt> &activeColumns) {
  */
 bool Cells4::inferPhase1(const std::vector<UInt> &activeColumns,
                          bool useStartCells) {
-  TIMER(infPhase1Timer.start());
   //---------------------------------------------------------------------------
   // Initialize current active state to 0 to start
   _infActiveStateT.resetAll();
@@ -1098,7 +1049,6 @@ bool Cells4::inferPhase1(const std::vector<UInt> &activeColumns,
     }
   }
 
-  TIMER(infPhase1Timer.stop());
   // Did we predict this input well enough?
   return (useStartCells ||
           (numPredictedColumns >= 0.50 * activeColumns.size()));
@@ -1112,11 +1062,8 @@ bool Cells4::inferPhase1(const std::vector<UInt> &activeColumns,
  */
 bool Cells4::inferPhase2() {
   // Compute number of active synapses per segment based on forward propagation
-  TIMER(forwardInfPropTimer.start());
   computeForwardPropagation(_infActiveStateT);
-  TIMER(forwardInfPropTimer.stop());
 
-  TIMER(infPhase2Timer.start());
   //---------------------------------------------------------------------------
   // Initialize to 0 to start
   _infPredictedStateT.resetAll();
@@ -1182,9 +1129,6 @@ bool Cells4::inferPhase2() {
       _cellConfidenceT[i] /= sumColConfidence;
   }
 
-  // Turn off timer before we return
-  TIMER(infPhase2Timer.stop());
-
   //---------------------------------------------------------------------------
   // Are we predicting the required minimum number of columns?
   return (numPredictedCols >= (0.5 * _avgInputDensity));
@@ -1196,24 +1140,10 @@ bool Cells4::inferPhase2() {
  */
 void Cells4::compute(Real* input, Real* output, bool doInference, bool doLearning)
 {
-  TIMER(computeTimer.start());
   NTA_CHECK(doInference || doLearning);
 
   if (doLearning) _nLrnIterations++;
   ++_nIterations;
-
-#ifdef CELLS4_TIMING
-  if (_nIterations % 1000 == 0) {
-    std::cout << "\n=================\n_nIterations = " << _nIterations << "\n";
-    dumpTiming();
-    resetTimers();
-  }
-
-  if (_verbosity >= 3) {
-    std::cout << "\n==== CPP Iteration: " << _nIterations
-              << " =====" << std::endl;
-  }
-#endif
 
   // Create array of active bottom up column indices for later use
   static std::vector<UInt> activeColumns;
@@ -1253,17 +1183,13 @@ void Cells4::compute(Real* input, Real* output, bool doInference, bool doLearnin
   //---------------------------------------------------------------------------
   // Update the inference state
   if (doInference) {
-    TIMER(inferenceTimer.start());
     updateInferenceState(activeColumns);
-    TIMER(inferenceTimer.stop());
   }
 
   //---------------------------------------------------------------------------
   // Update the learning state
   if (doLearning) {
-    TIMER(learningTimer.start());
     updateLearningState(activeColumns, input);
-    TIMER(learningTimer.stop());
 
     // Apply age-based global decay
     applyGlobalDecay();
@@ -1395,7 +1321,6 @@ void Cells4::compute(Real* input, Real* output, bool doInference, bool doLearnin
   if (_checkSynapseConsistency) {
     NTA_CHECK(invariants(true));
   }
-  TIMER(computeTimer.stop());
 }
 
 //--------------------------------------------------------------------------------
@@ -1598,7 +1523,6 @@ void Cells4::_generateListsOfSynapsesToAdjustForAdaptSegment(
  *
  */
 void Cells4::adaptSegment(const SegmentUpdate &update) {
-  TIMER(adaptSegmentTimer.start());
   {
     // consistency checks:
     // update synapses need to be sorted and unique
@@ -1614,7 +1538,6 @@ void Cells4::adaptSegment(const SegmentUpdate &update) {
     // been released. It's cheaper to deal with it here rather than do
     // a search through pending updates each time a segment has been deleted.
     if (_cells[cellIdx][segIdx].empty()) {
-      TIMER(adaptSegmentTimer.stop());
       return;
     }
 
@@ -1762,8 +1685,6 @@ void Cells4::adaptSegment(const SegmentUpdate &update) {
   if (_checkSynapseConsistency) {
     NTA_CHECK(invariants());
   }
-
-  TIMER(adaptSegmentTimer.stop());
 }
 
 // Rebalance segment lists for each cell
@@ -2704,7 +2625,6 @@ void Cells4::chooseCellsToLearnFrom(UInt cellIdx, UInt segIdx, UInt nSynToAdd,
   // bail out if no cells requested
   if (nSynToAdd == 0)
     return;
-  TIMER(chooseCellsTimer.start());
 
   // start with a sorted vector of all the cells that are on in the current
   // state
@@ -2740,7 +2660,6 @@ void Cells4::chooseCellsToLearnFrom(UInt cellIdx, UInt segIdx, UInt nSynToAdd,
 
   // bail out if there are no cells left to process
   if (nbrCells == 0) {
-    TIMER(chooseCellsTimer.stop()); // turn off timer
     return;
   }
 
@@ -2771,9 +2690,6 @@ void Cells4::chooseCellsToLearnFrom(UInt cellIdx, UInt segIdx, UInt nSynToAdd,
   // sort the new additions with any prior elements
   if (fSortNeeded)
     std::sort(srcCells.begin(), srcCells.end());
-
-  // Turn off timer
-  TIMER(chooseCellsTimer.stop());
 }
 
 std::pair<UInt, UInt> Cells4::trimSegments(Real minPermanence,
@@ -3094,79 +3010,3 @@ void Cells4::computeForwardPropagation(CState &state) {
   }
 }
 #endif // SOME_STATES_NOT_INDEXED
-
-//--------------------------------------------------------------------------------
-// Dump detailed Cells4 timing report to stdout
-//--------------------------------------------------------------------------------
-void Cells4::dumpTiming() {
-#ifdef CELLS4_TIMING
-  Real64 learnTime = learningTimer.getElapsed(),
-         inferenceTime = inferenceTimer.getElapsed();
-
-  std::cout << "Total time in compute:   " << computeTimer.toString() << "\n";
-  std::cout << "Total time in learning:  " << learningTimer.toString() << "\n";
-  std::cout << "Total time in inference: " << inferenceTimer.toString() << "\n";
-
-  std::cout << "\n\nLearning breakdown:" << std::endl;
-  std::cout << "Phase 1: " << learnPhase1Timer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * learnPhase1Timer.getElapsed() / learnTime << "%\n";
-  std::cout << "Phase 2: " << learnPhase2Timer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * learnPhase2Timer.getElapsed() / learnTime << "%\n";
-  std::cout << "Backtrack: " << learnBacktrackTimer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * learnBacktrackTimer.getElapsed() / learnTime << "%\n";
-  std::cout << "Forward prop: " << forwardLearnPropTimer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * forwardLearnPropTimer.getElapsed() / learnTime << "%\n";
-  std::cout << "getCellForNewSegment: " << getNewCellTimer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * getNewCellTimer.getElapsed() / learnTime << "%\n";
-  std::cout << "chooseCells: " << chooseCellsTimer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * chooseCellsTimer.getElapsed() / learnTime << "%\n";
-  std::cout << "adaptSegment: " << adaptSegmentTimer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * adaptSegmentTimer.getElapsed() / learnTime << "%\n";
-  std::cout << "Note: % is percentage of learning time\n";
-
-  std::cout << "\n\nInference breakdown:" << std::endl;
-  std::cout << "Phase 1: " << infPhase1Timer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * infPhase1Timer.getElapsed() / inferenceTime << "%\n";
-  std::cout << "Phase 2: " << infPhase2Timer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * infPhase2Timer.getElapsed() / inferenceTime << "%\n";
-  std::cout << "Backtrack: " << infBacktrackTimer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * infBacktrackTimer.getElapsed() / inferenceTime << "%\n";
-  std::cout << "Forward prop: " << forwardInfPropTimer.toString() << " "
-            << std::setprecision(3)
-            << 100.0 * forwardInfPropTimer.getElapsed() / inferenceTime
-            << "%\n";
-  std::cout << "Note: % is percentage of inference time\n";
-
-#endif
-}
-
-//--------------------------------------------------------------------------------
-// Reset timers and counters to 0
-//--------------------------------------------------------------------------------
-void Cells4::resetTimers() {
-#ifdef CELLS4_TIMING
-  computeTimer.reset();
-  inferenceTimer.reset();
-  learningTimer.reset();
-  learnPhase1Timer.reset();
-  learnPhase2Timer.reset();
-  learnBacktrackTimer.reset();
-  forwardLearnPropTimer.reset();
-  infPhase1Timer.reset();
-  infPhase2Timer.reset();
-  infBacktrackTimer.reset();
-  forwardInfPropTimer.reset();
-  getNewCellTimer.reset();
-  chooseCellsTimer.reset();
-#endif
-}

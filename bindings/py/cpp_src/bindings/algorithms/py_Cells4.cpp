@@ -411,12 +411,6 @@ namespace nupic_ext
         // def getNonEmptySegList(self, colIdx, cellIdxInCol):
         py_cells4.def("getNonEmptySegList", &Cells4_t::getNonEmptySegList);
 
-        // def dumpTiming(self):
-        py_cells4.def("dumpTiming", &Cells4_t::dumpTiming);
-
-        // def resetTimers(self):
-        py_cells4.def("resetTimers", &Cells4_t::resetTimers);
-
         // def invariants(self, verbose=False):
         py_cells4.def("invariants", &Cells4_t::invariants);
 
