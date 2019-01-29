@@ -35,7 +35,6 @@ namespace py = pybind11;
 namespace nupic_ext
 {
     void init_Engine(py::module&);
-    void init_Timer(py::module&);
     void init_OS(py::module&);
 } // namespace nupic_ext
 
@@ -46,5 +45,4 @@ PYBIND11_MODULE(engine_internal, m) {
 
     init_Engine(m);
     init_OS(m);
-    init_Timer(m);
 }

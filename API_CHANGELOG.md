@@ -41,3 +41,5 @@ bool raisePerm = true)`  due to SP implementation now using Connections. PR #153
 (i.e. No Python 2.7 under Windows)
 
 * Removed methods `Cells4::dumpTiming()` and `Cells4::resetTimers()`.
+
+* Removed class `Timer`.

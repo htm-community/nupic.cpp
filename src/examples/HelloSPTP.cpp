@@ -29,9 +29,9 @@
 #include "nupic/algorithms/SpatialPooler.hpp"
 #include "nupic/encoders/ScalarEncoder.hpp"
 
-#include "nupic/os/Timer.hpp"
 #include "nupic/utils/VectorHelpers.hpp"
 #include "nupic/utils/Random.hpp"
+#include "nupic/utils/Time.hpp"
 
 namespace examples {
 
@@ -55,19 +55,19 @@ void run() {
   const UInt EPOCHS = 2; // make test faster in Debug
 #endif
 
-  std::cout << "starting test. DIM_INPUT=" << DIM_INPUT
-  		<< ", DIM=" << COLS << ", CELLS=" << CELLS << std::endl;
-  std::cout << "EPOCHS = " << EPOCHS << std::endl;
+  cout << "starting test. DIM_INPUT=" << DIM_INPUT
+       << ", DIM=" << COLS << ", CELLS=" << CELLS << endl;
+  cout << "EPOCHS = " << EPOCHS << endl;
 
 
   // initialize SP, TP, Anomaly, AnomalyLikelihood
-  Timer tInit(true);
+  clock_t tInit = clock();
   ScalarEncoder enc(133, -100.0, 100.0, DIM_INPUT, 0.0, 0.0, false);
   SpatialPooler sp(vector<UInt>{DIM_INPUT}, vector<UInt>{COLS});
   Cells4 tp(COLS, CELLS, 12, 8, 15, 5, .5f, .8f, 1.0f, .1f, .1f, 0.0f,
             false, 42, true, false);
   Anomaly an(5, AnomalyMode::LIKELIHOOD);
-  tInit.stop();
+  tInit = clock() - tInit;
 
   // data for processing input
   vector<UInt> input(DIM_INPUT);
@@ -81,46 +81,50 @@ void run() {
 
   // Start a stopwatch timer
   printf("starting:  %d iterations.", EPOCHS);
-  Timer tAll(true);
-  Timer tRng, tEnc, tSP, tTP, tAn;
+  clock_t tAll = clock();
+  clock_t tRng = 0u;
+  clock_t tEnc = 0u;
+  clock_t tSP  = 0u;
+  clock_t tTP  = 0u;
+  clock_t tAn  = 0u;
 
 
   //run
   for (UInt e = 0; e < EPOCHS; e++) {
     //Input
 //    generate(input.begin(), input.end(), [&] () { return rnd.getUInt32(2); });
-    tRng.start();
+    tRng -= clock();
     const Real r = (Real)(rnd.getUInt32(100) - rnd.getUInt32(100)*rnd.getReal64()); //rnd from range -100..100
-    tRng.stop();
+    tRng += clock();
 
     //Encode
-    tEnc.start();
+    tEnc -= clock();
     enc.encodeIntoArray(r, input.data());
-    tEnc.stop();
+    tEnc += clock();
 
     //SP
-    tSP.start();
+    tSP -= clock();
     fill(outSP.begin(), outSP.end(), 0);
     sp.compute(input.data(), true, outSP.data());
     sp.stripUnlearnedColumns(outSP.data());
-    tSP.stop();
+    tSP += clock();
 
     //TP
-    tTP.start();
+    tTP -= clock();
     rIn = VectorHelpers::castVectorType<UInt, Real>(outSP);
     tp.compute(rIn.data(), rOut.data(), true, true);
     outTP = VectorHelpers::castVectorType<Real, UInt>(rOut);
-    tTP.stop();
+    tTP += clock();
 
     //Anomaly
-    tAn.start();
+    tAn -= clock();
     res = an.compute(outSP /*active*/, prevPred_ /*prev predicted*/);
     prevPred_ = outTP; //to be used as predicted T-1
-    tAn.stop();
+    tAn += clock();
 
     // print
     if (e == EPOCHS - 1) {
-      tAll.stop();
+      tAll = clock() - tAll;
 
       cout << "Epoch = " << e << endl;
       cout << "Anomaly = " << res << endl;
@@ -129,21 +133,21 @@ void run() {
       NTA_CHECK(outSP[69] == 0) << "A value in SP computed incorrectly";
       NTA_CHECK(outTP[42] == 0) << "Incorrect value in TP";
       cout << "==============TIMERS============" << endl;
-      cout << "Init:\t" << tInit.getElapsed() << endl;
-      cout << "Random:\t" << tRng.getElapsed() << endl;
-      cout << "Encode:\t" << tEnc.getElapsed() << endl;
-      cout << "SP:\t" << tSP.getElapsed() << endl;
-      cout << "TP:\t" << tTP.getElapsed() << endl;
-      cout << "AN:\t" << tAn.getElapsed() << endl;
-
-      const size_t timeTotal = (size_t)floor(tAll.getElapsed());
+      cout << "Init:\t"   << (float)tInit / CLOCKS_PER_SEC << endl;
+      cout << "Random:\t" << (float)tRng  / CLOCKS_PER_SEC << endl;
+      cout << "Encode:\t" << (float)tEnc  / CLOCKS_PER_SEC << endl;
+      cout << "SP:\t"     << (float)tSP   / CLOCKS_PER_SEC << endl;
+      cout << "TP:\t"     << (float)tTP   / CLOCKS_PER_SEC << endl;
+      cout << "AN:\t"     << (float)tAn   / CLOCKS_PER_SEC << endl;
+      float timeTotal      = (float)tAll  / CLOCKS_PER_SEC;
       cout << "Total elapsed time = " << timeTotal << " seconds" << endl;
+
       #ifdef NDEBUG
-	    #ifdef _MSC_VER
-          const size_t CI_avg_time = (size_t)floor(14*Timer::getSpeed()); //sec
-		#else
-          const size_t CI_avg_time = (size_t)floor(7*Timer::getSpeed()); //sec
-		#endif
+       #ifdef _MSC_VER
+          const size_t CI_avg_time = (size_t)floor(14 * getSpeed()); //sec
+        #else
+          const size_t CI_avg_time = (size_t)floor(7 * getSpeed()); //sec
+        #endif
         NTA_CHECK(timeTotal <= CI_avg_time) << //we'll see how stable the time result in CI is, if usable
           "HelloSPTP test slower than expected! (" << timeTotal << ",should be "<< CI_avg_time;
       #endif

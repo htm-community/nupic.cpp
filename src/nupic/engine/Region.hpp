@@ -34,11 +34,11 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <time.h>
 
 // We need the full definitions because these
 // objects are returned by value.
 #include <nupic/ntypes/Dimensions.hpp>
-#include <nupic/os/Timer.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/types/Serializable.hpp>
 #include <nupic/engine/Network.hpp>
@@ -55,7 +55,7 @@ class Array;
 class Spec;
 class NodeSet;
 class BundleIO;
-class Timer;
+typedef clock_t Timer;
 class Network;
 class GenericRegisteredRegionImpl;
 

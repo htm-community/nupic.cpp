@@ -35,7 +35,6 @@
 #include <nupic/os/Env.hpp>
 #include <nupic/os/OS.hpp> // memory leak detection
 #include <nupic/os/Path.hpp>
-#include <nupic/os/Timer.hpp>
 #include <nupic/types/Exception.hpp>
 
 #include <cmath>   // fabs/abs

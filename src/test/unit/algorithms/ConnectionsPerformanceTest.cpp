@@ -32,7 +32,7 @@
 #include <nupic/algorithms/SpatialPooler.hpp>
 #include <nupic/algorithms/TemporalMemory.hpp>
 #include <nupic/utils/Random.hpp>
-#include <nupic/os/Timer.hpp>
+#include <nupic/utils/Time.hpp> // clock, getElapsed
 #include <nupic/types/Types.hpp> // macro "UNUSED"
 
 namespace testing {
@@ -52,7 +52,7 @@ void _feedTM(TemporalMemory &tm, vector<CellIdx> sdr, bool learn = true);
 float runTemporalMemoryTest(UInt numColumns, UInt w,   int numSequences,
                                                        int numElements,
                                                        string label) {
-  Timer timer(true);
+  clock_t timer = clock();
 
   // Initialize
 
@@ -61,7 +61,7 @@ float runTemporalMemoryTest(UInt numColumns, UInt w,   int numSequences,
   columnDim.push_back(numColumns);
   tm.initialize(columnDim);
 
-  cout << (float)timer.getElapsed() << " in " << label << ": initialize"  << endl;
+  cout << getElapsed(timer) << " in " << label << ": initialize"  << endl;
 
   // Learn
 
@@ -87,7 +87,7 @@ float runTemporalMemoryTest(UInt numColumns, UInt w,   int numSequences,
     }
   }
 
-  cout << (float)timer.getElapsed() << " in " << label << ": initialize + learn"  << endl;
+  cout << getElapsed(timer) << " in " << label << ": initialize + learn"  << endl;
 
   // Test
 
@@ -98,9 +98,8 @@ float runTemporalMemoryTest(UInt numColumns, UInt w,   int numSequences,
     }
   }
 
-  cout << (float)timer.getElapsed() << " in " << label << ": initialize + learn + test"  << endl;
-  timer.stop();
-  return (float)timer.getElapsed();
+  cout << getElapsed(timer) << " in " << label << ": initialize + learn + test"  << endl;
+  return getElapsed(timer);
 }
 
 float runSpatialPoolerTest(
@@ -118,8 +117,7 @@ float runSpatialPoolerTest(
   const auto testTime  =  5u;
 #endif
 
-  Timer timer;
-  timer.start();
+  clock_t timer = clock();
 
   // Initialize
   SpatialPooler sp(
@@ -142,23 +140,22 @@ float runSpatialPoolerTest(
     /* wrapAround */                    true);
   SDR input( sp.getInputDimensions() );
   SDR columns( sp.getColumnDimensions() );
-  cout << (float)timer.getElapsed() << " in " << label << ": initialize"  << endl;
+  cout << getElapsed(timer) << " in " << label << ": initialize"  << endl;
 
   // Learn
   for (auto i = 0u; i < trainTime; i++) {
     input.randomize( inputSparsity, rng );
     sp.compute( input, true, columns );
   }
-  cout << (float)timer.getElapsed() << " in " << label << ": initialize + learn"  << endl;
+  cout << getElapsed(timer) << " in " << label << ": initialize + learn"  << endl;
 
   // Test
   for (auto i = 0u; i < testTime; i++) {
     input.randomize( inputSparsity, rng );
     sp.compute( input, false, columns );
   }
-  cout << (float)timer.getElapsed() << " in " << label << ": initialize + learn + test"  << endl;
-  timer.stop();
-  return (float)timer.getElapsed();
+  cout << getElapsed(timer) << " in " << label << ": initialize + learn + test"  << endl;
+  return getElapsed(timer);
 }
 
 
@@ -208,7 +205,7 @@ void _feedTM(TemporalMemory &tm, vector<CellIdx> sdr, bool learn) {
 TEST(ConnectionsPerformanceTest, testTM) {
 	auto tim = runTemporalMemoryTest(COLS, 40, EPOCHS, SEQ, "temporal memory");
 #ifdef NDEBUG
-	ASSERT_LE(tim, 1.0*Timer::getSpeed()); //there are times, we must be better. Bit underestimated for slow CI
+	ASSERT_LE(tim, 1.0*getSpeed()); //there are times, we must be better. Bit underestimated for slow CI
 #endif
   UNUSED(tim);
 }
@@ -219,7 +216,7 @@ TEST(ConnectionsPerformanceTest, testTM) {
 TEST(ConnectionsPerformanceTest, testTMLarge) {
   auto tim = runTemporalMemoryTest(2*COLS, 328, EPOCHS/2, SEQ, "temporal memory (large)");
 #ifdef NDEBUG
-  ASSERT_LE(tim, 1.9*Timer::getSpeed());
+  ASSERT_LE(tim, 1.9*getSpeed());
 #endif
   UNUSED(tim);
 }
@@ -236,7 +233,7 @@ TEST(ConnectionsPerformanceTest, testSP) {
     /* label */              "spatial pooler");
 
 #ifdef NDEBUG
-  ASSERT_LE(tim, 4.0f * Timer::getSpeed());
+  ASSERT_LE(tim, 4.0f * getSpeed());
 #endif
   UNUSED(tim);
 }
@@ -253,7 +250,7 @@ TEST(ConnectionsPerformanceTest, testTP) {
     /* label */              "temporal pooler");
 
 #ifdef NDEBUG
-  ASSERT_LE(tim, 4.0f * Timer::getSpeed());
+  ASSERT_LE(tim, 4.0f * getSpeed());
 #endif
   UNUSED(tim);
 }

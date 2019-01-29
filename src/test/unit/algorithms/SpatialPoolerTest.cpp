@@ -27,6 +27,7 @@
 #include <cstring>
 #include <fstream>
 #include <stdio.h>
+#include <time.h>
 
 #include "gtest/gtest.h"
 #include <nupic/algorithms/SpatialPooler.hpp>
@@ -34,7 +35,6 @@
 #include <nupic/math/StlIo.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>
-#include <nupic/os/Timer.hpp>
 
 namespace testing {
 
@@ -1967,7 +1967,7 @@ TEST(SpatialPoolerTest, testSerialization2) {
 
   SpatialPooler sp2;
 
-  nupic::Timer testTimer;
+  clock_t testTimer = 0u;
 
   for (UInt i = 0; i < 10; ++i) {
     // Create new input
@@ -1981,7 +1981,7 @@ TEST(SpatialPoolerTest, testSerialization2) {
     {
       SpatialPooler spTemp;
 
-      testTimer.start();
+      testTimer -= clock();
 
       // Deserialize
       ifstream is("outC.stream", ifstream::binary);
@@ -1997,7 +1997,7 @@ TEST(SpatialPoolerTest, testSerialization2) {
       spTemp.save(os);
       os.close();
 
-      testTimer.stop();
+      testTimer += clock();
 
       for (UInt i = 0; i < numColumns; ++i) {
         EXPECT_EQ(outputBaseline[i], outputC[i]);
@@ -2006,7 +2006,7 @@ TEST(SpatialPoolerTest, testSerialization2) {
   }
 
   cout << "Timing for SpatialPooler serialization (smaller is better):" << endl;
-  cout << "Stream: " << testTimer.getElapsed() << endl;
+  cout << "Stream: " << (float)(clock() - testTimer) / CLOCKS_PER_SEC << endl;
 
   remove("outC.stream");
 }

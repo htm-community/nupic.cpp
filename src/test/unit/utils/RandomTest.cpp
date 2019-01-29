@@ -29,7 +29,7 @@
 #include <nupic/ntypes/MemStream.hpp>
 #include <nupic/os/Env.hpp>
 #include <nupic/utils/LoggingException.hpp>
-#include <nupic/os/Timer.hpp>
+#include <nupic/utils/Time.hpp> // clock, getElapsed
 
 #include <fstream>
 #include <sstream>
@@ -153,8 +153,7 @@ TEST(RandomTest, testSerialization2) {
   Random r1(7);
   Random r2;
 
-  nupic::Timer testTimer;
-  testTimer.start();
+  clock_t testTimer = clock();
   for (UInt i = 0; i < n; ++i) {
     r1.getUInt32();
 
@@ -176,11 +175,9 @@ TEST(RandomTest, testSerialization2) {
     ASSERT_EQ(r1.getUInt32(), r2.getUInt32());
     ASSERT_EQ(r1.getUInt32(), r2.getUInt32());
   }
-  testTimer.stop();
+  cout << "Random serialization: " << getElapsed(testTimer) << endl;
 
   remove("random3.stream");
-
-  cout << "Random serialization: " << testTimer.getElapsed() << endl;
 }
 
 

@@ -32,6 +32,7 @@ Methods related to inputs and outputs are in Region_io.cpp
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <time.h>
 
 #include <nupic/engine/Input.hpp>
 #include <nupic/engine/Link.hpp>
@@ -40,7 +41,6 @@ Methods related to inputs and outputs are in Region_io.cpp
 #include <nupic/engine/RegionImpl.hpp>
 #include <nupic/engine/RegionImplFactory.hpp>
 #include <nupic/engine/Spec.hpp>
-#include <nupic/os/Timer.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/ntypes/BundleIO.hpp>
 #include <nupic/ntypes/Array.hpp>
@@ -186,12 +186,12 @@ std::string Region::executeCommand(const std::vector<std::string> &args) {
   }
 
   if (profilingEnabled_)
-    executeTimer_.start();
+    executeTimer_ -= clock();
 
   retVal = impl_->executeCommand(args, (UInt64)(-1));
 
   if (profilingEnabled_)
-    executeTimer_.stop();
+    executeTimer_ += clock();
 
   return retVal;
 }
@@ -202,12 +202,12 @@ void Region::compute() {
               << " unable to compute because not initialized";
 
   if (profilingEnabled_)
-    computeTimer_.start();
+    computeTimer_ -= clock();
 
   impl_->compute();
 
   if (profilingEnabled_)
-    computeTimer_.stop();
+    computeTimer_ += clock();
 
   return;
 }
@@ -441,8 +441,8 @@ void Region::enableProfiling() { profilingEnabled_ = true; }
 void Region::disableProfiling() { profilingEnabled_ = false; }
 
 void Region::resetProfiling() {
-  computeTimer_.reset();
-  executeTimer_.reset();
+  computeTimer_ = clock();
+  executeTimer_ = clock();
 }
 
 const Timer &Region::getComputeTimer() const { return computeTimer_; }

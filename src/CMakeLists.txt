@@ -197,8 +197,6 @@ set(os_files
     nupic/os/OSWin.cpp
     nupic/os/Path.cpp
     nupic/os/Path.hpp
-    nupic/os/Timer.cpp
-    nupic/os/Timer.hpp    
 )
 
 set(regions_files
@@ -242,6 +240,8 @@ set(utils_files
     nupic/utils/VectorHelpers.hpp
     nupic/utils/Watcher.cpp
     nupic/utils/Watcher.hpp
+    nupic/utils/Time.cpp
+    nupic/utils/Time.hpp
 )
 
 #set up file tabs in Visual Studio
