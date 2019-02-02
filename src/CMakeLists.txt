@@ -62,13 +62,7 @@ configure_file(
   
 
 ############ nupic_core Library ######################################
-# Setup nupic_core static library, consisting of our own sources and yaml libraries;
-#
-# this is an intermediate archive that will be merged with external static
-# libraries in a subsequent step to produce the nupic_core "combined" static
-# library.
-#
-set(src_lib_static_nupiccore_solo nupiccore_solo)
+# Setup nupic_core library, consisting of our own sources and yaml libraries;
 
 
 set(algorithm_files
@@ -254,7 +248,7 @@ source_group("utils" FILES ${utils_files})
 
 #--------------------------------------------------------
 # Lib
-add_library(${src_lib_static_nupiccore_solo} STATIC 
+add_library(${core_library} SHARED 
     ${algorithm_files} 
     ${encoders_files} 
     ${engine_files} 
@@ -267,30 +261,23 @@ add_library(${src_lib_static_nupiccore_solo} STATIC
 )
 
 
-target_compile_options( ${src_lib_static_nupiccore_solo} PUBLIC ${INTERNAL_CXX_FLAGS})
-target_compile_definitions(${src_lib_static_nupiccore_solo} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
-target_include_directories(${src_lib_static_nupiccore_solo} PRIVATE 
+target_compile_options( ${core_library} PUBLIC ${INTERNAL_CXX_FLAGS})
+target_compile_definitions(${core_library} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+target_include_directories(${core_library} PRIVATE 
 		${CORE_LIB_INCLUDES} 
 		${EXTERNAL_INCLUDES}
 		)
 
 if(${NUPIC_IWYU})
-  set_target_properties(${src_lib_static_nupiccore_solo}
+  set_target_properties(${core_library}
     PROPERTIES CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()
 
 
-#--------------------------------------------------------
-#
-# Create the nupic_core as a "combined" static library by merging nupic_core_solo
-# with our external static libraries
-#
-set(src_combined_nupiccore_source_archives
-    ${src_lib_static_nupiccore_solo}
+target_link_libraries(${core_library}
     ${yaml-cpp_LIBRARIES}
     ${Boost_LIBRARIES}
     )
-merge_static_libraries(${core_library} "${src_combined_nupiccore_source_archives}")
 
 
 ############ TEST #############################################
