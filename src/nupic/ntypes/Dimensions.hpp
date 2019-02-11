@@ -365,9 +365,7 @@ public:
    *
    */
 
-#ifdef NTA_INTERNAL
   friend std::ostream &operator<<(std::ostream &f, const Dimensions &);
-#endif
 };
 
 } // namespace nupic

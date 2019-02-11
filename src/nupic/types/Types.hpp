@@ -274,6 +274,4 @@ enum LogLevel {
 
 } // end namespace nupic
 
-#define NTA_INTERNAL 1
-
 #endif // NTA_TYPES_HPP
