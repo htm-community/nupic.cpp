@@ -264,17 +264,19 @@ add_library(${src_lib_static_nupiccore_alg} STATIC
 )
 
 
-target_compile_options( ${src_lib_static_nupiccore_alg} PUBLIC ${INTERNAL_CXX_FLAGS})
+target_compile_options( ${src_lib_static_nupiccore_alg} PUBLIC ${INTERNAL_CXX_FLAGS} ${CXX_FLAGS_OPTIMIZED})
 target_compile_definitions(${src_lib_static_nupiccore_alg} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${src_lib_static_nupiccore_alg} PRIVATE 
 		${CORE_LIB_INCLUDES} 
 		${EXTERNAL_INCLUDES}
 		)
+set_target_properties(${src_lib_static_nupiccore_alg} PROPERTIES LINK_FLAGS "${LINKER_FLAGS_OPTIMIZED}")
 
 if(${NUPIC_IWYU})
   set_target_properties(${src_lib_static_nupiccore_alg}
     PROPERTIES CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()
+
 
 # Lib NetworkAPI (Regions, Engine,...) 
 add_library(${src_lib_static_nupiccore_networkapi} STATIC
@@ -328,12 +330,14 @@ target_link_libraries(${src_executable_hotgym}
 		${core_library}
 		${COMMON_OS_LIBS}
 		)
-target_compile_options( ${src_executable_hotgym} PUBLIC ${INTERNAL_CXX_FLAGS})
+target_compile_options( ${src_executable_hotgym} PUBLIC ${INTERNAL_CXX_FLAGS} ${CXX_FLAGS_OPTIMIZED})
 target_compile_definitions(${src_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${src_executable_hotgym} PRIVATE 
 		${CORE_LIB_INCLUDES} 
 		${EXTERNAL_INCLUDES}
 		)
+set_target_properties(${src_lib_static_nupiccore_alg} PROPERTIES LINK_FLAGS "${LINKER_FLAGS_OPTIMIZED}")
+
 add_custom_target(hotgym
                   COMMAND ${src_executable_hotgym}
                   DEPENDS ${src_executable_hotgym}
