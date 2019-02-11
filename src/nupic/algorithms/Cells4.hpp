@@ -325,23 +325,17 @@ namespace nupic {
          * Note: 'T1' means 't-1'
          * TODO: change to more compact data type (later)   2011-07-23 partly done.
          */
-#define SOME_STATES_NOT_INDEXED 1
-#if SOME_STATES_NOT_INDEXED
         CState _infActiveStateT;
         CState _infActiveStateT1;
         CState _infPredictedStateT;
         CState _infPredictedStateT1;
-#else
-        CStateIndexed _infActiveStateT;
-        CStateIndexed _infActiveStateT1;
-        CStateIndexed _infPredictedStateT;
-        CStateIndexed _infPredictedStateT1;
-#endif
-        Real* _cellConfidenceT;
+
+	Real* _cellConfidenceT;
         Real* _cellConfidenceT1;
         Real* _colConfidenceT;
         Real* _colConfidenceT1;
-        bool _ownsMemory;                   // If true, this class is responsible
+
+	bool _ownsMemory;                   // If true, this class is responsible
                                             // for managing memory of above
                                             // eight arrays.
 
@@ -354,17 +348,11 @@ namespace nupic {
         Real* _cellConfidenceCandidate;
         Real* _colConfidenceCandidate;
         Real* _tmpInputBuffer;
-#if SOME_STATES_NOT_INDEXED
-        CState _infActiveStateCandidate;
+
+	CState _infActiveStateCandidate;
         CState _infPredictedStateCandidate;
         CState _infActiveBackup;
         CState _infPredictedBackup;
-#else
-        CStateIndexed _infActiveStateCandidate;
-        CStateIndexed _infPredictedStateCandidate;
-        CStateIndexed _infActiveBackup;
-        CStateIndexed _infPredictedBackup;
-#endif
 
   //-----------------------------------------------------------------------
   /**
@@ -684,9 +672,7 @@ public:
    * known offender is TP.py.
    */
   void computeForwardPropagation(CStateIndexed &state);
-#if SOME_STATES_NOT_INDEXED
-        void computeForwardPropagation(CState& state);
-#endif
+  void computeForwardPropagation(CState& state);
 
         //----------------------------------------------------------------------
         //----------------------------------------------------------------------
