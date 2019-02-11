@@ -196,7 +196,7 @@ void run(UInt EPOCHS = 5000) {
 #ifdef _MSC_VER
           const size_t CI_avg_time = (size_t)floor(30*Timer::getSpeed()); //sec
 #else
-          const size_t CI_avg_time = (size_t)floor(7*Timer::getSpeed()); //sec
+          const size_t CI_avg_time = (size_t)floor(5*Timer::getSpeed()); //sec
 #endif
         NTA_CHECK(timeTotal <= CI_avg_time) << //we'll see how stable the time result in CI is, if usable
           "HelloSPTP test slower than expected! (" << timeTotal << ",should be "<< CI_avg_time;

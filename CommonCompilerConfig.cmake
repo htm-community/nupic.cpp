@@ -346,7 +346,7 @@ else()
         # set OPTIMIZATION flags
 	#
         set(optimization_flags_cc ${optimization_flags_cc} -pipe -Ofast -funroll-loops )
-        set(optimization_flags_lt -Ofast ${optimization_flags_lt})
+        set(optimization_flags_lt ${optimization_flags_lt} -Ofast)
         if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
                 set(optimization_flags_cc ${optimization_flags_cc} -mtune=native -march=native)
         endif()
