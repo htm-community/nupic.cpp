@@ -281,7 +281,7 @@ else()
 
 	# Hide all symbols in DLLs except the ones with explicit visibility;
         # see https://gcc.gnu.org/wiki/Visibility
-        set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -fvisibility-inlines-hidden -fvisibility=hidden)
+        set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -fvisibility-inlines-hidden -fvisibility=hidden -O2)
         set(cxx_flags_unoptimized ${cxx_flags_unoptimized}  -std=c++${std_ver})
 	
 
@@ -394,9 +394,11 @@ else()
 	#
 
 	# Settings for internal nupic.core code
-	set(INTERNAL_CXX_FLAGS ${debug_specific_compile_flags} ${cxx_flags_unoptimized} ${internal_compiler_warning_flags} ${optimization_flags_cc})
+	set(INTERNAL_CXX_FLAGS ${debug_specific_compile_flags} ${cxx_flags_unoptimized} ${internal_compiler_warning_flags} )
 	set(INTERNAL_LINKER_FLAGS ${debug_specific_linker_flags} ${linker_flags_unoptimized} ${optimization_flags_lt})
-	
+        set(CXX_FLAGS_OPTIMIZED ${optimization_flags_cc})
+        set(LINKER_FLAGS_OPTIMIZED ${optimization_flags_lt})
+
 	#
 	# Common system libraries for shared libraries and executables
 	#
