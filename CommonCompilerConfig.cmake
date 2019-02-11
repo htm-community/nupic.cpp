@@ -158,11 +158,6 @@ if(MSVC)
 							$<$<CONFIG:Release>:/O2 /Oi /Gy  /GL /MD> 
 							$<$<CONFIG:Debug>:/Ob0 /Od /Zi /sdl /RTC1 /MDd>)
 	#linker flags
-	if("${BITNESS}" STREQUAL "32")
-		set(machine "/MACHINE:X86")
-	else()
-		set(machine "/MACHINE:X${BITNESS}")
-	endif()
 	set(INTERNAL_LINKER_FLAGS "${machine} /NOLOGO /SAFESEH:NO /NODEFAULTLIB:LIBCMT /ignore:4099 /LTCG")
 
 	set(COMMON_COMPILER_DEFINITIONS 	
@@ -170,7 +165,6 @@ if(MSVC)
 		_MBCS
 		NTA_OS_WINDOWS
 		NTA_COMPILER_MSVC
-		NTA_ARCH_${BITNESS}
 		_CRT_SECURE_NO_WARNINGS
 		_SCL_SECURE_NO_WARNINGS
 		_CRT_NONSTDC_NO_DEPRECATE
@@ -207,7 +201,6 @@ else()
 
 	set(${COMMON_COMPILER_DEFINITIONS}
 		-DNTA_OS_${platform_uppercase}
-		-DNTA_ARCH_${BITNESS}
 		-DHAVE_CONFIG_H
 		-DBOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
 		-DBOOST_NO_WREGEX
