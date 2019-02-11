@@ -1291,54 +1291,8 @@ void Cells4::compute(Real* input, Real* output, bool doInference, bool doLearnin
   // base function in TP.py, which modifies various states, thereby
   // invalidating our indexes.
   memset(output, 0, _nCells * sizeof(output[0])); // most output is zero
-  const UInt multipleOf8 = 8 * (_nCells / 8); //TODO rm
-  UInt i;
-  for (i = 0; i < multipleOf8; i += 8) {
-    UInt64 eightStates = *(UInt64 *)(_infPredictedStateT.arrayPtr() + i);
-    if (eightStates != 0) {
-      if ((eightStates & 0x00000000000000ff) != 0)
-        output[i + 0] = 1.0;
-      if ((eightStates & 0x000000000000ff00) != 0)
-        output[i + 1] = 1.0;
-      if ((eightStates & 0x0000000000ff0000) != 0)
-        output[i + 2] = 1.0;
-      if ((eightStates & 0x00000000ff000000) != 0)
-        output[i + 3] = 1.0;
-      if ((eightStates & 0x000000ff00000000) != 0)
-        output[i + 4] = 1.0;
-      if ((eightStates & 0x0000ff0000000000) != 0)
-        output[i + 5] = 1.0;
-      if ((eightStates & 0x00ff000000000000) != 0)
-        output[i + 6] = 1.0;
-      if ((eightStates & 0xff00000000000000) != 0)
-        output[i + 7] = 1.0;
-    }
-    eightStates = *(UInt64 *)(_infActiveStateT.arrayPtr() + i);
-    if (eightStates != 0) {
-      if ((eightStates & 0x00000000000000ff) != 0)
-        output[i + 0] = 1.0;
-      if ((eightStates & 0x000000000000ff00) != 0)
-        output[i + 1] = 1.0;
-      if ((eightStates & 0x0000000000ff0000) != 0)
-        output[i + 2] = 1.0;
-      if ((eightStates & 0x00000000ff000000) != 0)
-        output[i + 3] = 1.0;
-      if ((eightStates & 0x000000ff00000000) != 0)
-        output[i + 4] = 1.0;
-      if ((eightStates & 0x0000ff0000000000) != 0)
-        output[i + 5] = 1.0;
-      if ((eightStates & 0x00ff000000000000) != 0)
-        output[i + 6] = 1.0;
-      if ((eightStates & 0xff00000000000000) != 0)
-        output[i + 7] = 1.0;
-    }
-  }
-
-  // process the tail if (_nCells % 8) != 0
-  for (i = multipleOf8; i < _nCells; i++) {
-    if (_infPredictedStateT.isSet(i)) {
-      output[i] = 1.0;
-    } else if (_infActiveStateT.isSet(i)) {
+  for (UInt i = 0u; i < _nCells; i++) {
+    if (_infPredictedStateT.isSet(i) or _infActiveStateT.isSet(i) ) {
       output[i] = 1.0;
     }
   }
