@@ -422,16 +422,14 @@ public:
     for (size_t i = 0; i != _synapses.size(); ++i)
       indices.push_back(_synapses[i].srcCellIdx());
 
-#ifndef NDEBUG
-    if (indices.size() != _synapses.size())
-      std::cout << "Indices are not unique" << std::endl;
+    NTA_ASSERT(indices.size() != _synapses.size())
+      << "Indices are not unique" << std::endl;
 
-    if (!is_sorted(indices, true, true))
-      std::cout << "Indices are not sorted" << std::endl;
+    NTA_ASSERT(!is_sorted(indices, true, true))
+      << "Indices are not sorted" << std::endl;
 
-    if (_frequency < 0)
-      std::cout << "Frequency is less than zero" << std::endl;
-#endif
+    NTA_ASSERT(_frequency < 0)
+      << "Frequency is less than zero" << std::endl;
 
     return _frequency >= 0 && is_sorted(indices, true, true);
   }
