@@ -68,7 +68,8 @@ configure_file(
 # libraries in a subsequent step to produce the nupic_core "combined" static
 # library.
 #
-set(src_lib_static_nupiccore_solo nupiccore_solo)
+set(src_lib_static_nupiccore_alg nupiccore_alg)
+set(src_lib_static_nupiccore_networkapi nupiccore_networkapi)
 
 
 set(algorithm_files
@@ -253,32 +254,46 @@ source_group("types" FILES ${types_files})
 source_group("utils" FILES ${utils_files})
 
 #--------------------------------------------------------
-# Lib
-add_library(${src_lib_static_nupiccore_solo} STATIC 
+# Lib core_alg (encoders, SP, TM/TP/BackTM, Anomaly,...) 
+add_library(${src_lib_static_nupiccore_alg} STATIC 
     ${algorithm_files} 
     ${encoders_files} 
-    ${engine_files} 
     ${math_files} 
-    ${ntypes_files} 
-    ${os_files} 
-    ${regions_files} 
     ${types_files} 
     ${utils_files} 
 )
 
 
-target_compile_options( ${src_lib_static_nupiccore_solo} PUBLIC ${INTERNAL_CXX_FLAGS})
-target_compile_definitions(${src_lib_static_nupiccore_solo} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
-target_include_directories(${src_lib_static_nupiccore_solo} PRIVATE 
+target_compile_options( ${src_lib_static_nupiccore_alg} PUBLIC ${INTERNAL_CXX_FLAGS})
+target_compile_definitions(${src_lib_static_nupiccore_alg} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+target_include_directories(${src_lib_static_nupiccore_alg} PRIVATE 
 		${CORE_LIB_INCLUDES} 
 		${EXTERNAL_INCLUDES}
 		)
 
 if(${NUPIC_IWYU})
-  set_target_properties(${src_lib_static_nupiccore_solo}
+  set_target_properties(${src_lib_static_nupiccore_alg}
     PROPERTIES CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()
 
+# Lib NetworkAPI (Regions, Engine,...) 
+add_library(${src_lib_static_nupiccore_networkapi} STATIC
+  ${engine_files}
+  ${ntypes_files}
+  ${os_files}
+  ${regions_files}
+)
+
+target_compile_options( ${src_lib_static_nupiccore_networkapi} PUBLIC ${INTERNAL_CXX_FLAGS})
+target_compile_definitions(${src_lib_static_nupiccore_networkapi} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+target_include_directories(${src_lib_static_nupiccore_networkapi} PRIVATE
+  ${CORE_LIB_INCLUDES}
+  ${EXTERNAL_INCLUDES}
+)
+if(${NUPIC_IWYU})
+  set_target_properties(${src_lib_static_nupiccore_networkapi}
+    PROPERTIES CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
+endif()
 
 #--------------------------------------------------------
 #
@@ -286,7 +301,8 @@ endif()
 # with our external static libraries
 #
 set(src_combined_nupiccore_source_archives
-    ${src_lib_static_nupiccore_solo}
+    ${src_lib_static_nupiccore_alg}
+    ${src_lib_static_nupiccore_networkapi}
     ${yaml-cpp_LIBRARIES}
     ${Boost_LIBRARIES}
     )
