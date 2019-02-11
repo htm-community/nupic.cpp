@@ -345,12 +345,10 @@ else()
         #
         # set OPTIMIZATION flags
 	#
-	#TODO: CMake automatically generates optimisation flags. Do we need this? - "I think yes ~breznak"
-        set(optimization_flags_cc ${optimization_flags_cc} -O2)
-        set(optimization_flags_cc -pipe ${optimization_flags_cc}) #TODO use -Ofast instead of -O3
-        set(optimization_flags_lt -O2 ${optimization_flags_lt})
+        set(optimization_flags_cc ${optimization_flags_cc} -pipe -Ofast -funroll-loops )
+        set(optimization_flags_lt -Ofast ${optimization_flags_lt})
         if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
-                set(optimization_flags_cc ${optimization_flags_cc} -mtune=generic)
+                set(optimization_flags_cc ${optimization_flags_cc} -mtune=native -march=native)
         endif()
         if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND NOT MINGW)
                 set(optimization_flags_cc ${optimization_flags_cc} -fuse-ld=gold)
