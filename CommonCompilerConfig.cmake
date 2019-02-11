@@ -27,7 +27,6 @@
 
 # INPUTS:
 #	INTERNAL_CPP_STANDARD  i.e. C++11, C++14, C++17 , defaults to C++11 or C++17
-#	BITNESS   32,64, defaults to bitness of current machine.
 #	PLATFORM:   defaults to ${CMAKE_SYSTEM_NAME}  
 #	CMAKE_BUILD_TYPE   Debug, Release   defaults to Release
 
@@ -35,7 +34,6 @@
 #
 #	INTERNAL_CPP_STANDARD  and compiler options are set in flags
 #	PLATFORM:   lowercase
-#	BITNESS: Platform bitness: 32 or 64
 #
 #	COMMON_COMPILER_DEFINITIONS: list of -D define flags for the compilation of
 #                               source files; e.g., for cmake `add_definitions()`
@@ -138,21 +136,11 @@ set_property(GLOBAL PROPERTY CXX_STANDARD ${std_ver})
 set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
 
-# Identify platform "bitness".
-if(NOT BITNESS)
-	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-	  set(BITNESS 64)
-	else()
-	  set(BITNESS 32)
-	endif()
-endif()
-
-
 
 # Init exported properties
 set(COMMON_COMPILER_DEFINITIONS)
-set(INTERNAL_CXX_FLAGS_OPTIMIZED)
-set(INTERNAL_LINKER_FLAGS_OPTIMIZED)
+set(CXX_FLAGS_OPTIMIZED)
+set(LINKER_FLAGS_OPTIMIZED)
 set(COMMON_OS_LIBS)
 
 
@@ -292,15 +280,6 @@ else()
 	set(cxx_flags_unoptimized ${cxx_flags_unoptimized} ${stdlib_common} -fdiagnostics-show-option)
 	set (internal_compiler_warning_flags ${internal_compiler_warning_flags} -Werror -Wextra -Wreturn-type -Wunused -Wno-unused-variable -Wno-unused-parameter -Wno-missing-field-initializers)
 
-	CHECK_CXX_COMPILER_FLAG(-m${BITNESS} compiler_supports_machine_option)
-	if (compiler_supports_machine_option)
-		set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -m${BITNESS})
-		set(linker_flags_unoptimized ${linker_flags_unoptimized} -m${BITNESS})
-	endif()
-	if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "armv7l")
-		set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -marm)
-		set(linker_flags_unoptimized ${linker_flags_unoptimized} -marm)
-	endif()
 
 	if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 		set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -fPIC)
