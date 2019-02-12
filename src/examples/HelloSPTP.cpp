@@ -56,10 +56,13 @@ using nupic::algorithms::anomaly::Anomaly;
 using nupic::algorithms::anomaly::AnomalyMode;
 
 // work-load
-void run(UInt EPOCHS = 5000) {
+void run(UInt EPOCHS = 10000) { // this is a value for running in CI, 
+	// for benchmarking and optimizing the code, use larger values to get 
+	// realisitic results. 
+	
   const UInt COLS = 2048; // number of columns in SP, TP
   const UInt DIM_INPUT = 10000;
-  const UInt CELLS = 10; // cells per column in TP
+  const UInt CELLS = 8; // cells per column in TP
 #ifndef NDEBUG
   EPOCHS = 2; // make test faster in Debug
 #endif
@@ -194,9 +197,9 @@ void run(UInt EPOCHS = 5000) {
       cout << "Total elapsed time = " << timeTotal << " seconds" << endl;
       if(EPOCHS >= 100) { //show only relevant values, ie don't run in valgrind (ndebug, epochs=5) run
 #ifdef _MSC_VER
-          const size_t CI_avg_time = (size_t)floor(30*Timer::getSpeed()); //sec
+          const size_t CI_avg_time = (size_t)floor(60*Timer::getSpeed()); //sec
 #else
-          const size_t CI_avg_time = (size_t)floor(6*Timer::getSpeed()); //sec
+          const size_t CI_avg_time = (size_t)floor(27*Timer::getSpeed()); //sec
 #endif
         NTA_CHECK(timeTotal <= CI_avg_time) << //we'll see how stable the time result in CI is, if usable
           "HelloSPTP test slower than expected! (" << timeTotal << ",should be "<< CI_avg_time;
