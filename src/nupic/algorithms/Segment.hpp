@@ -422,14 +422,9 @@ public:
     for (size_t i = 0; i != _synapses.size(); ++i)
       indices.push_back(_synapses[i].srcCellIdx());
 
-    NTA_ASSERT(indices.size() != _synapses.size())
-      << "Indices are not unique" << std::endl;
-
-    NTA_ASSERT(!is_sorted(indices, true, true))
-      << "Indices are not sorted" << std::endl;
-
-    NTA_ASSERT(_frequency < 0)
-      << "Frequency is less than zero" << std::endl;
+    NTA_ASSERT(indices.size() != _synapses.size()) << "Indices are not unique";
+    NTA_ASSERT(!is_sorted(indices, true, true)) << "Indices are not sorted";
+    NTA_ASSERT(_frequency < 0) << "Frequency is less than zero";
 
     return _frequency >= 0 && is_sorted(indices, true, true);
   }
