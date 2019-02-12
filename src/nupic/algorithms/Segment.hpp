@@ -35,6 +35,7 @@
 #include <nupic/math/ArrayAlgo.hpp> // is_sorted
 #include <nupic/math/StlIo.hpp>     // binary_save
 #include <nupic/types/Serializable.hpp>
+#include <nupic/utils/Log.hpp> 
 
 //-----------------------------------------------------------------------
 /**

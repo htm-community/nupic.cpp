@@ -30,6 +30,7 @@
 
 #include <nupic/utils/LogItem.hpp>
 #include <nupic/utils/LoggingException.hpp>
+#include <ostream> //endl
 
 #define NTA_DEBUG                                                              \
   nupic::LogItem(__FILE__, __LINE__, nupic::LogItem::debug).stream()
