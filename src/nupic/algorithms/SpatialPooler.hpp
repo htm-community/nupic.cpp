@@ -277,7 +277,7 @@ public:
         inhibition. The size of the SDR is equal to the number of
         columns (also returned by the method getNumColumns).
    */
-  virtual void compute(SDR &input, bool learn, SDR &active);
+  virtual void compute(const SDR &input, bool learn, SDR &active);
 
   /**
    Removes the set of columns who have never been active from the set
@@ -908,9 +908,10 @@ public:
      a "connected state" (connected synapses) that are connected to
      input bits which are turned on.
   */
-  void calculateOverlap_(SDR &input, vector<UInt> &overlap) const;
+  void calculateOverlap_(const SDR &input, vector<UInt> &overlap) const;
   void calculateOverlapPct_(const vector<UInt> &overlaps, vector<Real> &overlapPct) const;
 
+  
   /**
       Performs inhibition. This method calculates the necessary values needed to
       actually perform inhibition and then delegates the task of picking the
@@ -998,7 +999,7 @@ public:
       @param  activeColumns  an int vector containing the indices of the columns
      that survived inhibition.
    */
-  void adaptSynapses_(SDR &input, SDR &active);
+  void adaptSynapses_(const SDR &input, SDR &active);
 
   /**
       This method increases the permanence values of synapses of columns whose
