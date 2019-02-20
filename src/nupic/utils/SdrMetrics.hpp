@@ -105,7 +105,8 @@ protected:
      * streaming data.  This class deals with finding a suitable weight for each
      * sample.
      */
-    virtual void callback( SDR &dataSource, Real alpha ) = 0;
+    virtual void callback( SDR &dataSource, Real alpha )
+        { NTA_THROW << "Virtual method 'SDR_MetricsHelper_.callback' called!"; }
 
 public:
     const int          &samples    = samples_;
