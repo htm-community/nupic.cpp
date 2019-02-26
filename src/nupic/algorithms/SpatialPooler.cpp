@@ -89,7 +89,8 @@ SpatialPooler::SpatialPooler() {
 }
 
 SpatialPooler::SpatialPooler(
-    const vector<UInt> inputDimensions, const vector<UInt> columnDimensions,
+    const vector<UInt> inputDimensions, 
+    const vector<UInt> columnDimensions,
     UInt potentialRadius, Real potentialPct, bool globalInhibition,
     Real localAreaDensity, Int numActiveColumnsPerInhArea,
     UInt stimulusThreshold, Real synPermInactiveDec, Real synPermActiveInc,
@@ -134,8 +135,15 @@ UInt SpatialPooler::getNumInputs() const { return numInputs_; }
 UInt SpatialPooler::getPotentialRadius() const { return potentialRadius_; }
 
 void SpatialPooler::setPotentialRadius(UInt potentialRadius) {
-  NTA_CHECK(potentialRadius < numInputs_);
+  NTA_CHECK(potentialRadius < numInputs_/2);
+  for(const auto dim: inputDimensions_) {
+    if(potentialRadius > (dim/2) +1) {
+      NTA_WARN << "potentialRadius >= one of the dimensions: " << dim;
+    }
+  } 
   potentialRadius_ = potentialRadius;
+  NTA_CHECK((UInt)(potentialPct_ * potentialRadius_) >= 1u) << "SP: at least 1 input synapse must be able to activate from potential pool.";
+  NTA_CHECK(stimulusThreshold_ <= potentialPct_ * potentialRadius) << "Stimulus threshold must be <= than the number of possibly active input synapses per segment.";
 }
 
 Real SpatialPooler::getPotentialPct() const { return potentialPct_; }
@@ -143,6 +151,8 @@ Real SpatialPooler::getPotentialPct() const { return potentialPct_; }
 void SpatialPooler::setPotentialPct(Real potentialPct) {
   NTA_CHECK(potentialPct > 0.0f && potentialPct <= 1.0f);
   potentialPct_ = potentialPct;
+  NTA_CHECK((UInt)(potentialPct_ * potentialRadius_) >= 1u) << "SP: at least 1 input synapse must be able to activate from potential pool.";
+  NTA_CHECK(stimulusThreshold_ <= potentialPct_ * potentialRadius_) << "Stimulus threshold must be <= than the number of possibly active input synapses per segment.";
 }
 
 bool SpatialPooler::getGlobalInhibition() const { return globalInhibition_; }
@@ -156,7 +166,7 @@ Int SpatialPooler::getNumActiveColumnsPerInhArea() const {
 }
 
 void SpatialPooler::setNumActiveColumnsPerInhArea(UInt numActiveColumnsPerInhArea) {
-  NTA_CHECK(numActiveColumnsPerInhArea > 0u && numActiveColumnsPerInhArea <= numColumns_); //TODO this boundary could be smarter
+  NTA_CHECK(numActiveColumnsPerInhArea > 0u && numActiveColumnsPerInhArea <= numColumns_); 
   numActiveColumnsPerInhArea_ = numActiveColumnsPerInhArea;
   localAreaDensity_ = DISABLED;  //MUTEX with localAreaDensity
 }
@@ -172,6 +182,7 @@ void SpatialPooler::setLocalAreaDensity(Real localAreaDensity) {
 UInt SpatialPooler::getStimulusThreshold() const { return stimulusThreshold_; }
 
 void SpatialPooler::setStimulusThreshold(UInt stimulusThreshold) {
+  NTA_CHECK(stimulusThreshold_ <= potentialPct_ * potentialRadius_) << "Stimulus threshold must be <= than the number of possibly active input synapses per segment.";
   stimulusThreshold_ = stimulusThreshold;
 }
 
@@ -227,6 +238,8 @@ Real SpatialPooler::getSynPermActiveInc() const { return synPermActiveInc_; }
 void SpatialPooler::setSynPermActiveInc(Real synPermActiveInc) {
   NTA_CHECK( synPermActiveInc > connections::minPermanence );
   NTA_CHECK( synPermActiveInc <= connections::maxPermanence );
+  if(synPermActiveInc >= synPermConnected_) 
+    NTA_WARN << "SP: synPermActiveInc will learn in just one occurance."; 
   synPermActiveInc_ = synPermActiveInc;
 }
 
@@ -237,6 +250,8 @@ Real SpatialPooler::getSynPermInactiveDec() const {
 void SpatialPooler::setSynPermInactiveDec(Real synPermInactiveDec) {
   NTA_CHECK( synPermInactiveDec >= connections::minPermanence );
   NTA_CHECK( synPermInactiveDec <= connections::maxPermanence );
+  if(synPermInactiveDec >= connections::maxPermanence - synPermConnected_)
+    NTA_WARN << "SP: synPermInactiveDec will unlearn in just one example";
   synPermInactiveDec_ = synPermInactiveDec;
 }
 
@@ -247,6 +262,7 @@ Real SpatialPooler::getSynPermBelowStimulusInc() const {
 void SpatialPooler::setSynPermBelowStimulusInc(Real synPermBelowStimulusInc) {
   NTA_CHECK( synPermBelowStimulusInc > connections::minPermanence );
   NTA_CHECK( synPermBelowStimulusInc <= connections::maxPermanence );
+  NTA_CHECK( synPermBelowStimulusInc <= synPermActiveInc_ * 0.5 ) << "Inactive growth should be << than for active synapses.";
   synPermBelowStimulusInc_ = synPermBelowStimulusInc;
 }
 
@@ -415,32 +431,32 @@ void SpatialPooler::initialize(
   }
   NTA_CHECK(numColumns_ > 0);
   NTA_CHECK(numInputs_ > 0);
-  NTA_CHECK(inputDimensions_.size() == columnDimensions_.size());
+  NTA_CHECK(inputDimensions_.size() == columnDimensions_.size()) << "Input and SpatialPooler must have same dimensionality.";
 
-  NTA_CHECK((numActiveColumnsPerInhArea > 0 && localAreaDensity < 0) ||
-            (localAreaDensity > 0 && localAreaDensity <= MAX_LOCALAREADENSITY
-	     && numActiveColumnsPerInhArea < 0)
-	   ) << numActiveColumnsPerInhArea << " vs " << localAreaDensity;
-  numActiveColumnsPerInhArea_ = numActiveColumnsPerInhArea;
-  localAreaDensity_ = localAreaDensity;
+  NTA_CHECK((numActiveColumnsPerInhArea > 0 || localAreaDensity > 0.0f) && !(localAreaDensity > 0.0f && numActiveColumnsPerInhArea > 0)) << "exactly one of these must be enabled";
+  if(numActiveColumnsPerInhArea > 0) {
+    setNumActiveColumnsPerInhArea(numActiveColumnsPerInhArea);
+  } else {
+    setLocalAreaDensity(localAreaDensity);
+  }
 
   rng_ = Random(seed);
 
-  potentialRadius_ = potentialRadius > numInputs_ ? numInputs_ : potentialRadius;
-  NTA_CHECK(potentialPct > 0 && potentialPct <= 1);
-  potentialPct_ = potentialPct;
+  setPotentialRadius(potentialRadius);
+  setPotentialPct(potentialPct);
   globalInhibition_ = globalInhibition;
-  stimulusThreshold_ = stimulusThreshold;
-  synPermInactiveDec_ = synPermInactiveDec;
-  synPermActiveInc_ = synPermActiveInc;
-  synPermBelowStimulusInc_ = synPermConnected / 10.0f;
+  setStimulusThreshold(stimulusThreshold);
+  NTA_CHECK(0.0 < synPermConnected && synPermConnected < 1.0);
   synPermConnected_ = synPermConnected;
-  minPctOverlapDutyCycles_ = minPctOverlapDutyCycles;
-  dutyCyclePeriod_ = dutyCyclePeriod;
-  boostStrength_ = boostStrength;
-  spVerbosity_ = spVerbosity;
-  wrapAround_ = wrapAround;
-  updatePeriod_ = 50u;
+  setSynPermInactiveDec(synPermInactiveDec);
+  setSynPermActiveInc(synPermActiveInc);
+  setSynPermBelowStimulusInc(synPermConnected / 10.0f);
+  setMinPctOverlapDutyCycles(minPctOverlapDutyCycles);
+  setDutyCyclePeriod(dutyCyclePeriod);
+  setBoostStrength(boostStrength);
+  setSpVerbosity(spVerbosity);
+  setWrapAround(wrapAround);
+  setUpdatePeriod(50u);
   initConnectedPct_ = 0.5f;
   iterationNum_ = 0u;
   iterationLearnNum_ = 0u;
@@ -584,8 +600,7 @@ vector<UInt> SpatialPooler::initMapPotential_(UInt column, bool wrapAround) {
       columnInputs.push_back(input);
     }
   } else {
-    for (UInt input :
-         Neighborhood(centerInput, potentialRadius_, inputDimensions_)) {
+    for (UInt input : Neighborhood(centerInput, potentialRadius_, inputDimensions_)) {
       columnInputs.push_back(input);
     }
   }
@@ -601,13 +616,17 @@ Real SpatialPooler::initPermConnected_() {
   Real p =
       synPermConnected_ + (Real)((connections::maxPermanence - synPermConnected_) * rng_.getReal64());
 
-  return round5_(p);
+  p = round5_(p);
+  NTA_ASSERT(p >= synPermConnected_);
+  return p;
 }
 
 
 Real SpatialPooler::initPermNonConnected_() {
   Real p = (Real)(synPermConnected_ * rng_.getReal64());
-  return round5_(p);
+  p = round5_(p);
+  NTA_ASSERT(p < synPermConnected_);
+  return p;
 }
 
 
