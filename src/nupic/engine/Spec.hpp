@@ -47,20 +47,20 @@ public:
     return !operator==(other);
   }
   std::string description;   // description of input
-	
+
   NTA_BasicType dataType;    // declare type of input
 
   // width of buffer if fixed. 0 means variable.
   // If non-zero positive value it means this region was developed
 	// to accept a fixed sized 1D array only.
-  UInt32 count;             
-	
+  UInt32 count;
+
   bool required;             // true if input must be connected.
-	
-  bool regionLevel;          // if true, this means this input can propagate its 
+
+  bool regionLevel;          // if true, this means this input can propagate its
                              // dimensions to/from the region's dimensions.
-	
-  bool isDefaultInput;       // if True, assume this if input name not given 
+
+  bool isDefaultInput;       // if True, assume this if input name not given
 	                           // in functions involving inputs of a region.
 };
 
@@ -77,11 +77,11 @@ public:
     return !operator==(other);
   }
   std::string description;   // description of output
-	
+
 	NTA_BasicType dataType;    // The type of the output buffer.
 
-  size_t count;              // Size, in number of elements. If size is fixed.  
-	                           // If non-zero value it means this region 
+  size_t count;              // Size, in number of elements. If size is fixed.
+	                           // If non-zero value it means this region
 														 // was developed to output a fixed sized 1D array only.
                              // if 0, call askImplForOutputDimensions() to get dimensions.
 
@@ -108,9 +108,6 @@ public:
   typedef enum { CreateAccess, ReadOnlyAccess, ReadWriteAccess } AccessMode;
 
   ParameterSpec() {}
-  /**
-   * @param defaultValue -- a JSON-encoded value
-   */
   ParameterSpec(std::string description, NTA_BasicType dataType, size_t count,
                 std::string constraints, std::string defaultValue,
                 AccessMode accessMode);
@@ -118,18 +115,22 @@ public:
   inline bool operator!=(const ParameterSpec &other) const {
     return !operator==(other);
   }
-  std::string description;
+  std::string description;  // what this parameter is about
 
-  // [open: current basic types are bytes/{u}int16/32/64, real32/64, BytePtr. Is
-  // this the right list? Should we have std::string, jsonstd::string?]
-  NTA_BasicType dataType;
-  // 1 = scalar; > 1 = array o fixed sized; 0 = array of unknown size
-  // TODO: should be size_t? Serialization issues?
-  size_t count;
-  std::string constraints;
-  std::string defaultValue; // JSON representation; empty std::string means
-                            // parameter is required
-  AccessMode accessMode;
+  NTA_BasicType dataType;   // any NTA_BaseType type
+
+  size_t count;             // 0  - means array of unknown size
+                            // 1  - means scalar
+                            // >1 - means array of fixed size
+
+  std::string constraints;  // 'bool' means 0 or 1 value
+
+  std::string defaultValue; // JSON representation;
+                            // i.e.  11024.56 for scaler
+                            //       [1,2,3] for arrays
+                            // empty string means no default available.
+
+  AccessMode accessMode;    // any AccessMode enum
 };
 
 class Spec {
@@ -161,11 +162,11 @@ public:
 
   // a value that applys to the count field in inputs, outputs, parameters.
   // It means that the field is an array and its size is not fixed.
-  static const int VARIABLE = 0; 
+  static const int VARIABLE = 0;
 
   // a value that applys to the count field in inputs, outputs, parameters.
   // It means that the field not an array and has a single scaler value.
-  static const int SCALER = 1; 
+  static const int SCALER = 1;
 
 };
 

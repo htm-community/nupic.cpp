@@ -76,6 +76,10 @@ FILE(REMOVE "${EXPORT_FILE_NAME}")
 # Yaml-cpp
 include(YamlCppLib.cmake)
 
+################
+# libyaml
+include(libyaml.cmake)
+
 
 ################
 # Eigen

@@ -20,13 +20,19 @@
  * ---------------------------------------------------------------------
  */
 
+ #define USE_LIBYAML 1
+
 #include <nupic/engine/Spec.hpp>
 #include <nupic/engine/YAMLUtils.hpp>
 #include <nupic/ntypes/Collection.hpp>
 #include <nupic/ntypes/Value.hpp>
 #include <nupic/types/BasicType.hpp>
 #include <string.h> // strlen
+#ifdef USE_LIBYAML
+#include <libyaml/yaml.hpp>
+#else
 #include <yaml-cpp/yaml.h>
+#endif
 
 #include <sstream>
 
