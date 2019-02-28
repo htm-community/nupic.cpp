@@ -29,16 +29,18 @@
 #  - create build/scripts (mkdir -d build/scripts)
 #  - cd build/scripts
 #  - cmake ../..
+#
+# externals are always built in Release mode, CMake's build type is ignored
 
 
 
 FILE(MAKE_DIRECTORY  ${REPOSITORY_DIR}/build/ThirdParty)
 execute_process(COMMAND ${CMAKE_COMMAND} 
             -G ${CMAKE_GENERATOR}
-			-D CMAKE_INSTALL_PREFIX=. 
+	    -D CMAKE_INSTALL_PREFIX=. 
             -D NEEDS_BOOST:BOOL=${NEEDS_BOOST}
             -D BINDING_BUILD:STRING=${BINDING_BUILD}
-			-D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+	    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 			 ../../external
                 WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
                 RESULT_VARIABLE result
@@ -47,36 +49,15 @@ execute_process(COMMAND ${CMAKE_COMMAND}
 if(result)
     message(FATAL_ERROR "CMake step for Third Party builds failed: ${result}")
 endif()
-if(MSVC)
-  # for MSVC builds we need to build both Release and Debug builds
-  # because this will not be ran again if we switch modes in the IDE.
-  execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release 
+
+execute_process(COMMAND ${CMAKE_COMMAND} --build .  
                     WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
                     RESULT_VARIABLE result
-#                    OUTPUT_QUIET      ### Disable this to debug external buiilds
-        )
-  if(result)
-    message(FATAL_ERROR "build step for MSVC Relase Third Party builds failed: ${result}")
-  endif()
-  execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug 
-                    WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
-                    RESULT_VARIABLE result
-#                    OUTPUT_QUIET      ### Disable this to debug external buiilds
-        )
-  if(result)
-    message(FATAL_ERROR "build step for MSVC Debug Third Party builds failed: ${result}")
-  endif()
-else(MSVC)
-  # for linux and OSx builds
-  execute_process(COMMAND ${CMAKE_COMMAND} --build . --config ${CMAKE_BUILD_TYPE} 
-                    WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
-                    RESULT_VARIABLE result
-#                    OUTPUT_QUIET      ### Disable this to debug external buiilds
+#                    OUTPUT_QUIET      ### Disable this to debug external builds
         )
   if(result)
     message(FATAL_ERROR "build step for Third Party builds failed: ${result}")
   endif()
-endif(MSVC)
 
 # extract the external directory paths
 #    The external third party modules are being built
@@ -97,6 +78,7 @@ set(EXTERNAL_INCLUDES
 	${yaml-cpp_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIRS}
 	${eigen_INCLUDE_DIRS}
+	${mnist_INCLUDE_DIRS}
 	${REPOSITORY_DIR}/external/common/include
 )
 

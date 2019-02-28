@@ -41,7 +41,7 @@ namespace nupic
 /*
  * For converting param specs for Regions and LinkPolicies
  */
-ValueMap toValueMap(const char *yamlstring,
+ValueMap toValueMap(const std::string yamlstring,
                     Collection<ParameterSpec> &parameters,
                     const std::string &nodeType = "",
                     const std::string &regionName = "");

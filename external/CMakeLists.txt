@@ -106,4 +106,6 @@ if(match)
 endif()
 
 
-
+#################
+# mnist data
+include(mnist_data.cmake)

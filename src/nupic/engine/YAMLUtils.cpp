@@ -95,6 +95,7 @@ static void _toArray(const YAML::Node& node, std::shared_ptr<Array>& a) {
 
   a->allocateBuffer(node.size());
   void *buffer = a->getBuffer();
+  NTA_CHECK(buffer != nullptr) << "buffer is null";
 
   for (size_t i = 0; i < node.size(); i++) {
     const YAML::Node &item = node[i];
@@ -171,6 +172,7 @@ static Value toValue(const YAML::Node &node, NTA_BasicType dataType) {
 Value toValue(const std::string& yamlstring, NTA_BasicType dataType)
 {
   // TODO -- return value? exceptions?
+  NTA_CHECK(yamlstring.size() > 0) << "string is empty!";
   const YAML::Node doc = YAML::Load(yamlstring);
   return toValue(doc, dataType);
 }
@@ -178,7 +180,7 @@ Value toValue(const std::string& yamlstring, NTA_BasicType dataType)
 /*
  * For converting param specs for Regions and LinkPolicies
  */
-ValueMap toValueMap(const char *yamlstring,
+ValueMap toValueMap(const std::string yamlstring,
                     Collection<ParameterSpec> &parameters,
                     const std::string &nodeType,
                     const std::string &regionName) {
@@ -282,11 +284,6 @@ ValueMap toValueMap(const char *yamlstring,
         // }
 
         try {
-#ifdef YAMLDEBUG
-          NTA_DEBUG << "Adding default value '" << ps.defaultValue
-                    << "' to parameter " << item.first << " of type "
-                    << BasicType::getName(ps.dataType) << " count " << ps.count;
-#endif
           // NOTE: this can handle both scalers and arrays
           //       Arrays MUST be in Yaml sequence format even if one element.
           //       i.e.  [1,2,3]
