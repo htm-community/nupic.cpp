@@ -51,7 +51,7 @@ if(result)
 endif()
 if(MSVC)
   # for MSVC builds we need to build both Release and Debug builds
-  # because this will not be ran again if we switch modes in the IDE.
+  # because this will not be ran again if we switch modes in the IDE.  
   execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release 
                     WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
                     RESULT_VARIABLE result
