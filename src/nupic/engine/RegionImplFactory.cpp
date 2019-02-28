@@ -116,7 +116,7 @@ RegionImpl *RegionImplFactory::createRegionImpl(const std::string nodeType,
 
   RegionImpl *impl = nullptr;
   std::shared_ptr<Spec>& ns = getSpec(nodeType);
-  ValueMap vm = YAMLUtils::toValueMap(nodeParams.c_str(), ns->parameters,
+  ValueMap vm = YAMLUtils::toValueMap(nodeParams, ns->parameters,
                                       nodeType, region->getName());
 
   if (regionTypeMap.find(nodeType) != regionTypeMap.end()) {

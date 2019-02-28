@@ -166,6 +166,7 @@ static Value toValue(const YAML::Node &node, NTA_BasicType dataType) {
 Value toValue(const std::string& yamlstring, NTA_BasicType dataType)
 {
   // TODO -- return value? exceptions?
+  NTA_CHECK(yamlstring.size() > 0) << "string is empty!";
   const YAML::Node doc = YAML::Load(yamlstring);
   return toValue(doc, dataType);
 }
@@ -173,7 +174,7 @@ Value toValue(const std::string& yamlstring, NTA_BasicType dataType)
 /*
  * For converting param specs for Regions and LinkPolicies
  */
-ValueMap toValueMap(const char *yamlstring,
+ValueMap toValueMap(const std::string yamlstring,
                     Collection<ParameterSpec> &parameters,
                     const std::string &nodeType,
                     const std::string &regionName) {
