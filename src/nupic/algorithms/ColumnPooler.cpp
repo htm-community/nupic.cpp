@@ -222,14 +222,14 @@ public:
     SDR_ActivationFrequency PP_AF( proximalInputs.dimensions, 10 * proximalInputs.size);
     UInt cell = 0u;
     for(auto inhib = 0u; inhib < inhibitionAreas.size; ++inhib) {
-      inhibitionAreas.setFlatSparse(SDR_flatSparse_t{ inhib });
+      inhibitionAreas.setSparse(SDR_sparse_t{ inhib });
       for(auto c = 0u; c < cellsPerInhibitionArea; ++c, ++cell) {
         for(auto s = 0u; s < proximalSegments; ++s) {
           auto segment = proximalConnections.createSegment( cell );
 
           // Make synapses.
           potentialPool( inhibitionAreas, proximalInputs );
-          for(const auto presyn : proximalInputs.getFlatSparse() ) {
+          for(const auto presyn : proximalInputs.getSparse() ) {
             auto permanence = initProximalPermanence();
             proximalConnections.createSynapse( segment, presyn, permanence);
           }
@@ -347,7 +347,7 @@ public:
   {
     // Proximal Feed Forward Excitement
     rawOverlaps_.assign( proximalConnections.numSegments(), 0.0f );
-    proximalConnections.computeActivity(rawOverlaps_, feedForwardInputs.getFlatSparse());
+    proximalConnections.computeActivity(rawOverlaps_, feedForwardInputs.getSparse());
 
     // Setup for Boosting
     const Real denominator = 1.0f / log2( sparsity / proximalSegments );
@@ -412,7 +412,7 @@ public:
     auto compare = [&overlaps](const UInt &a, const UInt &b) -> bool
       {return overlaps[a] > overlaps[b];};
 
-    auto &active = activeCells.getFlatSparse();
+    auto &active = activeCells.getSparse();
     active.clear();
     active.reserve(cellsPerInhibitionArea + numDesired * inhibitionAreas );
 
@@ -446,7 +446,7 @@ public:
            ++iter;
       }
     }
-    activeCells.setFlatSparse( active );
+    activeCells.setSparse( active );
   }
 
 
@@ -455,7 +455,7 @@ public:
                                const SDR &active ) {
     SDR AF_SDR( AF->dimensions );
     auto &activeSegments = AF_SDR.getSparse();
-    for(const auto &cell : active.getFlatSparse())
+    for(const auto &cell : active.getSparse())
     {
       // Adapt Proximal Segments
       NTA_CHECK(cell < proximalMaxSegment_.size()) << "cell oob! " << cell << " < " << proximalMaxSegment_.size();
@@ -522,8 +522,8 @@ public:
       inputCoords.push_back({ (UInt32)floor(inputCoord) });
     }
     potentialPool.setSparse(inputCoords);
-    NTA_CHECK(potentialPool.getFlatSparse().size() == 1u);
-    const auto centerInput = potentialPool.getFlatSparse()[0];
+    NTA_CHECK(potentialPool.getSparse().size() == 1u);
+    const auto centerInput = potentialPool.getSparse()[0];
 
     vector<UInt> columnInputs;
     if (wrapAround) {
@@ -539,7 +539,7 @@ public:
 
     const UInt numPotential = (UInt)round(columnInputs.size() * potentialPct);
     const auto selectedInputs = Random().sample<UInt>(columnInputs, numPotential);
-    potentialPool.setFlatSparse( selectedInputs );
+    potentialPool.setSparse( selectedInputs );
   }
 };
 
