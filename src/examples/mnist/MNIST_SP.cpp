@@ -29,6 +29,7 @@
 #include <vector>
 
 #include <nupic/algorithms/SpatialPooler.hpp>
+#include <nupic/algorithms/ColumnPooler.cpp>
 #include <nupic/algorithms/SDRClassifier.hpp>
 #include <nupic/algorithms/ClassifierResult.hpp>
 #include <nupic/utils/SdrMetrics.hpp>
@@ -41,6 +42,9 @@ using namespace std;
 using namespace nupic;
 
 using nupic::algorithms::spatial_pooler::SpatialPooler;
+using nupic::algorithms::column_pooler::ColumnPooler;
+using nupic::algorithms::column_pooler::DefaultTopology;
+using nupic::algorithms::connections::Permanence;
 using nupic::algorithms::sdr_classifier::SDRClassifier;
 using nupic::algorithms::cla_classifier::ClassifierResult;
 
@@ -48,6 +52,7 @@ class MNIST {
 
   private:
     SpatialPooler sp;
+    ColumnPooler cp;
     SDR input;
     SDR columns;
     SDRClassifier clsr;
@@ -80,7 +85,33 @@ void setup() {
     /* spVerbosity */                 1u,
     /* wrapAround */                  false); //wrap is false for this problem
 
-  columns.initialize({sp.getNumColumns()});
+   cp.initialize(
+      /* proximalInputDimensions */       input.dimensions,
+      /* distalInputDimensions */         vector<UInt>{1},
+      /* inhibitionDimensions */          vector<UInt>{10, 10},
+      /* cellsPerInhbitionArea */         120,
+      /* sparsity */                      .015,
+      /* potentialPool */                 DefaultTopology(.9, 4., true),
+      /* proximalSegments */              1,
+      /* proximalSegmentThreshold */      28,
+      /* proximalIncrement */             .032,
+      /* proximalDecrement */             .00928,
+      /* proximalSynapseThreshold */      .422,
+      /* distalMaxSegments */             0u,
+      /* distalMaxSynapsesPerSegment */   0u,
+      /* distalSegmentThreshold */        0u,
+      /* distalIncrement */               (Permanence)0.0,
+      /* distalDecrement */               (Permanence)0.0,
+      /* distalMispredictDecrement */     (Permanence)0.0,
+      /* distalSynapseThreshold */        (Permanence)0.0,
+      /* stability_rate */                0.0,
+      /* fatigue_rate */                  0.0,
+      /* period */                        1402.0,
+      /* seed */                          0,
+      /* verbose */                       verbosity);
+
+//  columns.initialize({sp.getNumColumns()});
+  columns.initialize(cp.cellDimensions);
 
   clsr.initialize(
     /* steps */         {0},
@@ -116,9 +147,12 @@ void train() {
 
       // Compute & Train
       input.setDense( image );
-      sp.compute(input, true, columns);
+      //sp.compute(input, true, columns); //TOGGLE SP/CP computation
+      cp.compute(input, true, columns);
+
       ClassifierResult result;
-      clsr.compute(sp.getIterationNum(), columns.getFlatSparse(),
+      //clsr.compute(sp.getIterationNum(), columns.getFlatSparse(), //TOGGLE
+      clsr.compute(cp.iterationNum, columns.getFlatSparse(), 
         /* bucketIdxList */   {label},
         /* actValueList */    {(Real)label},
         /* category */        true,
@@ -147,10 +181,11 @@ void test() {
 
     // Compute
     input.setDense( image );
-    sp.compute(input, false, columns);
-    sp.stripUnlearnedColumns(columns);
+    //sp.compute(input, false, columns); //TOGGLE
+    cp.compute(input, false, columns);
     ClassifierResult result;
-    clsr.compute(sp.getIterationNum(), columns.getFlatSparse(),
+    //clsr.compute(sp.getIterationNum(), columns.getFlatSparse(), //TOGGLE
+    clsr.compute(cp.iterationNum, columns.getFlatSparse(), 
       /* bucketIdxList */   {},
       /* actValueList */    {},
       /* category */        true,
