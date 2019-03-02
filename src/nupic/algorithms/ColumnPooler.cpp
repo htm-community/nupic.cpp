@@ -65,7 +65,7 @@ private:
   vector<UInt> distalInputDimensions_;
   vector<UInt> inhibitionDimensions_;
   vector<UInt> cellDimensions_;
-  UInt         cellsPerInhbitionArea_;
+  UInt         cellsPerInhibitionArea_;
   UInt         proximalSegments_;
 
   vector<UInt> proximalMaxSegment_;
@@ -79,7 +79,7 @@ public:
   const vector<UInt> &proximalInputDimensions = proximalInputDimensions_;
   const vector<UInt> &distalInputDimensions   = distalInputDimensions_;
   const vector<UInt> &inhibitionDimensions    = inhibitionDimensions_;
-  const UInt         &cellsPerInhbitionArea   = cellsPerInhbitionArea_;
+  const UInt         &cellsPerInhibitionArea   = cellsPerInhibitionArea_;
   const vector<UInt> &cellDimensions          = cellDimensions_;
   const UInt         &proximalSegments        = proximalSegments_;
 
@@ -123,7 +123,7 @@ public:
     const vector<UInt> proximalInputDimensions,
     const vector<UInt> distalInputDimensions,
     const vector<UInt> inhibitionDimensions,
-    UInt               cellsPerInhbitionArea,
+    UInt               cellsPerInhibitionArea,
     Real sparsity,
     Topology_t potentialPool,
     UInt       proximalSegments,
@@ -162,7 +162,7 @@ public:
 	distalDecrement,
 	distalMispredictDecrement,
 	distalSynapseThreshold,
-	sparsity_rate,
+	stability_rate,
 	fatigue_rate,
 	period,
 	seed,
@@ -174,7 +174,7 @@ public:
         const vector<UInt> proximalInputDimensions,
         const vector<UInt> distalInputDimensions,
         const vector<UInt> inhibitionDimensions,
-        UInt               cellsPerInhbitionArea,
+        UInt               cellsPerInhibitionArea,
 
         Real sparsity,
 
@@ -202,7 +202,7 @@ public:
     proximalInputDimensions_ = proximalInputDimensions;
     distalInputDimensions_   = distalInputDimensions;
     inhibitionDimensions_    = inhibitionDimensions;
-    cellsPerInhbitionArea_   = cellsPerInhbitionArea;
+    cellsPerInhibitionArea_   = cellsPerInhibitionArea;
     proximalSegments_        = proximalSegments;
     this->sparsity                    = sparsity;
     this->proximalSegmentThreshold    = proximalSegmentThreshold;
@@ -221,7 +221,7 @@ public:
     SDR proximalInputs(  proximalInputDimensions );
     SDR inhibitionAreas( inhibitionDimensions );
     cellDimensions_ = inhibitionAreas.dimensions;
-    cellDimensions_.push_back( cellsPerInhbitionArea );
+    cellDimensions_.push_back( cellsPerInhibitionArea );
     SDR cells( cellDimensions_ );
 
     // Setup the proximal segments & synapses.
@@ -231,7 +231,7 @@ public:
     UInt cell = 0u;
     for(auto inhib = 0u; inhib < inhibitionAreas.size; ++inhib) {
       inhibitionAreas.setFlatSparse(SDR_flatSparse_t{ inhib });
-      for(auto c = 0u; c < cellsPerInhbitionArea; ++c, ++cell) {
+      for(auto c = 0u; c < cellsPerInhibitionArea; ++c, ++cell) {
         for(auto s = 0u; s < proximalSegments; ++s) {
           auto segment = proximalConnections.createSegment( cell );
 
@@ -408,10 +408,10 @@ public:
                  // predictiveCells,
                  SDR &activeCells)
   {
-    const UInt inhibitionAreas = activeCells.size / cellsPerInhbitionArea;
-    const UInt numDesired = (UInt) std::round(sparsity * cellsPerInhbitionArea);
-    NTA_CHECK(numDesired > 0) << "Not enough cellsPerInhbitionArea ("
-      << cellsPerInhbitionArea << ") for desired density (" << sparsity << ").";
+    const UInt inhibitionAreas = activeCells.size / cellsPerInhibitionArea;
+    const UInt numDesired = (UInt) std::round(sparsity * cellsPerInhibitionArea);
+    NTA_CHECK(numDesired > 0) << "Not enough cellsPerInhibitionArea ("
+      << cellsPerInhibitionArea << ") for desired density (" << sparsity << ").";
 
     // Compare the cell indexes by their overlap.
     auto compare = [&overlaps](const UInt &a, const UInt &b) -> bool
@@ -419,14 +419,14 @@ public:
 
     auto &active = activeCells.getFlatSparse();
     active.clear();
-    active.reserve(cellsPerInhbitionArea + numDesired * inhibitionAreas );
+    active.reserve(cellsPerInhibitionArea + numDesired * inhibitionAreas );
 
-    for(UInt offset = 0u; offset < activeCells.size; offset += cellsPerInhbitionArea)
+    for(UInt offset = 0u; offset < activeCells.size; offset += cellsPerInhibitionArea)
     {
       // Sort the columns by the amount of overlap.  First make a list of all of
       // the mini-column indexes.
       auto activeBegin = active.end();
-      for(UInt i = 0u; i < cellsPerInhbitionArea; i++)
+      for(UInt i = 0u; i < cellsPerInhibitionArea; i++)
         active.push_back( i + offset );
       // Do a partial sort to divide the winners from the losers.  This sort is
       // faster than a regular sort because it stops after it partitions the
@@ -438,7 +438,7 @@ public:
         active.end(),
         compare);
       // Remove the columns which lost the competition.
-      active.resize( active.size() - (cellsPerInhbitionArea - numDesired) );
+      active.resize( active.size() - (cellsPerInhibitionArea - numDesired) );
       // Finish sorting the winner columns by their overlap.
       // std::sort(activeBegin, active.end(), compare);
       // Remove sub-threshold winners
