@@ -252,7 +252,7 @@ private:
         for(auto &value : activationFrequency_)
             value *= decay;
 
-        const auto &sparse = dataSource.getFlatSparse();
+        const auto &sparse = dataSource.getSparse();
         for(const auto &idx : sparse)
             activationFrequency_[idx] += alpha;
     }
@@ -410,7 +410,7 @@ private:
         max_        = -1234.56789f;
         mean_       =  1234.56789f;
         variance_   =  1234.56789f;
-        previous_.getFlatSparse();
+        previous_.getSparse();
     }
 
     void callback(SDR &dataSource, Real alpha) override {

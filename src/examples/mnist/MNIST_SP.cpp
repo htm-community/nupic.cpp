@@ -156,8 +156,8 @@ void train() {
       cp.compute(input, true, columns);
 
       ClassifierResult result;
-      //clsr.compute(sp.getIterationNum(), columns.getFlatSparse(), //TOGGLE
-      clsr.compute(cp.iterationNum, columns.getFlatSparse(), 
+      //clsr.compute(sp.getIterationNum(), columns.getSparse(), //TOGGLE
+      clsr.compute(cp.iterationNum, columns.getSparse(), 
         /* bucketIdxList */   {label},
         /* actValueList */    {(Real)label},
         /* category */        true,
@@ -189,8 +189,8 @@ void test() {
     //sp.compute(input, false, columns); //TOGGLE
     cp.compute(input, false, columns);
     ClassifierResult result;
-    //clsr.compute(sp.getIterationNum(), columns.getFlatSparse(), //TOGGLE
-    clsr.compute(cp.iterationNum, columns.getFlatSparse(), 
+    //clsr.compute(sp.getIterationNum(), columns.getSparse(), //TOGGLE
+    clsr.compute(cp.iterationNum, columns.getSparse(), 
       /* bucketIdxList */   {},
       /* actValueList */    {},
       /* category */        true,
