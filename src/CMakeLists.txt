@@ -419,25 +419,6 @@ add_custom_target(mnist
                   COMMENT "Executing ${src_executable_mnistsp}"
                   VERBATIM)
 
-
-#########################################################
-## ASCII Example
-#
-set(src_executable_ascii ascii)
-add_executable(${src_executable_ascii} "examples/ascii.cpp")
-target_link_libraries(${src_executable_ascii} ${core_library})
-target_compile_options(${src_executable_ascii} PUBLIC ${INTERNAL_CXX_FLAGS})
-target_compile_definitions(${src_executable_ascii} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
-target_include_directories(${src_executable_ascii} PRIVATE 
-        ${CORE_LIB_INCLUDES} 
-        ${EXTERNAL_INCLUDES}
-        )
-# add_custom_target(ascii
-#                   COMMAND ${src_executable_ascii}
-#                   DEPENDS ${src_executable_ascii}
-#                   COMMENT "Executing ${src_executable_ascii}"
-#                   VERBATIM)
-
 ##################################################
 #
 # Install targets into CMAKE_INSTALL_PREFIX
