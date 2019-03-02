@@ -116,7 +116,61 @@ public:
 
   Connections distalConnections;
 
+
+  ColumnPooler() {}; //default constructor, must call initialize to setup properly
+ 
   ColumnPooler(
+    const vector<UInt> proximalInputDimensions,
+    const vector<UInt> distalInputDimensions,
+    const vector<UInt> inhibitionDimensions,
+    UInt               cellsPerInhbitionArea,
+    Real sparsity,
+    Topology_t potentialPool,
+    UInt       proximalSegments,
+    UInt       proximalSegmentThreshold,
+    Permanence proximalIncrement,
+    Permanence proximalDecrement,
+    Permanence proximalSynapseThreshold,
+    UInt       distalMaxSegments,
+    UInt       distalMaxSynapsesPerSegment,
+    UInt       distalSegmentThreshold,
+    Permanence distalIncrement,
+    Permanence distalDecrement,
+    Permanence distalMispredictDecrement,
+    Permanence distalSynapseThreshold,
+    Real stability_rate,
+    Real fatigue_rate,
+    Real period,
+    Int  seed,
+    bool verbose) {
+      initialize(
+        proximalInputDimensions, 
+	distalInputDimensions,
+	inhibitionDimensions,
+	cellsPerInhibitionArea,
+	sparsity,
+	potentialPool,
+	proximalSegments,
+	proximalSegmentThreshold,
+	proximalIncrement,
+	proximalDecrement,
+	proximalSynapseThreshold,
+	distalMaxSegments,
+	distalMaxSynapsesPerSegment,
+	distalSegmentThreshold,
+	distalIncrement,
+	distalDecrement,
+	distalMispredictDecrement,
+	distalSynapseThreshold,
+	sparsity_rate,
+	fatigue_rate,
+	period,
+	seed,
+	verbose);
+  }
+
+
+  void initialize(
         const vector<UInt> proximalInputDimensions,
         const vector<UInt> distalInputDimensions,
         const vector<UInt> inhibitionDimensions,
