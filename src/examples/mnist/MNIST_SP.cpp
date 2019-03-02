@@ -92,21 +92,26 @@ void setup() {
       /* cellsPerInhbitionArea */         120,
       /* sparsity */                      .015,
       /* potentialPool */                 DefaultTopology(.9, 4., true),
+
       /* proximalSegments */              1,
-      /* proximalSegmentThreshold */      28,
+      /* proximalSegmentThreshold */      3, // 7, // 14,
       /* proximalIncrement */             .032,
       /* proximalDecrement */             .00928,
       /* proximalSynapseThreshold */      .422,
+
       /* distalMaxSegments */             0u,
       /* distalMaxSynapsesPerSegment */   0u,
       /* distalSegmentThreshold */        0u,
+      /* distalSegmentMatch */            0u,
+      /* distalAddSynapses */             0u,
       /* distalIncrement */               (Permanence)0.0,
       /* distalDecrement */               (Permanence)0.0,
       /* distalMispredictDecrement */     (Permanence)0.0,
       /* distalSynapseThreshold */        (Permanence)0.0,
+
       /* stability_rate */                0.0,
       /* fatigue_rate */                  0.0,
-      /* period */                        1402.0,
+      /* period */                        1402,
       /* seed */                          0,
       /* verbose */                       verbosity);
 

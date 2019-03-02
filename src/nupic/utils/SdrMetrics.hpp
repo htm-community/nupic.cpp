@@ -277,12 +277,24 @@ public:
      */
     SDR_ActivationFrequency( const vector<UInt> dimensions, UInt period )
         : SDR_MetricsHelper_( dimensions, period )
-        {
-            UInt size = 1;
-            for(const auto &dim : dimensions)
-                size *= dim;
-            initialize( size );
-        }
+    {
+        UInt size = 1;
+        for(const auto &dim : dimensions)
+            size *= dim;
+        initialize( size );
+    }
+
+    /**
+     * TODO: DOCS
+     */
+    void initializeToValue( Real initialValue )
+    {
+        NTA_ASSERT( samples_ < 1 );
+        NTA_CHECK( initialValue >= 0.0f );
+        NTA_CHECK( initialValue <= 1.0f );
+        activationFrequency_.assign( activationFrequency_.size(), initialValue );
+        samples_ = period;
+    }
 
     const vector<Real> &activationFrequency = activationFrequency_;
 
