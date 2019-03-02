@@ -458,6 +458,7 @@ public:
     for(const auto &cell : active.getFlatSparse())
     {
       // Adapt Proximal Segments
+      NTA_CHECK(cell < proximalMaxSegment_.size()) << "cell oob! " << cell << " < " << proximalMaxSegment_.size();
       const auto maxSegment = proximalMaxSegment_[cell];
       proximalConnections.adaptSegment(maxSegment, proximalInputActive,
                                        proximalIncrement, proximalDecrement);
