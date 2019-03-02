@@ -119,22 +119,29 @@ public:
     const vector<UInt> distalInputDimensions,
     const vector<UInt> inhibitionDimensions,
     UInt               cellsPerInhibitionArea,
+
     Real sparsity,
+
     Topology_t potentialPool,
     UInt       proximalSegments,
     UInt       proximalSegmentThreshold,
     Permanence proximalIncrement,
     Permanence proximalDecrement,
     Permanence proximalSynapseThreshold,
+ 
     UInt       distalMaxSegments,
     UInt       distalMaxSynapsesPerSegment,
     UInt       distalSegmentThreshold,
+    UInt       distalSegmentMatch,
+    UInt       distalAddSynapses,
     Permanence distalIncrement,
     Permanence distalDecrement,
     Permanence distalMispredictDecrement,
     Permanence distalSynapseThreshold,
+ 
     Real stability_rate,
     Real fatigue_rate,
+
     Real period,
     Int  seed,
     bool verbose) {
@@ -143,22 +150,29 @@ public:
 	distalInputDimensions,
 	inhibitionDimensions,
 	cellsPerInhibitionArea,
+
 	sparsity,
+
 	potentialPool,
 	proximalSegments,
 	proximalSegmentThreshold,
 	proximalIncrement,
 	proximalDecrement,
 	proximalSynapseThreshold,
+
 	distalMaxSegments,
 	distalMaxSynapsesPerSegment,
 	distalSegmentThreshold,
+	distalSegmentMatch,
+        distalAddSynapses,
 	distalIncrement,
 	distalDecrement,
 	distalMispredictDecrement,
 	distalSynapseThreshold,
+
 	stability_rate,
 	fatigue_rate,
+
 	period,
 	seed,
 	verbose);
@@ -196,10 +210,12 @@ public:
         Real period,
         Int  seed,
         bool verbose) {
+
     proximalInputDimensions_ = proximalInputDimensions;
     distalInputDimensions_   = distalInputDimensions;
     inhibitionDimensions_    = inhibitionDimensions;
     cellsPerInhibitionArea_   = cellsPerInhibitionArea;
+
     proximalSegments_        = proximalSegments;
     this->sparsity                    = sparsity;
     this->proximalSegmentThreshold    = proximalSegmentThreshold;
