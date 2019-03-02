@@ -42,6 +42,10 @@
 #include <nupic/math/Math.hpp>
 #include <nupic/math/Topology.hpp>
 
+namespace nupic {
+namespace algorithms {
+namespace column_pooler {
+
 using namespace std;
 using namespace nupic;
 using namespace nupic::math::topology;
@@ -482,3 +486,4 @@ public:
   }
 };
 
+}}} //-end ns
