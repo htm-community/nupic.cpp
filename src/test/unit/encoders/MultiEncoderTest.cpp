@@ -313,22 +313,6 @@ TEST(MultiEncoderTest, testPassThroughEncoder_) {
 	ASSERT_EQ(Utils<nupic::UInt>::sum(bitmap), Utils<nupic::UInt>::sum(pteOutput));
 }
 
-TEST(MultiEncoderTest, testSparsePassThroughEncoder_) {
-	cout << "\n ---test SparsePassThroughEncoder EncodeArray--- \n" << endl;
-
-	SparsePassThroughEncoder<boost::any> spte;
-	spte.init(24, 5, "foo");
-
-	MultiEncoder<map<string, boost::any>> multi;
-	multi.addEncoder(dynamic_cast<Encoder<boost::any> *>(&spte), "spte");
-
-	vector<nupic::UInt> bitmap({ 2, 7, 15, 18, 23 });
-	map<string, boost::any> d;
-	d["spte"] = bitmap;
-
-	vector<nupic::UInt> spteOutput = multi.encode(d);
-	ASSERT_EQ(bitmap.size(), Utils<nupic::UInt>::sum(spteOutput));
-}
 
 TEST(MultiEncoderTest, testSDRCategoryEncoder) {
 	cout << "\n ---test SDRCategoryEncoder EncodeArray--- \n" << endl;

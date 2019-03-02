@@ -36,7 +36,6 @@
 #include "CategoryEncoder.hpp"    
 #include "SDRCategoryEncoder.hpp"    
 #include "PassThroughEncoder.hpp"    
-#include "SparsePassThroughEncoder.hpp"    
 #include "CoordinateEncoder.hpp"    
 #include "GeospatialCoordinateEncoder.hpp"    
 #include "RandomDistributedScalarEncoder.hpp"   
