@@ -136,8 +136,6 @@ set(engine_files
   
 set(math_files
     nupic/math/Math.hpp
-    nupic/math/StlIo.cpp
-    nupic/math/StlIo.hpp
     nupic/math/Topology.cpp
     nupic/math/Topology.hpp
     nupic/math/Utils.hpp
@@ -215,6 +213,8 @@ set(utils_files
     nupic/utils/Random.cpp
     nupic/utils/Random.hpp
     nupic/utils/SlidingWindow.hpp
+    nupic/utils/StlIo.cpp
+    nupic/utils/StlIo.hpp
     nupic/utils/StringUtils.cpp
     nupic/utils/StringUtils.hpp
     nupic/utils/VectorHelpers.hpp

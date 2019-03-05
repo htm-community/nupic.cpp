@@ -37,7 +37,7 @@
 #include <nupic/os/Directory.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/os/ImportFilesystem.hpp>
-#include <nupic/math/StlIo.hpp> // use these to help you serialize std::containers 
+#include <nupic/utils/StlIo.hpp> // use these to help you serialize std::containers 
 
 #define SERIALIZABLE_VERSION 1
 
