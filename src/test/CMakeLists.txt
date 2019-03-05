@@ -104,6 +104,7 @@ set(utils_tests
 	   unit/utils/RandomTest.cpp
 	   unit/utils/VectorHelpersTest.cpp
 	   unit/utils/SdrMetricsTest.cpp
+	   unit/utils/SerializationSTLTest.cpp
 	   )
 
 set(examples_files

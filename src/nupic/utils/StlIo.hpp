@@ -62,7 +62,7 @@ inline void binary_save(std::ostream &out_stream, const Container &objFrom) {
     cout << "xxx2 " <<sizeof(value_type) << endl;
     out_stream.write(ptr, (std::streamsize)size * sizeof(value_type));
   }
-  out_stream << "~BIN" << " ";
+  out_stream << " ~BIN " << endl;
 }
 
 //--------------------------------------------------------------------------------
@@ -87,9 +87,10 @@ using std::endl;
     cout << "YYY 3 " << in_stream.tellg() << endl;
     in_stream.read(raw, (std::streamsize)sz * sizeof(value_type));
     cout << "YYY 4 " << in_stream.tellg() << endl;
+    NTA_CHECK(objTo.size() == sz);
   }
   in_stream >> label;
-//  NTA_CHECK(label == "~BIN") << "Stream found " << "'1-" << label << "-2'";
+  NTA_CHECK(label == "~BIN") << "Stream found " << "'1-" << label << "-2'";
 }
 
 
