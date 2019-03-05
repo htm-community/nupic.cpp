@@ -42,82 +42,6 @@
 namespace nupic {
 
 //--------------------------------------------------------------------------------
-// IO CONTROL AND MANIPULATORS
-//--------------------------------------------------------------------------------
-
-struct IOControl { //TODO remove other, all of IOControl
-
-  int abbr;           // shorten long vectors output
-  bool output_n_elts; // output vector size at beginning
-
-  bool pair_paren;      // put parens around pairs in vector of pairs
-  const char *pair_sep; // put separator between pair.first and pair.second
-
-  inline IOControl(int a = -1, bool s = true, bool pp = false,
-                   const char *psep = " ")
-      : abbr(a), output_n_elts(s), pair_paren(pp), pair_sep(psep) 
-  {}
-
-  inline void reset() {
-    abbr = -1;
-    output_n_elts = true;
-    pair_paren = false;
-    pair_sep = " ";
-  }
-};
-
-extern IOControl io_control;
-
-template <typename CharT, typename Traits, typename T>
-inline std::basic_ostream<CharT, Traits> &operator,(
-    std::basic_ostream<CharT, Traits> &out_stream, const T &a) {
-  return out_stream << ' ' << a;
-}
-
-template <typename CharT, typename Traits, typename T>
-inline std::basic_istream<CharT, Traits> &operator,(
-    std::basic_istream<CharT, Traits> &in_stream, T &a) {
-  return in_stream >> a;
-}
-
-template <typename CharT, typename Traits>
-inline std::basic_ostream<CharT, Traits> &operator,(
-    std::basic_ostream<CharT, Traits> &out_stream,
-    std::basic_ostream<CharT, Traits> &(*pf)(
-        std::basic_ostream<CharT, Traits> &)) {
-  pf(out_stream);
-  return out_stream;
-}
-
-
-struct abbr {
-  int n;
-  inline abbr(int _n) : n(_n) {}
-};
-
-template <typename CharT, typename Traits>
-inline std::basic_ostream<CharT, Traits> &
-operator<<(std::basic_ostream<CharT, Traits> &out_stream, abbr s) {
-  io_control.abbr = s.n;
-  return out_stream;
-}
-
-struct debug {
-  int n;
-  inline debug(int _n = -1) : n(_n) {}
-};
-
-template <typename CharT, typename Traits>
-inline std::basic_ostream<CharT, Traits> &
-operator<<(std::basic_ostream<CharT, Traits> &out_stream, debug d) {
-  io_control.abbr = d.n;
-  io_control.output_n_elts = false;
-  io_control.pair_sep = ",";
-  io_control.pair_paren = true;
-  return out_stream;
-}
-
-//--------------------------------------------------------------------------------
 // BINARY PERSISTENCE
 //--------------------------------------------------------------------------------
 template <typename It>
@@ -163,13 +87,8 @@ inline void binary_load(std::istream &in_stream, std::vector<T> &v) {
 template <typename T1, typename T2>
 inline std::ostream &operator<<(std::ostream &out_stream,
                                 const std::pair<T1, T2> &p) {
-  if (io_control.pair_paren)
-    out_stream << "(";
   out_stream << p.first;
-  out_stream << io_control.pair_sep;
   out_stream << p.second;
-  if (io_control.pair_paren)
-    out_stream << ")";
   return out_stream;
 }
 
@@ -235,18 +154,7 @@ template <typename T, bool> struct vector_saver {
 template <typename T> struct vector_saver<T, true> {
   inline void save(size_t n, std::ostream &out_stream,
                    const std::vector<T> &v) {
-    if (io_control.output_n_elts) out_stream << n << ' ';
-
-    if (io_control.abbr > 0) {
-      n = std::min((size_t)io_control.abbr, n);
-    }
-
     for (size_t i = 0; i != n; ++i) out_stream << v[i] << ' ';
-
-    if (io_control.abbr > 0 && n < v.size()) {
-      size_t rest = v.size() - n;
-      out_stream << "[+" << rest << "/" << count_non_zeros(v) << "]";
-    }
   }
 };
 
@@ -261,19 +169,8 @@ inline std::ostream &operator<<(std::ostream &out_stream,
 template <typename T> struct vector_saver<T, false> {
   inline void save(size_t n, std::ostream &out_stream,
                    const std::vector<T> &v) {
-    if (io_control.output_n_elts)
-      out_stream << n << ' ';
-
-    if (io_control.abbr > 0)
-      n = std::min((size_t)io_control.abbr, n);
-
     for (size_t i = 0; i != n; ++i)
       out_stream << v[i] << ' ';
-
-    if (io_control.abbr > 0 && n < v.size()) {
-      size_t rest = v.size() - n;
-      out_stream << "[+" << rest << "/" << count_non_zeros(v) << "]";
-    }
   }
 };
 

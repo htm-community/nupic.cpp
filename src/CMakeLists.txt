@@ -213,7 +213,6 @@ set(utils_files
     nupic/utils/Random.cpp
     nupic/utils/Random.hpp
     nupic/utils/SlidingWindow.hpp
-    nupic/utils/StlIo.cpp
     nupic/utils/StlIo.hpp
     nupic/utils/StringUtils.cpp
     nupic/utils/StringUtils.hpp
