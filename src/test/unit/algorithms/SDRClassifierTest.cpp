@@ -286,7 +286,7 @@ TEST_F(SDRClassifierTest, MultipleCategory) {
 TEST_F(SDRClassifierTest, SaveLoad) {
   vector<UInt> steps{ 1u };
   SDRClassifier c1 = SDRClassifier(steps, 0.1f, 0.1f, 0u);
-  SDRClassifier c2 = SDRClassifier(steps, 0.1f, 0.1f, 0u);
+  SDRClassifier c2;
 
   // Create a vector of input bit indices
   vector<UInt> input1{ 1u, 5u, 9u };

@@ -32,8 +32,7 @@
 #include <map>
 #include <set>
 #include <vector>
-
-#include <iomanip>
+#include <string>
 #include <iostream>
 
 #include <nupic/types/Types.hpp>
@@ -44,38 +43,55 @@ namespace nupic {
 //--------------------------------------------------------------------------------
 // BINARY PERSISTENCE
 //--------------------------------------------------------------------------------
-template <typename It>
-inline void binary_save(std::ostream &out_stream, It begin, It end) {
-  typedef typename std::iterator_traits<It>::value_type value_type;
-  size_t size = (size_t)(end - begin);
-  if (size > 0) {
+template <typename Container> //TODO Container must provide begin,end, check for that
+inline void binary_save(std::ostream &out_stream, const Container &objFrom) {
+  const auto begin = std::begin(objFrom); //iterator.begin()
+  const auto end   = std::end(objFrom);
+  using std::cout;
+  using std::endl;
+
+  const size_t size = (size_t) (end - begin);
+  out_stream << "BIN" << " ";
+  out_stream << size << " ";
+  cout << "XXX1 " << size << endl;
+
+  if(size > 0) {
+    cout << "DEBUG vector[" << *begin << "]  ";
     char *ptr = (char *)&*begin;
+    typedef typename Container::value_type value_type;
+    cout << "xxx2 " <<sizeof(value_type) << endl;
     out_stream.write(ptr, (std::streamsize)size * sizeof(value_type));
   }
+  out_stream << "~BIN" << " ";
 }
 
 //--------------------------------------------------------------------------------
-template <typename It>
-inline void binary_load(std::istream &in_stream, It begin, It end) {
-  typedef typename std::iterator_traits<It>::value_type value_type;
-  size_t size = (size_t)(end - begin);
-  if (size > 0) {
-    char *ptr = (char *)&*begin;
-    in_stream.read(ptr, (std::streamsize)size * sizeof(value_type));
+template <typename Container>
+inline void binary_load(std::istream &in_stream, Container &objTo) {
+  std::string label;
+  in_stream >> label;
+  NTA_CHECK(label == "BIN") << "Stream mismatched.";
+  size_t sz;
+  in_stream >> sz;
+
+  using std::cout;
+using std::endl;
+  cout << "YYY1 " << sz << endl;
+
+  if(sz > 0) {    
+    objTo.resize(sz);
+    const auto begin = std::begin(objTo);
+    typedef typename Container::value_type value_type;
+    cout << "YYY2 " << sizeof(value_type) << endl;
+    char* raw = (char*)&*begin;
+    cout << "YYY 3 " << in_stream.tellg() << endl;
+    in_stream.read(raw, (std::streamsize)sz * sizeof(value_type));
+    cout << "YYY 4 " << in_stream.tellg() << endl;
   }
+  in_stream >> label;
+//  NTA_CHECK(label == "~BIN") << "Stream found " << "'1-" << label << "-2'";
 }
 
-//--------------------------------------------------------------------------------
-template <typename T>
-inline void binary_save(std::ostream &out_stream, const std::vector<T> &v) {
-  nupic::binary_save(out_stream, v.begin(), v.end());
-}
-
-//--------------------------------------------------------------------------------
-template <typename T>
-inline void binary_load(std::istream &in_stream, std::vector<T> &v) {
-  nupic::binary_load(in_stream, v.begin(), v.end());
-}
 
 //--------------------------------------------------------------------------------
 // STL STREAMING OPERATORS
@@ -103,7 +119,7 @@ inline std::istream &operator>>(std::istream &in_stream, std::pair<T1, T2> &p) {
 // std::vector
 //--------------------------------------------------------------------------------
 template <typename T, bool> struct vector_loader {
-  inline void load(size_t, std::istream &, std::vector<T> &);
+  inline void load(const size_t, std::istream &, std::vector<T> &);
 };
 
 //--------------------------------------------------------------------------------
@@ -111,9 +127,8 @@ template <typename T, bool> struct vector_loader {
  * Partial specialization of above functor for primitive types.
  */
 template <typename T> struct vector_loader<T, true> {
-  inline void load(size_t n, std::istream &in_stream, std::vector<T> &v) {
-      for (size_t i = 0; i != n; ++i)
-        in_stream >> v[i];
+  inline void load(const size_t n, std::istream &in_stream, std::vector<T> &v) {
+      for (size_t i = 0; i != n; ++i)  in_stream >> v[i];
   }
 };
 
@@ -126,8 +141,7 @@ inline std::istream &operator>>(std::istream &in_stream, std::vector<T> &v);
  */
 template <typename T> struct vector_loader<T, false> {
   inline void load(size_t n, std::istream &in_stream, std::vector<T> &v) {
-    for (size_t i = 0; i != n; ++i)
-      in_stream >> v[i];
+      binary_load(in_stream, v.cbegin(), v.cend());
   }
 };
 
@@ -169,8 +183,7 @@ inline std::ostream &operator<<(std::ostream &out_stream,
 template <typename T> struct vector_saver<T, false> {
   inline void save(size_t n, std::ostream &out_stream,
                    const std::vector<T> &v) {
-    for (size_t i = 0; i != n; ++i)
-      out_stream << v[i] << ' ';
+	  binary_save(out_stream, v.cbegin(), v.cend());
   }
 };
 

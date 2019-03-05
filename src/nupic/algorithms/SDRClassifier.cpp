@@ -292,11 +292,13 @@ void SDRClassifier::save(ostream &outStream) const {
   outStream << endl;
 
   // Store the different prediction steps.
-  outStream << steps_.size() << " ";
-  for (auto &elem : steps_) {
-    outStream << elem << " ";
-  }
-  outStream << endl;
+//  outStream << steps_.size() << " ";
+//  for (auto &elem : steps_) {
+//    outStream << elem << " ";
+//  }
+//  outStream << endl;
+//!outStream << steps_ << " ";
+binary_save(outStream, steps_);
 
   // Store the pattern history.
   outStream << patternNZHistory_.size() << " ";
@@ -369,11 +371,13 @@ void SDRClassifier::load(istream &inStream) {
   // Load the prediction steps.
   UInt size;
   UInt step;
-  inStream >> size;
-  for (UInt i = 0; i < size; ++i) {
-    inStream >> step;
-    steps_.push_back(step);
-  }
+//  inStream >> size;
+//  for (UInt i = 0; i < size; ++i) {
+//    inStream >> step;
+//    steps_.push_back(step);
+//  }
+//!inStream >> steps_;
+  binary_load(inStream, steps_);
 
   // Load the input pattern history.
   inStream >> size;
