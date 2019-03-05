@@ -30,7 +30,6 @@
 
 #include <assert.h>
 #include <map>
-#include <nupic/math/StlIo.hpp>     // binary_save
 #include <nupic/math/Math.hpp> // Epsilon
 
 #include <nupic/utils/Log.hpp>

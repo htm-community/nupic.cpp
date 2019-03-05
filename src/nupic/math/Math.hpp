@@ -27,6 +27,8 @@
 #ifndef NTA_MATH_HPP
 #define NTA_MATH_HPP
 
+#include <nupic/types/Types.hpp>
+
 namespace nupic {
 
 /**

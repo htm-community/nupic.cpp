@@ -26,11 +26,7 @@
 
 #include <cstring>
 #include <fstream>
-#include <nupic/math/StlIo.hpp>
-#include <nupic/types/Types.hpp>
-#include <nupic/types/Sdr.hpp>
-#include <nupic/utils/Log.hpp>
-#include <stdio.h>
+#include <cstdio>
 
 #include "gtest/gtest.h"
 #include <nupic/algorithms/TemporalMemory.hpp>

@@ -32,7 +32,6 @@
 #include <vector>
 
 #include <nupic/algorithms/InSynapse.hpp>
-#include <nupic/math/StlIo.hpp>     // binary_save
 #include <nupic/types/Serializable.hpp>
 
 //-----------------------------------------------------------------------
