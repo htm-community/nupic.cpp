@@ -74,20 +74,21 @@ public:
   virtual void save(std::ostream &stream) const = 0;
   virtual void load(std::istream &stream) = 0;
 
-  // Serializable overrides stream operators <<, >> 
-  std::ostream &operator<<(std::ostream &outStream) {
-    this->save(outStream);
-    return outStream;
-  }
-
-  std::istream &operator>>(std::istream &inStream) {
-    this->load(inStream);
-    return inStream;
-  }
 
   virtual ~Serializable() {}
 };
 
+/*
+// Serializable overrides stream operators <<, >>
+std::ostream &operator<<(std::ostream &outStream, Serializable &s) {
+s.save(outStream);
+return outStream;
+}
+std::istream &operator>>(std::istream &inStream, Serializable &s) {
+s.load(inStream);
+return inStream;
+}
+*/
 } // end namespace nupic
 
 #endif // NTA_SERIALIZABLE_HPP

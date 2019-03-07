@@ -1964,17 +1964,13 @@ void Cells4::save(std::ostream &outStream) const {
   // (these are deque's of vectors of UInt, see StlIo.hpp)
   outStream << "prevInfPatterns [ " << _prevInfPatterns.size() << "\n";
   for(auto v : _prevInfPatterns) {
-    outStream << v.size() << " ";
-    binary_save(outStream, v);
-    outStream << "\n";
+    outStream << v " ";
   }
   outStream << "]\n";
 
   outStream << "prevLrnPatterns [ " << _prevLrnPatterns.size() << "\n";
   for(auto v : _prevLrnPatterns) {
-    outStream << v.size() << " ";
-    binary_save(outStream, v);
-    outStream << "\n";
+    outStream <<  v << " ";
   }
   outStream << "]\n";
 
@@ -2124,11 +2120,8 @@ void Cells4::load(std::istream &inStream) {
   NTA_CHECK(tag == "[");
   inStream >> len;
   for (size_t i = 0; i < len; i++) {
-    size_t count;
-    inStream >> count;
-    inStream.ignore(1);
-    std::vector<UInt> vec(count);
-    binary_load(inStream, vec);
+    std::vector<UInt> vec;
+    inStream >> vec;
     _prevInfPatterns.push_back(vec);
   }
   inStream >> tag;
@@ -2141,11 +2134,8 @@ void Cells4::load(std::istream &inStream) {
   NTA_CHECK(tag == "[");
   inStream >> len;
   for (size_t i = 0; i < len; i++) {
-    size_t count;
-    inStream >> count;
-    inStream.ignore(1);
-    std::vector<UInt> vec(count);
-    binary_load(inStream, vec);
+    std::vector<UInt> vec;
+    inStream >>  vec;
     _prevLrnPatterns.push_back(vec);
   }
   inStream >> tag;

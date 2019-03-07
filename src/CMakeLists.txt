@@ -85,7 +85,6 @@ set(algorithm_files
     nupic/algorithms/Cells4.hpp
     nupic/algorithms/Connections.cpp
     nupic/algorithms/Connections.hpp
-    nupic/algorithms/InSynapse.cpp
     nupic/algorithms/InSynapse.hpp
     nupic/algorithms/OutSynapse.cpp
     nupic/algorithms/OutSynapse.hpp

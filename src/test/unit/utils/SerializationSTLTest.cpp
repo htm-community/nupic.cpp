@@ -45,14 +45,14 @@ TEST(SerializableSTLTest, demo)
 //!  ASSERT_EQ(demo.v, demo2.v);
 }
 
-TEST(SerializableSTLTest, binary_save) 
+TEST(SerializableSTLTest, stl_save) 
 {
   //from StlIo.hpp
   const vector<int> v = vector<int>{1, 2, 3};
   stringstream ss;
-  binary_save(ss, v);
+  ss << v;
   vector<int> v2;
-  binary_load(ss, v2);
+  ss >> v2;
   ASSERT_EQ(v, v2);
 }
 

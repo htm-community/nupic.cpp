@@ -24,11 +24,10 @@
 #define NTA_INSYNAPSE_HPP
 
 #include <nupic/types/Types.hpp>
+#include <nupic/types/Serializable.hpp>
 
 #include <fstream>
 #include <ostream>
-
-using namespace nupic;
 
 //--------------------------------------------------------------------------------
 
@@ -43,7 +42,7 @@ namespace Cells4 {
  * of the synapse, and a permanence value. The source cell index is between
  * 0 and nCols * nCellsPerCol.
  */
-class InSynapse {
+class InSynapse : public Serializable {
 private:
   UInt _srcCellIdx;
   Real _permanence;
@@ -74,15 +73,27 @@ public:
   const inline Real &permanence() const { return _permanence; }
   inline Real &permanence() { return _permanence; }
 
-  inline void print(std::ostream &outStream) const;
+  inline void print(std::ostream &outStream) const { outStream << this << std::endl; }
+
+  //Serializable
+  void save(std::ostream &o) {
+    o << _srcCellIdx << " " << std::setprecision(10) << _permanence << " ";
+  }
+  void load(std::istream &i) {
+    i >> _srcCellIdx >> _permanence;
+  }
+
 };
 
 //--------------------------------------------------------------------------------
-std::ostream &operator<<(std::ostream &outStream, const InSynapse &s);
 
 // end namespace
 } // namespace Cells4
 } // namespace algorithms
+
+// serialization/deserialization
+std::ostream &operator<<(std::ostream &o, const InSynapse &s) { s.save(o); return o;};
+std::istream &operator>>(std::istream &i, InSynapse &s) { s.load(i); return i; }
 } // namespace nupic
 
 #endif // NTA_INSYNAPSE_HPP

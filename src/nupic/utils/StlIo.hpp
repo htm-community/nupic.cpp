@@ -38,61 +38,8 @@
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>
 
+
 namespace nupic {
-
-//--------------------------------------------------------------------------------
-// BINARY PERSISTENCE
-//--------------------------------------------------------------------------------
-template <typename Container> //TODO Container must provide begin,end, check for that
-inline void binary_save(std::ostream &out_stream, const Container &objFrom) {
-  const auto begin = std::begin(objFrom); //iterator.begin()
-  const auto end   = std::end(objFrom);
-  using std::cout;
-  using std::endl;
-
-  const size_t size = (size_t) (end - begin);
-  out_stream << "BIN" << " ";
-  out_stream << size << " ";
-  cout << "XXX1 " << size << endl;
-
-  if(size > 0) {
-    cout << "DEBUG vector[" << *begin << "]  ";
-    char *ptr = (char *)&*begin;
-    typedef typename Container::value_type value_type;
-    cout << "xxx2 " <<sizeof(value_type) << endl;
-    out_stream.write(ptr, (std::streamsize)size * sizeof(value_type));
-  }
-  out_stream << " ~BIN " << endl;
-}
-
-//--------------------------------------------------------------------------------
-template <typename Container>
-inline void binary_load(std::istream &in_stream, Container &objTo) {
-  std::string label;
-  in_stream >> label;
-  NTA_CHECK(label == "BIN") << "Stream mismatched.";
-  size_t sz;
-  in_stream >> sz;
-
-  using std::cout;
-using std::endl;
-  cout << "YYY1 " << sz << endl;
-
-  if(sz > 0) {    
-    objTo.resize(sz);
-    const auto begin = std::begin(objTo);
-    typedef typename Container::value_type value_type;
-    cout << "YYY2 " << sizeof(value_type) << endl;
-    char* raw = (char*)&*begin;
-    cout << "YYY 3 " << in_stream.tellg() << endl;
-    in_stream.read(raw, (std::streamsize)sz * sizeof(value_type));
-    cout << "YYY 4 " << in_stream.tellg() << endl;
-    NTA_CHECK(objTo.size() == sz);
-  }
-  in_stream >> label;
-  NTA_CHECK(label == "~BIN") << "Stream found " << "'1-" << label << "-2'";
-}
-
 
 //--------------------------------------------------------------------------------
 // STL STREAMING OPERATORS
@@ -104,110 +51,39 @@ using std::endl;
 template <typename T1, typename T2>
 inline std::ostream &operator<<(std::ostream &out_stream,
                                 const std::pair<T1, T2> &p) {
+  out_stream << "PAIR" << " ";
   out_stream << p.first;
   out_stream << p.second;
+  out_stream << "~PAIR ";
   return out_stream;
 }
 
 //--------------------------------------------------------------------------------
 template <typename T1, typename T2>
 inline std::istream &operator>>(std::istream &in_stream, std::pair<T1, T2> &p) {
+  std::string s;
+  in_stream >> s;
+  NTA_CHECK(s == "PAIR");
   in_stream >> p.first >> p.second;
+  in_stream >> s;
+  NTA_CHECK(s == "~PAIR");
   return in_stream;
 }
 
 //--------------------------------------------------------------------------------
 // std::vector
 //--------------------------------------------------------------------------------
-template <typename T, bool> struct vector_loader {
-  inline void load(const size_t, std::istream &, std::vector<T> &);
-};
-
-//--------------------------------------------------------------------------------
-/**
- * Partial specialization of above functor for primitive types.
- */
-template <typename T> struct vector_loader<T, true> {
-  inline void load(const size_t n, std::istream &in_stream, std::vector<T> &v) {
-      for (size_t i = 0; i != n; ++i)  in_stream >> v[i];
-  }
-};
-
-// declartion of >> which is used in the following function. Avoid lookup error
-template <typename T>
-inline std::istream &operator>>(std::istream &in_stream, std::vector<T> &v);
-//--------------------------------------------------------------------------------
-/**
- * Partial specialization for non-primitive types.
- */
-template <typename T> struct vector_loader<T, false> {
-  inline void load(size_t n, std::istream &in_stream, std::vector<T> &v) {
-      binary_load(in_stream, v.cbegin(), v.cend());
-  }
-};
-
-//--------------------------------------------------------------------------------
-/**
- * Factory that will instantiate the right functor to call depending on whether
- * T is a primitive type or not.
- */
-template <typename T>
-inline void vector_load(size_t n, std::istream &in_stream, std::vector<T> &v) {
-  vector_loader<T, std::is_fundamental<T>::value > loader;
-  loader.load(n, in_stream, v);
-}
-
-//--------------------------------------------------------------------------------
-template <typename T, bool> struct vector_saver {
-  inline void save(size_t n, std::ostream &out_stream, const std::vector<T> &v);
-};
-
-//--------------------------------------------------------------------------------
-/**
- * Partial specialization for primitive types.
- */
-template <typename T> struct vector_saver<T, true> {
-  inline void save(size_t n, std::ostream &out_stream,
-                   const std::vector<T> &v) {
-    for (size_t i = 0; i != n; ++i) out_stream << v[i] << ' ';
-  }
-};
-
-// declartion of << which is used in the following function. Avoid lookup error.
-template <typename T>
-inline std::ostream &operator<<(std::ostream &out_stream,
-                                const std::vector<T> &v);
-//--------------------------------------------------------------------------------
-/**
- * Partial specialization for non-primitive types.
- */
-template <typename T> struct vector_saver<T, false> {
-  inline void save(size_t n, std::ostream &out_stream,
-                   const std::vector<T> &v) {
-	  binary_save(out_stream, v.cbegin(), v.cend());
-  }
-};
-
-//--------------------------------------------------------------------------------
-/**
- * Factory that will instantiate the right functor to call depending on whether
- * T is a primitive type or not.
- */
-template <typename T>
-inline void vector_save(size_t n, std::ostream &out_stream,
-                        const std::vector<T> &v) {
-  vector_saver<T, std::is_fundamental<T>::value> saver;
-  saver.save(n, out_stream, v);
-}
 
 //--------------------------------------------------------------------------------
 /**
  * Saves the size of the vector.
  */
 template <typename T>
-inline std::ostream &operator<<(std::ostream &out_stream,
-                                const std::vector<T> &v) {
-  vector_save(v.size(), out_stream, v);
+inline std::ostream &operator<<(std::ostream &out_stream, const std::vector<T> &v) {
+  out_stream << "VECTOR ";
+  out_stream << v.size() << " ";
+  for(const auto& el : v) out_stream << el << " ";
+  out_stream << "~VECTOR ";
   return out_stream;
 }
 
@@ -218,10 +94,15 @@ inline std::ostream &operator<<(std::ostream &out_stream,
  */
 template <typename T>
 inline std::istream &operator>>(std::istream &in_stream, std::vector<T> &v) {
+  std::string s;
+  in_stream >> s;
+  NTA_CHECK(s == "VECTOR");
   size_t n = 0;
   in_stream >> n;
   v.resize(n);
-  vector_load(n, in_stream, v);
+  for(size_t i=0; i< n; i++) in_stream >> v[i];
+  in_stream >> s;
+  NTA_CHECK(s == "~VECTOR");
   return in_stream;
 }
 

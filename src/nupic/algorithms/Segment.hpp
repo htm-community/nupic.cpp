@@ -818,23 +818,20 @@ public:
   //----------------------------------------------------------------------
   inline void save(std::ostream &outStream) const {
     NTA_ASSERT(invariants());
-    outStream << size() << ' ' << _seqSegFlag << ' ' << _frequency << ' '
+    outStream << ' ' << _seqSegFlag << ' ' << _frequency << ' '
               << _nConnected << ' ' << _totalActivations << ' '
               << _positiveActivations << ' ' << _lastActiveIteration << ' '
               << _lastPosDutyCycle << ' ' << _lastPosDutyCycleIteration << ' ';
-    binary_save(outStream, _synapses);  // see StIo.hpp
+    outStream << _synapses;  // see StIo.hpp
     outStream << ' ';
   }
 
   //----------------------------------------------------------------------
   inline void load(std::istream &inStream) {
-    UInt n = 0;
-    inStream >> n >> _seqSegFlag >> _frequency >> _nConnected >>
+    inStream >> _seqSegFlag >> _frequency >> _nConnected >>
         _totalActivations >> _positiveActivations >> _lastActiveIteration >>
         _lastPosDutyCycle >> _lastPosDutyCycleIteration;
-    _synapses.resize(n);
-    inStream.ignore(1);
-    binary_load(inStream, _synapses);  // see StIo.hpp
+    inStream >> _synapses;  // see StIo.hpp
     NTA_ASSERT(invariants());
   }
 
