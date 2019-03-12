@@ -1964,7 +1964,7 @@ void Cells4::save(std::ostream &outStream) const {
   // (these are deque's of vectors of UInt, see StlIo.hpp)
   outStream << "prevInfPatterns [ " << _prevInfPatterns.size() << "\n";
   for(auto v : _prevInfPatterns) {
-    outStream << v " ";
+    outStream << v << " ";
   }
   outStream << "]\n";
 

@@ -1183,8 +1183,8 @@ void BacktrackingTMCpp::printOutput(const Real32 *y, std::ostream &out) const {
 
 //     Print the parameter settings for the TM.
 void BacktrackingTMCpp::printParameters(std::ostream &out) const {
-//!  out << "numberOfCols=", loc_.numberOfCols;
-//!  out << "cellsPerColumn=", loc_.cellsPerColumn; //FIXME some problem with Serializable::<< 
+  out << "numberOfCols=", loc_.numberOfCols;
+  out << "cellsPerColumn=", loc_.cellsPerColumn;
   out << "minThreshold=", cells4_->getMinThreshold();
   out << "newSynapseCount=", cells4_->getNewSynapseCount();
   out << "activationThreshold=", cells4_->getActivationThreshold();
