@@ -27,7 +27,7 @@
 #include <nupic/types/Serializable.hpp>
 
 #include <fstream>
-#include <ostream>
+#include <iostream>
 
 //--------------------------------------------------------------------------------
 
@@ -76,7 +76,7 @@ public:
   inline void print(std::ostream &outStream) const { outStream << this << std::endl; }
 
   //Serializable
-  void save(std::ostream &o) {
+  void save(std::ostream &o) const {
     o << _srcCellIdx << " " << std::setprecision(10) << _permanence << " ";
   }
   void load(std::istream &i) {
@@ -87,13 +87,13 @@ public:
 
 //--------------------------------------------------------------------------------
 
+// serialization/deserialization
+inline std::ostream &operator<<(std::ostream &o, const nupic::algorithms::Cells4::InSynapse &s);
+inline std::istream &operator>>(std::istream &i, nupic::algorithms::Cells4::InSynapse &s);
+
 // end namespace
 } // namespace Cells4
 } // namespace algorithms
-
-// serialization/deserialization
-std::ostream &operator<<(std::ostream &o, const InSynapse &s) { s.save(o); return o;};
-std::istream &operator>>(std::istream &i, InSynapse &s) { s.load(i); return i; }
 } // namespace nupic
 
 #endif // NTA_INSYNAPSE_HPP

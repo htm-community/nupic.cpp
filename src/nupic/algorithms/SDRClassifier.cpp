@@ -365,6 +365,7 @@ void SDRClassifier::load(istream &inStream) {
   inStream >> steps_;
 
   // Load the input pattern history.
+  UInt size;
   inStream >> size;
   UInt vSize;
   for (UInt i = 0; i < size; ++i) {
@@ -379,15 +380,16 @@ void SDRClassifier::load(istream &inStream) {
   UInt numSteps;
   inStream >> numSteps;
   for (UInt s = 0; s < numSteps; ++s) {
+    UInt step;
     inStream >> step;
     // Insert the step to initialize the weight matrix
     auto m = Matrix();
     for (UInt i = 0; i < maxInputIdx_; i++) {
       for (UInt j = 0; j < maxBucketIdx_; j++) {
-	Real64 val;
+	      Real64 val;
         inStream >> val;
-	if(val == 0.0) continue; //load sparse map only
-	m[i][j] = val;
+	      if(val == 0.0) continue; //load sparse map only
+	      m[i][j] = val;
       }
     }
     weightMatrix_[step] = m;

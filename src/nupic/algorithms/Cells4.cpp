@@ -1962,17 +1962,8 @@ void Cells4::save(std::ostream &outStream) const {
 
   // capture the prev states (for backtracking)
   // (these are deque's of vectors of UInt, see StlIo.hpp)
-  outStream << "prevInfPatterns [ " << _prevInfPatterns.size() << "\n";
-  for(auto v : _prevInfPatterns) {
-    outStream << v << " ";
-  }
-  outStream << "]\n";
-
-  outStream << "prevLrnPatterns [ " << _prevLrnPatterns.size() << "\n";
-  for(auto v : _prevLrnPatterns) {
-    outStream <<  v << " ";
-  }
-  outStream << "]\n";
+  nupic::operator<<(outStream, _prevInfPatterns);
+  nupic::operator<<(outStream, _prevLrnPatterns);
 
   outStream << "cellConfidenceT [ " << _nCells << "\n";
   outStream.write((const char*)_cellConfidenceT, _nCells * sizeof(Real));
