@@ -28,17 +28,18 @@
 #include <nupic/algorithms/Segment.hpp>
 #include <set>
 
-using namespace nupic::algorithms::Cells4;
-using namespace std;
+namespace nupic {
+  namespace algorithms {
+    namespace Cells4 {
 
-void setUpSegment(Segment &segment, vector<UInt> &inactiveSegmentIndices,
-                  vector<UInt> &activeSegmentIndices,
-                  vector<UInt> &activeSynapseIndices,
-                  vector<UInt> &inactiveSynapseIndices) {
-  vector<double> permanences = {0.2, 0.9, 0.9, 0.7, 0.4,  // active synapses
+void setUpSegment(Segment &segment, std::vector<UInt> &inactiveSegmentIndices,
+                  std::vector<UInt> &activeSegmentIndices,
+                  std::vector<UInt> &activeSynapseIndices,
+                  std::vector<UInt> &inactiveSynapseIndices) {
+  std::vector<double> permanences = {0.2, 0.9, 0.9, 0.7, 0.4,  // active synapses
                                 0.8, 0.1, 0.2, 0.3, 0.2}; // inactive synapses
 
-  set<UInt> srcCells;
+  std::set<UInt> srcCells;
   for (UInt i = 0; i < permanences.size(); i++) {
     srcCells.clear();
     srcCells.insert(i);
@@ -62,11 +63,11 @@ void setUpSegment(Segment &segment, vector<UInt> &inactiveSegmentIndices,
 TEST(SegmentTest, freeNSynapsesInactiveFirst) {
   Segment segment;
 
-  vector<UInt> inactiveSegmentIndices;
-  vector<UInt> activeSegmentIndices;
-  vector<UInt> activeSynapseIndices;
-  vector<UInt> inactiveSynapseIndices;
-  vector<UInt> removed;
+  std::vector<UInt> inactiveSegmentIndices;
+  std::vector<UInt> activeSegmentIndices;
+  std::vector<UInt> activeSynapseIndices;
+  std::vector<UInt> inactiveSynapseIndices;
+  std::vector<UInt> removed;
 
   setUpSegment(segment, inactiveSegmentIndices, activeSegmentIndices,
                activeSynapseIndices, inactiveSynapseIndices);
@@ -79,7 +80,7 @@ TEST(SegmentTest, freeNSynapsesInactiveFirst) {
 
   ASSERT_EQ(segment.size(), 8ul);
 
-  vector<UInt> removed_expected = {0, 4};
+  std::vector<UInt> removed_expected = {0, 4};
   sort(removed.begin(), removed.end());
   ASSERT_EQ(removed, removed_expected);
 }
@@ -91,12 +92,12 @@ TEST(SegmentTest, freeNSynapsesInactiveFirst) {
 TEST(SegmentTest, freeNSynapsesActiveFallback) {
   Segment segment;
 
-  vector<UInt> inactiveSegmentIndices;
-  vector<UInt> activeSegmentIndices;
+  std::vector<UInt> inactiveSegmentIndices;
+  std::vector<UInt> activeSegmentIndices;
 
-  vector<UInt> activeSynapseIndices;
-  vector<UInt> inactiveSynapseIndices;
-  vector<UInt> removed;
+  std::vector<UInt> activeSynapseIndices;
+  std::vector<UInt> inactiveSynapseIndices;
+  std::vector<UInt> removed;
 
   setUpSegment(segment, inactiveSegmentIndices, activeSegmentIndices,
                activeSynapseIndices, inactiveSynapseIndices);
@@ -107,7 +108,7 @@ TEST(SegmentTest, freeNSynapsesActiveFallback) {
                         activeSynapseIndices, activeSegmentIndices, removed, 0,
                         10, 1.0);
 
-  vector<UInt> removed_expected = {0, 1, 2, 3, 4, 6};
+  std::vector<UInt> removed_expected = {0, 1, 2, 3, 4, 6};
   sort(removed.begin(), removed.end());
   ASSERT_EQ(removed, removed_expected);
 }
@@ -118,12 +119,12 @@ TEST(SegmentTest, freeNSynapsesActiveFallback) {
 TEST(SegmentTest, freeNSynapsesStableSort) {
   Segment segment;
 
-  vector<UInt> inactiveSegmentIndices;
-  vector<UInt> activeSegmentIndices;
+  std::vector<UInt> inactiveSegmentIndices;
+  std::vector<UInt> activeSegmentIndices;
 
-  vector<UInt> activeSynapseIndices;
-  vector<UInt> inactiveSynapseIndices;
-  vector<UInt> removed;
+  std::vector<UInt> activeSynapseIndices;
+  std::vector<UInt> inactiveSynapseIndices;
+  std::vector<UInt> removed;
 
   setUpSegment(segment, inactiveSegmentIndices, activeSegmentIndices,
                activeSynapseIndices, inactiveSynapseIndices);
@@ -134,8 +135,8 @@ TEST(SegmentTest, freeNSynapsesStableSort) {
                         activeSynapseIndices, activeSegmentIndices, removed, 0,
                         10, 1.0);
 
-  vector<UInt> removed_expected = {0, 1, 2, 3, 4, 6, 7};
-  sort(removed.begin(), removed.end());
+  std::vector<UInt> removed_expected = {0, 1, 2, 3, 4, 6, 7};
+  std::sort(removed.begin(), removed.end());
   ASSERT_EQ(removed, removed_expected);
 }
 
@@ -146,10 +147,10 @@ TEST(SegmentTest, testEqualsOperator) {
   Segment segment1;
   Segment segment2;
 
-  vector<UInt> inactiveSegmentIndices;
-  vector<UInt> activeSegmentIndices;
-  vector<UInt> activeSynapseIndices;
-  vector<UInt> inactiveSynapseIndices;
+  std::vector<UInt> inactiveSegmentIndices;
+  std::vector<UInt> activeSegmentIndices;
+  std::vector<UInt> activeSynapseIndices;
+  std::vector<UInt> inactiveSynapseIndices;
 
   setUpSegment(segment1, inactiveSegmentIndices, activeSegmentIndices,
                activeSynapseIndices, inactiveSynapseIndices);
@@ -158,3 +159,8 @@ TEST(SegmentTest, testEqualsOperator) {
                activeSynapseIndices, inactiveSynapseIndices);
   ASSERT_TRUE(segment1 == segment2);
 }
+
+
+} // end namespace Cells4
+} // end namespace algorithms
+} // end namespace nupic

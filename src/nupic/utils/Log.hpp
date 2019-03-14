@@ -28,6 +28,7 @@
 #ifndef NTA_LOG2_HPP
 #define NTA_LOG2_HPP
 
+#include <nupic/types/Types.hpp>
 #include <nupic/utils/LogItem.hpp>
 #include <nupic/utils/LoggingException.hpp>
 

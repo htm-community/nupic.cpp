@@ -29,7 +29,13 @@
  *    std::vector<T>
  *    std::map<K,T>
  *    std::set<T>
+ *    std::deque<T>
+ *    std::list<T>
  *    std::shared_ptr<T>    // no arrays
+ *
+ * Example:
+ *    std::map<std::string, std::vector<shared_ptr<Link>>> linkMap;
+ *    std::cout << linkMap << std::endl;
  *    
  * Rules:
  *   1) The <T> can be any container in the list, any fundamental data
@@ -44,13 +50,14 @@
  *      types described in rules 1, 2, or 3.
  *
  *
- *   About Namespaces:
- *     In general you should have the >> and << operators in the same namespace 
- *     as the class upon which it operates.  Namespace nupic should work in most places.
- *     If you are using the >> or << operators with objects outside of nupic:: 
- *     the normal syntax may not work, i.e. nupic::algorithms::Cells4. So use this syntax:
+ * About Namespaces:
+ *      In general you should have the >> and << operators in the same namespace 
+ *      as the class upon which it operates.  Namespace nupic:: should work in most places.
+ *      If you are using the >> or << operators with objects outside of nupic:: 
+ *      the normal syntax may not work, i.e. nupic::algorithms::Cells4. So use this syntax:
  *          nupic::operator<<(outStream, _prevInfPatterns);
- *     https://stackoverflow.com/questions/5195512/namespaces-and-operator-resolution
+ *          nupic::operator>>(inStream,  _prevInfPatterns);
+ *      https://stackoverflow.com/questions/5195512/namespaces-and-operator-resolution
  *
  */
 
@@ -64,7 +71,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
-
+#include <regex>
 #include <typeinfo>             // for typeId
 #include <iterator>             // for stream_iterator
 #include <nupic/utils/Log.hpp>  // for CHECK( ) and THROW( ) macros
@@ -81,23 +88,35 @@ static size_t getLength(std::istream &in_stream) {
   in_stream >> std::ws;
   char s[20];
   in_stream.getline(s, sizeof(s), '|');
-  NTA_CHECK(in_stream.get() == '|') << " was expecting a '|' as end of a length.";
   return strtoull(s, nullptr, 0);
 }
 
 //--------------------------------------------------------------------------------
 // std::string   (that can include spaces)
-//    len|val
+//    "val" with \ and " characters escaped with \.
 //--------------------------------------------------------------------------------
 // Adds some length syntax to stream so that a string value may contain spaces.
 // Note that we cannot define our own operator>> for std::string
-inline void stringOut(std::ostream &out_stream, std::string str) {
-  out_stream << str.length() << "|" << str;
+// One apparach would be to define a subclass of std::string for which we define
+// a way to serialize it in a way that it can be deserialized even with spaces.
+// However that would require that we use this new string class in all data structures
+// and that is probably not practical.  So instead we try to catch the string type
+// as it is being serialized or deserialized.
+
+inline void stringOut(std::ostream &out_stream, const std::string str) {
+  const std::regex e (R"(([\\"]))");   // matches letters \ and "
+  std::string x = std::regex_replace(str, e, "\\$1");  // excape by adding a \ 
+  out_stream << "\"" << x << "\"";
 }
 inline void stringIn(std::istream &in_stream, std::string& str) {
-  size_t n = getLength(in_stream);
-  std::istream_iterator<char> it(in_stream);
-  std::copy_n(it, n, str.begin());
+  in_stream >> std::ws;  // skip whitespace
+  NTA_CHECK(in_stream.get() == '\"') << " was expecting a '\"' as start of a string.";
+  str.clear();
+  int c;
+  while((c = in_stream.get()) != '\"') {
+    if (c == '\\') c = in_stream.get();
+    str.push_back(c);
+  }
 }
 
 //--------------------------------------------------------------------------------
@@ -105,36 +124,51 @@ inline void stringIn(std::istream &in_stream, std::string& str) {
 //    [len| val val val ...]
 //--------------------------------------------------------------------------------
 // T is the container type, T1 is the type of elements in the container.
+// The third argument is intended to select the right function based on the element 
+// type. We don't actually use it for any computations.
 
 template <typename T, typename T1>
-static void genaric_container(std::ostream &out_stream, const T &v) {
+static void genaric_container(std::ostream &out_stream, const T &v, const std::string &itm) {
+  // handles string elements
   out_stream << "[" << v.size() << "| ";
-  if (typeid(T1) == typeid(std::string))
-    for(const auto& el : v) stringOut(out_stream, el);
-  else
-    for(const auto& el : v) out_stream << el << " ";
+  for(const auto& el : v) stringOut(out_stream, el);
+  out_stream << "]";
+}
+template <typename T, typename T1>
+static void genaric_container(std::ostream &out_stream, const T &v, const T1 &itm) {
+  // handles all non-string elements
+  out_stream << "[" << v.size() << "| ";
+  for(const auto& el : v) out_stream << el << " ";
   out_stream << "]";
 }
 
-
 template <typename T, typename T1>
-static void genaric_container(std::istream &in_stream, T &v) {
+static void genaric_container(std::istream &in_stream, T &v, std::string& itm) {
+  // handles string elements
   in_stream >> std::ws;  // skip whitespace
   NTA_CHECK(in_stream.get() == '[') << " was expecting a '[' as beginning of a container.";
-  size_t n = getLength(in_stream);
+  size_t n = getLength(in_stream); // number of elements to remove from stream.
   in_stream.ignore(1);
   v.clear();
-  if (typeid(T1) == typeid(std::string)) {
-    std::string el;
-    for (size_t i = 0; i < n; i++) {
-      stringIn(in_stream, el); 
-      v.push_back(el);
-    }
+  std::string el;
+  for (size_t i = 0; i < n; i++) {
+    stringIn(in_stream, el); 
+    std::inserter(v, v.end());  // same as push_back but works with set, etc.
   }
-  else {
-    std::istream_iterator<T1> it(in_stream);
-    std::copy_n(it, n, back_inserter(v));
-  }
+  in_stream.ignore(1);
+  NTA_CHECK(in_stream.get() == ']') << " was expecting a ']' as end of a container.";
+}
+
+template <typename T, typename T1>
+static void genaric_container(std::istream &in_stream, T &v, T1 &itm) {
+  // handles non-string elements
+  in_stream >> std::ws;  // skip whitespace
+  NTA_CHECK(in_stream.get() == '[') << " was expecting a '[' as beginning of a container.";
+  size_t n = getLength(in_stream); // number of elements to remove from stream.
+  in_stream.ignore(1);
+  v.clear();
+  std::istream_iterator<T1> it(in_stream);
+  std::copy_n(it, n, inserter(v, v.end()));
   in_stream.ignore(1);
   NTA_CHECK(in_stream.get() == ']') << " was expecting a ']' as end of a container.";
 }
@@ -162,11 +196,11 @@ inline std::istream &operator>>(std::istream &in_stream,  std::shared_ptr<T> &p)
 
 //--------------------------------------------------------------------------------
 // std::pair
-//    value1 : value2
-//    len|strvalue : len|value2
+//    (value1 : value2 )
 //--------------------------------------------------------------------------------
 template <typename T1, typename T2>
 inline std::ostream &operator<<(std::ostream &out_stream, const std::pair<T1, T2> &p) {
+  out_stream << "(";
   if (typeid(T1) == typeid(std::string))
     stringOut(out_stream, p.first);
   else
@@ -176,12 +210,13 @@ inline std::ostream &operator<<(std::ostream &out_stream, const std::pair<T1, T2
     stringOut(out_stream, p.second);
   else
     out_stream << p.second;
-  out_stream << " ";
+  out_stream << " )\n";
   return out_stream;
 }
 
 template <typename T1, typename T2>
 inline std::istream &operator>>(std::istream &in_stream, std::pair<T1, T2> &p) {
+  NTA_CHECK(in_stream.get() == '(') << " was expecting a '(' as beginning of a pair.";
   if (typeid(T1) == typeid(std::string))
     stringIn(in_stream, p.first);
   else
@@ -192,56 +227,15 @@ inline std::istream &operator>>(std::istream &in_stream, std::pair<T1, T2> &p) {
   else
     in_stream >> p.second;
   in_stream.ignore(1);
-  return in_stream;
-}
-
-//--------------------------------------------------------------------------------
-// std::vector
-//     [len| val val val ]
-//--------------------------------------------------------------------------------
-
-template <typename T>
-inline std::ostream &operator<<(std::ostream &out_stream, const std::vector<T> &v) {
-  genaric_container<std::vector<T>, T>(out_stream, v);
-  return out_stream;
-}
-
-template <typename T>
-inline std::istream &operator>>(std::istream &in_stream, std::vector<T> &v) {
-  genaric_container<std::vector<T>, T>(in_stream, v);
-  return in_stream;
-}
-
-
-//--------------------------------------------------------------------------------
-// std::set
-//    [len| val val val ]
-//--------------------------------------------------------------------------------
-template <typename T>
-inline std::ostream &operator<<(std::ostream &out_stream, const std::set<T> &m) {
-  out_stream << "[" << m.size() << "| ";
-  for(const auto& el : m) out_stream << el << " ";
-  out_stream << "]";
-  return out_stream;
-}
-
-template <typename T>
-inline std::istream &operator>>(std::istream &in_stream, std::set<T> &m) {
-  in_stream >> std::ws;
-  NTA_CHECK(in_stream.get() == '[') << " was expecting a '[' as beginning of a set.";
-  size_t n = getLength(in_stream);
+  NTA_CHECK(in_stream.get() == ')') << " was expecting a ')' as ending of a pair.";
   in_stream.ignore(1);
-  m.clear();
-  std::istream_iterator<char> it(in_stream); 
-  std::copy_n(it, n, inserter(m));
-  in_stream.ignore(1);
-  NTA_CHECK(in_stream.get() == ']') << " was expecting a ']' as end of a set.";
   return in_stream;
 }
 
 //--------------------------------------------------------------------------------
 // std::map
 //     {len| pair pair pair }
+//       where pair is (val1 : val2 )
 //--------------------------------------------------------------------------------
 template <typename T1, typename T2>
 inline std::ostream& operator<<(std::ostream& out_stream, const std::map<T1, T2>& m) {
@@ -260,7 +254,7 @@ inline std::istream& operator>>(std::istream& in_stream, std::map<T1, T2>& m)
   size_t n = getLength(in_stream);
   m.clear();
   std::istream_iterator<char> it(in_stream); 
-  std::copy_n(it, n, inserter(m));  // insert each pair
+  std::copy_n(it, n, inserter(m, m.begin()));  // insert each pair
 
   NTA_CHECK(in_stream.get() == '}') << "Expected a closing '}' after map object.";
 
@@ -269,28 +263,59 @@ inline std::istream& operator>>(std::istream& in_stream, std::map<T1, T2>& m)
 
 
 //--------------------------------------------------------------------------------
-// std::deque
-//    [len| val val val ]
+// std::vector
+//     [len| val val val ]
 //--------------------------------------------------------------------------------
+
 template <typename T>
-inline std::ostream &operator<<(std::ostream &out_stream, const std::deque<T> &m) {
-  out_stream << "[" << m.size() << "| ";
-  for(const auto& el : m) out_stream << el << " ";
-  out_stream << "]";
+inline std::ostream &operator<<(std::ostream &out_stream, const std::vector<T> &v) {
+  T e;
+  genaric_container<std::vector<T>, T>(out_stream, v, e);
   return out_stream;
 }
 
 template <typename T>
-inline std::istream &operator>>(std::istream &in_stream, std::deque<T> &m) {
-  in_stream >> std::ws;
-  NTA_CHECK(in_stream.get() == '[') << " was expecting a '[' as beginning of a set.";
-  size_t n = getLength(in_stream);
-  in_stream.ignore(1);
-  m.clear();
-  std::istream_iterator<char> it(in_stream); 
-  std::copy_n(it, n, inserter(m));
-  in_stream.ignore(1);
-  NTA_CHECK(in_stream.get() == ']') << " was expecting a ']' as end of a set.";
+inline std::istream &operator>>(std::istream &in_stream, std::vector<T> &v) {
+  T e;
+  genaric_container<std::vector<T>, T>(in_stream, v, e);
+  return in_stream;
+}
+
+
+//--------------------------------------------------------------------------------
+// std::set
+//    [len| val val val ]
+//--------------------------------------------------------------------------------
+template <typename T>
+inline std::ostream &operator<<(std::ostream &out_stream, const std::set<T> &v) {
+  T e;
+  genaric_container<std::set<T>, T>(out_stream, v, e);
+  return out_stream;
+}
+
+template <typename T>
+inline std::istream &operator>>(std::istream &in_stream, std::set<T> &v) {
+  T e;
+  genaric_container<std::set<T>, T>(in_stream, v, e);
+  return in_stream;
+}
+
+//--------------------------------------------------------------------------------
+// std::deque
+//    [len| val val val ]
+//--------------------------------------------------------------------------------
+
+template <typename T>
+inline std::ostream &operator<<(std::ostream &out_stream, const std::deque<T> &v) {
+  T e;
+  genaric_container<std::deque<T>, T>(out_stream, v, e);
+  return out_stream;
+}
+
+template <typename T>
+inline std::istream &operator>>(std::istream &in_stream, std::deque<T> &v) {
+  T e;
+  genaric_container<std::deque<T>, T>(in_stream, v, e);
   return in_stream;
 }
 
@@ -300,24 +325,16 @@ inline std::istream &operator>>(std::istream &in_stream, std::deque<T> &m) {
 //    [len| val val val ]
 //--------------------------------------------------------------------------------
 template <typename T>
-inline std::ostream &operator<<(std::ostream &out_stream, const std::list<T> &m) {
-  out_stream << "[" << m.size() << "| ";
-  for(const auto& el : m) out_stream << el << " ";
-  out_stream << "]";
+inline std::ostream &operator<<(std::ostream &out_stream, const std::list<T> &v) {
+  T e;
+  genaric_container<std::list<T>, T>(out_stream, v, e);
   return out_stream;
 }
 
 template <typename T>
-inline std::istream &operator>>(std::istream &in_stream, std::list<T> &m) {
-  in_stream >> std::ws;
-  NTA_CHECK(in_stream.get() == '[') << " was expecting a '[' as beginning of a set.";
-  size_t n = getLength(in_stream);
-  in_stream.ignore(1);
-  m.clear();
-  std::istream_iterator<char> it(in_stream); 
-  std::copy_n(it, n, inserter(m));
-  in_stream.ignore(1);
-  NTA_CHECK(in_stream.get() == ']') << " was expecting a ']' as end of a set.";
+inline std::istream &operator>>(std::istream &in_stream, std::list<T> &v) {
+  T e;
+  genaric_container<std::list<T>, T>(in_stream, v, e);
   return in_stream;
 }
 

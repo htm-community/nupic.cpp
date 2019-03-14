@@ -37,8 +37,11 @@
 
 #include <nupic/algorithms/Segment.hpp>
 
-using namespace nupic::algorithms::Cells4;
-
+namespace nupic {
+  namespace algorithms {
+    namespace Cells4 {
+      // Note: we need to put this in the namespace because there are 
+      //       static functions and structures that are being declared.
 //----------------------------------------------------------------------
 /**
  * Utility routine. Given a src cell index, prints synapse as:
@@ -49,6 +52,7 @@ void printSynapse(UInt srcCellIdx, UInt nCellsPerCol) {
   UInt cell = srcCellIdx - col * nCellsPerCol;
   std::cout << "[" << col << "," << cell << "]  ";
 }
+
 
 //----------------------------------------------------------------------
 Segment::Segment(InSynapses _s, Real frequency, bool seqSegFlag,
@@ -429,9 +433,6 @@ void Segment::print(std::ostream &outStream, UInt nCellsPerCol) const {
   outStream << std::endl;
 }
 
-namespace nupic{
-  namespace algorithms {
-    namespace Cells4 {
 
 std::ostream &operator<<(std::ostream &outStream, const Segment &seg) {
   seg.print(outStream);

@@ -79,8 +79,8 @@
 //-----------------------------------------------------------------------
 
 namespace nupic {
-namespace algorithms {
-namespace Cells4 {
+  namespace algorithms {
+    namespace Cells4 {
 
 //-----------------------------------------------------------------------
 /**
@@ -822,7 +822,7 @@ public:
               << _nConnected << ' ' << _totalActivations << ' '
               << _positiveActivations << ' ' << _lastActiveIteration << ' '
               << _lastPosDutyCycle << ' ' << _lastPosDutyCycleIteration << ' ';
-    outStream << _synapses;  // see StIo.hpp
+    nupic::operator<<(outStream,  _synapses);  // see StIo.hpp
     outStream << ' ';
   }
 
@@ -831,7 +831,7 @@ public:
     inStream >> _seqSegFlag >> _frequency >> _nConnected >>
         _totalActivations >> _positiveActivations >> _lastActiveIteration >>
         _lastPosDutyCycle >> _lastPosDutyCycleIteration;
-    inStream >> _synapses;  // see StIo.hpp
+    nupic::operator>>(inStream, _synapses);  // see StIo.hpp
     NTA_ASSERT(invariants());
   }
 

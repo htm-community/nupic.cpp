@@ -32,8 +32,8 @@
 //--------------------------------------------------------------------------------
 
 namespace nupic {
-namespace algorithms {
-namespace Cells4 {
+  namespace algorithms {
+    namespace Cells4 {
 
 //--------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------
@@ -76,20 +76,30 @@ public:
   inline void print(std::ostream &outStream) const { outStream << this << std::endl; }
 
   //Serializable
-  void save(std::ostream &o) const {
-    o << _srcCellIdx << " " << std::setprecision(10) << _permanence << " ";
+  void save(std::ostream &outStream) const {
+    outStream.write((char*)&_srcCellIdx, sizeof(_srcCellIdx));
+    outStream.write((char*)&_permanence, sizeof(_permanence));
   }
-  void load(std::istream &i) {
-    i >> _srcCellIdx >> _permanence;
+  void load(std::istream &inStream) {
+    inStream.read((char*)&_srcCellIdx, sizeof(_srcCellIdx));
+    inStream.read((char*)&_permanence, sizeof(_permanence));
   }
-
+  friend std::ostream &operator<<(std::ostream &outStream, const InSynapse &s);
+  friend std::istream &operator>>(std::istream &inStream, InSynapse &s);
 };
 
 //--------------------------------------------------------------------------------
 
 // serialization/deserialization
-inline std::ostream &operator<<(std::ostream &o, const nupic::algorithms::Cells4::InSynapse &s);
-inline std::istream &operator>>(std::istream &i, nupic::algorithms::Cells4::InSynapse &s);
+inline std::ostream &operator<<(std::ostream &outStream, const InSynapse &s){
+  outStream << s._srcCellIdx << " " << std::setprecision(10) << s._permanence << " ";
+  return outStream;
+}
+inline std::istream &operator>>(std::istream &inStream, InSynapse &s){
+  inStream >> s._srcCellIdx >> s._permanence;
+  inStream.ignore(1);
+  return inStream;
+}
 
 // end namespace
 } // namespace Cells4

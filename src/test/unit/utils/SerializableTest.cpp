@@ -22,53 +22,80 @@
 
 
 #include <gtest/gtest.h>
+
 #include <nupic/types/Types.hpp>
 #include <nupic/types/Serializable.hpp>
 #include <nupic/utils/StlIo.hpp>
+#include <nupic/utils/Random.hpp>
 #include <sstream>
 
 using namespace nupic;
 
 
 
-TEST(SerializableSTLTest, string_save)
+TEST(SerializableTest, string_serialize)
 {
   std::stringstream ss;
-  std::string orig = " This is a string ";
+  std::string orig = " This\\\" \"is a \\string ";
   std::string result;
-  std::string expected = "18| This is a string ";
+  std::string expected = "\" This\\\\\\\" \\\"is a \\\\string \"";
   stringOut(ss, orig);
   result = ss.str();
-  EXPECT_EQ(result, expected);
+  EXPECT_TRUE(result == expected);
 
   ss.seekp(0);
   stringIn(ss, result);
-  EXPECT_EQ(result, orig);
+  EXPECT_TRUE(result == orig);
 }
 
-TEST(SerializableSTLTest, vector_save) 
+
+
+TEST(SerializableTest, shared_ptr_serialize) 
+{
+  // We pick on Random because its an easy class to use.
+  std::shared_ptr<Random> sp1, sp2;
+  Random *rnd = new Random(42);
+  sp1.reset(rnd);
+
+  std::stringstream ss;
+  ss << sp1 << std::endl;
+	
+  std::string expected = "random-v2 42 0 endrandom-v2 \n";
+	EXPECT_TRUE(ss.str() == expected);
+	
+	ss.seekp(0); // rewind
+  ss >> sp2;
+  EXPECT_TRUE(*sp1.get() == *sp2.get());
+}
+
+TEST(SerializableTest, vector_serialize) 
 {
   const std::vector<UInt> v = {1,2,3};
   std::stringstream ss;
    ss << "Vector " << v << std::endl;
 	
-  std::string expected = " ";
-	EXPECT_EQ(ss.str(), expected);
+  std::string expected = "Vector [3| 1 2 3 ]\n";
+	EXPECT_TRUE(ss.str() == expected);
 	
 	ss.seekp(0); // rewind
   std::vector<UInt> v2;
+  std::string tag;
+  ss >> tag;  // "Vector"
   ss >> v2;
-  EXPECT_EQ(v, v2);
+  EXPECT_TRUE(v == v2);
 }
-
-/****
 
 
 class Dummy : public Serializable {
   public:	
   int i = 3;
   std::vector<int> v = {1, 2, 3};
-	std::map<std::string, std::vector<int>> m = {
+	std::map<std::string, int> m = {
+				{"first",  1}, 
+				{"second", 2}, 
+				{"third",  3}
+	  };
+	std::map<std::string, std::vector<int>> mv = {
 				{"first",  { 1, 1, 15}}, 
 				{"second", { 2, 2, 25}}, 
 				{"third",  { 3, 3, 35}}
@@ -79,7 +106,8 @@ class Dummy : public Serializable {
     o << "DUMMY ";
     o << i << " ";
     o << v << " ";
-		o << m << " ";
+		//o << m << " ";
+		//o << mv << " ";
     o << "~DUMMY";
   }
 
@@ -89,24 +117,47 @@ class Dummy : public Serializable {
     ASSERT_EQ(label, "DUMMY");
     in >> i;
 		in >> v;
-		in >> m;
+		//in >> m;
+		//in >> mv;
     in >> label;
     ASSERT_EQ(label, "~DUMMY");
   }
-};
 
-TEST(SerializableSTLTest, demo)
+};
+// serialization/deserialization
+std::ostream &operator<<(std::ostream &f, const Dummy &demo) {
+  //f << demo.i << " " << demo.v << " " << demo.m << " " demo.mv << std::endl;
+  f << demo.i << " " << demo.v << std::endl;
+  return f;
+}
+std::istream &operator>>(std::istream &f, Dummy &demo) {
+  //f >> demo.i >> demo.v >> demo.m >> demo.mv;
+  f >> demo.i >> demo.v;
+  return f;
+}
+
+TEST(SerializableTest, demo)
 {
-  Dummy demo;
+  Dummy demo1;
   std::stringstream ss;
-  demo.save(ss);
+  demo1.save(ss);
   Dummy demo2;
   demo2.i = 5; //manualy change, to have a difference
   demo2.v = {8, 9, 10, 234};
   demo2.load(ss);
-  ASSERT_EQ(demo.i, demo2.i);
-  ASSERT_EQ(demo.v, demo2.v);
-  ASSERT_EQ(demo.m, demo2.m);
+  ASSERT_EQ(demo1.i, demo2.i);
+  ASSERT_EQ(demo1.v, demo2.v);
+  //ASSERT_EQ(demo1.m, demo2.m);
+
+  Dummy demo3;
+  ss.seekg(0);
+  ss << demo3;
+  ss.flush();
+
+  Dummy demo4;
+  ss >> demo4;
+  ASSERT_EQ(demo3.i, demo4.i);
+  ASSERT_EQ(demo3.v, demo4.v);
+  //ASSERT_EQ(demo3.m, demo4.m);
 }
-****/
 

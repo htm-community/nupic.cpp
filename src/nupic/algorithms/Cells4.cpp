@@ -1962,8 +1962,21 @@ void Cells4::save(std::ostream &outStream) const {
 
   // capture the prev states (for backtracking)
   // (these are deque's of vectors of UInt, see StlIo.hpp)
-  nupic::operator<<(outStream, _prevInfPatterns);
-  nupic::operator<<(outStream, _prevLrnPatterns);
+  outStream << "prevInfPatterns [ " << _prevInfPatterns.size() << "\n";
+  for(auto v : _prevInfPatterns) {
+    outStream << v.size() << " ";
+    nupic::operator<<(outStream,v);
+    outStream << "\n";
+  }
+  outStream << "]\n";
+
+  outStream << "prevLrnPatterns [ " << _prevLrnPatterns.size() << "\n";
+  for(auto v : _prevLrnPatterns) {
+    outStream << v.size() << " ";
+    nupic::operator<<(outStream, v);
+    outStream << "\n";
+  }
+  outStream << "]\n";
 
   outStream << "cellConfidenceT [ " << _nCells << "\n";
   outStream.write((const char*)_cellConfidenceT, _nCells * sizeof(Real));
@@ -2111,8 +2124,11 @@ void Cells4::load(std::istream &inStream) {
   NTA_CHECK(tag == "[");
   inStream >> len;
   for (size_t i = 0; i < len; i++) {
+    size_t count;
+    inStream >> count;
+    inStream.ignore(1);
     std::vector<UInt> vec;
-    inStream >> vec;
+		nupic::operator>>(inStream,vec);
     _prevInfPatterns.push_back(vec);
   }
   inStream >> tag;
@@ -2125,8 +2141,11 @@ void Cells4::load(std::istream &inStream) {
   NTA_CHECK(tag == "[");
   inStream >> len;
   for (size_t i = 0; i < len; i++) {
-    std::vector<UInt> vec;
-    inStream >>  vec;
+    size_t count;
+    inStream >> count;
+    inStream.ignore(1);
+    std::vector<UInt> vec(count);
+    nupic::operator>>(inStream,vec);
     _prevLrnPatterns.push_back(vec);
   }
   inStream >> tag;
