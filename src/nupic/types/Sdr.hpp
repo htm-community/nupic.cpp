@@ -506,6 +506,23 @@ public:
      */
     void load(std::istream &inStream) override;
 
+
+    // New serialization library **Cereal**.
+    // Do NOT call this externally!  Instead use methods save/load.
+    template<class Archive>
+    void save_ar(Archive & archive) const
+    {
+        archive( dimensions, getSparse() );
+    }
+
+    template<class Archive>
+    void load_ar(Archive & archive)
+    {
+        archive( dimensions_, sparse_ );
+        initialize( dimensions_ );
+        setSparseInplace();
+    }
+
     /**
      * Callbacks notify you when this SDR's value changes.
      *

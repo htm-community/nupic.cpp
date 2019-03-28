@@ -347,67 +347,13 @@ namespace sdr {
 
 
     void SparseDistributedRepresentation::save(std::ostream &outStream) const {
-
-        auto writeVector = [&outStream] (const vector<UInt> &vec) {
-            outStream << vec.size() << " ";
-            for( auto elem : vec ) {
-                outStream << elem << " ";
-            }
-            outStream << endl;
-        };
-
-        // Write a starting marker and version.
-        outStream << "SDR " << SERIALIZE_VERSION << " " << endl;
-
-        // Store the dimensions.
-        writeVector( dimensions );
-
-        // Store the data in the flat-sparse format.
-        writeVector( getSparse() );
-
-        outStream << "~SDR" << endl;
+        cereal::BinaryOutputArchive archive( outStream );
+        archive( *this );
     }
 
     void SparseDistributedRepresentation::load(std::istream &inStream) {
-
-        auto readVector = [&inStream] (vector<UInt> &vec) { //TODO add to Serializable
-            vec.clear();
-            UInt size;
-            inStream >> size;
-            vec.reserve( size );
-            for( UInt i = 0; i < size; ++i ) {
-                UInt elem;
-                inStream >> elem;
-                vec.push_back( elem );
-            }
-        };
-
-        // Read the starting marker and version.
-        string marker;
-        UInt version;
-        inStream >> marker >> version;
-        NTA_CHECK( marker == "SDR" );
-        NTA_CHECK( version == SERIALIZE_VERSION );
-
-        // Read the dimensions.
-        readVector( dimensions_ );
-
-        // Initialize the SDR.
-        // Calculate the SDR's size.
-        size_ = 1;
-        for(UInt dim : dimensions)
-            size_ *= dim;
-        // Initialize sparse tuple.
-        coordinates_.assign( dimensions.size(), {} );
-
-        // Read the data.
-        readVector( sparse_ );
-        setSparseInplace();
-
-        // Consume the end marker.
-        inStream >> marker;
-        NTA_CHECK( marker == "~SDR" );
-        inStream.ignore(1);  // skip past endl.
+        cereal::BinaryInputArchive archive( inStream );
+        archive( *this );
     }
 
 

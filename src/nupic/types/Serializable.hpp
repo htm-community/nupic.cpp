@@ -17,8 +17,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  *
  * http://numenta.org/licenses/
- * ----------------------------------------------------------------------
- */
+ * ---------------------------------------------------------------------- */
 
 /** @file
  * Definitions for the base Serializable class in C++
@@ -37,7 +36,15 @@
 #include <nupic/os/Path.hpp>
 #include <nupic/os/ImportFilesystem.hpp>
 
-#define SERIALIZABLE_VERSION 1
+#define CEREAL_SAVE_FUNCTION_NAME save_ar
+#define CEREAL_LOAD_FUNCTION_NAME load_ar
+#include <cereal/cereal.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/types/memory.hpp>
+#include <cereal/types/vector.hpp>
+
+#define SERIALIZABLE_VERSION 3
+
 
 namespace nupic {
 
@@ -51,13 +58,15 @@ public:
   virtual inline int getSerializableVersion() const { return SERIALIZABLE_VERSION; }
 
   virtual inline void saveToFile(std::string filePath) const {
-      std::string dirPath = Path::getParent(filePath);
+    std::string dirPath = Path::getParent(filePath);
 	  Directory::create(dirPath, true, true);
 	  std::ofstream out(filePath, std::ios_base::out | std::ios_base::binary);
 	  out.exceptions(std::ofstream::failbit | std::ofstream::badbit);
 	  out.precision(std::numeric_limits<double>::digits10 + 1);
 	  out.precision(std::numeric_limits<float>::digits10 + 1);
 	  save(out);
+		//cereal::BinaryOutputArchive archive( out );
+		//save_ar(archive);
 	  out.close();
   }
 
@@ -65,6 +74,8 @@ public:
     std::ifstream in(filePath, std::ios_base::in | std::ios_base::binary);
     in.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     load(in);
+		//cereal::BinaryInputArchive archive( in );
+		//load_ar(archive);
     in.close();
   }
 
@@ -75,8 +86,5 @@ public:
   virtual ~Serializable() {}
 };
 
-} // end namespace nupic
-
-
-#endif // NTA_SERIALIZABLE_HPP
-
+}      // End namespace nupic
+#endif // End ifndef NTA_SERIALIZABLE_HPP
