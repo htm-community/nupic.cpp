@@ -2012,15 +2012,8 @@ TEST(SpatialPoolerTest, testConstructorVsInitialize) {
 }
 
 TEST(SpatialPoolerTest, ExactOutput) {
-  string gold =
-    "SDR 1 "
-    "1 200 "
-    "10 190 172 23 118 178 129 113 71 185 182 "
-    "~SDR"; // This is all one string.
-
-  stringstream gold_stream( gold );
-  SDR gold_sdr;
-  gold_sdr.load( gold_stream );
+  SDR gold({ 200 });
+  gold.setSparse(vector<UInt>{190, 172, 23, 118, 178, 129, 113, 71, 185, 182});
 
   SDR inputs({ 1000 });
   SDR columns({ 200 });
@@ -2047,7 +2040,7 @@ TEST(SpatialPoolerTest, ExactOutput) {
     sp.compute(inputs, true, columns);
   }
   cerr << "OUTPUT SDR:" << endl; columns.save( cerr ); cerr << endl;
-  ASSERT_TRUE( columns == gold_sdr );
+  ASSERT_TRUE( columns == gold );
 }
 
 } // end anonymous namespace
