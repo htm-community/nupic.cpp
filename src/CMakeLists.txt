@@ -196,7 +196,6 @@ set(regions_files
 set(types_files
     nupic/types/BasicType.cpp
     nupic/types/BasicType.hpp
-    nupic/types/c_array.hpp
     nupic/types/ClassifierResult.cpp
     nupic/types/ClassifierResult.hpp
     nupic/types/Exception.hpp
