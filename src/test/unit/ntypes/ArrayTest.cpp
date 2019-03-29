@@ -39,7 +39,7 @@
 
 namespace testing {
     
-static bool verbose = true;
+static bool verbose = false;
 #define VERBOSE if(verbose) std::cerr << "[          ]"
 #define UNUSED(x) (void)(x)
 
@@ -650,6 +650,8 @@ TEST_F(ArrayTest, testArrayBaseSerialization) {
     if (testCase->second.testUsesInvalidParameters) {
       continue;
     }
+    if (testCase->second.dataType == NTA_BasicType_SDR) continue;  // SDR not serializable yet
+
     VERBOSE << "  Iteration " << testCase->first << " element size: " << testCase->second.dataTypeSize << std::endl;
 
     // constructors;  Allocate and populate an array using the test data.
