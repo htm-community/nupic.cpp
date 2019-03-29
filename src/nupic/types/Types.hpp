@@ -162,7 +162,7 @@ typedef enum NTA_BasicType {
   /**
    * Represents a 8-bit byte.
    */
-  NTA_BasicType_Byte,
+  NTA_BasicType_Byte = 0,
 
   /**
    * Represents a 16-bit signed integer.

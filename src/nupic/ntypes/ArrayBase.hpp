@@ -41,12 +41,13 @@
 #include <iostream> // for ostream, istream
 #include <string>
 #include <memory>	// for shared_ptr
+#include <vector>
 
 #include <nupic/types/Serializable.hpp>
-#include <nupic/types/c_array.hpp>
 
 #include <nupic/types/Types.hpp>
 #include <nupic/types/Sdr.hpp>
+#include <cereal/types/vector.hpp>
 
 
 
@@ -136,15 +137,7 @@ namespace nupic
      */
     size_t getCount() const;
 
-    /**
-     * max number of elements this buffer can hold (capacity)
-     */
-	  size_t getMaxElementsCount() const;
 
-	  /**
-     * Returns the allocated buffer size in bytes independent of array length
-     */
-    size_t getBufferSize() const;
 
     /**
      * Returns true if the buffer is allocated a size > 0.  A capacity == 0 could
@@ -167,7 +160,7 @@ namespace nupic
      * Set the number of elements.  This is used to truncate the array.
      * For NTA_BasicTypeSparse, this sets the current length of the sparse array.
      */
-    void setCount(size_t count);
+    //void setCount(size_t count);
 
     /**
      * Return the type of data contained in the ArrayBase object.
@@ -196,24 +189,37 @@ namespace nupic
     void save(std::ostream &outStream) const override;
     void load(std::istream &inStream) override;
 
-    // FOR Serialization
+    // FOR Cereal Serialization
     template<class Archive>
     void save_ar(Archive& ar) const {
+      ar(cereal::make_nvp("type", std::string(BasicType::getName(getType()))));
       if (type_ == NTA_BasicType_SDR) {
-      //  ar(cereal::make_nvp("type", std::string(BasicType::getName(getType()))), 
-      //     cereal::make_nvp("SDR", getSDR()));
+      //  ar(cereal::make_nvp("SDR", getSDR()));
       }
       else {
-        ar(cereal::make_nvp("type", std::string(BasicType::getName(type_))),
-           cereal::make_nvp("data", cereal::make_size_tag(count_)));
-        save_c_array(ar, type_, buffer_.get(), count_); 
+        const void* ptr = getBuffer();
+        size_t count = getCount();
+        switch (type_) {
+        case NTA_BasicType_Byte:  save_array(ar, (Byte*)ptr,   count); break;
+	      case NTA_BasicType_Int16: save_array(ar, (Int16*)ptr,  count); break;
+	      case NTA_BasicType_UInt16:save_array(ar, (UInt16*)ptr, count); break;
+	      case NTA_BasicType_Int32: save_array(ar, (Int32*)ptr,  count); break;
+	      case NTA_BasicType_UInt32:save_array(ar, (UInt32*)ptr, count); break;
+	      case NTA_BasicType_Int64: save_array(ar, (Int64*)ptr,  count); break;
+	      case NTA_BasicType_UInt64:save_array(ar, (UInt64*)ptr, count); break;
+	      case NTA_BasicType_Real32:save_array(ar, (Real32*)ptr, count); break;
+	      case NTA_BasicType_Real64:save_array(ar, (Real64*)ptr, count); break;
+	      case NTA_BasicType_Bool:  save_array(ar, (bool*)ptr,   count); break;
+	      default:
+	        NTA_THROW << "Unexpected Element Type: " << type_;
+	        break;
+	      }
       }
     }
 
-    // FOR Deserialization
+    // FOR Cereal Deserialization
     template<class Archive>
     void load_ar(Archive& ar) {
-      size_t count;
       std::string name;
       ar(cereal::make_nvp("type", name));
       type_ = BasicType::parse(name);
@@ -225,10 +231,26 @@ namespace nupic
       //  count_ = sdr2->size;
       //  capacity_ = count_;
       } else {
-        ar(cereal::make_nvp("data", cereal::make_size_tag(count)));
-        load_c_array(ar, type_, allocateBuffer(count), count);
+        void* ptr = getBuffer();
+        size_t count = getCount();
+	      switch (type_) {
+        case NTA_BasicType_Byte:  load_array(ar, (Byte*)ptr,   count); break;
+	      case NTA_BasicType_Int16: load_array(ar, (Int16*)ptr,  count); break;
+	      case NTA_BasicType_UInt16:load_array(ar, (UInt16*)ptr, count); break;
+	      case NTA_BasicType_Int32: load_array(ar, (Int32*)ptr,  count); break;
+	      case NTA_BasicType_UInt32:load_array(ar, (UInt32*)ptr, count); break;
+	      case NTA_BasicType_Int64: load_array(ar, (Int64*)ptr,  count); break;
+	      case NTA_BasicType_UInt64:load_array(ar, (UInt64*)ptr, count); break;
+	      case NTA_BasicType_Real32:load_array(ar, (Real32*)ptr, count); break;
+	      case NTA_BasicType_Real64:load_array(ar, (Real64*)ptr, count); break;
+	      case NTA_BasicType_Bool:  load_array(ar, (bool*)ptr,   count); break;
+	      default:
+	        NTA_THROW << "Unexpected Element Type: " << type_;
+	        break;
+	      }
       }
     } 
+
 
     // ascii text representation
     //    [ type count ( item item item ...) ... ]
@@ -240,15 +262,26 @@ namespace nupic
     // cast to/from void* as necessary
     std::shared_ptr<char> buffer_;
     size_t count_;      // number of elements in the buffer
-    size_t capacity_;   // size of the allocated buffer in bytes
     NTA_BasicType type_;// type of data in this buffer
-    bool own_;
 
     // Buffer array conversion routines
     void convertInto(ArrayBase &a, size_t offset=0, size_t maxsize=0) const;
 
-
   private:
+    // helpers for Cereal Serialization
+    template<class Archive, class T>
+    void save_array(Archive& ar, T* ptr, size_t count) const {
+      std::vector<T> a(ptr, ptr+count); 
+      ar(cereal::make_nvp("data", a));
+    }
+
+    template<class Archive, class T>
+    void load_array(Archive& ar, T* ptr, size_t count) {
+      std::vector<T> a;
+      ar(a);   
+      allocateBuffer(a.size()); 
+      std::copy(a.begin(), a.end(), (T*)getBuffer());
+    }
 
   };
 

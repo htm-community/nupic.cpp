@@ -28,6 +28,7 @@
 //#include <iomanip>  // for std::setprecision
 #include <cstring>  // for memcpy, memcmp
 #include <stdlib.h> // for size_t
+#include <vector>
 
 #include <nupic/ntypes/ArrayBase.hpp>
 #include <nupic/types/BasicType.hpp>
@@ -79,7 +80,6 @@ ArrayBase::ArrayBase(NTA_BasicType type) {
               << " used in array constructor";
   }
   type_ = type;
-  own_ = true;
   releaseBuffer();
 }
 
@@ -102,16 +102,14 @@ char *ArrayBase::allocateBuffer(size_t count) {
   // disambiguate uninitialized ArrayBases and ArrayBases initialized with
   // size zero.
   count_ = count;
-  capacity_ = count_ * BasicType::getSize(type_);
   if (type_ == NTA_BasicType_SDR) {
     std::vector<UInt> dimension;
     dimension.push_back((UInt)count);
     allocateBuffer(dimension);
   } else {
-    std::shared_ptr<char> sp(new char[capacity_],
+    std::shared_ptr<char> sp(new char[count_ * BasicType::getSize(type_)],
                              std::default_delete<char[]>());
     buffer_ = sp;
-    own_ = true;
   }
   return buffer_.get();
 }
@@ -121,9 +119,7 @@ char *ArrayBase::allocateBuffer( const std::vector<UInt>& dimensions) { // only 
   SDR *sdr = new SDR(dimensions);
   std::shared_ptr<char> sp((char *)(sdr));
   buffer_ = sp;
-  own_ = true;
   count_ = sdr->size;
-  capacity_ = count_ * sizeof(Byte);
   return buffer_.get();
 }
 
@@ -135,7 +131,7 @@ void ArrayBase::zeroBuffer() {
     if (type_ == NTA_BasicType_SDR) {
         getSDR().zero();
     } else
-      std::memset(buffer_.get(), 0, capacity_);
+      std::memset(buffer_.get(), 0, count_ * BasicType::getSize(type_));
   }
 }
 
@@ -152,16 +148,12 @@ void ArrayBase::zeroBuffer() {
 void ArrayBase::setBuffer(void *buffer, size_t count) {
   NTA_CHECK(type_ != NTA_BasicType_SDR);
   count_ = count;
-  capacity_ = count * BasicType::getSize(type_);
   buffer_ = std::shared_ptr<char>((char *)buffer, nonDeleter());
-  own_ = false;
 }
 void ArrayBase::setBuffer(SDR &sdr) {
   type_ = NTA_BasicType_SDR;
   buffer_ = std::shared_ptr<char>((char *)&sdr, nonDeleter());
   count_ = sdr.size;
-  capacity_ = count_ * BasicType::getSize(type_);
-  own_ = false;
 }
 
 
@@ -169,7 +161,6 @@ void ArrayBase::setBuffer(SDR &sdr) {
 void ArrayBase::releaseBuffer() {
   buffer_.reset();
   count_ = 0;
-  capacity_ = 0;
 }
 
 void *ArrayBase::getBuffer() {
@@ -213,15 +204,6 @@ const SDR& ArrayBase::getSDR() const {
   return sdr;
 }
 
-/**
- * Actual size in bytes of the space allocated for the buffer.
- */
-size_t ArrayBase::getBufferSize() const {
-  if (has_buffer() && type_ == NTA_BasicType_SDR) {
-    return getSDR().size;
-  }
-  return capacity_;
-}
 
 /**
  * number of elements of the given type in the buffer.
@@ -233,24 +215,11 @@ size_t ArrayBase::getCount() const {
   return count_;
 };
 
-/**
- * max number of elements this buffer can hold.
- * We use this to determine if there is extra space in the buffer
- * to hold the new data so we can avoid having to re-allocate.
- */
-size_t ArrayBase::getMaxElementsCount() const {
-  if (has_buffer()) {
-    if (type_ == NTA_BasicType_SDR)
-      return getCount();
-    return capacity_ / BasicType::getSize(type_);
-  } else
-    return 0;
-};
 
 /**
  * This can be used to truncate an array to a smaller size.
  * Not usable with an SDR.
- */
+ * /
 void ArrayBase::setCount(size_t count) {
   NTA_CHECK(type_ != NTA_BasicType_SDR) << "Operation not valid for SDR";
   NTA_ASSERT(count <= getMaxElementsCount())
@@ -258,6 +227,7 @@ void ArrayBase::setCount(size_t count) {
       << ") greater than the capacity (" << getMaxElementsCount() << ").";
   count_ = count;
 }
+***/
 
 /**
  * Return the NTA_BasicType of the current contents.
@@ -293,15 +263,15 @@ bool ArrayBase::has_buffer() const { return (buffer_.get() != nullptr); }
 void ArrayBase::convertInto(ArrayBase &a, size_t offset, size_t maxsize) const {
   if (maxsize == 0)
     maxsize = getCount() + offset;
-  if (maxsize > a.getMaxElementsCount()) {
+  if (maxsize > a.getCount()) {
     a.allocateBuffer(maxsize);
     a.zeroBuffer();
   }
-  if (offset == 0) {
+  //if (offset == 0) {
     // This could be the first buffer of a Fan-In set.
-    if (a.getCount() != maxsize)
-      a.setCount(maxsize);
-  }
+  //  if (a.getCount() != maxsize)
+  //    a.setCount(maxsize);
+  //}
   NTA_CHECK(getCount() + offset <= maxsize);
   char *toPtr =  (char *)a.getBuffer(); // char* so it has size
   if (offset)
@@ -402,11 +372,10 @@ void ArrayBase::load(std::istream &inStream) {
     std::shared_ptr<char> sp((char *)(sdr));
     buffer_ = sp;
     count_ = sdr->size;
-    capacity_ = sdr->size;
   } else {
     allocateBuffer(count);
     inStream.ignore(1);
-    inStream.read(buffer_.get(), capacity_);
+    inStream.read(buffer_.get(), count_ * BasicType::getSize(type_));
   }
   NTA_CHECK(inStream.get() == ']')
       << "Binary load of Array, expected ending ']'.";
@@ -579,5 +548,6 @@ std::istream &operator>>(std::istream &inStream, ArrayBase &a) {
 
   return inStream;
 }
+
 
 } // namespace nupic

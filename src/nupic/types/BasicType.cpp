@@ -690,6 +690,3 @@ void BasicType::convertArray(void *ptr1, NTA_BasicType toType, const void *ptr2,
               << " to " << BasicType::getName(toType) << " " << e.what();
   }
 }
-
-
-

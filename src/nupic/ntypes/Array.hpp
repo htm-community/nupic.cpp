@@ -282,7 +282,7 @@ public:
     */
   Array get_as(NTA_BasicType type) const {
     Array a(type);
-    a.allocateBuffer(getMaxElementsCount());
+    a.allocateBuffer(getCount());
     a.zeroBuffer();
     convertInto(a);
     return a;
@@ -319,9 +319,12 @@ public:
   }
 
 };
+
 } // namespace nupic
 
 CEREAL_REGISTER_TYPE(nupic::Array)
 CEREAL_REGISTER_POLYMORPHIC_RELATION(nupic::ArrayBase, nupic::Array)
+
+
 
 #endif

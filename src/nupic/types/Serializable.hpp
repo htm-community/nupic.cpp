@@ -85,7 +85,7 @@ public:
   virtual void load(std::istream &stream) = 0;
 	
 	//template <class Archive>
-	//void save_ar(Archive& ar) const { };    // TODO: convert to =0 after all are written.
+	//void save_ar(Archive& ar) const { };  
 	//template <class Archive>
 	//void load_ar(Archive& ar) { };
 	

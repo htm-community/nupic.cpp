@@ -588,23 +588,11 @@ TEST_F(ArrayTest, testArrayBasefunctions) {
     //std::cerr << "ArrayTest:testArrayBasefunctions a=" << a << std::endl;
     nCols = testdata.size();
 
-    // getMaxElementsCount, getCount, setCount, copy
-    if (testCase->second.dataType != NTA_BasicType_SDR) {
-      // SDR cannot do a truncate of data keeping capacity fixed.
-      // For everyone else, remove the last element.
-      size_t buffer_cnt = a.getCount();
-      c = a.copy();
-      c.setCount(buffer_cnt - 1);
-      EXPECT_EQ(c.getMaxElementsCount(), buffer_cnt);
-      EXPECT_EQ(c.getCount(), buffer_cnt - 1);
-    }
     
     c = a; // shallow copy
     EXPECT_EQ(c.getCount(), a.getCount());
     EXPECT_TRUE(c.getBuffer() == a.getBuffer());
     EXPECT_EQ(a.getCount(), nCols);
-    EXPECT_EQ(a.getMaxElementsCount(), nCols);
-    EXPECT_EQ(a.getBufferSize(), nCols * testCase->second.dataTypeSize );
 
 
     if (testCase->second.dataType == NTA_BasicType_SDR) {
@@ -662,7 +650,7 @@ TEST_F(ArrayTest, testArrayBaseSerialization) {
     if (testCase->second.testUsesInvalidParameters) {
       continue;
     }
-    VERBOSE << "  Iteration " << testCase->first << std::endl;
+    VERBOSE << "  Iteration " << testCase->first << " element size: " << testCase->second.dataTypeSize << std::endl;
 
     // constructors;  Allocate and populate an array using the test data.
     Array a(testCase->second.dataType);
@@ -674,6 +662,7 @@ TEST_F(ArrayTest, testArrayBaseSerialization) {
       cereal::BinaryOutputArchive binaryOut_ar(ss); // Create an output archive
       a.save_ar(binaryOut_ar);
     } //flush when archive goes out of scope
+    VERBOSE << "  binary size: " << ss.str().length() << std::endl;
     ss.seekg(0);  // rewind
     Array b;
     {
@@ -690,6 +679,7 @@ TEST_F(ArrayTest, testArrayBaseSerialization) {
       cereal::JSONOutputArchive jsonOut_ar(ss); // Create an output archive
       a.save_ar(jsonOut_ar);
     } // flush
+    VERBOSE << ss.str() << std::endl;
     ss.seekg(0);  // rewind
     {
       cereal::JSONInputArchive jsonIn_ar(ss);  // Create an input archive

@@ -77,7 +77,6 @@ public:
                       NTA_BasicType fromType, size_t count);
 
 
-
 private:
   BasicType();
   BasicType(const BasicType &);
@@ -85,8 +84,6 @@ private:
 
 
 };
-
-
 } // namespace nupic
 
 #endif
