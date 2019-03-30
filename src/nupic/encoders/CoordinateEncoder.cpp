@@ -41,12 +41,12 @@ void CoordinateEncoder::initialize( const CoordinateEncoderParameters &parameter
   BaseEncoder<const vector<Real64> &>::initialize({ parameters.size });
   args_ = parameters;
   // Fill in remaining parameters.
-  args_.activeBits = rdse.activeBits;
-  args_.sparsity   = rdse.sparsity;
-  args_.seed       = rdse.seed;
+  args_.activeBits = rdse.parameters.activeBits;
+  args_.sparsity   = rdse.parameters.sparsity;
+  args_.seed       = rdse.parameters.seed;
   // args_.resolution = TODO
   // args_.radius = (Real64) 2.0f * radius / maxExtent;
-  assert(args_.radius == 0.0f); // For now disable.
+  NTA_CHECK(args_.radius == 0.0f); // For now disable.
 
   // TODO: EXPLAIN what this next section does...  hashes neighborhoods ...
 
