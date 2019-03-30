@@ -429,6 +429,11 @@ public:
                     const sdr::SDR &inputs,
                     const Permanence increment,
                     const Permanence decrement);
+  void adaptSegment(const Segment segment, 
+                    const sdr::SDR &inputs,
+                    const Permanence increment,
+                    const Permanence decrement,
+                    std::vector<Permanence> &updates );
 
   /**
    * Ensures a minimum number of connected synapses.  This raises permance
@@ -591,12 +596,8 @@ private:
 
   UInt32 nextEventToken_;
   std::map<UInt32, ConnectionsEventHandler *> eventHandlers_;
-}; // end class Connections
-
-} // end namespace connections
-
-} // end namespace algorithms
-
-} // end namespace nupic
-
-#endif // NTA_CONNECTIONS_HPP
+};     // End class Connections
+}      // End namespace connections
+}      // End namespace algorithms
+}      // End namespace nupic
+#endif // End ifdef NTA_CONNECTIONS_HPP

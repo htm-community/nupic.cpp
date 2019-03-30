@@ -29,10 +29,10 @@
 #include <iostream>
 #include <vector>
 #include <string>
-#include <algorithm>
-#include <limits>  // std::numeric_limits
-#include <iomanip> // std::setprecision
-#include <functional> // function
+#include <algorithm> // accumulate
+#include <limits>  // numeric_limits
+#include <iomanip> // setprecision
+#include <functional> // function, multiplies
 
 // #include <nupic/algorithms/ColumnPooler.hpp>
 #include <nupic/types/Types.hpp>
@@ -98,7 +98,7 @@ public:
   Real stability_rate;    // TODO: Fix naming convention
   Real fatigue_rate;      // TODO: Fix naming convention
 
-  Real period;
+  UInt period;
   Int  seed;
   bool verbose;
 };
@@ -119,6 +119,8 @@ private:
 
   vector<UInt32> rawOverlaps_;
   vector<UInt> proximalMaxSegment_;
+
+  vector<vector<Permanence>> proximalUpdates;
 
   Random rng_;
   vector<Real> tieBreaker_;
@@ -152,8 +154,10 @@ public:
     { initialize( parameters ); }
 
   void initialize( const Parameters &parameters ) {
-    args_ = parameters;
+    NTA_CHECK( parameters.proximalSegments > 0u );
+    NTA_CHECK( parameters.cellsPerInhibitionArea > 0u );
 
+    args_ = parameters;
     SDR proximalInputs(  args_.proximalInputDimensions );
     SDR inhibitionAreas( args_.inhibitionDimensions );
     cellDimensions_ = inhibitionAreas.dimensions;
@@ -195,7 +199,7 @@ public:
     AF_ = new ActivationFrequency( {cells.size, args_.proximalSegments}, args_.period );
     AF_->initializeToValue( args_.sparsity / args_.proximalSegments );
 
-    // // Setup the distal dendrites
+    // Setup the distal dendrites
     distalConnections.initialize(
         /* columnDimensions */            cellDimensions,
         /* cellsPerColumn */              1,
@@ -247,8 +251,9 @@ public:
   void reset() {
     X_act.assign( proximalConnections.numCells(), 0.0f );
     X_inact.assign( proximalConnections.numCells(), 0.0f );
-    // TODO Zero Previous Updates
     distalConnections.reset();
+    // Zero Previous Updates
+    proximalUpdates.assign( proximalConnections.segmentFlatListLength(), {} );
   }
 
 
@@ -350,6 +355,9 @@ public:
       }
       proximalMaxSegment_[cell] = maxSegment;
 
+      // TODO: apply stability & fatigue before boosting?  My previous
+      // experiments w/ grid cells apply stab+fatigue b4 boosting...
+
       // Apply Stability & Fatigue
       X_act[cell]   += (1.0f - args_.stability_rate) * (maxOverlap - X_act[cell] - X_inact[cell]);
       X_inact[cell] += args_.fatigue_rate * (maxOverlap - X_inact[cell]);
@@ -381,24 +389,38 @@ public:
                                const SDR &active ) {
     SDR AF_SDR( AF_->dimensions );
     auto &activeSegments = AF_SDR.getSparse();
-    for(const auto &cell : active.getSparse())
+    auto &sparse = active.getSparse();
+    sort( sparse.begin(), sparse.end() );
+    Int prevSegmentUpdate = -1;
+    for(const auto &cell : sparse)
     {
-      // Adapt Proximal Segments
-      NTA_CHECK(cell < proximalMaxSegment_.size()) << "cell oob! " << cell << " < " << proximalMaxSegment_.size();
-
       const auto &maxSegment = proximalMaxSegment_[cell];
+      activeSegments.push_back(maxSegment);
+
+      // Adapt Proximal Segments
       proximalConnections.adaptSegment(maxSegment, proximalInputActive,
-                                       args_.proximalIncrement, args_.proximalDecrement);
+                                       args_.proximalIncrement, args_.proximalDecrement,
+                                       proximalUpdates[maxSegment]);
+
+      // Zero the permanence changes for the inactive cells.
+      for(UInt z = prevSegmentUpdate + 1; z < maxSegment; ++z) {
+        proximalUpdates[z].clear();
+      }
+      NTA_CHECK( prevSegmentUpdate < (Int) maxSegment );
+      prevSegmentUpdate = maxSegment;
 
       proximalConnections.raisePermanencesToThreshold(maxSegment,
                                    args_.proximalSynapseThreshold,
                                    args_.proximalSegmentThreshold);
-
-      activeSegments.push_back(maxSegment);
     }
-    // TODO: Grow new synapses from the learning inputs?
+    // Zero the permanence changes for the last cells in the list.
+    for(UInt z = prevSegmentUpdate + 1; z < proximalMaxSegment_.size(); ++z) {
+      proximalUpdates[z].clear();
+    }
     AF_SDR.setSparse( activeSegments );
     AF_->addData( AF_SDR );
+
+    // TODO: Grow new synapses from the learning inputs?
   }
 
 

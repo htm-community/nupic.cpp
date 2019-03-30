@@ -512,6 +512,7 @@ protected:
 
 public:
   Connections connections;
+  const UInt &extra = extra_;
 };
 
 } // end namespace temporal_memory

@@ -444,21 +444,38 @@ void Connections::adaptSegment(const Segment segment,
                                const Permanence increment,
                                const Permanence decrement)
 {
+  vector<Permanence> foobar;
+  adaptSegment(segment, inputs, increment, decrement, foobar);
+}
+
+void Connections::adaptSegment(const Segment segment, 
+                               const SDR &inputs,
+                               const Permanence increment,
+                               const Permanence decrement,
+                               vector<Permanence>& updates)
+{
   const vector<Synapse> &synapses = synapsesForSegment(segment);
+
+  if( updates.size() != synapses.size() ) {
+    updates.assign( synapses.size(), 0.0f );
+  }
 
   const auto &inputArray = inputs.getDense();
 
   for (SynapseIdx i = 0; i < synapses.size(); i++) {
     const SynapseData &synapseData = dataForSynapse(synapses[i]);
 
-    Permanence permanence = synapseData.permanence;
+    Permanence delta;
     if( inputArray[synapseData.presynapticCell] ) {
-      permanence += increment;
+      delta = increment;
     } else {
-      permanence -= decrement;
+      delta = -decrement;
     }
 
-    updateSynapsePermanence(synapses[i], permanence);
+    if( delta != updates[i] ) {
+      updateSynapsePermanence( synapses[i], synapseData.permanence + delta );
+    }
+    updates[i] = delta;
   }
 }
 
