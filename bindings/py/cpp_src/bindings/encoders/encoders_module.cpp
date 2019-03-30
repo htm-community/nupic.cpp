@@ -31,6 +31,7 @@ namespace nupic_ext
 {
     void init_ScalarEncoder(py::module&);
     void init_RDSE(py::module&);
+    void init_CoordinateEncoder(py::module&);
 }
 
 using namespace nupic_ext;
@@ -58,4 +59,5 @@ Reference: https://arxiv.org/pdf/1602.05925.pdf
 
     init_ScalarEncoder(m);
     init_RDSE(m);
+    init_CoordinateEncoder(m);
 }
