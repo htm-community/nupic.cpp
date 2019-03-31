@@ -37,6 +37,7 @@
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/types/Serializable.hpp>
+#include <cereal/types/vector.hpp>
 
 
 namespace nupic {
@@ -114,6 +115,15 @@ public:
     return ss.str();
   }
 
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar((std::vector<UInt>&) *this);
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar((std::vector<UInt>&) *this);
+  }
+
   void save(std::ostream &f) const {
     size_t n = size();
     f.write((const char*)&n, sizeof(size_t));
@@ -133,12 +143,21 @@ public:
 };
   
 
-  inline std::ostream &operator<<(std::ostream &f, const Dimensions& d) {
+inline std::ostream &operator<<(std::ostream &f, const Dimensions& d) {
     f << d.toString(false) << " ";
-    return f;
-  }
+	//cereal::JSONOutputArchive ar(f);
+  //d.save_ar(ar);
+  return f;
+}
+  //inline std::istream &operator>>(std::istream &f, Dimensions& d) { 
+  //  cereal::JSONInputArchive ar(f);
+  //  d.load_ar(ar);
+  //  return f;
+  //}
+
+
+  // expected format:    [val, val, val]
   inline std::istream &operator>>(std::istream &f, Dimensions& d) { 
-    // expected format:    [val, val, val]
     f >> std::ws;  // ignore leading whitespace
     d.clear();
     int c = f.get();
@@ -171,6 +190,7 @@ public:
     }
     return f;
   }
+  
 
 } // namespace nupic
 

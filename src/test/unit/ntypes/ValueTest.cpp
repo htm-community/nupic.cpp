@@ -38,7 +38,7 @@ TEST(ValueTest, Scalar) {
   ASSERT_TRUE(v.isScalar());
   ASSERT_TRUE(!v.isString());
   ASSERT_TRUE(!v.isArray());
-  ASSERT_EQ(Value::scalarCategory, v.getCategory());
+  ASSERT_EQ(Value::Category::scalar, v.getCategory());
   ASSERT_EQ(NTA_BasicType_Int32, v.getType());
 
   std::shared_ptr<Scalar> s1 = v.getScalar();
@@ -62,7 +62,7 @@ TEST(ValueTest, Array) {
   ASSERT_TRUE(v.isArray());
   ASSERT_TRUE(!v.isString());
   ASSERT_TRUE(!v.isScalar());
-  ASSERT_EQ(Value::arrayCategory, v.getCategory());
+  ASSERT_EQ(Value::Category::array, v.getCategory());
   ASSERT_EQ(NTA_BasicType_Int32, v.getType());
 
   std::shared_ptr<Array> s1 = v.getArray();
@@ -81,7 +81,7 @@ TEST(ValueTest, String) {
   ASSERT_TRUE(!v.isArray());
   ASSERT_TRUE(v.isString());
   ASSERT_TRUE(!v.isScalar());
-  ASSERT_EQ(Value::stringCategory, v.getCategory());
+  ASSERT_EQ(Value::Category::string, v.getCategory());
   ASSERT_EQ(NTA_BasicType_Byte, v.getType());
 
   std::string s1 = v.getString();
@@ -127,7 +127,7 @@ TEST(ValueTest, ValueMap) {
   ASSERT_EQ((Int32)20, x);
 
   Value v = vm.getValue("array");
-  ASSERT_EQ(Value::arrayCategory, v.getCategory());
+  ASSERT_EQ(Value::Category::array, v.getCategory());
   ASSERT_TRUE(v.getArray() == a);
 }
 }

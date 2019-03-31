@@ -196,6 +196,7 @@ private:
   std::string name_;
 };
 
+std::ostream &operator<<(std::ostream &f, const Output &d);
 
 } // namespace nupic
 

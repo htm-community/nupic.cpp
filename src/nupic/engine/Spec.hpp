@@ -28,12 +28,13 @@ Definition of Spec data structures
 #define NTA_SPEC_HPP
 
 #include <map>
+#include <nupic/types/Serializable.hpp>
 #include <nupic/ntypes/Collection.hpp>
 #include <nupic/types/Types.hpp>
 #include <string>
 
 namespace nupic {
-class InputSpec {
+class InputSpec : public Serializable {
 public:
   InputSpec() {}
   InputSpec(std::string description,
@@ -62,9 +63,35 @@ public:
 	
   bool isDefaultInput;       // if True, assume this if input name not given 
 	                           // in functions involving inputs of a region.
-};
 
-class OutputSpec {
+        
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar(cereal::make_nvp("description",    description), 
+       cereal::make_nvp("dataType",       dataType), 
+       cereal::make_nvp("count",          count), 
+       cereal::make_nvp("required",       required), 
+       cereal::make_nvp("regionLevel",    regionLevel), 
+       cereal::make_nvp("isDefaultInput", isDefaultInput));
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar(cereal::make_nvp("description",    description), 
+       cereal::make_nvp("dataType",       dataType), 
+       cereal::make_nvp("count",          count), 
+       cereal::make_nvp("required",       required), 
+       cereal::make_nvp("regionLevel",    regionLevel), 
+       cereal::make_nvp("isDefaultInput", isDefaultInput));
+  }
+  void save(std::ostream &stream) const override { };  // will be removed later
+  void load(std::istream &stream) override { };
+
+};
+std::ostream &operator<<(std::ostream &f, const InputSpec &s);
+std::istream &operator>>(std::istream &f, InputSpec &s);
+
+
+class OutputSpec : public Serializable  {
 public:
   OutputSpec() {}
   OutputSpec(std::string description,
@@ -90,9 +117,31 @@ public:
 
   bool isDefaultOutput;      // if true, use this output for region if output name not given
 	                           // in functions involving outputs on a region.
-};
+        
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar(cereal::make_nvp("description",    description), 
+       cereal::make_nvp("dataType",       dataType), 
+       cereal::make_nvp("count",          count), 
+       cereal::make_nvp("regionLevel",    regionLevel), 
+       cereal::make_nvp("isDefaultOutput", isDefaultOutput));
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar(cereal::make_nvp("description",    description), 
+       cereal::make_nvp("dataType",       dataType), 
+       cereal::make_nvp("count",          count), 
+       cereal::make_nvp("regionLevel",    regionLevel), 
+       cereal::make_nvp("isDefaultOutput", isDefaultOutput));
+  }
 
-class CommandSpec {
+  void save(std::ostream &stream) const override { };  // will be removed later
+  void load(std::istream &stream) override { };
+};
+std::ostream &operator<<(std::ostream &f, const OutputSpec &s);
+std::istream &operator>>(std::istream &f, OutputSpec &s);
+
+class CommandSpec : public Serializable  {
 public:
   CommandSpec() {}
   CommandSpec(std::string description);
@@ -101,9 +150,22 @@ public:
     return !operator==(other);
   }
   std::string description;
-};
 
-class ParameterSpec {
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar(cereal::make_nvp("description",    description));
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar(cereal::make_nvp("description",    description));
+  }
+  void save(std::ostream &stream) const override { };  // will be removed later
+  void load(std::istream &stream) override { };
+};
+std::ostream &operator<<(std::ostream &f, const CommandSpec &s);
+std::istream &operator>>(std::istream &f, CommandSpec &s);
+
+class ParameterSpec : public Serializable  {
 public:
   typedef enum { CreateAccess, ReadOnlyAccess, ReadWriteAccess } AccessMode;
 
@@ -130,10 +192,36 @@ public:
   std::string defaultValue; // JSON representation; empty std::string means
                             // parameter is required
   AccessMode accessMode;
-};
 
-class Spec {
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar(cereal::make_nvp("description",    description), 
+       cereal::make_nvp("dataType",       dataType), 
+       cereal::make_nvp("count",          count), 
+       cereal::make_nvp("constraints",    constraints), 
+       cereal::make_nvp("defaultValue",   defaultValue),
+       cereal::make_nvp("accessMode",     accessMode));
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar(cereal::make_nvp("description",    description), 
+       cereal::make_nvp("dataType",       dataType), 
+       cereal::make_nvp("count",          count), 
+       cereal::make_nvp("constraints",    constraints), 
+       cereal::make_nvp("defaultValue",   defaultValue),
+       cereal::make_nvp("accessMode",     accessMode));
+  }
+  void save(std::ostream &stream) const override { };  // will be removed later
+  void load(std::istream &stream) override { };
+};
+std::ostream &operator<<(std::ostream &f, const ParameterSpec &s);
+std::istream &operator>>(std::istream &f, ParameterSpec &s);
+
+class Spec  : public Serializable {
 public:
+  // Constructor
+  Spec();
+
   // Return a printable string with Spec information
   // TODO: should this be in the base API or layered? In the API right
   // now since we do not build layered libraries.
@@ -154,8 +242,6 @@ public:
   Collection<ParameterSpec> parameters;
 
 
-  Spec();
-
   std::string getDefaultOutputName() const;
   std::string getDefaultInputName() const;
 
@@ -167,7 +253,31 @@ public:
   // It means that the field not an array and has a single scaler value.
   static const int SCALER = 1; 
 
+      
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar(cereal::make_nvp("singleNodeOnly", singleNodeOnly), 
+       cereal::make_nvp("description",    description), 
+       cereal::make_nvp("inputs",         inputs), 
+       cereal::make_nvp("outputs",        outputs), 
+       cereal::make_nvp("commands",       commands), 
+       cereal::make_nvp("parameters",     parameters));
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar(cereal::make_nvp("singleNodeOnly", singleNodeOnly), 
+       cereal::make_nvp("description",    description), 
+       cereal::make_nvp("inputs",         inputs), 
+       cereal::make_nvp("outputs",        outputs), 
+       cereal::make_nvp("commands",       commands), 
+       cereal::make_nvp("parameters",     parameters));
+  }
+  void save(std::ostream &stream) const override { };  // will be removed later
+  void load(std::istream &stream) override { };
+
 };
+std::ostream &operator<<(std::ostream &f, const Spec &s);
+std::istream &operator>>(std::istream &f, Spec &s);
 
 } // namespace nupic
 

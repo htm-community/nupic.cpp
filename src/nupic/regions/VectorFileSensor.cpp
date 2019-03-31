@@ -319,16 +319,15 @@ void VectorFileSensor::deserialize(BundleIO &bundle) {
 
 Spec *VectorFileSensor::createSpec() {
   auto ns = new Spec;
-  ns->description =
+  ns->description = string(
       "VectorFileSensor is a basic sensor for reading files containing "
       "vectors.\n"
-      "\n"
-      "VectorFileSensor reads in a text file containing lists of numbers\n"
-      "and outputs these vectors in sequence. The output is updated\n"
-      "each time the sensor's compute() method is called. If\n"
-      "repeatCount is > 1, then each vector is repeated that many times\n"
-      "before moving to the next one. The sensor loops when the end of\n"
-      "the vector list is reached. The default file format\n"
+      "VectorFileSensor reads in a text file containing lists of numbers "
+      "and outputs these vectors in sequence. The output is updated "
+      "each time the sensor's compute() method is called. If "
+      "repeatCount is > 1, then each vector is repeated that many times "
+      "before moving to the next one. The sensor loops when the end of "
+      "the vector list is reached. The default file format "
       "is as follows (assuming the sensor is configured with N outputs):\n"
       "\n"
       "  e11 e12 e13 ... e1N\n"
@@ -336,13 +335,10 @@ Spec *VectorFileSensor::createSpec() {
       "    : \n"
       "  eM1 eM2 eM3 ... eMN\n"
       "\n"
-      "In this format the sensor ignores all whitespace in the file, including "
-      "newlines\n"
-      "If the file contains an incorrect number of floats, the sensor has no "
-      "way\n"
-      "of checking and will silently ignore the extra numbers at the end of "
-      "the file.\n"
-      "\n"
+      "In this format the sensor ignores all whitespace in the file, "
+      "including newlines.  If the file contains an incorrect number of "
+      "floats, the sensor has no way of checking and will silently ignore "
+      "the extra numbers at the end of the file.\n"
       "The sensor can also read in comma-separated (CSV) files following the "
       "format:\n"
       "\n"
@@ -351,11 +347,10 @@ Spec *VectorFileSensor::createSpec() {
       "    : \n"
       "  eM1, eM2, eM3, ... ,eMN\n"
       "\n"
-      "When reading CSV files the sensor expects that each line contains a new "
-      "vector\n"
-      "Any line containing too few elements or any text will be ignored. If "
-      "there are\n"
-      "more than N numbers on a line, the sensor retains only the first N.\n";
+      "When reading CSV files the sensor expects that each line contains "
+      "a new vector. Any line containing too few elements or any text will "
+      "be ignored. If there are more than N numbers on a line, the sensor "
+      "retains only the first N.\n");
 
   ns->outputs.add("dataOut",
                   OutputSpec("Data read from file", NTA_BasicType_Real32,

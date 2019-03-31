@@ -464,24 +464,27 @@ public:
     /**
      * Print a human readable version of the SDR.
      */
-    friend std::ostream& operator<< (std::ostream& stream, const SparseDistributedRepresentation &sdr)
+    std::string toString()
     {
+        std::stringstream stream;
         stream << "SDR( ";
-        for( UInt i = 0; i < (UInt)sdr.dimensions.size(); i++ ) {
-            stream << sdr.dimensions[i];
-            if( i + 1 != (UInt)sdr.dimensions.size() )
+        for( UInt i = 0; i < (UInt)dimensions.size(); i++ ) {
+            stream << dimensions[i];
+            if( i + 1 != (UInt)dimensions.size() )
                 stream << ", ";
         }
         stream << " ) ";
-        auto data = sdr.getSparse();
+        auto data = getSparse();
         std::sort( data.begin(), data.end() );
         for( UInt i = 0; i < data.size(); i++ ) {
             stream << data[i];
             if( i + 1 != data.size() )
                 stream << ", ";
         }
-        return stream << std::endl;
+        stream << std::endl;
+        return stream.str();
     }
+
 
     bool operator==(const SparseDistributedRepresentation &sdr) const;
 
@@ -505,6 +508,32 @@ public:
      * @param stream A input valid istream, such as an open file.
      */
     void load(std::istream &inStream) override;
+
+    template<class Archive>
+    void save_ar(Archive & archive) const
+    {
+        archive( dimensions, getSparse() );
+    }
+
+    template<class Archive>
+    void load_ar(Archive & archive)
+    {
+        archive( dimensions_, sparse_ );
+        initialize( dimensions_ );
+        setSparseInplace();
+    }
+        
+    friend std::ostream& operator<< (std::ostream& stream, const SparseDistributedRepresentation &sdr) {
+      cereal::JSONOutputArchive ar(stream);
+      sdr.save_ar(ar);
+      return stream;
+    }
+    friend std::istream& operator>> (std::istream& stream, SparseDistributedRepresentation &sdr) {
+      cereal::JSONInputArchive ar(stream);
+      sdr.load_ar(ar);
+      return stream;
+    }
+
 
     /**
      * Callbacks notify you when this SDR's value changes.

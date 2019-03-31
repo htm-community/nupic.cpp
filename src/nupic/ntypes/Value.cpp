@@ -30,32 +30,32 @@
 using namespace nupic;
 
 Value::Value(std::shared_ptr<Scalar> &s) {
-  category_ = scalarCategory;
+  category_ = Category::scalar;
   scalar_ = s;
 }
 
 Value::Value(std::shared_ptr<Array> &a) {
-  category_ = arrayCategory;
+  category_ = Category::array;
   array_ = a;
 }
 
 Value::Value(const std::string& s) {
-  category_ = stringCategory;
+  category_ = Category::string;
   string_ = s;
 }
 
-bool Value::isScalar() const { return category_ == scalarCategory; }
+bool Value::isScalar() const { return category_ == Category::scalar; }
 
-bool Value::isArray() const { return category_ == arrayCategory; }
+bool Value::isArray() const { return category_ == Category::array; }
 
-bool Value::isString() const { return category_ == stringCategory; }
+bool Value::isString() const { return category_ == Category::string; }
 
 NTA_BasicType Value::getType() const {
   switch (category_) {
-  case scalarCategory:
+  case Category::scalar:
     return scalar_->getType();
     break;
-  case arrayCategory:
+  case Category::array:
     return array_->getType();
     break;
   default:
@@ -66,22 +66,22 @@ NTA_BasicType Value::getType() const {
 }
 
 std::shared_ptr<Scalar> Value::getScalar() const {
-  NTA_CHECK(category_ == scalarCategory);
+  NTA_CHECK(category_ == Category::scalar);
   return scalar_;
 }
 
 std::shared_ptr<Array> Value::getArray() const {
-  NTA_CHECK(category_ == arrayCategory);
+  NTA_CHECK(category_ == Category::array);
   return array_;
 }
 
 std::string Value::getString() const {
-  NTA_CHECK(category_ == stringCategory);
+  NTA_CHECK(category_ == Category::string);
   return string_;
 }
 
 template <typename T> T Value::getScalarT() const {
-  NTA_CHECK(category_ == scalarCategory);
+  NTA_CHECK(category_ == Category::scalar);
   if (BasicType::getType<T>() != scalar_->getType()) {
     NTA_THROW << "Attempt to access scalar of type "
               << BasicType::getName(scalar_->getType()) << " as type "
@@ -92,13 +92,13 @@ template <typename T> T Value::getScalarT() const {
 
 const std::string Value::getDescription() const {
   switch (category_) {
-  case stringCategory:
+  case Category::string:
     return std::string("string") + " (" + string_ + ")";
     break;
-  case scalarCategory:
+  case Category::scalar:
     return std::string("Scalar of type ") + BasicType::getName(scalar_->getType());
     break;
-  case arrayCategory:
+  case Category::array:
     return std::string("Array of type ") +  BasicType::getName(array_->getType());
     break;
   }
@@ -109,9 +109,7 @@ void ValueMap::add(const std::string &key, const Value &value) {
   if (map_.find(key) != map_.end()) {
     NTA_THROW << "Key '" << key << "' specified twice";
   }
-  auto vp = new Value(value);
-
-  map_.insert(std::make_pair(key, vp));
+  map_.insert(std::make_pair(key, value));
 }
 
 Value::Category Value::getCategory() const { return category_; }
@@ -136,38 +134,18 @@ template Handle Value::getScalarT<Handle>() const;
 template bool Value::getScalarT<bool>() const;
 } // namespace nupic
 
-ValueMap::ValueMap(){};
 
-ValueMap::~ValueMap() {
-  for (auto &elem : map_) {
-    delete elem.second;
-    elem.second = nullptr;
-  }
-  map_.clear();
-}
 
-ValueMap::ValueMap(const ValueMap &rhs) {
-  for (auto &elem : map_) {
-    delete elem.second;
-    elem.second = nullptr;
-  }
-  map_.clear();
 
-  for (const auto &rh : rhs) {
-    auto vp = new Value(*(rh.second));
-
-    map_.insert(std::make_pair(rh.first, vp));
-  }
-}
 
 void ValueMap::dump() const {
   NTA_DEBUG << "===== Value Map:";
   for (const auto &elem : map_) {
     std::string key = elem.first;
-    Value *value = elem.second;
+    const Value& value = elem.second;
     NTA_DEBUG << "key: " << key
-              << " datatype: " << BasicType::getName(value->getType())
-              << " category: " << value->getCategory();
+              << " datatype: " << BasicType::getName(value.getType())
+              << " category: " << value.getCategory();
   }
   NTA_DEBUG << "===== End of Value Map";
 }
@@ -176,12 +154,12 @@ bool ValueMap::contains(const std::string &key) const {
   return (map_.find(key) != map_.end());
 }
 
-Value &ValueMap::getValue(const std::string &key) const {
+const Value &ValueMap::getValue(const std::string &key) const {
   auto item = map_.find(key);
   if (item == map_.end()) {
     NTA_THROW << "No value '" << key << "' found in Value Map";
   }
-  return *(item->second);
+  return item->second;
 }
 
 template <typename T>
@@ -206,7 +184,7 @@ template <typename T> T ValueMap::getScalarT(const std::string &key) const {
 }
 
 std::shared_ptr<Array> ValueMap::getArray(const std::string &key) const {
-  Value &v = getValue(key);
+  const Value &v = getValue(key);
   if (!v.isArray()) {
     NTA_THROW << "Attempt to access element '" << key
               << "' of value map as an array but it is a '"
@@ -216,7 +194,7 @@ std::shared_ptr<Array> ValueMap::getArray(const std::string &key) const {
 }
 
 std::shared_ptr<Scalar> ValueMap::getScalar(const std::string &key) const {
-  Value &v = getValue(key);
+  const Value &v = getValue(key);
   if (!v.isScalar()) {
     NTA_THROW << "Attempt to access element '" << key
               << "' of value map as an array but it is a '"
@@ -226,7 +204,7 @@ std::shared_ptr<Scalar> ValueMap::getScalar(const std::string &key) const {
 }
 
 std::string ValueMap::getString(const std::string& key) const {
-  Value& v = getValue(key);
+  const Value& v = getValue(key);
   if (! v.isString())
   {
     NTA_THROW << "Attempt to access element '" << key
@@ -240,7 +218,7 @@ std::string ValueMap::getString(const std::string &key, const std::string defaul
   if (item == map_.end()) {
     return defaultValue;
   } else {
-    Value &v = getValue(key);
+    const Value &v = getValue(key);
     if (!v.isString()) {
       NTA_THROW << "Attempt to access element '" << key
                 << "' of value map as a string but it is a '"

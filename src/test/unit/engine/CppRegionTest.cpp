@@ -29,12 +29,14 @@
 #include <nupic/engine/Output.hpp>
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/Spec.hpp>
+#include <nupic/regions/TestNode.hpp>
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/ntypes/Dimensions.hpp>
 #include <nupic/os/Env.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/os/Timer.hpp>
 #include <nupic/types/Exception.hpp>
+#include <cereal/cereal.hpp>
 
 #include <cmath>   // fabs/abs
 #include <cstdlib> // exit
@@ -50,9 +52,36 @@ namespace testing {
 using namespace nupic;
 using std::exception;
 
-static bool verbose = true;
+static bool verbose = false;
 #define VERBOSE if(verbose) std::cerr << "[          ]"
 
+TEST(CppRegionTest, spec) {
+  std::shared_ptr<Spec> ns(TestNode::createSpec());
+  Spec ns2, ns3;
+  VERBOSE << "TestNode Spec: " << ns << std::endl;
+  VERBOSE << "compare with " << ns->toString() << std::endl;
+  std::stringstream ss;
+  {
+    cereal::BinaryOutputArchive ar(ss);
+    ns->save_ar(ar);
+  }// flushes cereal
+  {
+    cereal::BinaryInputArchive ar(ss);
+    ns2.load_ar(ar);
+  }
+  EXPECT_EQ(ns2, *(ns.get()));
+
+  ss.seekp(0);
+  {
+    cereal::JSONOutputArchive ar(ss);
+    ns->save_ar(ar);
+  } // flushes cereal
+  {
+    cereal::JSONInputArchive ar(ss);
+    ns3.load_ar(ar);
+  }
+  EXPECT_EQ(ns3, *(ns.get()));
+}
 
 
 TEST(CppRegionTest, testCppLinkingFanIn) {

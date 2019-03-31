@@ -26,8 +26,10 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <nupic/types/Serializable.hpp>
 #include <nupic/utils/Log.hpp>
 
+using namespace cereal;
 namespace nupic {
 // A collection is a templated class that contains items of type t.
 // The items are stored in a vector and keys are also stored in a map.
@@ -45,7 +47,7 @@ namespace nupic {
 
 
 template <class T>
-class Collection {
+class Collection : public Serializable {
 public:
   Collection() {}
   virtual ~Collection() {}
@@ -81,9 +83,9 @@ public:
   }
 
   inline T getByName(const std::string &name) const {
-     auto itr = map_.find(name);
-	 NTA_CHECK(itr != map_.end()) << "No item named: " << name;
-	 return vec_[itr->second].second;
+    auto itr = map_.find(name);
+	  NTA_CHECK(itr != map_.end()) << "No item named: " << name;
+	  return vec_[itr->second].second;
   }
 
   inline Iterator begin() {
@@ -116,6 +118,32 @@ public:
 	 }
   }
 
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar(cereal::make_size_tag(map_.size()));
+    for (auto it = vec_.begin(); it != vec_.end(); it++) {
+      //map order
+      //std::pair<std::string, T> p = vec_[it->second];
+      //ar(cereal::make_map_item(p.first, p.second));
+      ar(cereal::make_map_item(it->first, it->second));
+    }
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    size_t count;
+    ar(cereal::make_size_tag(count));
+    for (size_t i = 0; i < count; i++) {
+      std::string key;
+      T value;
+
+      ar( cereal::make_map_item(key, value) );
+      add(std::move(key), std::move(value));
+    }
+  }
+
+  void save(std::ostream &stream) const override { };  // will be removed later
+  void load(std::istream &stream) override { };
+
 
 private:
   std::vector<std::pair<std::string, T>> vec_;
@@ -123,6 +151,19 @@ private:
 
 };
 
+template<typename T>
+inline std::ostream &operator<< (std::ostream &f, const Collection<T> &s) {
+  cereal::JSONOutputArchive ar(f);
+  s.save_ar(ar);
+  return f;
+}
+template<typename T>
+inline std::istream &operator>> (std::istream &f, Collection<T> &s) {
+  cereal::JSONInputArchive ar(f);
+  s.load_ar(ar);
+  return f;
+}
+
 } // namespace nupic
 
-#endif
+#endif // NTA_COLLECTION_HPP

@@ -39,6 +39,7 @@
 #include <nupic/ntypes/Scalar.hpp>
 #include <nupic/types/BasicType.hpp>
 #include <nupic/types/Types.hpp>
+#include <nupic/types/Serializable.hpp>
 #include <string>
 
 namespace nupic {
@@ -59,13 +60,13 @@ namespace nupic {
  * using the underlying objects, to avoid copying, and because
  * Array may not be copied.
  */
-class Value {
+class Value : public Serializable {
 public:
   Value(std::shared_ptr<Scalar> &s);
   Value(std::shared_ptr<Array> &a);
   Value(const std::string &s);
 
-  enum Category { scalarCategory, arrayCategory, stringCategory };
+  enum Category { scalar=0, array, string };
 
   bool isArray() const;
   bool isString() const;
@@ -84,27 +85,60 @@ public:
 
   const std::string getDescription() const;
 
+    
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    switch(category_) {
+    case Category::scalar: ar(category_, scalar_); break;
+    case Category::array: ar(category_, array_);   break;
+    case Category::string: ar(category_, string_); break;
+    default: break;
+    }
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar(category_);
+    switch(category_) {
+    case Category::scalar: ar(scalar_); break;
+    case Category::array: ar(array_);   break;
+    case Category::string: ar(string_); break;
+    default: break;
+    }
+  }
+
+  void save(std::ostream &stream) const override { };  // will be removed later
+  void load(std::istream &stream) override { };
+
+
+
 private:
   // Default constructor would not be useful
   Value();
+	
   Category category_;
   std::shared_ptr<Scalar> scalar_;
   std::shared_ptr<Array> array_;
   std::string string_;
 };
 
-class ValueMap {
+class ValueMap : public Serializable {
 public:
-  ValueMap();
-  ValueMap(const ValueMap &rhs);
-  ~ValueMap();
+  ValueMap() { };
+  ValueMap(const ValueMap &rhs) {
+    map_.clear();
+    for (const auto &rh : rhs) {
+      map_.insert(std::make_pair(rh.first, rh.second));
+    }
+  }
+  ~ValueMap() { map_.clear(); }
+
   void add(const std::string &key, const Value &value);
 
   // map.find(key) != map.end()
   bool contains(const std::string &key) const;
 
   // map.find(key) + exception if not found
-  Value &getValue(const std::string &key) const;
+  const Value &getValue(const std::string &key) const;
 
   // Method below are for convenience, bypassing the Value
   std::shared_ptr<Array> getArray(const std::string &key) const;
@@ -123,15 +157,28 @@ public:
 
   void dump() const;
 
-  typedef std::map<std::string, Value *>::const_iterator const_iterator;
+  typedef std::map<std::string, Value>::const_iterator const_iterator;
   const_iterator begin() const;
   const_iterator end() const;
+
+  
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar(map_);
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar(map_);
+  }
+  void save(std::ostream &stream) const override { };  // will be removed later
+  void load(std::istream &stream) override { };
+
 
 private:
   // must be a Value* since Value doesn't have a default constructor
   // We own all the items in the map and must delete them in our destructor
-  typedef std::map<std::string, Value *>::iterator iterator;
-  std::map<std::string, Value *> map_;
+  typedef std::map<std::string, Value>::iterator iterator;
+  std::map<std::string, Value> map_;
 };
 
 } // namespace nupic

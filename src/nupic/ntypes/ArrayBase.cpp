@@ -267,8 +267,9 @@ void ArrayBase::convertInto(ArrayBase &a, size_t offset, size_t maxsize) const {
     a.allocateBuffer(maxsize);
     a.zeroBuffer();
   }
+	//   Comment this out until we are sure that it is not needed.
   //if (offset == 0) {
-    // This could be the first buffer of a Fan-In set.
+  //  // This could be the first buffer of a Fan-In set.
   //  if (a.getCount() != maxsize)
   //    a.setCount(maxsize);
   //}
@@ -384,9 +385,19 @@ void ArrayBase::load(std::istream &inStream) {
 
 
 ////////////////////////////////////////////////////////////////////////////////
-//         Stream Serialization  (as Ascii text character strings)
-//              [ type count ( item item item ...) ... ]
+//         Stream Serialization  (as JSON text character strings)
 ////////////////////////////////////////////////////////////////////////////////
+//std::ostream &operator<<(std::ostream &outStream, const ArrayBase &a) {
+//  cereal::JSONOutputArchive ar(outStream);
+//  a.save_ar(ar);
+//  return outStream;
+//}
+//std::istream &operator>>(std::istream &inStream, ArrayBase &a) {
+//  cereal::JSONInputArchive ar(inStream);
+//  a.load_ar(ar);
+//  return inStream;
+//}
+
 
 template <typename T>
 static void _templatedStreamBuffer(std::ostream &outStream, const void *inbuf,
@@ -548,6 +559,5 @@ std::istream &operator>>(std::istream &inStream, ArrayBase &a) {
 
   return inStream;
 }
-
 
 } // namespace nupic
