@@ -58,13 +58,14 @@ static bool verbose = false;
 TEST(CppRegionTest, spec) {
   std::shared_ptr<Spec> ns(TestNode::createSpec());
   Spec ns2, ns3;
-  VERBOSE << "TestNode Spec: " << ns << std::endl;
+  VERBOSE << "TestNode Spec: " << *(ns.get()) << std::endl;
   VERBOSE << "compare with " << ns->toString() << std::endl;
   std::stringstream ss;
   {
     cereal::BinaryOutputArchive ar(ss);
     ns->save_ar(ar);
   }// flushes cereal
+  ss.seekg(0);
   {
     cereal::BinaryInputArchive ar(ss);
     ns2.load_ar(ar);
@@ -76,6 +77,7 @@ TEST(CppRegionTest, spec) {
     cereal::JSONOutputArchive ar(ss);
     ns->save_ar(ar);
   } // flushes cereal
+  ss.seekg(0);
   {
     cereal::JSONInputArchive ar(ss);
     ns3.load_ar(ar);

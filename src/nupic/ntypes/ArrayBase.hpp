@@ -50,7 +50,7 @@
 #include <cereal/types/vector.hpp>
 
 
-
+using namespace nupic::sdr;
 namespace nupic
 {
 
@@ -194,7 +194,7 @@ namespace nupic
     void save_ar(Archive& ar) const {
       ar(cereal::make_nvp("type", std::string(BasicType::getName(getType()))));
       if (type_ == NTA_BasicType_SDR) {
-      //  ar(cereal::make_nvp("SDR", getSDR()));
+        ar(cereal::make_nvp("SDR", getSDR()));
       }
       else {
         const void* ptr = getBuffer();
@@ -224,12 +224,10 @@ namespace nupic
       ar(cereal::make_nvp("type", name));
       type_ = BasicType::parse(name);
       if (type_ == NTA_BasicType_SDR){
-      //  sdr::SDR sdr;
-      //  cereal::make_nvp("SDR", sdr);
-      //  sdr::SDR *sdr2 = new sdr::SDR(sdr);
-      //  buffer_.reset(sdr2);
-      //  count_ = sdr2->size;
-      //  capacity_ = count_;
+        SDR *sdr = new SDR();
+        ar(cereal::make_nvp("SDR", *sdr));
+        buffer_.reset((char*)sdr);
+        count_ = sdr->size;
       } else {
         void* ptr = getBuffer();
         size_t count = getCount();

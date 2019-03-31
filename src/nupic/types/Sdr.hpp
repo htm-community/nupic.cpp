@@ -30,6 +30,7 @@
 #include <nupic/types/Types.hpp>
 #include <nupic/types/Serializable.hpp>
 #include <nupic/utils/Random.hpp>
+#include <cereal/types/vector.hpp>
 
 namespace nupic {
 namespace sdr {
@@ -498,7 +499,7 @@ public:
      * 
      * @param stream A valid output stream, such as an open file.
      */
-    void save(std::ostream &outStream) const override;
+    void save(std::ostream &outStream) const override;   // will be removed later
 
     /**
      * Load (deserialize) and initialize the SDR from the specified input
@@ -507,18 +508,20 @@ public:
      *
      * @param stream A input valid istream, such as an open file.
      */
-    void load(std::istream &inStream) override;
+    void load(std::istream &inStream) override;   // will be removed later
 
     template<class Archive>
-    void save_ar(Archive & archive) const
+    void save_ar(Archive & ar) const
     {
-        archive( dimensions, getSparse() );
+        getSparse();
+        ar(dimensions_, sparse_ );
     }
 
     template<class Archive>
-    void load_ar(Archive & archive)
+    void load_ar(Archive & ar)
     {
-        archive( dimensions_, sparse_ );
+        getSparse();
+        ar( dimensions_, sparse_ );
         initialize( dimensions_ );
         setSparseInplace();
     }
