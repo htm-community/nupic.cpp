@@ -41,8 +41,23 @@
 #define CEREAL_LOAD_FUNCTION_NAME load_ar
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
+
+// The RapidJson distribution had a problem with this new gcc warning.
+// It is being fixed in next release.
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 800)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#endif
+
 #include <cereal/archives/json.hpp>
+
+#if defined(__GNUC__) && !defined(__INTEL_COMPILER) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 800)
+#pragma GCC diagnostic pop
+#endif
+
 #include <cereal/types/memory.hpp>
+#include <cereal/types/vector.hpp>
 
 #define SERIALIZABLE_VERSION 3
 
@@ -83,12 +98,12 @@ public:
   // These must be implemented by the subclass.
   virtual void save(std::ostream &stream) const = 0;
   virtual void load(std::istream &stream) = 0;
-	
+
 	//template <class Archive>
-	//void save_ar(Archive& ar) const { };  
+	//void save_ar(Archive& ar) const { };
 	//template <class Archive>
 	//void load_ar(Archive& ar) { };
-	
+
 
   virtual ~Serializable() {}
 };

@@ -31,7 +31,7 @@
   * - a capacity   (useful if buffer is larger than data in buffer)
   * - a type
   * - a flag indicating whether or not the object owns the buffer.
-  * Note: if buffer is not owned, shared_ptr will not delete it. 
+  * Note: if buffer is not owned, shared_ptr will not delete it.
   *       But it also does not provide any protections either.
   */
 
@@ -46,6 +46,7 @@
 #include <nupic/types/Serializable.hpp>
 
 #include <nupic/types/Types.hpp>
+#include <nupic/types/BasicType.hpp>
 #include <nupic/types/Sdr.hpp>
 #include <cereal/types/vector.hpp>
 
@@ -113,7 +114,7 @@ namespace nupic
      */
     virtual void zeroBuffer();
 
-    /** 
+    /**
      * resets the shared_ptr. The Array object is now empty.
      */
     virtual void releaseBuffer();
@@ -173,7 +174,7 @@ namespace nupic
     bool isInstance(const ArrayBase &a) const;
 
     /**
-     * Call this to refresh the cache in the SDR after making a lot of changes 
+     * Call this to refresh the cache in the SDR after making a lot of changes
      * to the dense buffer.  Call this just before doing anything else with the SDR.
      */
     void inline RefreshCache() {
@@ -247,11 +248,15 @@ namespace nupic
 	        break;
 	      }
       }
-    } 
+    }
 
 
     // ascii text representation
     //    [ type count ( item item item ...) ... ]
+    std::string toString() const;
+    void fromString(const std::string& str);
+
+    // JSON text representation
     friend std::ostream &operator<<(std::ostream &outStream, const ArrayBase &a);
     friend std::istream &operator>>(std::istream &inStream, ArrayBase &a);
 
@@ -269,15 +274,15 @@ namespace nupic
     // helpers for Cereal Serialization
     template<class Archive, class T>
     void save_array(Archive& ar, T* ptr, size_t count) const {
-      std::vector<T> a(ptr, ptr+count); 
+      std::vector<T> a(ptr, ptr+count);
       ar(cereal::make_nvp("data", a));
     }
 
     template<class Archive, class T>
     void load_array(Archive& ar, T* ptr, size_t count) {
       std::vector<T> a;
-      ar(a);   
-      allocateBuffer(a.size()); 
+      ar(a);
+      allocateBuffer(a.size());
       std::copy(a.begin(), a.end(), (T*)getBuffer());
     }
 
@@ -292,8 +297,7 @@ namespace nupic
     }
   };
   ///////////////////////////////////////////////////////////
-  // for stream serialization on an Array
-  //    [ type count ( item item item ) ]
+  // for JSON stream serialization on an Array
   // for inStream the Array object must already exist and initialized with a type.
   // The buffer will be allocated and populated with this class as owner.
   std::ostream &operator<<(std::ostream &outStream, const ArrayBase &a);
@@ -305,7 +309,7 @@ namespace nupic
   bool operator==(const ArrayBase &lhs,const  ArrayBase &rhs);
   inline bool operator!=(const ArrayBase &lhs, const ArrayBase &rhs) {return !(lhs == rhs);}
 
-  // Compare an Array or ArrayBase against a vector, comparing size and 
+  // Compare an Array or ArrayBase against a vector, comparing size and
   // binary (zero or non-zero) content.
   bool operator==(const ArrayBase &lhs, const std::vector<nupic::Byte> &rhs);
   inline bool operator!=(const ArrayBase &lhs, const std::vector<nupic::Byte> &rhs) {return !(lhs == rhs);}

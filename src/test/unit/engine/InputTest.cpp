@@ -32,9 +32,9 @@
 #include <nupic/ntypes/Dimensions.hpp>
 #include <nupic/regions/TestNode.hpp>
 
-namespace testing { 
-    
-static bool verbose = true;
+namespace testing {
+
+static bool verbose = false;
 #define VERBOSE                                                                \
   if (verbose)                                                                 \
   std::cerr << "[          ]"
@@ -176,7 +176,7 @@ TEST(InputTest, LinkTwoRegionsOneInput4X3) {
   net.run(2);
 
   // test getData()
-  std::vector<Real64> expectedData = {1.0, 0.0, 1.0, 2.0, 
+  std::vector<Real64> expectedData = {1.0, 0.0, 1.0, 2.0,
                                       1.0, 1.0, 2.0, 3.0,
                                       1.0, 0.0, 1.0, 2.0};
   const Array *pa = &(in3->getData());
@@ -222,9 +222,9 @@ TEST(InputTest, LinkTwoRegionsOneInput4X4) {
 
   // test getData()
   std::vector<Real64> expectedData = {
-      1.0, 0.0, 1.0, 2.0, 
+      1.0, 0.0, 1.0, 2.0,
       1.0, 1.0, 2.0, 3.0,
-      1.0, 0.0, 1.0, 2.0, 
+      1.0, 0.0, 1.0, 2.0,
       1.0, 1.0, 2.0, 3.0};
   const Array *pa = &(in3->getData());
   VERBOSE << "region3 input data: " << *pa << std::endl;
@@ -264,9 +264,9 @@ TEST(InputTest, LinkTwoRegionsOneInput3D1) {
 
   // test getData()
   std::vector<Real64> expectedData = {
-      1.0, 0.0, 1.0, 2.0, 
+      1.0, 0.0, 1.0, 2.0,
       1.0, 1.0, 2.0, 3.0,
-      1.0, 0.0, 1.0, 2.0, 
+      1.0, 0.0, 1.0, 2.0,
       1.0, 1.0, 2.0, 3.0};
   const Array *pa = &(in3->getData());
   VERBOSE << "region3 input data: " << *pa << std::endl;
@@ -306,11 +306,11 @@ TEST(InputTest, LinkTwoRegionsOneInput3D2) {
 
   // test getData()
   std::vector<Real64> expectedData = {
-      1.0, 0.0, 1.0, 2.0, 
+      1.0, 0.0, 1.0, 2.0,
       1.0, 1.0, 2.0, 3.0,
-      1.0, 0.0, 1.0, 2.0, 
+      1.0, 0.0, 1.0, 2.0,
       1.0, 1.0, 2.0, 3.0,
-      1.0, 2.0, 3.0, 4.0, 
+      1.0, 2.0, 3.0, 4.0,
       1.0, 3.0, 4.0, 5.0};
   const Array *pa = &(in3->getData());
   VERBOSE << "region3 input data: " << *pa << std::endl;

@@ -38,8 +38,8 @@
 #include <gtest/gtest.h>
 
 namespace testing {
-    
-static bool verbose = false;
+
+static bool verbose = true;
 #define VERBOSE if(verbose) std::cerr << "[          ]"
 #define UNUSED(x) (void)(x)
 
@@ -87,6 +87,7 @@ static void populateArray(const std::vector<UInt32>& sparse, size_t cols, Array&
 	    case NTA_BasicType_Real32: ((Real32*)buf)[idx] = 1.0f; break;
 	    case NTA_BasicType_Real64: ((Real64*)buf)[idx] = 1.0;  break;
 	    case NTA_BasicType_Bool:   ((bool*)buf)[idx]   = true; break;
+      case NTA_BasicType_SDR:    ((Byte*)buf)[idx]   = 1;    break;
 	    default:
 	      NTA_THROW << "Unexpected Element Type: " << a.getType();
 	      break;
@@ -95,6 +96,11 @@ static void populateArray(const std::vector<UInt32>& sparse, size_t cols, Array&
 }
 static void toSparse(const Array&a, std::vector<UInt32>&sparse) {
   sparse.clear();
+  if (a.getType() == NTA_BasicType_SDR) {
+        sparse = a.getSDR().getSparse();
+        return;
+  }
+
   char *buf = (char*)a.getBuffer();
   for (UInt32 idx = 0; idx < a.getCount(); idx++) {
     	switch (a.getType()) {
@@ -228,7 +234,7 @@ TEST_F(ArrayTest, testMemory) {
   char *ownedBufferLocation;
   Array b(NTA_BasicType_Byte);
   const Array* c;  // a read only pointer version
-  Array g; 
+  Array g;
   Array d;
   {
     Array a(NTA_BasicType_Byte);
@@ -257,7 +263,7 @@ TEST_F(ArrayTest, testMemory) {
     EXPECT_TRUE(testValue == 'i')
         << "Was not able to read the right thing from the buffer.";
     const Array f(a);
-    EXPECT_TRUE(f.isInstance(a)); 
+    EXPECT_TRUE(f.isInstance(a));
     EXPECT_TRUE(((char *)a.getBuffer())[4] == 'e');
     EXPECT_TRUE(((const char *)f.getBuffer())[4] == 'e');
 
@@ -274,8 +280,8 @@ TEST_F(ArrayTest, testMemory) {
         << "Should not be able to modify the original Array instance.";
 
     c = &b;
-    EXPECT_FALSE(b.isInstance(a)); 
-    EXPECT_TRUE(b.isInstance(*c)); 
+    EXPECT_FALSE(b.isInstance(a));
+    EXPECT_TRUE(b.isInstance(*c));
   }
   // The Array object a is now out of scope so its buffer should be invalid.
 
@@ -300,8 +306,8 @@ TEST_F(ArrayTest, testMemory) {
     ((char *)d.getBuffer())[4] = 'Z';
     EXPECT_TRUE(((char *)d.getBuffer())[4] == 'Z') << "Should be able to modify the new Array instance.";
     EXPECT_TRUE(((char *)e.getBuffer())[4] == 'Z') << "The original buffer should also change.";
-    
-    EXPECT_TRUE(d.isInstance(e)); 
+
+    EXPECT_TRUE(d.isInstance(e));
   }
   // the Array e is now out of scope but the buffer should still be valid.
   EXPECT_TRUE(((char *)d.getBuffer())[4] == 'Z')   << "Should still see the buffer in the new Array instance.";
@@ -309,7 +315,7 @@ TEST_F(ArrayTest, testMemory) {
   EXPECT_TRUE(ownedBufferLocation[4] == 'Z')  << "The pointer should also still see the buffer.";
 
   g = b;
-  EXPECT_TRUE(g.isInstance(b)); 
+  EXPECT_TRUE(g.isInstance(b));
 
   b.releaseBuffer();
   // The b buffer is no longer valid but c still has a reference to it.
@@ -364,7 +370,7 @@ TEST_F(ArrayTest, testArrayCreation) {
       std::memset(buf2.get(), 0, capacity); // fill with 0's
 
       // make copy of buffer into the Array
-      arrayP = new Array(testCase->second.dataType, 
+      arrayP = new Array(testCase->second.dataType,
                          buf2.get(),
                          testCase->second.allocationSize);
       EXPECT_TRUE(arrayP->getType() == testCase->second.dataType)  << "The data type should have been copied to the Array.";
@@ -549,7 +555,7 @@ TEST_F(ArrayTest, testArrayBasefunctions) {
 
   for (testCase = testCases_.begin(); testCase != testCases_.end(); testCase++) {
     // testArrayCreation() already validates that Array objects can't be
-    // created using invalid NTA_BasicType parameters, so we skip those 
+    // created using invalid NTA_BasicType parameters, so we skip those
     // negetive test cases here
     if (testCase->second.testUsesInvalidParameters) {
       continue;
@@ -588,7 +594,7 @@ TEST_F(ArrayTest, testArrayBasefunctions) {
     //std::cerr << "ArrayTest:testArrayBasefunctions a=" << a << std::endl;
     nCols = testdata.size();
 
-    
+
     c = a; // shallow copy
     EXPECT_EQ(c.getCount(), a.getCount());
     EXPECT_TRUE(c.getBuffer() == a.getBuffer());
@@ -645,12 +651,11 @@ TEST_F(ArrayTest, testArrayBaseSerialization) {
 
   for (testCase = testCases_.begin(); testCase != testCases_.end(); testCase++) {
     // testArrayCreation() already validates that Array objects can't be
-    // created using invalid NTA_BasicType parameters, so we skip those 
+    // created using invalid NTA_BasicType parameters, so we skip those
     // negetive test cases here
     if (testCase->second.testUsesInvalidParameters) {
       continue;
     }
-    if (testCase->second.dataType == NTA_BasicType_SDR) continue;  // SDR not serializable yet
 
     VERBOSE << "  Iteration " << testCase->first << " element size: " << testCase->second.dataTypeSize << std::endl;
 
@@ -658,8 +663,10 @@ TEST_F(ArrayTest, testArrayBaseSerialization) {
     Array a(testCase->second.dataType);
     populateArray(testdata, testCase->second.allocationSize, a);
 
+    VERBOSE << "starting with a = " << a << std::endl;
+
     // binary serialization
-    std::stringstream ss; 
+    std::stringstream ss;
     {
       cereal::BinaryOutputArchive binaryOut_ar(ss); // Create an output archive
       a.save_ar(binaryOut_ar);

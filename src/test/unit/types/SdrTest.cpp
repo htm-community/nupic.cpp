@@ -22,7 +22,7 @@
 #include <random>
 
 namespace testing {
-    
+
 using namespace std;
 using namespace nupic;
 using namespace nupic::sdr;
@@ -452,22 +452,21 @@ TEST(SdrTest, TestSumSparsity) {
 }
 
 TEST(SdrTest, TestPrint) {
-    stringstream str;
+    // Note: serialization is tested elsewhere.
+    std::string str;
     SDR a({100});
-    str << a;
+    str = a.toString();
     // Use find so that trailing whitespace differences on windows/unix don't break it.
-    ASSERT_NE( str.str().find( "SDR( 100 )" ), std::string::npos);
+    ASSERT_NE( str.find( "SDR( 100 )" ), std::string::npos);
 
-    stringstream str2;
     SDR b({ 9, 8 });
-    str2 << b;
-    ASSERT_NE( str2.str().find( "SDR( 9, 8 )" ), std::string::npos);
+    str  = b.toString();
+    ASSERT_NE( str.find( "SDR( 9, 8 )" ), std::string::npos);
 
-    stringstream str3;
     SDR sdr3({ 3, 3 });
     sdr3.setDense(SDR_dense_t({ 0, 1, 0, 0, 1, 0, 0, 0, 1 }));
-    str3 << sdr3;
-    ASSERT_NE( str3.str().find( "SDR( 3, 3 ) 1, 4, 8" ), std::string::npos);
+    str = sdr3.toString();
+    ASSERT_NE( str.find( "SDR( 3, 3 ) 1, 4, 8" ), std::string::npos);
 
     // Check that default aruments don't crash.
     cout << "PRINTING \"SDR( 3, 3 ) 1, 4, 8\" TO STDOUT: ";

@@ -47,7 +47,7 @@ typedef std::function<void()>           SDR_callback_t;
  * ### Description
  * This class manages the specification and momentary value of a Sparse
  * Distributed Representation (SDR).  An SDR is a group of boolean values which
- * represent the state of a group of neurons or their associated processes. 
+ * represent the state of a group of neurons or their associated processes.
  *
  * This class automatically converts between the commonly used SDR data formats:
  * which are dense, sparse, and coordinates.  Converted values are cached by
@@ -496,7 +496,7 @@ public:
      * Save (serialize) the current state of the SDR to the specified file.
      * This method can NOT save callbacks!  Only the dimensions and current data
      * are saved.
-     * 
+     *
      * @param stream A valid output stream, such as an open file.
      */
     void save(std::ostream &outStream) const override;   // will be removed later
@@ -513,19 +513,24 @@ public:
     template<class Archive>
     void save_ar(Archive & ar) const
     {
-        getSparse();
+        getSparse(); // to make sure sparse is valid.
         ar(dimensions_, sparse_ );
     }
 
     template<class Archive>
     void load_ar(Archive & ar)
     {
-        getSparse();
+std::cerr << "SDR::load_ar()1 " << std::endl;
+        setSparseInplace(); // to make sure sparse is valid.
+std::cerr << "SDR::load_ar()2 " << std::endl;
         ar( dimensions_, sparse_ );
+std::cerr << "SDR::load_ar()3 " << sparse_.size() << std::endl;
         initialize( dimensions_ );
+std::cerr << "SDR::load_ar()4 " << std::endl;
         setSparseInplace();
+std::cerr << "SDR::load_ar()5 " << std::endl;
     }
-        
+
     friend std::ostream& operator<< (std::ostream& stream, const SparseDistributedRepresentation &sdr) {
       cereal::JSONOutputArchive ar(stream);
       sdr.save_ar(ar);

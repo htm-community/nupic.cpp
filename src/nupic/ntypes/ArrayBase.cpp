@@ -25,6 +25,7 @@
  */
 
 #include <iostream> // for ostream
+#include <sstream>  // for stringstream
 //#include <iomanip>  // for std::setprecision
 #include <cstring>  // for memcpy, memcmp
 #include <stdlib.h> // for size_t
@@ -198,7 +199,7 @@ const SDR& ArrayBase::getSDR() const {
   NTA_CHECK(type_ == NTA_BasicType_SDR) << "Does not contain an SDR object";
   if (buffer_ == nullptr)
     // this is const, cannot create an empty SDR.
-    NTA_THROW << "getSDR: SDR pointer is null";  
+    NTA_THROW << "getSDR: SDR pointer is null";
   SDR& sdr = *((SDR *)buffer_.get());
   sdr.setDense(sdr.getDense()); // cleanup cache
   return sdr;
@@ -309,7 +310,7 @@ bool operator==(const ArrayBase &lhs, const ArrayBase &rhs) {
 template<typename T>
 static bool compare_array_0_and_non0s_helper_(T ptr, const Byte *v, size_t size) {
     for (size_t i = 0; i < size; i++) {
-      if (((v[i]!=0) && (((T)ptr)[i] == 0)) 
+      if (((v[i]!=0) && (((T)ptr)[i] == 0))
        || ((v[i]==0) && (((T)ptr)[i] != 0)))
         return false;
     }
@@ -319,13 +320,13 @@ static bool compare_array_0_and_non0s_helper_(T ptr, const Byte *v, size_t size)
 // Compare contents of a ArrayBase object and a vector of type Byte.  Actually
 // we are only interested in 0 and non-zero values in this compare.
 static bool compare_array_0_and_non0s_(const ArrayBase &a_side, const std::vector<nupic::Byte> &v_side) {
-  
+
   if (a_side.getCount() != v_side.size()) return false;
   size_t ele_size = BasicType::getSize(a_side.getType());
   size_t size = a_side.getCount();
   const void *a_ptr = a_side.getBuffer();
   const Byte *v_ptr = &v_side[0];
-  switch(ele_size) { 
+  switch(ele_size) {
   default:
   case 1: return compare_array_0_and_non0s_helper_((const Byte*  )a_ptr, v_ptr, size);
   case 2: return compare_array_0_and_non0s_helper_((const UInt16*)a_ptr, v_ptr, size);
@@ -387,16 +388,16 @@ void ArrayBase::load(std::istream &inStream) {
 ////////////////////////////////////////////////////////////////////////////////
 //         Stream Serialization  (as JSON text character strings)
 ////////////////////////////////////////////////////////////////////////////////
-//std::ostream &operator<<(std::ostream &outStream, const ArrayBase &a) {
-//  cereal::JSONOutputArchive ar(outStream);
-//  a.save_ar(ar);
-//  return outStream;
-//}
-//std::istream &operator>>(std::istream &inStream, ArrayBase &a) {
-//  cereal::JSONInputArchive ar(inStream);
-//  a.load_ar(ar);
-//  return inStream;
-//}
+std::ostream &operator<<(std::ostream &outStream, const ArrayBase &a) {
+  cereal::JSONOutputArchive ar(outStream);
+  a.save_ar(ar);
+  return outStream;
+}
+std::istream &operator>>(std::istream &inStream, ArrayBase &a) {
+  cereal::JSONInputArchive ar(inStream);
+  a.load_ar(ar);
+  return inStream;
+}
 
 
 template <typename T>
@@ -416,15 +417,17 @@ static void _templatedStreamBuffer(std::ostream &outStream, const void *inbuf,
   outStream << ") ";
 }
 
-std::ostream &operator<<(std::ostream &outStream, const ArrayBase &a) {
-  auto const inbuf = a.getBuffer();
-  auto const numElements = a.getCount();
-  auto const elementType = a.getType();
+std::string ArrayBase::toString() const {
+  std::stringstream outStream;
+
+  auto const inbuf = getBuffer();
+  auto const numElements = getCount();
+  auto const elementType = getType();
   if (elementType == NTA_BasicType_SDR) {
-    if (!a.has_buffer())
+    if (!has_buffer())
       outStream << "[ SDR(0) nullptr ]";
     else
-      outStream << "[ " << a.getSDR() << " ]";
+      outStream << "[ " << getSDR() << " ]";
   }
   else {
     outStream << "[ " << BasicType::getName(elementType) << " " << numElements
@@ -467,7 +470,7 @@ std::ostream &operator<<(std::ostream &outStream, const ArrayBase &a) {
     }
     outStream << " ] ";
   }
-  return outStream;
+  return outStream.str();
 }
 
 template <typename T>
@@ -491,29 +494,32 @@ static void _templatedStreamBuffer(std::istream &inStream, void *buf,
       << "deserialize Array buffer...expected a closing ')' but not found.";
 }
 
-std::istream &operator>>(std::istream &inStream, ArrayBase &a) {
+void ArrayBase::fromString(const std::string& str) {
+  std::stringstream inStream;
   std::string v;
   size_t numElements;
+
+  inStream << str;
 
   inStream >> v;
   NTA_CHECK(v == "[")
       << "deserialize Array object...expected an opening '[' but not found.";
 
   inStream >> v;
-  a.type_ = BasicType::parse(v);
+  type_ = BasicType::parse(v);
   inStream >> numElements;
-  if (numElements > 0 && a.type_ == NTA_BasicType_SDR) {
+  if (numElements > 0 && type_ == NTA_BasicType_SDR) {
     SDR *sdr = new SDR();
     sdr->load(inStream);
     std::shared_ptr<char> sp((char *)(sdr));
-    a.buffer_ = sp;
+    buffer_ = sp;
   } else {
-    a.allocateBuffer(numElements);
+    allocateBuffer(numElements);
   }
 
-  if (a.has_buffer()) {
-    auto inbuf = a.getBuffer();
-    switch (a.type_) {
+  if (has_buffer()) {
+    auto inbuf = getBuffer();
+    switch (type_) {
     case NTA_BasicType_Byte:
       _templatedStreamBuffer<Byte>(inStream, inbuf, numElements);
       break;
@@ -548,7 +554,7 @@ std::istream &operator>>(std::istream &inStream, ArrayBase &a) {
       _templatedStreamBuffer<Byte>(inStream, inbuf, numElements);
       break;
     default:
-      NTA_THROW << "Unexpected Element Type: " << a.type_;
+      NTA_THROW << "Unexpected Element Type: " << type_;
       break;
     }
   }
@@ -557,7 +563,6 @@ std::istream &operator>>(std::istream &inStream, ArrayBase &a) {
       << "deserialize Array buffer...expected a closing ']' but not found.";
   inStream.ignore(1);
 
-  return inStream;
 }
 
 } // namespace nupic
