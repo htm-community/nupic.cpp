@@ -120,19 +120,17 @@ public:
 
   template<class Archive>
   void save_ar(Archive & ar) const {
-    ar(cereal::make_size_tag(map_.size()));
+    ar(cereal::make_size_tag(static_cast<cereal::size_type>(map_.size())));
     for (auto it = vec_.begin(); it != vec_.end(); it++) {
-      //map order
-      //std::pair<std::string, T> p = vec_[it->second];
-      //ar(cereal::make_map_item(p.first, p.second));
+      //vector order
       ar(cereal::make_map_item(it->first, it->second));
     }
   }
   template<class Archive>
   void load_ar(Archive & ar) {
-    size_t count;
+    cereal::size_type count;
     ar(cereal::make_size_tag(count));
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = 0; i < static_cast<std::size_t>(count); i++) {
       std::string key;
       T value;
 

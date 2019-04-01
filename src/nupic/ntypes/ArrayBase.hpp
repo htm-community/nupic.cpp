@@ -156,11 +156,6 @@ namespace nupic
     virtual void setBuffer(void *buffer, size_t count);
     virtual void setBuffer(sdr::SDR &sdr);
 
-    /**
-     * Set the number of elements.  This is used to truncate the array.
-     * For NTA_BasicTypeSparse, this sets the current length of the sparse array.
-     */
-    //void setCount(size_t count);
 
     /**
      * Return the type of data contained in the ArrayBase object.

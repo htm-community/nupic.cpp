@@ -514,7 +514,7 @@ public:
     void save_ar(Archive & ar) const
     {
         getSparse(); // to make sure sparse is valid.
-        ar(dimensions_, sparse_ );
+        ar(cereal::make_nvp("dim", dimensions_), cereal::make_nvp("sparse", sparse_) );
     }
 
     template<class Archive>
