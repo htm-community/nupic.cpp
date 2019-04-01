@@ -36,43 +36,40 @@ namespace YAMLUtils {
 /*
  * These functions are used internally by toValue and toValueMap
  */
-static void _toScalar(const YAML::Node& node, std::shared_ptr<Scalar>& s);
-static void _toArray(const YAML::Node& node, std::shared_ptr<Array>& a);
-static Value toValue(const YAML::Node& node, NTA_BasicType dataType);
 
-static void _toScalar(const YAML::Node &node, std::shared_ptr<Scalar> &s) {
+static void _toScalar(const YAML::Node &node, Scalar& s) {
   NTA_CHECK(node.Type() == YAML::NodeType::Scalar);
-  switch (s->getType()) {
+  switch (s.getType()) {
   case NTA_BasicType_Byte:
     // We should have already detected this and gone down the string path
     NTA_THROW << "Internal error: attempting to convert YAML string to scalar of type Byte";
     break;
   case NTA_BasicType_UInt16:
-    s->value.uint16 = node.as<UInt16>();
+    s.value.uint16 = node.as<UInt16>();
     break;
   case NTA_BasicType_Int16:
-    s->value.int16 = node.as<Int16>();
+    s.value.int16 = node.as<Int16>();
     break;
   case NTA_BasicType_UInt32:
-    s->value.uint32 = node.as<UInt32>();
+    s.value.uint32 = node.as<UInt32>();
     break;
   case NTA_BasicType_Int32:
-    s->value.int32 = node.as<Int32>();
+    s.value.int32 = node.as<Int32>();
     break;
   case NTA_BasicType_UInt64:
-    s->value.uint64 = node.as<UInt64>();
+    s.value.uint64 = node.as<UInt64>();
     break;
   case NTA_BasicType_Int64:
-    s->value.int64 = node.as<Int64>();
+    s.value.int64 = node.as<Int64>();
     break;
   case NTA_BasicType_Real32:
-    s->value.real32 = node.as<Real32>();
+    s.value.real32 = node.as<Real32>();
     break;
   case NTA_BasicType_Real64:
-    s->value.real64 = node.as<Real64>();
+    s.value.real64 = node.as<Real64>();
     break;
   case NTA_BasicType_Bool:
-    s->value.boolean = node.as<bool>();
+    s.value.boolean = node.as<bool>();
     break;
   case NTA_BasicType_Handle:
     NTA_THROW << "Attempt to specify a YAML value for a scalar of type Handle";
@@ -80,20 +77,20 @@ static void _toScalar(const YAML::Node &node, std::shared_ptr<Scalar> &s) {
   default:
     // should not happen
     const std::string val = node.as<std::string>();
-    NTA_THROW << "Unknown data type " << s->getType() << " for yaml node '" << val << "'";
+    NTA_THROW << "Unknown data type " << s.getType() << " for yaml node '" << val << "'";
   }
 }
 
-static void _toArray(const YAML::Node& node, std::shared_ptr<Array>& a) {
+static void _toArray(const YAML::Node& node, Array& a) {
   NTA_CHECK(node.Type() == YAML::NodeType::Sequence);
 
-  a->allocateBuffer(node.size());
-  void *buffer = a->getBuffer();
+  a.allocateBuffer(node.size());
+  void *buffer = a.getBuffer();
 
   for (size_t i = 0; i < node.size(); i++) {
     const YAML::Node &item = node[i];
     NTA_CHECK(item.Type() == YAML::NodeType::Scalar);
-    switch (a->getType()) {
+    switch (a.getType()) {
     case NTA_BasicType_Byte:
       // We should have already detected this and gone down the string path
       NTA_THROW << "Internal error: attempting to convert YAML string to array "
@@ -128,7 +125,7 @@ static void _toArray(const YAML::Node& node, std::shared_ptr<Array>& a) {
       break;
     default:
       // should not happen
-      NTA_THROW << "Unknown data type " << a->getType();
+      NTA_THROW << "Unknown data type " << a.getType();
     }
   }
 }
@@ -145,14 +142,14 @@ static Value toValue(const YAML::Node &node, NTA_BasicType dataType) {
       Value v(val);
       return v;
     } else {
-      std::shared_ptr<Scalar> s(new Scalar(dataType));
+      Scalar s(dataType);
       _toScalar(node, s);
       Value v(s);
       return v;
     }
   } else {
     // array
-    std::shared_ptr<Array> a(new Array(dataType));
+    Array a(dataType);
     _toArray(node, a);
     Value v(a);
     return v;

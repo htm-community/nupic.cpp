@@ -84,34 +84,34 @@ namespace nupic
                 auto key = it->first.c_str();
 
                 auto value = it->second;
-                if (value->isScalar())
+                if (value.isScalar())
                 {
-                    auto s = value->getScalar();
-                    switch (s->getType())
+                    auto s = value.getScalar();
+                    switch (s.getType())
                     {
-                        case NTA_BasicType_Bool: { kwargs[key] = s->getValue<bool>(); break; }
-                        case NTA_BasicType_Byte: { kwargs[key] = s->getValue<Byte>(); break; }
-                        case NTA_BasicType_Int16: { kwargs[key] = s->getValue<Int16>(); break; }
-                        case NTA_BasicType_UInt16: { kwargs[key] = s->getValue<UInt16>(); break; }
-                        case NTA_BasicType_Int32: { kwargs[key] = s->getValue<Int32>(); break; }
-                        case NTA_BasicType_UInt32: { kwargs[key] = s->getValue<UInt32>(); break; }
-                        case NTA_BasicType_Int64: { kwargs[key] = s->getValue<Int64>(); break; }
-                        case NTA_BasicType_UInt64: { kwargs[key] = s->getValue<UInt64>(); break; }
-                        case NTA_BasicType_Real32: { kwargs[key] = s->getValue<Real32>(); break; }
-                        case NTA_BasicType_Real64: { kwargs[key] = s->getValue<Real64>(); break; }
+                        case NTA_BasicType_Bool: { kwargs[key] = s.getValue<bool>(); break; }
+                        case NTA_BasicType_Byte: { kwargs[key] = s.getValue<Byte>(); break; }
+                        case NTA_BasicType_Int16: { kwargs[key] = s.getValue<Int16>(); break; }
+                        case NTA_BasicType_UInt16: { kwargs[key] = s.getValue<UInt16>(); break; }
+                        case NTA_BasicType_Int32: { kwargs[key] = s.getValue<Int32>(); break; }
+                        case NTA_BasicType_UInt32: { kwargs[key] = s.getValue<UInt32>(); break; }
+                        case NTA_BasicType_Int64: { kwargs[key] = s.getValue<Int64>(); break; }
+                        case NTA_BasicType_UInt64: { kwargs[key] = s.getValue<UInt64>(); break; }
+                        case NTA_BasicType_Real32: { kwargs[key] = s.getValue<Real32>(); break; }
+                        case NTA_BasicType_Real64: { kwargs[key] = s.getValue<Real64>(); break; }
 
                         default:
-                            NTA_THROW << "Invalid type: " << s->getType();
+                            NTA_THROW << "Invalid type: " << s.getType();
                     }
                 }
-                else if(value->isString())
+                else if(value.isString())
                 {
-                    kwargs[key] = value->getString();
+                    kwargs[key] = value.getString();
                 }
-                else if (value->isArray())
+                else if (value.isArray())
                 {
-                    auto a = value->getArray();
-                    kwargs[key] = create_numpy_view(*a.get());
+                    auto a = value.getArray();
+                    kwargs[key] = create_numpy_view(a);
 
                 }
                 else
@@ -581,7 +581,7 @@ namespace nupic
                     auto count = input["count"].cast<UInt32>();
 
 										bool required = false;
-                    if (input.contains("required")) 
+                    if (input.contains("required"))
 										{
                     	required = input["required"].cast<bool>();
 										}
@@ -656,7 +656,7 @@ namespace nupic
                         regionLevel = output["regionLevel"].cast<bool>();
                     }
 										bool isDefaultOutput = false;
-										if (output.contains("isDefaultOutput")) 
+										if (output.contains("isDefaultOutput"))
 										{
                     	isDefaultOutput = output["isDefaultOutput"].cast<bool>();
 										}

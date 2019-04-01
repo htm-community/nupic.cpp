@@ -132,8 +132,8 @@ RegionImpl *RegionImplFactory::createRegionImpl(const std::string nodeType,
 
   // If the parameter 'dim' was defined, parse that out as a global parameter.
   if (vm.contains("dim")) {
-    std::shared_ptr<Array> dim = vm.getArray("dim");
-    Dimensions d(dim->asVector<UInt32>());
+    const Array& dim = vm.getArray("dim");
+    Dimensions d(dim.asVector<UInt32>());
     impl->setDimensions(d);
   }
 

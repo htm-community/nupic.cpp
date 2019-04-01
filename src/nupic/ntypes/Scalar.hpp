@@ -38,9 +38,10 @@
 namespace nupic {
 class Scalar : public Serializable {
 public:
+  Scalar() { theType_ = NTA_BasicType_UInt32; value.uint64 = 0; }
   Scalar(NTA_BasicType theTypeParam);
 
-  NTA_BasicType getType();
+  NTA_BasicType getType() const;
 
   template <typename T> T getValue() const;
 
@@ -58,7 +59,7 @@ public:
     bool boolean;
   } value;
 
-      
+
   template<class Archive>
   void save_ar(Archive & ar) const {
       switch (theType_) {
@@ -99,6 +100,8 @@ public:
   void save(std::ostream &stream) const override { };  // will be removed later
   void load(std::istream &stream) override { };
 
+  bool operator==(const Scalar &rhs) const;
+  inline bool operator!=(const Scalar &rhs) {return !(*this == rhs);}
 
 private:
   NTA_BasicType theType_;

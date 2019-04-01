@@ -34,7 +34,7 @@
 
 namespace testing {
 
-static bool verbose = false;
+static bool verbose = true;
 #define VERBOSE                                                                \
   if (verbose)                                                                 \
   std::cerr << "[          ]"

@@ -27,13 +27,13 @@
 #include <gtest/gtest.h>
 #include <nupic/ntypes/Value.hpp>
 
-namespace testing { 
-    
+namespace testing {
+
 using namespace nupic;
 
 TEST(ValueTest, Scalar) {
-  std::shared_ptr<Scalar> s(new Scalar(NTA_BasicType_Int32));
-  s->value.int32 = 10;
+  Scalar s(NTA_BasicType_Int32);
+  s.value.int32 = 10;
   Value v(s);
   ASSERT_TRUE(v.isScalar());
   ASSERT_TRUE(!v.isString());
@@ -41,7 +41,7 @@ TEST(ValueTest, Scalar) {
   ASSERT_EQ(Value::Category::scalar, v.getCategory());
   ASSERT_EQ(NTA_BasicType_Int32, v.getType());
 
-  std::shared_ptr<Scalar> s1 = v.getScalar();
+  const Scalar& s1 = v.getScalar();
   ASSERT_TRUE(s1 == s);
 
   ASSERT_ANY_THROW(v.getArray());
@@ -56,8 +56,8 @@ TEST(ValueTest, Scalar) {
 }
 
 TEST(ValueTest, Array) {
-  std::shared_ptr<Array> s(new Array(NTA_BasicType_Int32));
-  s->allocateBuffer(10);
+  Array s(NTA_BasicType_Int32);
+  s.allocateBuffer(10);
   Value v(s);
   ASSERT_TRUE(v.isArray());
   ASSERT_TRUE(!v.isString());
@@ -65,7 +65,7 @@ TEST(ValueTest, Array) {
   ASSERT_EQ(Value::Category::array, v.getCategory());
   ASSERT_EQ(NTA_BasicType_Int32, v.getType());
 
-  std::shared_ptr<Array> s1 = v.getArray();
+  const Array& s1 = v.getArray();
   ASSERT_TRUE(s1 == s);
 
   ASSERT_ANY_THROW(v.getScalar());
@@ -95,9 +95,9 @@ TEST(ValueTest, String) {
 }
 
 TEST(ValueTest, ValueMap) {
-  std::shared_ptr<Scalar> s(new Scalar(NTA_BasicType_Int32));
-  s->value.int32 = 10;
-  std::shared_ptr<Array> a(new Array(NTA_BasicType_Real32));
+  Scalar s(NTA_BasicType_Int32);
+  s.value.int32 = 10;
+  Array a(NTA_BasicType_Real32);
   std::string str("hello world");
 
   ValueMap vm;
@@ -113,13 +113,12 @@ TEST(ValueTest, ValueMap) {
   ASSERT_TRUE(!vm.contains("scalar2"));
   ASSERT_TRUE(!vm.contains("xscalar"));
 
-  std::shared_ptr<Scalar> s1 = vm.getScalar("scalar");
+  const Scalar& s1 = vm.getScalar("scalar");
   ASSERT_TRUE(s1 == s);
 
-  std::shared_ptr<Array> a1 = vm.getArray("array");
+  const Array& a1 = vm.getArray("array");
   ASSERT_TRUE(a1 == a);
 
-  std::shared_ptr<Scalar> def(new Scalar(NTA_BasicType_Int32));
   Int32 x = vm.getScalarT("scalar", (Int32)20);
   ASSERT_EQ((Int32)10, x);
 

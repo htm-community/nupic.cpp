@@ -62,8 +62,8 @@ namespace nupic {
  */
 class Value : public Serializable {
 public:
-  Value(std::shared_ptr<Scalar> &s);
-  Value(std::shared_ptr<Array> &a);
+  Value(const Scalar &s);
+  Value(const Array &a);
   Value(const std::string &s);
 
   enum Category { scalar=0, array, string };
@@ -75,9 +75,9 @@ public:
 
   NTA_BasicType getType() const;
 
-  std::shared_ptr<Scalar> getScalar() const;
+  const Scalar& getScalar() const;
 
-  std::shared_ptr<Array> getArray() const;
+  const Array& getArray() const;
 
   std::string getString() const;
 
@@ -85,7 +85,7 @@ public:
 
   const std::string getDescription() const;
 
-    
+
   template<class Archive>
   void save_ar(Archive & ar) const {
     switch(category_) {
@@ -114,10 +114,10 @@ public:
 private:
   // Default constructor would not be useful
   Value();
-	
+
   Category category_;
-  std::shared_ptr<Scalar> scalar_;
-  std::shared_ptr<Array> array_;
+  Scalar scalar_;
+  Array array_;
   std::string string_;
 };
 
@@ -141,8 +141,8 @@ public:
   const Value &getValue(const std::string &key) const;
 
   // Method below are for convenience, bypassing the Value
-  std::shared_ptr<Array> getArray(const std::string &key) const;
-  std::shared_ptr<Scalar> getScalar(const std::string &key) const;
+  const Array& getArray(const std::string &key) const;
+  const Scalar& getScalar(const std::string &key) const;
   std::string getString(const std::string &key) const;
   std::string getString(const std::string &key,  const std::string defaultValue) const;
 
@@ -161,7 +161,7 @@ public:
   const_iterator begin() const;
   const_iterator end() const;
 
-  
+
   template<class Archive>
   void save_ar(Archive & ar) const {
     ar(map_);
@@ -175,8 +175,6 @@ public:
 
 
 private:
-  // must be a Value* since Value doesn't have a default constructor
-  // We own all the items in the map and must delete them in our destructor
   typedef std::map<std::string, Value>::iterator iterator;
   std::map<std::string, Value> map_;
 };

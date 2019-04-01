@@ -42,8 +42,14 @@
 #include <cereal/cereal.hpp>
 #include <cereal/archives/binary.hpp>
 
-// The RapidJson distribution had a problem with this new gcc warning.
+// The RapidJson distribution (Used by Cereal) had a problem with these warnings.
 // It is being fixed in next release.
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wexceptions"
+#pragma clang diagnostic ignored "-Wunused-variable"
+#endif
+
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 800)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
@@ -54,6 +60,10 @@
 
 #if defined(__GNUC__) && !defined(__INTEL_COMPILER) && (((__GNUC__ * 100) + __GNUC_MINOR__) >= 800)
 #pragma GCC diagnostic pop
+#endif
+
+#ifdef __clang__
+#pragma clang diagnostic pop
 #endif
 
 #include <cereal/types/memory.hpp>

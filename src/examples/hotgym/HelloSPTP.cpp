@@ -131,7 +131,7 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
       input[i] = (UInt) inputSDR.getDense()[i];
     }
 
-    //SP (global x local) 
+    //SP (global x local)
     if(useSPlocal) {
     tSPloc.start();
     fill(outSP.begin(), outSP.end(), 0);
@@ -174,13 +174,13 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
     tTM.start();
     tm.compute(outSPsparse.size(), outSPsparse.data(), true /*learn*/);
     const auto tmAct = tm.getActiveCells();
-    tm.activateDendrites(); //must be called before getPredictiveCells 
+    tm.activateDendrites(); //must be called before getPredictiveCells
     const auto tmPred = tm.getPredictiveCells();
     //TODO assert tmAct == spOut
     //TODO merge Act + Pred and use for anomaly from TM
     tTM.stop();
     }
- 
+
 
     //Anomaly (pure x likelihood)
     tAn.start();
@@ -221,13 +221,13 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
 #ifdef _MSC_VER
           const size_t CI_avg_time = (size_t)floor(30*Timer::getSpeed()); //sec
 #else
-          const size_t CI_avg_time = (size_t)floor(7*Timer::getSpeed()); //sec
+          const size_t CI_avg_time = (size_t)floor(9*Timer::getSpeed()); //sec
 #endif
         NTA_CHECK(timeTotal <= CI_avg_time) << //we'll see how stable the time result in CI is, if usable
           "HelloSPTP test slower than expected! (" << timeTotal << ",should be "<< CI_avg_time;
       }
     }
   } //end for
-  return tAll.getElapsed(); 
+  return tAll.getElapsed();
 } //end run()
 } //-ns

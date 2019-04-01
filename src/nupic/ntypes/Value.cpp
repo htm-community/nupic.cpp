@@ -29,12 +29,12 @@
 
 using namespace nupic;
 
-Value::Value(std::shared_ptr<Scalar> &s) {
+Value::Value(const Scalar &s) {
   category_ = Category::scalar;
   scalar_ = s;
 }
 
-Value::Value(std::shared_ptr<Array> &a) {
+Value::Value(const Array &a) {
   category_ = Category::array;
   array_ = a;
 }
@@ -53,10 +53,10 @@ bool Value::isString() const { return category_ == Category::string; }
 NTA_BasicType Value::getType() const {
   switch (category_) {
   case Category::scalar:
-    return scalar_->getType();
+    return scalar_.getType();
     break;
   case Category::array:
-    return array_->getType();
+    return array_.getType();
     break;
   default:
     // string
@@ -65,12 +65,12 @@ NTA_BasicType Value::getType() const {
   }
 }
 
-std::shared_ptr<Scalar> Value::getScalar() const {
+const Scalar& Value::getScalar() const {
   NTA_CHECK(category_ == Category::scalar);
   return scalar_;
 }
 
-std::shared_ptr<Array> Value::getArray() const {
+const Array& Value::getArray() const {
   NTA_CHECK(category_ == Category::array);
   return array_;
 }
@@ -82,12 +82,12 @@ std::string Value::getString() const {
 
 template <typename T> T Value::getScalarT() const {
   NTA_CHECK(category_ == Category::scalar);
-  if (BasicType::getType<T>() != scalar_->getType()) {
+  if (BasicType::getType<T>() != scalar_.getType()) {
     NTA_THROW << "Attempt to access scalar of type "
-              << BasicType::getName(scalar_->getType()) << " as type "
+              << BasicType::getName(scalar_.getType()) << " as type "
               << BasicType::getName<T>();
   }
-  return scalar_->getValue<T>();
+  return scalar_.getValue<T>();
 }
 
 const std::string Value::getDescription() const {
@@ -96,10 +96,10 @@ const std::string Value::getDescription() const {
     return std::string("string") + " (" + string_ + ")";
     break;
   case Category::scalar:
-    return std::string("Scalar of type ") + BasicType::getName(scalar_->getType());
+    return std::string("Scalar of type ") + BasicType::getName(scalar_.getType());
     break;
   case Category::array:
-    return std::string("Array of type ") +  BasicType::getName(array_->getType());
+    return std::string("Array of type ") +  BasicType::getName(array_.getType());
     break;
   }
   return "NOT REACHED";
@@ -173,17 +173,17 @@ T ValueMap::getScalarT(const std::string &key, T defaultValue) const {
 }
 
 template <typename T> T ValueMap::getScalarT(const std::string &key) const {
-  std::shared_ptr<Scalar> s = getScalar(key);
-  if (s->getType() != BasicType::getType<T>()) {
+  const Scalar& s = getScalar(key);
+  if (s.getType() != BasicType::getType<T>()) {
     NTA_THROW << "Invalid attempt to access parameter '" << key
       << "' as type a " << BasicType::getName<T>()
-      << " but the Spec defines it as type " << BasicType::getName(s->getType());
+      << " but the Spec defines it as type " << BasicType::getName(s.getType());
   }
 
-  return s->getValue<T>();
+  return s.getValue<T>();
 }
 
-std::shared_ptr<Array> ValueMap::getArray(const std::string &key) const {
+const Array& ValueMap::getArray(const std::string &key) const {
   const Value &v = getValue(key);
   if (!v.isArray()) {
     NTA_THROW << "Attempt to access element '" << key
@@ -193,7 +193,7 @@ std::shared_ptr<Array> ValueMap::getArray(const std::string &key) const {
   return v.getArray();
 }
 
-std::shared_ptr<Scalar> ValueMap::getScalar(const std::string &key) const {
+const Scalar& ValueMap::getScalar(const std::string &key) const {
   const Value &v = getValue(key);
   if (!v.isScalar()) {
     NTA_THROW << "Attempt to access element '" << key

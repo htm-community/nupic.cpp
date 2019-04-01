@@ -520,15 +520,10 @@ public:
     template<class Archive>
     void load_ar(Archive & ar)
     {
-std::cerr << "SDR::load_ar()1 " << std::endl;
         setSparseInplace(); // to make sure sparse is valid.
-std::cerr << "SDR::load_ar()2 " << std::endl;
         ar( dimensions_, sparse_ );
-std::cerr << "SDR::load_ar()3 " << sparse_.size() << std::endl;
         initialize( dimensions_ );
-std::cerr << "SDR::load_ar()4 " << std::endl;
         setSparseInplace();
-std::cerr << "SDR::load_ar()5 " << std::endl;
     }
 
     friend std::ostream& operator<< (std::ostream& stream, const SparseDistributedRepresentation &sdr) {
