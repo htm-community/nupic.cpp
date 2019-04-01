@@ -266,9 +266,7 @@ special, it is replaced with the system time.  The default seed is 0.)",
             py::arg("seed") = 0u);
 
         py_SDR.def("__str__", [](SDR &self){
-            stringstream buf;
-            buf << self;
-            return StringUtils::trim( buf.str() ); });
+            return StringUtils::trim( self.toString() ); });
 
         py_SDR.def("__eq__", [](SDR &self, SDR &other){ return self == other; });
         py_SDR.def("__ne__", [](SDR &self, SDR &other){ return self != other; });

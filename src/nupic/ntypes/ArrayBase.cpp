@@ -36,7 +36,6 @@
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp>
 
-using nupic::sdr::SDR;
 
 namespace nupic {
 
@@ -60,7 +59,7 @@ ArrayBase::ArrayBase(NTA_BasicType type, void *buffer, size_t count) {
  * constructor for Array object containing an SDR.
  * The SDR is copied. Array is the owner of the copy.
  */
-ArrayBase::ArrayBase(const SDR &sdr) {
+ArrayBase::ArrayBase(const sdr::SDR &sdr) {
   type_ = NTA_BasicType_SDR;
   auto dim = sdr.dimensions;
   allocateBuffer(dim);
@@ -117,7 +116,7 @@ char *ArrayBase::allocateBuffer(size_t count) {
 
 char *ArrayBase::allocateBuffer( const std::vector<UInt>& dimensions) { // only for SDR
   NTA_CHECK(type_ == NTA_BasicType_SDR) << "Dimensions can only be set on the SDR payload";
-  SDR *sdr = new SDR(dimensions);
+  sdr::SDR *sdr = new sdr::SDR(dimensions);
   std::shared_ptr<char> sp((char *)(sdr));
   buffer_ = sp;
   count_ = sdr->size;
@@ -151,7 +150,7 @@ void ArrayBase::setBuffer(void *buffer, size_t count) {
   count_ = count;
   buffer_ = std::shared_ptr<char>((char *)buffer, nonDeleter());
 }
-void ArrayBase::setBuffer(SDR &sdr) {
+void ArrayBase::setBuffer(sdr::SDR &sdr) {
   type_ = NTA_BasicType_SDR;
   buffer_ = std::shared_ptr<char>((char *)&sdr, nonDeleter());
   count_ = sdr.size;
@@ -184,23 +183,23 @@ const void *ArrayBase::getBuffer() const {
   return nullptr;
 }
 
-SDR& ArrayBase::getSDR() {
+sdr::SDR& ArrayBase::getSDR() {
   NTA_CHECK(type_ == NTA_BasicType_SDR) << "Does not contain an SDR object";
   if (buffer_ == nullptr) {
     std::vector<UInt> zeroDim;
     zeroDim.push_back(0u);
     allocateBuffer(zeroDim);  // Create an empty SDR object.
   }
-  SDR& sdr = *((SDR *)buffer_.get());
+  sdr::SDR& sdr = *((sdr::SDR *)buffer_.get());
   sdr.setDense(sdr.getDense()); // cleanup cache
   return sdr;
 }
-const SDR& ArrayBase::getSDR() const {
+const sdr::SDR& ArrayBase::getSDR() const {
   NTA_CHECK(type_ == NTA_BasicType_SDR) << "Does not contain an SDR object";
   if (buffer_ == nullptr)
     // this is const, cannot create an empty SDR.
     NTA_THROW << "getSDR: SDR pointer is null";
-  SDR& sdr = *((SDR *)buffer_.get());
+  sdr::SDR& sdr = *((sdr::SDR *)buffer_.get());
   sdr.setDense(sdr.getDense()); // cleanup cache
   return sdr;
 }
@@ -211,24 +210,13 @@ const SDR& ArrayBase::getSDR() const {
  */
 size_t ArrayBase::getCount() const {
   if (has_buffer() && type_ == NTA_BasicType_SDR) {
-    return ((SDR *)(buffer_.get()))->size;
+    return ((sdr::SDR *)(buffer_.get()))->size;
   }
   return count_;
 };
 
 
-/**
- * This can be used to truncate an array to a smaller size.
- * Not usable with an SDR.
- * /
-void ArrayBase::setCount(size_t count) {
-  NTA_CHECK(type_ != NTA_BasicType_SDR) << "Operation not valid for SDR";
-  NTA_ASSERT(count <= getMaxElementsCount())
-      << "Cannot set the array count (" << count
-      << ") greater than the capacity (" << getMaxElementsCount() << ").";
-  count_ = count;
-}
-***/
+
 
 /**
  * Return the NTA_BasicType of the current contents.
@@ -348,7 +336,7 @@ bool operator==(const std::vector<nupic::Byte> &lhs, const ArrayBase &rhs) {
 void ArrayBase::save(std::ostream &outStream) const {
   outStream << "[ " << count_ << " " << BasicType::getName(type_) << " ";
   if (has_buffer() && type_ == NTA_BasicType_SDR) {
-    const SDR& sdr = getSDR();
+    const sdr::SDR& sdr = getSDR();
     sdr.save(outStream);
   } else {
 
@@ -369,7 +357,7 @@ void ArrayBase::load(std::istream &inStream) {
   inStream >> tag;
   type_ = BasicType::parse(tag);
   if (count > 0 && type_ == NTA_BasicType_SDR) {
-    SDR *sdr = new SDR();
+    sdr::SDR *sdr = new sdr::SDR();
     sdr->load(inStream);
     std::shared_ptr<char> sp((char *)(sdr));
     buffer_ = sp;
@@ -509,7 +497,7 @@ void ArrayBase::fromString(const std::string& str) {
   type_ = BasicType::parse(v);
   inStream >> numElements;
   if (numElements > 0 && type_ == NTA_BasicType_SDR) {
-    SDR *sdr = new SDR();
+    sdr::SDR *sdr = new sdr::SDR();
     sdr->load(inStream);
     std::shared_ptr<char> sp((char *)(sdr));
     buffer_ = sp;

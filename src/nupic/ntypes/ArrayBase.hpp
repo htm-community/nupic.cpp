@@ -51,7 +51,6 @@
 #include <cereal/types/vector.hpp>
 
 
-using namespace nupic::sdr;
 namespace nupic
 {
 
@@ -225,7 +224,7 @@ namespace nupic
       ar(cereal::make_nvp("type", name));
       type_ = BasicType::parse(name);
       if (type_ == NTA_BasicType_SDR){
-        SDR *sdr = new SDR();
+        sdr::SDR *sdr = new sdr::SDR();
         ar(cereal::make_nvp("SDR", *sdr));
         buffer_.reset((char*)sdr);
         count_ = sdr->size;
