@@ -34,6 +34,7 @@ namespace py = pybind11;
 namespace nupic_ext
 {
     void init_Cells4(py::module&);
+    void init_Connections(py::module&);
     void init_HTM(py::module&);
     void init_SDR_Classifier(py::module&);
     void init_Spatial_Pooler(py::module&);
@@ -47,6 +48,7 @@ PYBIND11_MODULE(algorithms, m) {
 
     init_HTM(m);
     init_Cells4(m);
+    init_Connections(m);
     init_SDR_Classifier(m);
     init_Spatial_Pooler(m);
 }

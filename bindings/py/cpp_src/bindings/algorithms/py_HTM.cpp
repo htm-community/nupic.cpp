@@ -128,11 +128,18 @@ using nupic::algorithms::connections::Permanence;
                                  const SDR &extraActive, const SDR &extraWinners)
             { self.compute(activeColumns, learn, extraActive, extraWinners); });
 
+        py_HTM.def("reset", &HTM_t::reset);
+
         py_HTM.def("getActiveCells", [](const HTM_t& self)
         {
             auto activeCells = self.getActiveCells();
 
             return py::array_t<nupic::UInt32>(activeCells.size(), activeCells.data());
+        });
+
+        py_HTM.def("activateDendrites", [](HTM_t &self, bool learn) {
+            SDR extra({ self.extra });
+            self.activateDendrites(learn, extra, extra);
         });
 
         py_HTM.def("getPredictiveCells", [](const HTM_t& self)
@@ -180,6 +187,15 @@ using nupic::algorithms::connections::Permanence;
         {
             self.compute(activeColumns.size(), get_it(activeColumns), learn);
         }, "", py::arg("activeColumns"), py::arg("learn") = true);
+
+        py_HTM.def_property_readonly("connections", [](HTM_t& self)
+            { return &self.connections; });
+
+        py_HTM.def("createSegment", &HTM_t::createSegment);
+
+        py_HTM.def("numberOfCells",   &HTM_t::numberOfCells);
+
+        py_HTM.def("numberOfColumns", &HTM_t::numberOfColumns);
 
     }
 
