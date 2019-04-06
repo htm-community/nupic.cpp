@@ -31,6 +31,7 @@ Implementation of Spec API
 namespace nupic {
 
 Spec::Spec() : singleNodeOnly(false), description("") {}
+
 bool Spec::operator==(const Spec &o) const {
   if (singleNodeOnly != o.singleNodeOnly || description != o.description ||
       parameters != o.parameters || outputs != o.outputs ||
@@ -183,4 +184,34 @@ std::string Spec::toString() const {
   return ss.str();
 }
 
+// Support of operator<< by Cereal.
+std::ostream &operator<<(std::ostream &f, const InputSpec &s) {
+  cereal::JSONOutputArchive ar(f);
+  s.save_ar(ar);
+  return f;
+}
+
+std::ostream &operator<<(std::ostream &f, const OutputSpec &s) {
+  cereal::JSONOutputArchive ar(f);
+  s.save_ar(ar);
+  return f;
+}
+
+std::ostream &operator<<(std::ostream &f, const CommandSpec &s) {
+  cereal::JSONOutputArchive ar(f);
+  s.save_ar(ar);
+  return f;
+}
+
+std::ostream &operator<<(std::ostream &f, const ParameterSpec &s) {
+  cereal::JSONOutputArchive ar(f);
+  s.save_ar(ar);
+  return f;
+}
+
+std::ostream &operator<<(std::ostream &f, const Spec &s) {
+  cereal::JSONOutputArchive ar(f);
+  s.save_ar(ar);
+  return f;
+}
 } // namespace nupic

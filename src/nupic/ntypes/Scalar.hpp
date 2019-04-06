@@ -30,16 +30,18 @@
 #ifndef NTA_SCALAR_HPP
 #define NTA_SCALAR_HPP
 
+#include <nupic/types/Serializable.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/utils/Log.hpp> // temporary, while implementation is in hpp
 #include <string>
 
 namespace nupic {
-class Scalar {
+class Scalar : public Serializable {
 public:
+  Scalar() { theType_ = NTA_BasicType_UInt32; value.uint64 = 0; }
   Scalar(NTA_BasicType theTypeParam);
 
-  NTA_BasicType getType();
+  NTA_BasicType getType() const;
 
   template <typename T> T getValue() const;
 
@@ -57,9 +59,54 @@ public:
     bool boolean;
   } value;
 
+  CerialAdapter;  // see Serializable.hpp
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+      switch (theType_) {
+      case NTA_BasicType_Byte:   ar(value.byte);    break;
+	    case NTA_BasicType_Int16:  ar(value.int16);   break;
+	    case NTA_BasicType_UInt16: ar(value.uint16);  break;
+	    case NTA_BasicType_Int32:  ar(value.int32);   break;
+	    case NTA_BasicType_UInt32: ar(value.uint32);  break;
+	    case NTA_BasicType_Int64:  ar(value.int64);   break;
+	    case NTA_BasicType_UInt64: ar(value.uint64);  break;
+	    case NTA_BasicType_Real32: ar(value.real32);  break;
+	    case NTA_BasicType_Real64: ar(value.real64);  break;
+	    case NTA_BasicType_Bool:   ar(value.boolean); break;
+	    default:
+	      NTA_THROW << "Unexpected Element Type: " << theType_;
+	      break;
+	    }
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+      switch (theType_) {
+      case NTA_BasicType_Byte:   ar(value.byte);    break;
+	    case NTA_BasicType_Int16:  ar(value.int16);   break;
+	    case NTA_BasicType_UInt16: ar(value.uint16);  break;
+	    case NTA_BasicType_Int32:  ar(value.int32);   break;
+	    case NTA_BasicType_UInt32: ar(value.uint32);  break;
+	    case NTA_BasicType_Int64:  ar(value.int64);   break;
+	    case NTA_BasicType_UInt64: ar(value.uint64);  break;
+	    case NTA_BasicType_Real32: ar(value.real32);  break;
+	    case NTA_BasicType_Real64: ar(value.real64);  break;
+	    case NTA_BasicType_Bool:   ar(value.boolean); break;
+	    default:
+	      NTA_THROW << "Unexpected Element Type: " << theType_;
+	      break;
+	    }
+  }
+
+
+  bool operator==(const Scalar &rhs) const;
+  inline bool operator!=(const Scalar &rhs) {return !(*this == rhs);}
+
 private:
   NTA_BasicType theType_;
 };
+
+std::ostream &operator<< (std::ostream &f, const Scalar &s);
+
 
 } // namespace nupic
 
