@@ -354,7 +354,7 @@ public:
    *
    * @returns Reference to callback Collection
    */
-  Collection<callbackItem> &getCallbacks();
+  std::map<std::string, callbackItem> &getCallbacks();
 
   /**
    * @}
@@ -433,7 +433,7 @@ private:
   std::vector<std::set<Region *> > phaseInfo_;
 
   // we invoke these callbacks at every iteration
-  Collection<callbackItem> callbacks_;
+  std::map<std::string, callbackItem> callbacks_;
 
   // number of elapsed iterations
   UInt64 iteration_;

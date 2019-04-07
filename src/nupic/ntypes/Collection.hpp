@@ -43,6 +43,8 @@ namespace nupic {
 // This has been re-implemnted as an inline header-only class.
 // The map holds the key (always a string) and an index into vector.
 // The vector holds a std::pair<key, Object>
+//
+// NOTE: This container can hold only items serializable by Cereal.  See Serializable.hpp
 
 
 template <class T>
@@ -139,6 +141,14 @@ public:
     }
   }
 
+  friend std::ostream &operator<< (std::ostream &f, const Collection<T> &s) {
+    f << "[\n";
+    for (auto it = vec_.begin(); it != vec_.end(); it++) {
+      //vector order
+      f << "   {" << it->first << ": " << it->second << " }\n";
+    }
+    f << "]\n";
+  } // namespace nupic
 
 
 private:
@@ -147,19 +157,6 @@ private:
 
 };
 
-template<typename T>
-inline std::ostream &operator<< (std::ostream &f, const Collection<T> &s) {
-  cereal::JSONOutputArchive ar(f);
-  s.save_ar(ar);
-  return f;
-}
-template<typename T>
-inline std::istream &operator>> (std::istream &f, Collection<T> &s) {
-  cereal::JSONInputArchive ar(f);
-  s.load_ar(ar);
-  return f;
-}
-
-} // namespace nupic
+} // nupic namespace
 
 #endif // NTA_COLLECTION_HPP

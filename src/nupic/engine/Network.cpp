@@ -380,8 +380,7 @@ void Network::run(int n) {
     }
 
     // invoke callbacks
-    for (UInt32 i = 0; i < callbacks_.getCount(); i++) {
-      const std::pair<std::string, callbackItem> &callback = callbacks_.getByIndex(i);
+    for (auto& callback: callbacks_) {
       callback.second.first(this, iteration_, callback.second.second);
     }
 
@@ -468,7 +467,7 @@ Collection<std::shared_ptr<Link>> Network::getLinks() {
   return links;
 }
 
-Collection<Network::callbackItem> &Network::getCallbacks() {
+std::map<std::string, Network::callbackItem> &Network::getCallbacks() {
   return callbacks_;
 }
 

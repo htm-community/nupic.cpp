@@ -266,6 +266,10 @@ public:
   }
 
 };
+std::ostream &operator<<(std::ostream &f, const InputSpec &s);
+std::ostream &operator<<(std::ostream &f, const OutputSpec &s);
+std::ostream &operator<<(std::ostream &f, const CommandSpec &s);
+std::ostream &operator<<(std::ostream &f, const ParameterSpec &s);
 std::ostream &operator<<(std::ostream &f, const Spec &s);
 
 } // namespace nupic

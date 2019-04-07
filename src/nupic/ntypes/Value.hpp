@@ -35,11 +35,11 @@
 
 
 #include <map>
+#include <nupic/types/Serializable.hpp>
 #include <nupic/ntypes/Array.hpp>
 #include <nupic/ntypes/Scalar.hpp>
 #include <nupic/types/BasicType.hpp>
 #include <nupic/types/Types.hpp>
-#include <nupic/types/Serializable.hpp>
 #include <string>
 
 namespace nupic {
