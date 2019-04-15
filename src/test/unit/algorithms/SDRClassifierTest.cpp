@@ -311,6 +311,33 @@ TEST_F(SDRClassifierTest, SaveLoad) {
 }
 
 
+TEST_F(SDRClassifierTest, SaveLoad_ar) {
+  vector<UInt> steps{ 1u };
+  SDRClassifier c1 = SDRClassifier(steps, 0.1f, 0.1f, 0u);
+  SDRClassifier c2 = SDRClassifier(steps, 0.1f, 0.1f, 0u);
+
+  // Create a vector of input bit indices
+  vector<UInt> input1{ 1u, 5u, 9u };
+  vector<UInt> bucketIdxList1{4u};
+  vector<Real64> actValueList1{34.7f};
+  ClassifierResult result;
+  c1.compute(0u, input1, bucketIdxList1, actValueList1, false, true, true, result);
+
+  {
+    stringstream ss;
+		c1.saveToStream_ar(ss);
+    c2.loadFromStream_ar(ss);
+  }
+  ASSERT_EQ(c1, c2);
+
+  ClassifierResult result1, result2;
+  c1.compute(1u, input1, bucketIdxList1, actValueList1, false, true, true, result1);
+  c2.compute(1u, input1, bucketIdxList1, actValueList1, false, true, true, result2);
+
+  ASSERT_EQ(result1[1u], result2[1]);
+}
+
+
 TEST_F(SDRClassifierTest, testSoftmaxOverflow) {
   SDRClassifier c = SDRClassifier({1u}, 0.5f, 0.5f, 0u);
   std::vector<Real64> values = {numeric_limits<Real64>::max()};

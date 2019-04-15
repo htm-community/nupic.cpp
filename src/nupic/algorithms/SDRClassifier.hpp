@@ -149,6 +149,42 @@ public:
    * Load state from istream.
    */
   void load(std::istream &inStream) override;
+	
+	  CerealAdapter;  // see Serializable.hpp
+  // FOR Cereal Serialization
+  template<class Archive>
+  void save_ar(Archive& ar) const {
+    ar(CEREAL_NVP(alpha_),
+		   CEREAL_NVP(actValueAlpha_),
+		   CEREAL_NVP(maxSteps_),
+		   CEREAL_NVP(maxBucketIdx_ ),
+		   CEREAL_NVP(maxInputIdx_),
+		   CEREAL_NVP(verbosity_),
+		   CEREAL_NVP(recordNumHistory_),
+		   CEREAL_NVP(steps_),
+		   CEREAL_NVP(patternNZHistory_),
+		   CEREAL_NVP(weightMatrix_),
+			 CEREAL_NVP(actualValues_),
+			 CEREAL_NVP(actualValuesSet_));
+    }
+
+  }
+  // FOR Cereal Deserialization
+  template<class Archive>
+  void load_ar(Archive& ar) {
+    ar(CEREAL_NVP(alpha_),
+		   CEREAL_NVP(actValueAlpha_),
+		   CEREAL_NVP(maxSteps_),
+		   CEREAL_NVP(maxBucketIdx_ ),
+		   CEREAL_NVP(maxInputIdx_),
+		   CEREAL_NVP(verbosity_),
+		   CEREAL_NVP(recordNumHistory_),
+		   CEREAL_NVP(steps_),
+		   CEREAL_NVP(patternNZHistory_),
+		   CEREAL_NVP(weightMatrix_),
+			 CEREAL_NVP(actualValues_),
+			 CEREAL_NVP(actualValuesSet_));
+  }
 
 
   /**
