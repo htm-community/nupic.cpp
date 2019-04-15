@@ -150,7 +150,7 @@ public:
    */
   void load(std::istream &inStream) override;
 	
-	  CerealAdapter;  // see Serializable.hpp
+	CerealAdapter;  // see Serializable.hpp
   // FOR Cereal Serialization
   template<class Archive>
   void save_ar(Archive& ar) const {
@@ -166,9 +166,9 @@ public:
 		   CEREAL_NVP(weightMatrix_),
 			 CEREAL_NVP(actualValues_),
 			 CEREAL_NVP(actualValuesSet_));
-    }
-
   }
+
+
   // FOR Cereal Deserialization
   template<class Archive>
   void load_ar(Archive& ar) {
