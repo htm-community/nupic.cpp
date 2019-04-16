@@ -77,6 +77,7 @@
 #include <cereal/types/vector.hpp>  // for serializing std::vector
 #include <cereal/types/string.hpp>  // for serializing std::string
 #include <cereal/types/map.hpp>     // for serializing std::map
+#include <cereal/types/deque.hpp>   // for serializing std::deque
 
 #define SERIALIZABLE_VERSION 3
 
@@ -217,8 +218,8 @@ public:
 	//       Remove the following two lines.
 
   // These must be implemented by the subclass.
-  virtual void save(std::ostream &stream) const {};
-  virtual void load(std::istream &stream) {};
+  virtual void save(std::ostream &stream) const { saveToStream_ar(stream); };
+  virtual void load(std::istream &stream) { loadFromStream_ar(stream); };
 
 
   virtual inline void saveToFile_ar(std::string filePath, SerializableFormat fmt=SerializableFormat::BINARY) const {
