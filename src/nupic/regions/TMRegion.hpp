@@ -46,6 +46,9 @@ public:
   TMRegion(const TMRegion &) = delete;
   TMRegion(const ValueMap &params, Region *region);
   TMRegion(BundleIO &bundle, Region *region);
+  TMRegion(ArWrapper& wrapper, Region *region) : RegionImpl(region) {
+      // TODO:cereal  complete.
+    }
   virtual ~TMRegion();
 
   /* -----------  Required RegionImpl Interface methods ------- */
