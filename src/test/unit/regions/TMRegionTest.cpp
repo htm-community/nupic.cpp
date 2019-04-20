@@ -330,108 +330,85 @@ TEST(TMRegionTest, testLinking) {
 }
 
 TEST(TMRegionTest, testSerialization) {
-  // use default parameters the first time
-  Network *net1 = new Network();
-  Network *net2 = nullptr;
-  Network *net3 = nullptr;
+  Network net1;
+  Network net2;
+  Network net3;
 
-  try {
+  VERBOSE << "Setup first network and save it" << std::endl;
+  std::shared_ptr<Region> n1region1 = net1.addRegion( "region1", "ScalarSensor",
+                                            "{n: 48,w: 10,minValue: 0.05,maxValue: 10}");
+  n1region1->setParameterReal64("sensedValue", 5.0);
 
-    VERBOSE << "Setup first network and save it" << std::endl;
-    std::shared_ptr<Region> n1region1 = net1->addRegion( "region1", "ScalarSensor",
-                                             "{n: 48,w: 10,minValue: 0.05,maxValue: 10}");
-    n1region1->setParameterReal64("sensedValue", 5.0);
+  std::shared_ptr<Region> n1region2 =  net1.addRegion("region2", "TMRegion", "{numberOfCols: 48}");
 
-    std::shared_ptr<Region> n1region2 =  net1->addRegion("region2", "TMRegion", "{numberOfCols: 48}");
+  net1.link("region1", "region2", "", "", "encoded", "bottomUpIn");
+  VERBOSE << "Initialize" << std::endl;
+  net1.initialize();
 
-    net1->link("region1", "region2", "", "", "encoded", "bottomUpIn");
-    VERBOSE << "Initialize" << std::endl;
-    net1->initialize();
+  VERBOSE << "compute region1" << std::endl;
+  n1region1->prepareInputs();
+  n1region1->compute();
 
-    VERBOSE << "compute region1" << std::endl;
-    n1region1->prepareInputs();
-    n1region1->compute();
+  VERBOSE << "compute region2" << std::endl;
+  n1region2->prepareInputs();
+  n1region2->compute();
 
-    VERBOSE << "compute region2" << std::endl;
-    n1region2->prepareInputs();
-    n1region2->compute();
+  // take a snapshot of everything in TMRegion at this point
+  // save to a bundle.
+  std::map<std::string, std::string> parameterMap;
+  EXPECT_TRUE(captureParameters(n1region2, parameterMap))
+      << "Capturing parameters before save.";
 
-    // take a snapshot of everything in TMRegion at this point
-    // save to a bundle.
-    std::map<std::string, std::string> parameterMap;
-    EXPECT_TRUE(captureParameters(n1region2, parameterMap))
-        << "Capturing parameters before save.";
+  VERBOSE << "saveToFile" << std::endl;
+  Directory::removeTree("TestOutputDir", true);
+  net1.saveToFile_ar("TestOutputDir/tmRegionTest.stream");
 
-    VERBOSE << "saveToFile" << std::endl;
-    Directory::removeTree("TestOutputDir", true);
-    net1->saveToFile("TestOutputDir/tmRegionTest.stream");
+  VERBOSE << "Restore from bundle into a second network and compare." << std::endl;
+  net2.loadFromFile_ar("TestOutputDir/tmRegionTest.stream");
 
-    VERBOSE << "Restore from bundle into a second network and compare." << std::endl;
-    net2 = new Network();
-    net2->loadFromFile("TestOutputDir/tmRegionTest.stream");
+  VERBOSE << "checked restored network" << std::endl;
+  std::shared_ptr<Region> n2region2 = net2.getRegions().getByName("region2");
+  ASSERT_TRUE(n2region2->getType() == "TMRegion")
+      << " Restored TMRegion region does not have the right type.  Expected "
+          "TMRegion, found "
+      << n2region2->getType();
 
-    VERBOSE << "checked restored network" << std::endl;
-    std::shared_ptr<Region> n2region2 = net2->getRegions().getByName("region2");
-    ASSERT_TRUE(n2region2->getType() == "TMRegion")
-        << " Restored TMRegion region does not have the right type.  Expected "
-           "TMRegion, found "
-        << n2region2->getType();
+  EXPECT_TRUE(compareParameters(n2region2, parameterMap))
+      << "Conflict when comparing TMRegion parameters after restore with "
+          "before save.";
 
-    EXPECT_TRUE(compareParameters(n2region2, parameterMap))
-        << "Conflict when comparing TMRegion parameters after restore with "
-           "before save.";
+  VERBOSE << "continue with execution." << std::endl;
+  // can we continue with execution?  See if we get any exceptions.
+  n1region1->setParameterReal64("sensedValue", 0.12);
+  n1region1->prepareInputs();
+  n1region1->compute();
 
-    VERBOSE << "continue with execution." << std::endl;
-    // can we continue with execution?  See if we get any exceptions.
-    n1region1->setParameterReal64("sensedValue", 0.12);
-    n1region1->prepareInputs();
-    n1region1->compute();
+  n2region2->prepareInputs();
+  n2region2->compute();
 
-    n2region2->prepareInputs();
-    VERBOSE << "continue 4." << std::endl;
-    n2region2->compute();
-    VERBOSE << "continue 5." << std::endl;
+  // Change a parameters and see if it is retained after a restore.
+  n2region2->setParameterReal32("permanenceDecrement", 0.099f);
+  n2region2->compute();
 
-    // Change a parameters and see if it is retained after a restore.
-    n2region2->setParameterReal32("permanenceDecrement", 0.099f);
-    n2region2->compute();
+  parameterMap.clear();
+  EXPECT_TRUE(captureParameters(n2region2, parameterMap))
+      << "Capturing parameters before second save.";
+  // serialize using a stream to a single file
+  VERBOSE << "save second network." << std::endl;
+  net2.saveToFile_ar("TestOutputDir/tmRegionTest.stream");
 
-    parameterMap.clear();
-    EXPECT_TRUE(captureParameters(n2region2, parameterMap))
-        << "Capturing parameters before second save.";
-    // serialize using a stream to a single file
-    VERBOSE << "save second network." << std::endl;
-    net2->saveToFile("TestOutputDir/tmRegionTest.stream");
+  VERBOSE << "Restore into a third network and compare changed parameters." << std::endl;
+  net3.loadFromFile_ar("TestOutputDir/tmRegionTest.stream");
+  std::shared_ptr<Region> n3region2 = net3.getRegions().getByName("region2");
+  EXPECT_TRUE(n3region2->getType() == "TMRegion")
+      << "Failure: Restored region does not have the right type. "
+          " Expected \"TMRegion\", found \""
+      << n3region2->getType() << "\".";
 
-    VERBOSE << "Restore into a third network and compare changed parameters." << std::endl;
-    net3 = new Network();
-    net3->loadFromFile("TestOutputDir/tmRegionTest.stream");
-    std::shared_ptr<Region> n3region2 = net3->getRegions().getByName("region2");
-    EXPECT_TRUE(n3region2->getType() == "TMRegion")
-        << "Failure: Restored region does not have the right type. "
-           " Expected \"TMRegion\", found \""
-        << n3region2->getType() << "\".";
-
-    EXPECT_TRUE(compareParameters(n3region2, parameterMap))
-        << "Comparing parameters after second restore with before save.";
-  } catch (nupic::Exception &ex) {
-    FAIL() << "Failure: Exception: " << ex.getFilename() << "("
-           << ex.getLineNumber() << ") " << ex.getMessage() << "" << std::endl;
-  } catch (std::exception &e) {
-    FAIL() << "Failure: Exception: " << e.what() << "" << std::endl;
-  }
+  EXPECT_TRUE(compareParameters(n3region2, parameterMap))
+      << "Comparing parameters after second restore with before save.";
 
   VERBOSE << "Cleanup" << std::endl;
-  // cleanup
-  if (net1 != nullptr) {
-    delete net1;
-  }
-  if (net2 != nullptr) {
-    delete net2;
-  }
-  if (net3 != nullptr) {
-    delete net3;
-  }
   Directory::removeTree("TestOutputDir", true);
 }
 
