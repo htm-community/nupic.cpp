@@ -91,7 +91,7 @@ public:
     ar(cereal::make_nvp("sequencePos", args_.sequencePos));
     ar(cereal::make_nvp("iter", args_.iter));
     ar(cereal::make_nvp("orColumnOutputs", args_.orColumnOutputs));
-		ar(cereal::make_nvp("dim", dim_);  // from RegionImpl
+		ar(cereal::make_nvp("dim", dim_));  // from RegionImpl
     ar(cereal::make_nvp("init", args_.init));
     if (args_.init) {
       // save the output buffers
@@ -132,6 +132,7 @@ public:
     ar(cereal::make_nvp("orColumnOutputs", args_.orColumnOutputs));
     args_.outputWidth = (args_.orColumnOutputs)?args_.numberOfCols
                       : (args_.numberOfCols * args_.cellsPerColumn);
+		ar(cereal::make_nvp("dim", dim_));  // from RegionImpl
     ar(cereal::make_nvp("init", args_.init));
     if (args_.init) {
       // restore the output buffers
@@ -146,7 +147,7 @@ public:
         outputBuffer = output;
       }
       // Restore algorithm state
-      TemporalMemory* tm = new TemporalMemory();
+      nupic::algorithms::temporal_memory::TemporalMemory* tm = new nupic::algorithms::temporal_memory::TemporalMemory();
       tm_.reset(tm);
       ar(cereal::make_nvp("TM", tm_));
     }
