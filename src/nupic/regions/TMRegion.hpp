@@ -72,7 +72,7 @@ public:
   // FOR Cereal Serialization
   template<class Archive>
   void save_ar(Archive& ar) const {
-    args_.init = ((tm_) ? true : false);
+    bool init = ((tm_) ? true : false);
     ar(cereal::make_nvp("numberOfCols", args_.numberOfCols));
     ar(cereal::make_nvp("cellsPerColumn", args_.cellsPerColumn));
     ar(cereal::make_nvp("activationThreshold", args_.activationThreshold));
@@ -92,8 +92,8 @@ public:
     ar(cereal::make_nvp("iter", args_.iter));
     ar(cereal::make_nvp("orColumnOutputs", args_.orColumnOutputs));
 		ar(cereal::make_nvp("dim", dim_));  // from RegionImpl
-    ar(cereal::make_nvp("init", args_.init));
-    if (args_.init) {
+    ar(cereal::make_nvp("init", init));
+    if (init) {
       // save the output buffers
       // The output buffers are saved as part of the Region Implementation.
       cereal::size_type numBuffers = 0;
