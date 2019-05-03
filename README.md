@@ -2,9 +2,9 @@
 
 # NuPIC C++ Core Library
 
-[![Linux/OSX Build Status](https://travis-ci.org/htm-community/nupic.cpp.svg?branch=master)](https://travis-ci.org/htm-community/nupic.cpp)
-[![OSX CircleCI](https://circleci.com/gh/htm-community/nupic.cpp/tree/master.svg?style=svg)](https://circleci.com/gh/htm-community/nupic.cpp/tree/master)
-[![Windows Build status](https://ci.appveyor.com/api/projects/status/59f87and1x0ugss9/branch/master?svg=true)](https://ci.appveyor.com/project/htm-community/nupic-cpp/branch/master)
+[![Travis: Linux Build Status](https://travis-ci.org/htm-community/nupic.cpp.svg?branch=master)](https://travis-ci.org/htm-community/nupic.cpp)
+[![CircleCI: OSX, ARM64 Build Status](https://circleci.com/gh/htm-community/nupic.cpp/tree/master.svg?style=svg)](https://circleci.com/gh/htm-community/nupic.cpp/tree/master)
+[![AppVeyor: Windows Build status](https://ci.appveyor.com/api/projects/status/59f87and1x0ugss9/branch/master?svg=true)](https://ci.appveyor.com/project/htm-community/nupic-cpp/branch/master)
 
 
 ## Community NuPIC.cpp (former nupic.core) repository
@@ -208,7 +208,7 @@ docker build --build-arg arch=arm64 .
 
 This uses Docker and QEMU to achieve an ARM64 build on CircleCI's x86 hardware.
 
- * **TODO!** [Build]()
+ * [Build](https://circleci.com/gh/htm-community/nupic.cpp/tree/master)
  * [Config](./.circleci/config.yml)
  * Local Test Build: `circleci local execute --job arm64-build-test`
 
