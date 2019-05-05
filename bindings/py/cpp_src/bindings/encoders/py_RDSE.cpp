@@ -106,7 +106,7 @@ fields are filled in automatically.)");
         py_RDSE.def("encode", &RDSE::encode, R"()");
 
         py_RDSE.def("encode", [](RDSE &self, Real64 value) {
-            auto sdr = new sdr::SDR({self.size});
+            auto sdr = new sdr::SDR({self.size}, {});
             self.encode(value, *sdr);
             return sdr;
         });

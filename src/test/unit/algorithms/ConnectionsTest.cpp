@@ -371,7 +371,7 @@ TEST(ConnectionsTest, testAdaptSynapses) {
   Connections con(numCells);
 
   vector<UInt> activeSegments;
-  SDR input({numInputs});
+  SDR input({numInputs}, {});
 
   UInt potentialArr[4][8] =  {{1, 1, 1, 1, 0, 0, 0, 0},
                               {1, 0, 0, 0, 1, 1, 0, 1},
@@ -714,7 +714,7 @@ TEST(ConnectionsTest, testCreateSynapseOverflow) {
 TEST(ConnectionsTest, testTimeseries) {
   Connections C( 1, .5, true );
   auto seg = C.createSegment(0);
-  SDR presyn({ 10u });
+  SDR presyn({ 10u }, {});
   for( UInt cell = 0; cell < presyn.size; cell++ ) {
     C.createSynapse(seg, cell, 0.5f );
   }

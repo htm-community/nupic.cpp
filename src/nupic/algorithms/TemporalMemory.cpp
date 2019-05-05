@@ -651,11 +651,12 @@ SDR TemporalMemory::cellsToColumns(const SDR& cells) const {
 	  << "cells.dimensions must match TM's (column dims x cellsPerColumn) ";
 
   SDR cols(getColumnDimensions(), SDR_sparse_t{});
-  auto& s = cols.getSparse();
+  auto& dense = cols.getDense();
   for(const auto cell : cells.getSparse()) {
     const auto col = columnForCell(cell);
-    s.push_back(col);
+    dense[col] = static_cast<ElemDense>(1); //using dense (and not sparse) here to avoid duplicit entries
   }
+  cols.setDense(dense);
   NTA_ASSERT(cols.size == numColumns_); 
   return cols;
 }

@@ -64,7 +64,7 @@ float runTemporalMemoryTest(UInt numColumns, UInt w,   int numSequences,
   vector<vector<SDR>> sequences;
   for (int i = 0; i < numSequences; i++) {
     vector<SDR> sequence;
-    SDR sdr({numColumns});
+    SDR sdr({numColumns}, {});
     for (int j = 0; j < numElements; j++) {
       const Real sparsity = w / static_cast<Real>(numColumns);
       sdr.randomize(sparsity, rng);
@@ -127,8 +127,8 @@ float runSpatialPoolerTest(
     );
   sp.setLocalAreaDensity(columnSparsity);
 
-  SDR input( sp.getInputDimensions() );
-  SDR columns( sp.getColumnDimensions() );
+  SDR input( sp.getInputDimensions(), {} );
+  SDR columns( sp.getColumnDimensions(), {} );
   cout << (float)timer.getElapsed() << " in " << label << ": initialize"  << endl;
 
   // Learn

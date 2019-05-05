@@ -139,7 +139,7 @@ using namespace nupic::algorithms::connections;
         });
 
         py_HTM.def("activateDendrites", [](HTM_t &self, bool learn) {
-            SDR extra({ self.extra });
+            SDR extra({ self.extra }, {});
             self.activateDendrites(learn, extra, extra);
         });
 

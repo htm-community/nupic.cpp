@@ -36,42 +36,34 @@ using namespace nupic;
 using namespace nupic::sdr;
 
 TEST(ComputeRawAnomalyScore, NoActiveOrPredicted) {
-  SDR active({10});
-  SDR predicted({10});
+  SDR active({10}, {});
+  SDR predicted({10}, {});
   ASSERT_FLOAT_EQ(computeRawAnomalyScore(active, predicted), 0.0);
 };
 
 TEST(ComputeRawAnomalyScore, NoActive) {
-  SDR active({10});
-  SDR predicted({10});
-  predicted.setSparse(SDR_sparse_t{3,5});
-
+  SDR active({10}, {});
+  SDR predicted({10}, {3,5});
   ASSERT_FLOAT_EQ(computeRawAnomalyScore(active, predicted), 0.0f);
 };
 
 TEST(ComputeRawAnomalyScore, PerfectMatch) {
-  SDR active({10});
-  SDR predicted({10});
-  active.setSparse(SDR_sparse_t{3,5,7});
-  predicted.setSparse(SDR_sparse_t{3,5,7});
+  SDR active({10}, {3,5,7});
+  SDR predicted({10}, {3,5,7});
 
   ASSERT_FLOAT_EQ(computeRawAnomalyScore(active, predicted), 0.0f);
 };
 
 TEST(ComputeRawAnomalyScore, NoMatch) {
-  SDR active({10});
-  SDR predicted({10});
-  active.setSparse(SDR_sparse_t{2,4,6});
-  predicted.setSparse(SDR_sparse_t{3,5,7});
+  SDR active({10}, {2,4,6});
+  SDR predicted({10}, {3,5,7});
 
   ASSERT_FLOAT_EQ(computeRawAnomalyScore(active, predicted), 1.0f);
 };
 
 TEST(ComputeRawAnomalyScore, PartialMatch) {
-  SDR active({10});
-  SDR predicted({10});
-  active.setSparse(SDR_sparse_t{2,3,6});
-  predicted.setSparse(SDR_sparse_t{3,5,7}); // 1 out of 3 matches -> 66.6% anomaly = 2/3
+  SDR active({10}, {2,3,6});
+  SDR predicted({10}, {3,5,7}); // 1 out of 3 matches -> 66.6% anomaly = 2/3
 
   ASSERT_FLOAT_EQ(computeRawAnomalyScore(active, predicted), 2.0f / 3.0f);
 };

@@ -47,7 +47,7 @@ namespace testing {
 TEST(SDRClassifierTest, ExampleUsageClassifier)
 {
   // Make a random SDR and associate it with the category B.
-  SDR inputData({ 1000u });
+  SDR inputData({ 1000u }, {});
       inputData.randomize( 0.02f );
   enum Category { A, B, C, D };
   Classifier clsr;
@@ -70,7 +70,7 @@ TEST(SDRClassifierTest, ExampleUsagePredictor)
   // Predict 1 and 2 time steps into the future.
 
   // Make a sequence of 4 random SDRs. Each SDR has 1000 bits and 2% sparsity.
-  vector<SDR> sequence( 4u, vector<UInt>{ 1000u } );
+  vector<SDR> sequence( 4u, SDR({ 1000u }, {}) );
   for( SDR & inputData : sequence ) {
       inputData.randomize( 0.02f );
   }
@@ -104,7 +104,7 @@ TEST(SDRClassifierTest, SingleValue) {
   Predictor c(steps, 0.1f);
 
   // Create a vector of input bit indices
-  SDR input1({10u}); input1.setSparse(SDR_sparse_t({ 1u, 5u, 9u }));
+  SDR input1({10u}, { 1u, 5u, 9u });
   vector<UInt> bucketIdxList{4u};
   for (UInt i = 0u; i < 10u; ++i) {
     c.learn( i, input1, bucketIdxList );
@@ -124,18 +124,15 @@ TEST(SDRClassifierTest, ComputeComplex) {
   Predictor c({1u}, 1.0f);
 
   // Create a input vector
-  SDR input1({ 20u });
-  input1.setSparse(SDR_sparse_t({ 1u, 5u, 9u }));
+  SDR input1({ 20u }, {1,5,9});
   vector<UInt> bucketIdxList1{ 4u };
 
   // Create a input vector
-  SDR input2({ 20u });
-  input2.setSparse(SDR_sparse_t({ 0u, 6u, 9u, 11u }));
+  SDR input2({ 20u }, {0,6,9,11});
   vector<UInt> bucketIdxList2{ 5u };
 
   // Create input vectors
-  SDR input3({ 20u });
-  input3.setSparse(SDR_sparse_t({ 6u, 9u }));
+  SDR input3({ 20u }, {6,9});
   vector<UInt> bucketIdxList3{ 5u };
   vector<UInt> bucketIdxList4{ 4u };
   vector<UInt> bucketIdxList5{ 4u };
@@ -171,13 +168,11 @@ TEST(SDRClassifierTest, MultipleCategories) {
   Classifier c(1.0f);
 
   // Create a input vectors
-  SDR input1({ 10 });
-  input1.setSparse(SDR_sparse_t({ 1u, 3u, 5u }));
+  SDR input1({ 10 }, {1,3,5});
   vector<UInt> bucketIdxList1{ 0u, 1u };
 
   // Create a input vectors
-  SDR input2({ 10 });
-  input2.setSparse(SDR_sparse_t({ 2u, 4u, 6u }));
+  SDR input2({ 10 }, {2,4,6});
   vector<UInt> bucketIdxList2{ 2u, 3u };
 
   // Train
@@ -207,7 +202,7 @@ TEST(SDRClassifierTest, SaveLoad) {
   Predictor c1(steps, 0.1f);
 
   // Train a Predictor with a few different things.
-  SDR A({ 100u }); A.randomize( 0.10f );
+  SDR A({ 100u }, {}); A.randomize( 0.10f );
   for(UInt i = 0; i < 10u; i++)
     { c1.learn(i, A, {4u}); }
   c1.reset();

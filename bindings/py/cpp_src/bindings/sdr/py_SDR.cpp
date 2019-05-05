@@ -106,16 +106,18 @@ re-access the data from the SDR.  Examples:
 )");
 
         py_SDR.def(
-            py::init<vector<UInt>>(),
+            py::init( [](vector<UInt> dimensions, SDR_sparse_t initialData) {
+		 return new SDR(dimensions, initialData);   }),
 R"(Create an SDR object.  The initial value is all zeros.
 
 Argument dimensions is a list of dimension sizes, defining the shape of the SDR.
 The product of the dimensions must be greater than zero.)",
-            py::arg("dimensions"));
+            py::arg("dimensions"),
+	    py::arg("initialData"));
 
         py_SDR.def(
             py::init( [](UInt dimensions) {
-                return new SDR({ dimensions }); }),
+                return new SDR({ dimensions }, {}); }),
 R"(Create an SDR object.  The initial value is all zeros.
 
 Argument dimensions is a single integer dimension size, defining a 1-dimensional

@@ -232,8 +232,8 @@ public:
 			 const sdr::SDR &extraWinners);
 
   inline void activateDendrites(const bool learn = true) {
-    const sdr::SDR extraActive(std::vector<UInt>{ extra });
-    const sdr::SDR extraWinners(std::vector<UInt>{extra });
+    const sdr::SDR extraActive(std::vector<UInt>{ extra }, sdr::SDR_sparse_t{});
+    const sdr::SDR extraWinners(std::vector<UInt>{extra }, sdr::SDR_sparse_t{});
     activateDendrites(learn, extraActive, extraWinners);
   }
 

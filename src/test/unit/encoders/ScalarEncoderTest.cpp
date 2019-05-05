@@ -48,10 +48,9 @@ void doScalarValueCases(ScalarEncoder& e, std::vector<ScalarValueCase> cases)
 {
   for( auto c : cases )
   {
-    SDR expectedOutput( e.dimensions );
-    expectedOutput.setSparse( c.expectedOutput );
+    SDR expectedOutput( e.dimensions, c.expectedOutput );
 
-    SDR actualOutput( e.dimensions );
+    SDR actualOutput( e.dimensions, {} );
     e.encode( c.input, actualOutput );
 
     EXPECT_EQ( actualOutput, expectedOutput );
@@ -66,7 +65,7 @@ TEST(ScalarEncoder, testClippingInputs) {
   p.minimum    = 10;
   p.maximum    = 20;
 
-  SDR output({ 10 });
+  SDR output({ 10 }, {});
   {
     p.clipInput = false;
     ScalarEncoder e( p );
@@ -92,7 +91,7 @@ TEST(ScalarEncoder, ValidScalarInputs) {
   p.activeBits = 2;
   p.minimum    = 10;
   p.maximum    = 20;
-  SDR output({ 10 });
+  SDR output({ 10 }, {});
   ScalarEncoder e( p );
 
   EXPECT_ANY_THROW(e.encode( 9.9f, output));

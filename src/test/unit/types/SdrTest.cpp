@@ -31,15 +31,15 @@ using namespace nupic::sdr;
 /* This also tests the size and dimensions are correct */
 TEST(SdrTest, TestConstructor) {
     // Test 0 dimensions
-    EXPECT_ANY_THROW( SDR( vector<UInt>(0) ));
+    EXPECT_ANY_THROW( SDR( vector<UInt>(0), {} ));
     // Test 0 size
-    EXPECT_NO_THROW( SDR({ 0 }) );
-    EXPECT_ANY_THROW( SDR({ 3, 2, 1, 0 }) );
-    EXPECT_NO_THROW(  SDR({ 3, 2, 1}) );
+    EXPECT_NO_THROW( SDR({ 0 }, {}) );
+    EXPECT_ANY_THROW( SDR({ 3, 2, 1, 0 }, {}) );
+    EXPECT_NO_THROW(  SDR({ 3, 2, 1}, {}) );
 
     // Test 1-D
     vector<UInt> b_dims = {3};
-    SDR b(b_dims);
+    SDR b(b_dims, {});
     ASSERT_EQ( b.size, 3ul );
     ASSERT_EQ( b.dimensions, b_dims );
     ASSERT_EQ( b.getCoordinates().size(), 1ul );
@@ -50,7 +50,7 @@ TEST(SdrTest, TestConstructor) {
 
     // Test 3-D
     vector<UInt> c_dims = {11u, 15u, 3u};
-    SDR c(c_dims);
+    SDR c(c_dims, {});
     ASSERT_EQ( c.size, 11u * 15u * 3u );
     ASSERT_EQ( c.dimensions, c_dims );
     ASSERT_EQ( c.getCoordinates().size(), 3ul );
@@ -71,13 +71,13 @@ TEST(SdrTest, testConstructorWithData) {
 
 
 TEST(SdrTest, TestEmptyPlaceholder) { //for NetworkAPI
-    EXPECT_NO_THROW( SDR({0})  );
-    EXPECT_EQ( SDR({0}).size, 0u  );
+    EXPECT_NO_THROW( SDR({0}, {})  );
+    EXPECT_EQ( SDR({0}, {}).size, 0u  );
 }
 
 TEST(SdrTest, TestConstructorCopy) {
     // Test data is copied.
-    SDR a({5});
+    SDR a({5}, {});
     a.setDense( SDR_dense_t({0, 1, 0, 0, 0}));
     SDR b(a);
     ASSERT_EQ( b.getSparse(),  vector<UInt>({1}) );
@@ -85,7 +85,7 @@ TEST(SdrTest, TestConstructorCopy) {
 }
 
 TEST(SdrTest, TestZero) {
-    SDR a({4, 4});
+    SDR a({4, 4}, {});
     a.setDense( vector<Byte>(16, 1) );
     a.zero();
     ASSERT_EQ( vector<Byte>(16, 0), a.getDense() );
@@ -98,7 +98,7 @@ TEST(SdrTest, TestZero) {
 TEST(SdrTest, TestSDR_Examples) {
     // Make an SDR with 9 values, arranged in a (3 x 3) grid.
     // "SDR" is an alias/typedef for SparseDistributedRepresentation.
-    SDR  X( {3, 3} );
+    SDR  X( {3, 3}, {} );
     SDR_dense_t data({
         0, 1, 0,
         0, 1, 0,
@@ -151,7 +151,7 @@ TEST(SdrTest, TestSDR_Examples) {
 }
 
 TEST(SdrTest, TestSetDenseVec) {
-    SDR a({11, 10, 4});
+    SDR a({11, 10, 4}, {});
     Byte *before = a.getDense().data();
     SDR_dense_t vec = vector<Byte>(440, 1);
     Byte *data = vec.data();
@@ -162,7 +162,7 @@ TEST(SdrTest, TestSetDenseVec) {
 }
 
 TEST(SdrTest, TestSetDenseByte) {
-    SDR a({11, 10, 4});
+    SDR a({11, 10, 4}, {});
     auto vec = vector<Byte>(a.size, 1);
     a.zero();
     a.setDense( (Byte*) vec.data());
@@ -172,15 +172,16 @@ TEST(SdrTest, TestSetDenseByte) {
 }
 
 TEST(SdrTest, TestSetDenseUInt) {
-    SDR a({11, 10, 4});
+    SDR a({11, 10, 4}, {});
     auto vec = vector<UInt>(a.size, 1);
     a.setDense( (UInt*) vec.data() );
     ASSERT_EQ( a.getDense(), vector<Byte>(a.size, 1) );
     ASSERT_NE( a.getDense().data(), (const Byte*) vec.data()); // true copy not a reference
 }
 
+
 TEST(SdrTest, TestSetDenseInplace) {
-    SDR a({10, 10});
+    SDR a({10, 10}, {});
     auto& a_data = a.getDense();
     ASSERT_EQ( a_data, vector<Byte>(100, 0) );
     a_data.assign( a.size, 1 );
@@ -192,7 +193,7 @@ TEST(SdrTest, TestSetDenseInplace) {
 }
 
 TEST(SdrTest, TestSetSparseVec) {
-    SDR a({11, 10, 4});
+    SDR a({11, 10, 4}, {});
     UInt *before = a.getSparse().data();
     auto vec = vector<UInt>(a.size, 1);
     UInt *data = vec.data();
@@ -205,7 +206,7 @@ TEST(SdrTest, TestSetSparseVec) {
 }
 
 TEST(SdrTest, TestSetSparsePtr) {
-    SDR a({11, 10, 4});
+    SDR a({11, 10, 4}, {});
     auto vec = vector<UInt>(a.size, 1);
     for(UInt i = 0; i < a.size; i++)
         vec[i] = i;
@@ -217,7 +218,7 @@ TEST(SdrTest, TestSetSparsePtr) {
 
 TEST(SdrTest, TestSetSparseInplace) {
     // Test both mutable & inplace methods at the same time, which is the intended use case.
-    SDR a({10, 10});
+    SDR a({10, 10}, {});
     a.zero();
     auto& a_data = a.getSparse();
     ASSERT_EQ( a_data, vector<UInt>(0) );
@@ -234,7 +235,7 @@ TEST(SdrTest, TestSetSparseInplace) {
 }
 
 TEST(SdrTest, TestSetCoordinates) {
-    SDR a({4, 1, 3});
+    SDR a({4, 1, 3}, {});
     void *before = a.getCoordinates().data();
     auto vec = vector<vector<UInt>>({
         { 0, 1, 2, 0 },
@@ -248,7 +249,7 @@ TEST(SdrTest, TestSetCoordinates) {
 }
 
 TEST(SdrTest, TestSetCoordinatesCopy) {
-    SDR a({ 3, 3 });
+    SDR a({ 3, 3 }, {});
     void *before = a.getCoordinates().data();
     auto vec = vector<vector<Real>>({
         { 0.0f, 1.0f, 2.0f },
@@ -263,7 +264,7 @@ TEST(SdrTest, TestSetCoordinatesCopy) {
 
 TEST(SdrTest, TestSetCoordinatesInplace) {
     // Test both mutable & inplace methods at the same time, which is the intended use case.
-    SDR a({10, 10});
+    SDR a({10, 10}, {});
     a.zero();
     auto& a_data = a.getCoordinates();
     ASSERT_EQ( a_data, vector<vector<UInt>>({{}, {}}) );
@@ -288,8 +289,8 @@ TEST(SdrTest, TestSetCoordinatesInplace) {
 }
 
 TEST(SdrTest, TestSetSDR) {
-    SDR a({5});
-    SDR b({5});
+    SDR a({5}, {});
+    SDR b({5}, {});
     // Test dense assignment works
     a.setDense(SDR_dense_t({1, 1, 1, 1, 1}));
     b.setSDR(a);
@@ -311,18 +312,18 @@ TEST(SdrTest, TestSetSDR) {
 
 TEST(SdrTest, TestGetDenseFromSparse) {
     // Test zeros
-    SDR z({4, 4});
+    SDR z({4, 4}, {});
     z.setSparse(SDR_sparse_t({}));
     ASSERT_EQ( z.getDense(), vector<Byte>(16, 0) );
 
     // Test ones
-    SDR nz({4, 4});
+    SDR nz({4, 4}, {});
     nz.setSparse(SDR_sparse_t(
         {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}));
     ASSERT_EQ( nz.getDense(), vector<Byte>(16, 1) );
 
     // Test 1-D
-    SDR d1({30});
+    SDR d1({30}, {});
     d1.setSparse(SDR_sparse_t({1, 29, 4, 5, 7}));
     vector<Byte> ans(30, 0);
     ans[1] = 1;
@@ -333,7 +334,7 @@ TEST(SdrTest, TestGetDenseFromSparse) {
     ASSERT_EQ( d1.getDense(), ans );
 
     // Test 3-D
-    SDR d3({10, 10, 10});
+    SDR d3({10, 10, 10}, {});
     d3.setSparse(SDR_sparse_t({0, 5, 50, 55, 500, 550, 555, 999}));
     vector<Byte> ans2(1000, 0);
     ans2[0]   = 1;
@@ -349,7 +350,7 @@ TEST(SdrTest, TestGetDenseFromSparse) {
 
 TEST(SdrTest, TestGetDenseFromCoordinates) {
     // Test simple 2-D
-    SDR a({3, 3});
+    SDR a({3, 3}, {});
     a.setCoordinates(SDR_coordinate_t({{1, 0, 2}, {2, 0, 2}}));
     vector<Byte> ans(9, 0);
     ans[0] = 1;
@@ -358,14 +359,15 @@ TEST(SdrTest, TestGetDenseFromCoordinates) {
     ASSERT_EQ( a.getDense(), ans );
 
     // Test zeros
-    SDR z({99, 1});
+    SDR z({99, 1}, {});
     z.setCoordinates(SDR_coordinate_t({{}, {}}));
     ASSERT_EQ( z.getDense(), vector<Byte>(99, 0) );
 }
 
 TEST(SdrTest, TestGetSparseFromDense) {
     // Test simple 2-D SDR.
-    SDR a({3, 3}); a.zero();
+    SDR a({3, 3}, {}); 
+    a.zero();
     auto dense = a.getDense();
     dense[5] = 1;
     dense[8] = 1;
@@ -380,7 +382,8 @@ TEST(SdrTest, TestGetSparseFromDense) {
 
 TEST(SdrTest, TestGetSparseFromCoordinates) {
     // Test simple 2-D SDR.
-    SDR a({3, 3}); a.zero();
+    SDR a({3, 3}, {}); 
+    a.zero();
     auto& index = a.getCoordinates();
     ASSERT_EQ( index.size(), 2ul );
     ASSERT_EQ( index[0].size(), 0ul );
@@ -406,7 +409,8 @@ TEST(SdrTest, TestGetSparseFromCoordinates) {
 
 TEST(SdrTest, TestGetCoordinatesFromSparse) {
     // Test simple 2-D SDR.
-    SDR a({3, 3}); a.zero();
+    SDR a({3, 3}, {}); 
+    a.zero();
     auto& index = a.getCoordinates();
     ASSERT_EQ( index.size(), 2ul );
     ASSERT_EQ( index[0].size(), 0ul );
@@ -423,7 +427,8 @@ TEST(SdrTest, TestGetCoordinatesFromSparse) {
 
 TEST(SdrTest, TestGetCoordinatesFromDense) {
     // Test simple 2-D SDR.
-    SDR a({3, 3}); a.zero();
+    SDR a({3, 3}, {}); 
+    a.zero();
     auto dense = a.getDense();
     dense[5] = 1;
     dense[8] = 1;
@@ -439,7 +444,7 @@ TEST(SdrTest, TestGetCoordinatesFromDense) {
 }
 
 TEST(SdrTest, TestAt) {
-    SDR a({3, 3});
+    SDR a({3, 3}, {});
     a.setSparse(SDR_sparse_t( {4, 5, 8} ));
     ASSERT_TRUE( a.at( {1, 1} ));
     ASSERT_TRUE( a.at( {1, 2} ));
@@ -453,7 +458,7 @@ TEST(SdrTest, TestAt) {
 }
 
 TEST(SdrTest, TestSumSparsity) {
-    SDR a({31, 17, 3});
+    SDR a({31, 17, 3}, {});
     auto& dense = a.getDense();
     for(UInt i = 0; i < a.size; i++) {
         ASSERT_EQ( i, a.getSum() );
@@ -467,18 +472,18 @@ TEST(SdrTest, TestSumSparsity) {
 
 TEST(SdrTest, TestPrint) {
     stringstream str;
-    SDR a({100});
+    SDR a({100}, {});
     str << a;
     // Use find so that trailing whitespace differences on windows/unix don't break it.
     ASSERT_NE( str.str().find( "SDR( 100 )" ), std::string::npos);
 
     stringstream str2;
-    SDR b({ 9, 8 });
+    SDR b({ 9, 8 }, {});
     str2 << b;
     ASSERT_NE( str2.str().find( "SDR( 9, 8 )" ), std::string::npos);
 
     stringstream str3;
-    SDR sdr3({ 3, 3 });
+    SDR sdr3({ 3, 3 }, {});
     sdr3.setDense(SDR_dense_t({ 0, 1, 0, 0, 1, 0, 0, 0, 1 }));
     str3 << sdr3;
     ASSERT_NE( str3.str().find( "SDR( 3, 3 ) 1, 4, 8" ), std::string::npos);
@@ -489,7 +494,7 @@ TEST(SdrTest, TestPrint) {
 }
 
 TEST(SdrTest, TestGetOverlap) {
-    SDR a({3, 3});
+    SDR a({3, 3}, {});
     a.setDense(SDR_dense_t({1, 1, 1, 1, 1, 1, 1, 1, 1}));
     SDR b(a);
     ASSERT_EQ( a.getOverlap( b ), 9ul );
@@ -503,7 +508,7 @@ TEST(SdrTest, TestGetOverlap) {
 
 TEST(SdrTest, TestRandomize) {
     // Test sparsity is OK
-    SDR a({1000});
+    SDR a({1000}, {});
     a.randomize( 0. );
     ASSERT_EQ( a.getSum(), 0ul );
     a.randomize( .25 );
@@ -539,7 +544,7 @@ TEST(SdrTest, TestRandomize) {
     ASSERT_TRUE( a != b);
     // Methodically test by running it many times and checking for an even
     // activation frequency at every bit.
-    SDR af_test({ 97 /* prime number */ });
+    SDR af_test({ 97 /* prime number */ }, {});
     UInt iterations = 10000;
     Real sparsity   = .25f;
     vector<Real> af( af_test.size, 0 );
@@ -556,7 +561,7 @@ TEST(SdrTest, TestRandomize) {
 }
 
 TEST(SdrTest, TestAddNoise) {
-    SDR a({1000});
+    SDR a({1000}, {});
     a.randomize( 0.10f );
     SDR b(a);
     SDR c(a);
@@ -603,9 +608,9 @@ TEST(SdrTest, TestAddNoise) {
 
 TEST(SdrTest, TestIntersectionExampleUsage) {
     // Setup 2 SDRs to hold the inputs.
-    SDR A({ 10 });
-    SDR B({ 10 });
-    SDR C({ 10 });
+    SDR A({ 10 }, {});
+    SDR B({ 10 }, {});
+    SDR C({ 10 }, {});
     A.setSparse(SDR_sparse_t{0, 1, 2, 3});
     B.setSparse(SDR_sparse_t      {2, 3, 4, 5});
     // Calculate the logical intersection
@@ -614,9 +619,9 @@ TEST(SdrTest, TestIntersectionExampleUsage) {
 }
 
 TEST(SdrTest, TestIntersection) {
-    SDR A({1000});
-    SDR B(A.dimensions);
-    SDR X(A.dimensions);
+    SDR A({1000}, {});
+    SDR B(A.dimensions, {});
+    SDR X(A.dimensions, {});
     A.randomize(.5);
     B.randomize(.5);
 
@@ -631,9 +636,9 @@ TEST(SdrTest, TestIntersection) {
 }
 
 TEST(SdrTest, TestConcatenationExampleUsage) {
-    SDR A({ 10 });
-    SDR B({ 10 });
-    SDR C({ 20 });
+    SDR A({ 10 }, {});
+    SDR B({ 10 }, {});
+    SDR C({ 20 }, {});
     A.setSparse(SDR_sparse_t{ 0, 1, 2 });
     B.setSparse(SDR_sparse_t{ 0, 1, 2 });
     C.concatenate( A, B );
@@ -641,10 +646,10 @@ TEST(SdrTest, TestConcatenationExampleUsage) {
 }
 
 TEST(SdrTest, TestConcatenation) {
-    SDR A({10});
-    SDR B({10});
-    SDR C({20});
-    SDR D({20});
+    SDR A({10}, {});
+    SDR B({10}, {});
+    SDR C({20}, {});
+    SDR D({20}, {});
     A.randomize( 0.30f );
     B.randomize( 0.70f );
     C.concatenate( A, B );
@@ -656,19 +661,19 @@ TEST(SdrTest, TestConcatenation) {
 TEST(SdrTest, TestEquality) {
     vector<SDR*> test_cases;
     // Test different dimensions
-    test_cases.push_back( new SDR({ 11 }));
-    test_cases.push_back( new SDR({ 1, 1 }));
-    test_cases.push_back( new SDR({ 1, 2, 3 }));
+    test_cases.push_back( new SDR({ 11 }, {}));
+    test_cases.push_back( new SDR({ 1, 1 }, {}));
+    test_cases.push_back( new SDR({ 1, 2, 3 }, {}));
     // Test different data
-    test_cases.push_back( new SDR({ 3, 3 }));
+    test_cases.push_back( new SDR({ 3, 3 }, {}));
     test_cases.back()->setDense(SDR_dense_t({0, 0, 1, 0, 1, 0, 1, 0, 0,}));
-    test_cases.push_back( new SDR({ 3, 3 }));
+    test_cases.push_back( new SDR({ 3, 3 }, {}));
     test_cases.back()->setDense(SDR_dense_t({0, 1, 0, 0, 1, 0, 0, 1, 0}));
-    test_cases.push_back( new SDR({ 3, 3 }));
+    test_cases.push_back( new SDR({ 3, 3 }, {}));
     test_cases.back()->setDense(SDR_dense_t({0, 1, 0, 0, 1, 0, 0, 0, 1}));
-    test_cases.push_back( new SDR({ 3, 3 }));
+    test_cases.push_back( new SDR({ 3, 3 }, {}));
     test_cases.back()->setSparse(SDR_sparse_t({0,}));
-    test_cases.push_back( new SDR({ 3, 3 }));
+    test_cases.push_back( new SDR({ 3, 3 }, {}));
     test_cases.back()->setSparse(SDR_sparse_t({3, 4, 6}));
 
     // Check that SDRs equal themselves
@@ -696,10 +701,10 @@ TEST(SdrTest, TestSaveLoad) {
     ofstream outfile;
     outfile.open(filename);
 
-    SDR zero({ 3, 3 });
-    SDR dense({ 3, 3 });
-    SDR sparse({ 3, 3 });
-    SDR coord({ 3, 3 });
+    SDR zero({ 3, 3 }, {});
+    SDR dense({ 3, 3 }, {});
+    SDR sparse({ 3, 3 }, {});
+    SDR coord({ 3, 3 }, {});
     {
       cereal::JSONOutputArchive json_out(outfile);
 
@@ -763,7 +768,7 @@ TEST(SdrTest, TestSaveLoad) {
 
 TEST(SdrTest, TestCallbacks) {
 
-    SDR A({ 10, 20 });
+    SDR A({ 10, 20 }, {});
     // Add and remove these callbacks a bunch of times, and then check they're
     // called the correct number of times.
     int count1 = 0;
@@ -838,7 +843,7 @@ TEST(SdrTest, TestCallbacks) {
 
 
 TEST(SdrReshapeTest, TestReshapeExamples) {
-    SDR     A(    { 4, 4 });
+    SDR     A(    { 4, 4 }, {});
     Reshape B( A, { 8, 2 });
     A.setCoordinates(SDR_coordinate_t({{1, 1, 2}, {0, 1, 2}}));
     auto coords = B.getCoordinates();
@@ -846,11 +851,11 @@ TEST(SdrReshapeTest, TestReshapeExamples) {
 }
 
 TEST(SdrReshapeTest, TestReshapeConstructor) {
-    SDR       A({ 11 });
+    SDR       A({ 11 }, {});
     Reshape   B( A );
     ASSERT_EQ( A.dimensions, B.dimensions );
     Reshape   C( A, { 11 });
-    SDR       D({ 5, 4, 3, 2, 1 });
+    SDR       D({ 5, 4, 3, 2, 1 }, {});
     Reshape   E( D, {1, 1, 1, 120, 1});
     Reshape   F( D, { 20, 6 });
     Reshape   X( (SDR&) F );
@@ -883,7 +888,7 @@ TEST(SdrReshapeTest, TestReshapeConstructor) {
 }
 
 TEST(SdrReshapeTest, TestReshapeDeconstructor) {
-    SDR     *A = new SDR({12});
+    SDR     *A = new SDR({12}, {});
     Reshape *B = new Reshape( *A );
     Reshape *C = new Reshape( *A, {3, 4} );
     Reshape *D = new Reshape( *C, {4, 3} );
@@ -910,21 +915,21 @@ TEST(SdrReshapeTest, TestReshapeDeconstructor) {
 }
 
 TEST(SdrReshapeTest, TestReshapeThrows) {
-    SDR A({10});
+    SDR A({10}, {});
     Reshape B(A, {2, 5});
     SDR *C = &B;
 
     ASSERT_ANY_THROW( C->setDense( SDR_dense_t( 10, 1 ) ));
     ASSERT_ANY_THROW( C->setCoordinates( SDR_coordinate_t({ {0}, {0} }) ));
     ASSERT_ANY_THROW( C->setSparse( SDR_sparse_t({ 0, 1, 2 }) ));
-    SDR X({10});
+    SDR X({10}, {});
     ASSERT_ANY_THROW( C->setSDR( X ));
     ASSERT_ANY_THROW( C->randomize(0.10f) );
     ASSERT_ANY_THROW( C->addNoise(0.10f) );
 }
 
 TEST(SdrReshapeTest, TestReshapeGetters) {
-    SDR A({ 2, 3 });
+    SDR A({ 2, 3 }, {});
     Reshape B( A, { 3, 2 });
     SDR *C = &B;
     // Test getting dense
@@ -958,25 +963,25 @@ TEST(SdrReshapeTest, TestSaveLoad) {
     outfile.open(filename);
 
     // Test zero value
-    SDR zero({ 3, 3 });
+    SDR zero({ 3, 3 }, {});
     Reshape z( zero );
     z.save( outfile );
 
     // Test dense data
-    SDR dense({ 3, 3 });
+    SDR dense({ 3, 3 }, {});
     Reshape d( dense );
     dense.setDense(SDR_dense_t({ 0, 1, 0, 0, 1, 0, 0, 0, 1 }));
     Serializable &ser = d;
     ser.save( outfile );
 
     // Test sparse data
-    SDR sparse({ 3, 3 });
+    SDR sparse({ 3, 3 }, {});
     Reshape f( sparse );
     sparse.setSparse(SDR_sparse_t({ 1, 4, 8 }));
     f.save( outfile );
 
     // Test coordinate data
-    SDR coord({ 3, 3 });
+    SDR coord({ 3, 3 }, {});
     Reshape x( coord );
     coord.setCoordinates(SDR_coordinate_t({
             { 0, 1, 2 },
@@ -1009,7 +1014,7 @@ TEST(SdrReshapeTest, TestSaveLoad) {
 
 TEST(SdrTest, TestAssignmentOperator) 
 {
-  SDR a({10, 10});
+  SDR a({10, 10}, {});
   a.setSparse<UInt>({1, 3, 5, 7});
   SDR copy; //notice the no dimensions
   ASSERT_EQ(copy.dimensions.size(), 0u);
@@ -1025,10 +1030,10 @@ TEST(SdrTest, TestAssignmentOperator)
  */
 TEST(SdrTest, testVectorIsNotSDR) {
   const auto fooSDR = [](SDR arg1) {return;}; //function expects a SDR arg
-  SDR sdr({10});
+  SDR sdr({10}, {});
   vector<UInt> vector{10};
 
-  EXPECT_ANY_THROW(fooSDR(vector)) << "Function expects a SDR argument, but got vector. This should fail!";
+//  EXPECT_ANY_THROW(fooSDR(vector)) << "Function expects a SDR argument, but got vector. This should fail!"; //OK, compile-time fail
   EXPECT_NO_THROW(fooSDR(sdr));
 }
 

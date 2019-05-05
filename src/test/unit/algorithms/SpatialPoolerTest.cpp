@@ -520,7 +520,7 @@ TEST(SpatialPoolerTest, testUpdateDutyCycles) {
   UInt numColumns = 5;
   setup(sp, numInputs, numColumns);
   vector<SynapseIdx> overlaps;
-  SDR active({numColumns});
+  SDR active({numColumns}, {});
 
   Real initOverlapArr1[] = {1, 1, 1, 1, 1};
   sp.setOverlapDutyCycles(initOverlapArr1);
@@ -797,7 +797,7 @@ TEST(SpatialPoolerTest, testAdaptSynapses) {
   UInt numInputs = 8;
   setup(sp, numInputs, numColumns);
 
-  SDR activeColumns({numColumns});
+  SDR activeColumns({numColumns}, {});
   vector<UInt> inputVector;
 
   UInt potentialArr1[4][8] = {{1, 1, 1, 1, 0, 0, 0, 0},
@@ -821,7 +821,7 @@ TEST(SpatialPoolerTest, testAdaptSynapses) {
       {0.070f, 0.000f, 0.000f, 0.000f, 0.000f, 0.000f, 0.178f, 0.000f}};
       //  -       -      -       -       -       -        -      -
 
-  SDR input1({8});
+  SDR input1({8}, {});
   input1.setDense(SDR_dense_t{1, 0, 0, 1, 1, 0, 1, 0});
   activeColumns.setSparse(SDR_sparse_t({ 0, 1, 2 }));
 
@@ -859,7 +859,7 @@ TEST(SpatialPoolerTest, testAdaptSynapses) {
       {0.170f, 0.000f, 0.000f, 0.000f, 0.000f, 0.000f, 0.380f, 0.000f}};
       //  -       -       -       -       -       -       -       -
 
-  SDR input2({8});
+  SDR input2({8}, {});
   input2.setDense(SDR_dense_t{1, 0, 0, 1, 1, 0, 1, 0});
   UInt activeColumnsArr2[3] = {0, 1, 2};
 
@@ -933,7 +933,7 @@ TEST(SpatialPoolerTest, testBumpUpWeakColumns) {
 TEST(SpatialPoolerTest, testUpdateDutyCyclesHelper) {
   SpatialPooler sp;
   vector<Real> dutyCycles;
-  SDR newValues({5});
+  SDR newValues({5}, {});
   UInt period;
 
   Real dutyCyclesArr1[] = {1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
@@ -1077,7 +1077,7 @@ TEST(SpatialPoolerTest, testCalculateOverlap) {
 
   for (UInt i = 0; i < numTrials; i++) {
     vector<SynapseIdx> overlaps;
-    SDR input({numInputs});
+    SDR input({numInputs}, {});
     input.setDense(SDR_dense_t(inputs[i], inputs[i] + numInputs));
     sp.calculateOverlap_(input, overlaps);
     ASSERT_TRUE(check_vector_eq(trueOverlaps[i], overlaps));
@@ -2129,8 +2129,8 @@ TEST(SpatialPoolerTest, ExactOutput) {
   SDR gold_sdr;
   gold_sdr.load( gold_stream );
 
-  SDR inputs({ 1000 });
-  SDR columns({ 200 });
+  SDR inputs({ 1000 }, {});
+  SDR columns({ 200 }, {});
   SpatialPooler sp({inputs.dimensions}, {columns.dimensions},
                    /*potentialRadius*/ 99999,
                    /*potentialPct*/ 0.5f,

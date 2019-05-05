@@ -32,7 +32,7 @@ using namespace nupic::sdr;
 using namespace nupic::encoders;
 
 TEST(RDSE, testConstruct) {
-  SDR  A({ 100u, 100u, 3u });
+  SDR  A({ 100u, 100u, 3u }, {});
   RDSE_Parameters P;
   P.size       = A.size;
   P.sparsity   = 0.05f;
@@ -51,12 +51,12 @@ TEST(RDSE, testSerialize) {
   std::stringstream buf;
   R1.save( buf );
 
-  SDR A( R1.dimensions );
+  SDR A( R1.dimensions, {} );
   R1.encode( 44.4f, A );
 
   RDSE R2;
   R2.load( buf );
-  SDR B( R2.dimensions );
+  SDR B( R2.dimensions, {} );
   R2.encode( 44.4f, B );
 
   ASSERT_EQ( A, B );

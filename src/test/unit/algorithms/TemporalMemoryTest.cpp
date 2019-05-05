@@ -71,9 +71,7 @@ TEST(TemporalMemoryTest, testCheckInputs_UnsortedColumns) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR activeColumns({tm.getColumnDimensions()});
-  activeColumns.setSparse(SDR_sparse_t{1u, 3u, 2u, 4u});
-
+  SDR activeColumns({tm.getColumnDimensions()}, {1,3,2,4});
   EXPECT_NO_THROW(tm.compute(activeColumns, true));
 }
 
@@ -96,10 +94,8 @@ TEST(TemporalMemoryTest, ActivateCorrectlyPredictiveCells) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {1});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const vector<CellIdx> expectedActiveCells = {4};
 
@@ -135,8 +131,7 @@ TEST(TemporalMemoryTest, BurstUnpredictedColumns) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{0});
+  SDR activeColumns({32}, {0});
   const vector<CellIdx> burstingCells = {0, 1, 2, 3};
 
   tm.compute(activeColumns, true);
@@ -165,8 +160,7 @@ TEST(TemporalMemoryTest, ZeroActiveColumns) {
 
 
   // Make some cells predictive.
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
+  SDR previousActiveColumns({32}, {0});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const vector<CellIdx> expectedActiveCells = {4};
 
@@ -181,8 +175,7 @@ TEST(TemporalMemoryTest, ZeroActiveColumns) {
   tm.activateDendrites();
   ASSERT_FALSE(tm.getPredictiveCells().getSum() == 0);
 
-  SDR empty({32});
-  empty.setSparse(SDR_sparse_t{});
+  SDR empty({32}, {});
   EXPECT_NO_THROW(tm.compute(empty, true)) << "failed with empty compute";
   EXPECT_TRUE(tm.getActiveCells().empty());
   EXPECT_TRUE(tm.getWinnerCells().empty());
@@ -208,10 +201,8 @@ TEST(TemporalMemoryTest, PredictedActiveCellsAreAlwaysWinners) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {1});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const vector<CellIdx> expectedWinnerCells = {4, 6};
 
@@ -249,8 +240,7 @@ TEST(TemporalMemoryTest, ChooseOneWinnerCellInBurstingColumn) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{0});
+  SDR activeColumns({32}, {0});
   const set<CellIdx> burstingCells = {0, 1, 2, 3};
 
   tm.compute(activeColumns, false);
@@ -278,11 +268,9 @@ TEST(TemporalMemoryTest, ReinforceCorrectlyActiveSegments) {
       /*predictedSegmentDecrement*/ 0.02f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});  
+  SDR previousActiveColumns({32}, {0});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});  
+  SDR activeColumns({32}, {1});
   const vector<CellIdx> activeCells = {5};
   const CellIdx activeCell = 5;
 
@@ -327,10 +315,8 @@ TEST(TemporalMemoryTest, ReinforceSelectedMatchingSegmentInBurstingColumn) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {1});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const vector<CellIdx> burstingCells = {4, 5, 6, 7};
 
@@ -384,10 +370,8 @@ TEST(TemporalMemoryTest,
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {1});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const vector<CellIdx> burstingCells = {4, 5, 6, 7};
 
@@ -437,10 +421,8 @@ TEST(TemporalMemoryTest, NoChangeToMatchingSegmentsInPredictedActiveColumn) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {1});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const vector<CellIdx> expectedActiveCells = {4};
   const vector<CellIdx> otherBurstingCells = {5, 6, 7};
@@ -492,10 +474,8 @@ TEST(TemporalMemoryTest, NoNewSegmentIfNotEnoughWinnerCells) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR zeroColumns({32});
-  zeroColumns.setSparse(SDR_sparse_t{});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});
+  SDR zeroColumns({32}, {});
+  SDR activeColumns({32}, {1});
 
   tm.compute(zeroColumns, true);
   tm.compute(activeColumns, true);
@@ -521,10 +501,8 @@ TEST(TemporalMemoryTest, NewSegmentAddSynapsesToSubsetOfWinnerCells) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0,1,2});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{4});
+  SDR previousActiveColumns({32}, {0,1,2});
+  SDR activeColumns({32}, {4});
 
   tm.compute(previousActiveColumns);
 
@@ -566,10 +544,8 @@ TEST(TemporalMemoryTest, NewSegmentAddSynapsesToAllWinnerCells) {
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0,1,2});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{4});
+  SDR previousActiveColumns({32}, {0,1,2});
+  SDR activeColumns({32}, {4});
 
   tm.compute(previousActiveColumns);
 
@@ -615,10 +591,8 @@ TEST(TemporalMemoryTest, MatchingSegmentAddSynapsesToSubsetOfWinnerCells) {
       /*seed*/ 42);
 
   // Use 1 cell per column so that we have easy control over the winner cells.
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0,1,2,3});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{4});
+  SDR previousActiveColumns({32}, {0,1,2,3});
+  SDR activeColumns({32}, {4});
   const vector<CellIdx> prevWinnerCells = {0, 1, 2, 3};
 
   Segment matchingSegment = tm.createSegment(4);
@@ -662,10 +636,8 @@ TEST(TemporalMemoryTest, MatchingSegmentAddSynapsesToAllWinnerCells) {
 
   // Use 1 cell per column so that we have easy control over the winner cells.
   const vector<CellIdx> prevWinnerCells = {0, 1};
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0,1});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{4});
+  SDR previousActiveColumns({32}, {0,1});
+  SDR activeColumns({32}, {4});
 
   Segment matchingSegment = tm.createSegment(4);
   tm.connections.createSynapse(matchingSegment, 0, 0.5f);
@@ -706,10 +678,8 @@ TEST(TemporalMemoryTest, ActiveSegmentGrowSynapsesAccordingToPotentialOverlap) {
 
   // Use 1 cell per column so that we have easy control over the winner cells.
   const vector<CellIdx> prevWinnerCells = {0, 1, 2, 3, 4};
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0,1,2,3,4});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{5});
+  SDR previousActiveColumns({32}, {0,1,2,3,4});
+  SDR activeColumns({32}, {5});
 
   Segment activeSegment = tm.createSegment(5);
   tm.connections.createSynapse(activeSegment, 0, 0.5f);
@@ -750,10 +720,8 @@ TEST(TemporalMemoryTest, DestroyWeakSynapseOnWrongPrediction) {
       /*predictedSegmentDecrement*/ 0.02f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{2});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {2});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const CellIdx expectedActiveCell = 5;
 
@@ -789,10 +757,8 @@ TEST(TemporalMemoryTest, DestroyWeakSynapseOnActiveReinforce) {
       /*predictedSegmentDecrement*/ 0.02f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {1});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const CellIdx activeCell = 5;
 
@@ -832,10 +798,8 @@ TEST(TemporalMemoryTest, RecycleWeakestSynapseToMakeRoomForNewSynapse) {
 
   // Use 1 cell per column so that we have easy control over the winner cells.
   const vector<CellIdx> prevWinnerCells = {1, 2, 3};
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{1,2,3});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{4});
+  SDR previousActiveColumns({32}, {1,2,3});
+  SDR activeColumns({32}, {4});
 
   Segment matchingSegment = tm.createSegment(4);
 
@@ -892,14 +856,10 @@ TEST(TemporalMemoryTest,
       /*seed*/ 42,
       /*maxSegmentsPerCell*/ 2);
 
-  SDR previousActiveColumns1({32});
-  previousActiveColumns1.setSparse(SDR_sparse_t{0,1,2});
-  SDR previousActiveColumns2({32});
-  previousActiveColumns2.setSparse(SDR_sparse_t{3,4,5});
-  SDR previousActiveColumns3({32});
-  previousActiveColumns3.setSparse(SDR_sparse_t{6,7,8});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{9});
+  SDR previousActiveColumns1({32}, {0,1,2});
+  SDR previousActiveColumns2({32}, {3,4,5});
+  SDR previousActiveColumns3({32}, {6,7,8});
+  SDR activeColumns({32}, {9});
 
   tm.compute(previousActiveColumns1);
   tm.compute(activeColumns);
@@ -963,10 +923,8 @@ TEST(TemporalMemoryTest, DestroySegmentsWithTooFewSynapsesToBeMatching) {
       /*predictedSegmentDecrement*/ 0.02f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{2});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {2});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const CellIdx expectedActiveCell = 5;
 
@@ -1005,10 +963,8 @@ TEST(TemporalMemoryTest, PunishMatchingSegmentsInInactiveColumns) {
       /*predictedSegmentDecrement*/ 0.02f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, {1});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const CellIdx previousInactiveCell = 81;
 
@@ -1071,10 +1027,8 @@ TEST(TemporalMemoryTest, AddSegmentToCellWithFewestSegments) {
         /*seed*/ seed);
 
     // enough for 4 winner cells
-    SDR previousActiveColumns({32});
-    previousActiveColumns.setSparse(SDR_sparse_t{1,2,3,4});
-    SDR activeColumns({32});
-    activeColumns.setSparse(SDR_sparse_t{0});
+    SDR previousActiveColumns({32}, {1,2,3,4});
+    SDR activeColumns({32}, {0});
     const vector<CellIdx> previousActiveCells = {4, 5, 6,7}; // (there are more)
     vector<CellIdx> nonmatchingCells = {0, 3};
     vector<CellIdx> activeCells = {0, 1, 2, 3};
@@ -1157,10 +1111,8 @@ TEST(TemporalMemoryTest, MaxNewSynapseCountOverflow) {
   tm.connections.createSynapse(segment, 6, 0.2f);
   tm.connections.createSynapse(segment, 7, 0.2f);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0,1,3,4});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{2});
+  SDR previousActiveColumns({32}, {0,1,3,4});
+  SDR activeColumns({32}, {2});
 
   tm.compute(previousActiveColumns);
   tm.activateDendrites();
@@ -1193,10 +1145,8 @@ TEST(TemporalMemoryTest, ConnectionsNeverChangeWhenLearningDisabled) {
       /*predictedSegmentDecrement*/ 0.02f,
       /*seed*/ 42);
 
-  SDR previousActiveColumns({32});
-  previousActiveColumns.setSparse(SDR_sparse_t{0});
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1 /*predicted*/, 2 /*bursting*/});
+  SDR previousActiveColumns({32}, {0});
+  SDR activeColumns({32}, { 1/*predicted*/, 2/*bursting*/});
   const vector<CellIdx> previousActiveCells = {0, 1, 2, 3};
   const CellIdx previousInactiveCell = 81;
   const vector<CellIdx> expectedActiveCells = {4};
@@ -1290,7 +1240,7 @@ TEST(TemporalMemoryTest, CreateSegmentDestroyOld) {
   tm.connections.createSynapse(segment1, 3, 0.5f);
 
   // Let some time pass.
-  SDR empty({32});
+  SDR empty({32}, {});
   tm.compute(empty);
   tm.compute(empty);
   tm.compute(empty);
@@ -1302,8 +1252,7 @@ TEST(TemporalMemoryTest, CreateSegmentDestroyOld) {
   tm.compute(empty);
 
   // Give the first segment some activity.
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1,2,3});
+  SDR activeColumns({32}, {1,2,3});
 
   tm.compute(activeColumns);
   tm.activateDendrites();
@@ -1398,8 +1347,7 @@ TEST(TemporalMemoryTest, testCellsToColumns)
 
   auto correctDims = tm.getColumnDimensions();
   correctDims.push_back(tm.getCellsPerColumn());
-  SDR v1(correctDims);
-  v1.setSparse(SDR_sparse_t{4,5,8});
+  SDR v1(correctDims, {4,5,8});
   const SDR_sparse_t expected {1u, 2u};
 
   auto res = tm.cellsToColumns(v1);
@@ -1409,10 +1357,10 @@ TEST(TemporalMemoryTest, testCellsToColumns)
   res = tm.cellsToColumns(v1);
   EXPECT_TRUE(res.getSparse().empty());
 
-  SDR larger({10,10, 3});
+  SDR larger({10,10, 3}, {});
   EXPECT_ANY_THROW(tm.cellsToColumns(larger));
 
-  SDR wrongDims({3*3}); //matches numberOfCells, but dimensions are incorrect
+  SDR wrongDims({3*3}, {}); //matches numberOfCells, but dimensions are incorrect
   EXPECT_ANY_THROW(tm.cellsToColumns(wrongDims));
 };
 
@@ -1458,8 +1406,7 @@ void serializationTestPrepare(TemporalMemory &tm) {
   tm.connections.createSynapse(matchingSegment2, 2, 0.4f);
   tm.connections.createSynapse(matchingSegment2, 3, 0.4f);
 
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{0});
+  SDR activeColumns({32}, {0});
   tm.compute(activeColumns);
   tm.activateDendrites();
 
@@ -1477,8 +1424,7 @@ void serializationTestVerify(TemporalMemory &tm) {
   const vector<UInt> prevWinnerCells = tm.getWinnerCells();
   ASSERT_EQ(1ul, prevWinnerCells.size());
 
-  SDR activeColumns({32});
-  activeColumns.setSparse(SDR_sparse_t{1,2,3});
+  SDR activeColumns({32}, {1,2,3});
   tm.compute(activeColumns);
 
   // Verify the correct cells were activated.
@@ -1616,9 +1562,9 @@ TEST(TemporalMemoryTest, testSaveArLoadAr) {
  */
 TEST(TemporalMemoryTest, testExtraActive) {
 
-  SDR columns({120});
+  SDR columns({120}, {});
 
-  vector<SDR> pattern( 10, columns.dimensions );
+  vector<SDR> pattern( 10, SDR(columns.dimensions, {}) );
   for(auto i = 0u; i < pattern.size(); i++) {
     Random rng( i + 99u );             // Use deterministic seeds for unit tests.
     auto &sdr = pattern[i];
@@ -1644,8 +1590,8 @@ TEST(TemporalMemoryTest, testExtraActive) {
     /* extra */                        (UInt)(columns.size * 12u));
   auto tm_dimensions = tm.getColumnDimensions();
   tm_dimensions.push_back( tm.getCellsPerColumn() );
-  SDR extraActive( tm_dimensions );
-  SDR extraWinners( tm_dimensions );
+  SDR extraActive( tm_dimensions, {} );
+  SDR extraWinners(tm_dimensions, {} );
 
   // Look at the pattern.
   for(UInt trial = 0; trial < 20; trial++) {
@@ -1678,13 +1624,13 @@ TEST(TemporalMemoryTest, testExtraActive) {
   }
 }
 
+
 TEST(TemporalMemoryTest, testEquals) {
   TemporalMemory tm({10,10});
   auto tmCopy = tm;
   ASSERT_EQ(tm, tmCopy);
 
-  SDR data({tm.getColumnDimensions()});
-  data.setSparse(SDR_sparse_t{1,2,3,4,5,13,21,22,23,25,28,49,51,53,55,69});
+  SDR data({tm.getColumnDimensions()}, {1,2,3,4,5,13,21,22,23,25,28,49,51,53,55,69});
   tm.compute(data, true);
 
   ASSERT_NE(tm, tmCopy);
@@ -1692,13 +1638,14 @@ TEST(TemporalMemoryTest, testEquals) {
   ASSERT_EQ(tm, tmCopy);
 }
 
+
 TEST(TemporalMemoryTest, testIncorrectDefaultConstructor) {
   TemporalMemory tmFail; //default empty constructor is only used for deserialization
-  SDR data1({0});
+  SDR data1({0}, {});
   EXPECT_ANY_THROW(tmFail.compute(data1, true));
   
   TemporalMemory tmOk({32} /*column dims must always be specified*/);
-  SDR data2({tmOk.getColumnDimensions()});
+  SDR data2({tmOk.getColumnDimensions()}, {});
   EXPECT_NO_THROW(tmOk.compute(data2, true));
 }
 
