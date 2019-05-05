@@ -735,16 +735,16 @@ TEST(SdrTest, TestSaveLoad) {
     ASSERT_TRUE(ret == 0) << "Failed to delete " << filename;
 
     // Check that all of the data is OK
-    ASSERT_TRUE( zero    == zero_2 );
-    ASSERT_TRUE( dense   == dense_2 );
-    ASSERT_TRUE( sparse  == sparse_2 );
-    ASSERT_TRUE( coord   == coord_2 );
+    ASSERT_EQ( zero, zero_2 );
+    ASSERT_EQ( dense, dense_2 );
+    ASSERT_EQ( sparse, sparse_2 );
+    ASSERT_EQ( coord, coord_2 );
 
     dense.setDense(SDR_dense_t({ 0, 1, 0, 0, 1, 0, 0, 0, 1 }));
     stringstream ss;
     dense.saveToStream_ar(ss, SerializableFormat::BINARY);
     dense_2.loadFromStream_ar(ss, SerializableFormat::BINARY);
-    ASSERT_TRUE( dense   == dense_2 );
+    ASSERT_EQ( dense,  dense_2 ) << "Binary data mismatch";
 
 }
 
