@@ -305,12 +305,9 @@ public:
   size_t numberOfCells(void) const { return connections.numCells(); }
 
   /**
-   * Returns the indices of the active cells.
-   *
-   * @returns (std::vector<CellIdx>) Vector of indices of active cells.
+   * @return SDR with indices of active cells.
    */
-  vector<CellIdx> getActiveCells() const; //TODO remove
-  void getActiveCells(sdr::SDR &activeCells) const;
+  sdr::SDR getActiveCells() const;
 
   /**
    * @return SDR with indices of the predictive cells.
@@ -621,7 +618,7 @@ protected:
   SynapseIdx maxSynapsesPerSegment_;
 
 private:
-  vector<CellIdx> activeCells_;
+  sdr::SDR activeCells_;
   vector<CellIdx> winnerCells_;
   bool segmentsValid_;
   vector<Segment> activeSegments_;

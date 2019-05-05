@@ -42,6 +42,8 @@ using SDR_sparse_t     = std::vector<ElemSparse>;
 using SDR_coordinate_t = std::vector<std::vector<UInt>>;
 using SDR_callback_t   = std::function<void()>;
 
+class Reshape; // Forward Declaration.
+
 /**
  * SparseDistributedRepresentation class
  * Also known as "SDR" class
@@ -518,6 +520,8 @@ public:
 
     void concatenate(std::vector<const SparseDistributedRepresentation*> inputs,
                      UInt axis = 0u);
+
+    Reshape flatten() const;
 
     /**
      * Print a human readable version of the SDR.

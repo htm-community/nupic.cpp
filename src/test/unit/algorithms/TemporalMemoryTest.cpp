@@ -114,7 +114,7 @@ TEST(TemporalMemoryTest, ActivateCorrectlyPredictiveCells) {
   ASSERT_EQ(expectedActiveCells, tm.getPredictiveCells().getSparse());
   tm.compute(activeColumns, true);
 
-  EXPECT_EQ(expectedActiveCells, tm.getActiveCells());
+  EXPECT_EQ(expectedActiveCells, tm.getActiveCells().getSparse());
 }
 
 /**
@@ -141,7 +141,7 @@ TEST(TemporalMemoryTest, BurstUnpredictedColumns) {
 
   tm.compute(activeColumns, true);
 
-  EXPECT_EQ(burstingCells, tm.getActiveCells());
+  EXPECT_EQ(burstingCells, tm.getActiveCells().getSparse());
 }
 
 /**
@@ -176,15 +176,14 @@ TEST(TemporalMemoryTest, ZeroActiveColumns) {
   tm.connections.createSynapse(segment, previousActiveCells[2], 0.5f);
   tm.connections.createSynapse(segment, previousActiveCells[3], 0.5f);
   tm.compute(previousActiveColumns, true);
-  ASSERT_FALSE(tm.getActiveCells().empty());
+  ASSERT_FALSE(tm.getActiveCells().getSum() == 0);
   ASSERT_FALSE(tm.getWinnerCells().empty());
   tm.activateDendrites();
   ASSERT_FALSE(tm.getPredictiveCells().getSum() == 0);
 
-  SDR empty({32});
-  empty.setSparse(SDR_sparse_t{});
+  const SDR empty({32});
   EXPECT_NO_THROW(tm.compute(empty, true)) << "failed with empty compute";
-  EXPECT_TRUE(tm.getActiveCells().empty());
+  EXPECT_TRUE(tm.getActiveCells().getSparse().empty());
   EXPECT_TRUE(tm.getWinnerCells().empty());
   tm.activateDendrites();
   EXPECT_TRUE(tm.getPredictiveCells().getSum() == 0);
@@ -1087,7 +1086,7 @@ TEST(TemporalMemoryTest, AddSegmentToCellWithFewestSegments) {
     tm.compute(previousActiveColumns, true);
     tm.compute(activeColumns, true);
 
-    ASSERT_EQ(activeCells, tm.getActiveCells());
+    ASSERT_EQ(activeCells, tm.getActiveCells().getSparse());
 
     EXPECT_EQ(3ul, tm.connections.numSegments());
     EXPECT_EQ(1ul, tm.connections.segmentsForCell(0).size());
@@ -1483,7 +1482,7 @@ void serializationTestVerify(TemporalMemory &tm) {
 
   // Verify the correct cells were activated.
   EXPECT_EQ((vector<UInt>{4, 8, 9, 10, 11, 12, 13, 14, 15}),
-            tm.getActiveCells());
+            tm.getActiveCells().getSparse());
   const vector<UInt> winnerCells = tm.getWinnerCells();
   ASSERT_EQ(3ul, winnerCells.size());
   EXPECT_EQ(4ul, winnerCells[0]);
@@ -1644,8 +1643,8 @@ TEST(TemporalMemoryTest, testExtraActive) {
     /* extra */                        (UInt)(columns.size * 12u));
   auto tm_dimensions = tm.getColumnDimensions();
   tm_dimensions.push_back( tm.getCellsPerColumn() );
-  SDR extraActive( tm_dimensions );
-  SDR extraWinners( tm_dimensions );
+  SDR extraActive( tm_dimensions);
+  SDR extraWinners(tm_dimensions);
 
   // Look at the pattern.
   for(UInt trial = 0; trial < 20; trial++) {
@@ -1654,8 +1653,8 @@ TEST(TemporalMemoryTest, testExtraActive) {
       // Calculate TM output
       tm.compute(x, true, extraActive, extraWinners);
       // update the external 'hints' for the next iteration
-      tm.getActiveCells( extraActive );
-      tm.getWinnerCells( extraWinners );
+      extraActive = tm.getActiveCells();
+      tm.getWinnerCells(extraWinners);
     }
     if( trial >= 19 ) {
       ASSERT_LT( tm.anomaly, 0.05f );

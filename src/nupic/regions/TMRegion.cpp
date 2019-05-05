@@ -239,15 +239,21 @@ void TMRegion::compute() {
   out = getOutput("bottomUpOut");
   if (out && (out->hasOutgoingLinks() || LogItem::isDebug())) {
     SDR& sdr = out->getData().getSDR();
-    tm_->getActiveCells(sdr); //active cells
     if (args_.orColumnOutputs) { //output as columns
-      sdr = tm_->cellsToColumns(sdr);
+      SDR cols = tm_->cellsToColumns(tm_->getActiveCells());
+      sdr.setSparse(cols.getSparse());
+    } else { //output as cells
+      SDR cells = tm_->getActiveCells();
+      sdr.setSparse(cells.getSparse());
     }
     NTA_DEBUG << "compute " << *out << std::endl;
   }
   out = getOutput("activeCells");
   if (out && (out->hasOutgoingLinks() || LogItem::isDebug())) {
-    tm_->getActiveCells(out->getData().getSDR());
+    SDR& sdr = out->getData().getSDR();
+    SDR cells = tm_->getActiveCells();
+    sdr.setSparse(cells.getSparse());
+
     NTA_DEBUG << "compute " << *out << std::endl;
   }
   out = getOutput("predictedActiveCells");

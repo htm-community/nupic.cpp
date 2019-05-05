@@ -426,6 +426,9 @@ namespace sdr {
         SDR::setDenseInplace();
     }
 
+    Reshape SparseDistributedRepresentation::flatten() const
+        { return Reshape(*this, {size} ); }
+
     bool SparseDistributedRepresentation::operator==(const SparseDistributedRepresentation &sdr) const {
         // Check attributes
         if( sdr.size != size or dimensions.size() != sdr.dimensions.size() )
