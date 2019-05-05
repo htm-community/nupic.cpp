@@ -101,10 +101,12 @@ namespace sdr {
     //constructors
     SparseDistributedRepresentation::SparseDistributedRepresentation() {}
 
-    SparseDistributedRepresentation::SparseDistributedRepresentation( const vector<UInt> dimensions )
-        { initialize( dimensions ); }
+    SparseDistributedRepresentation::SparseDistributedRepresentation( const vector<UInt> dimensions, 
+		                                                      const SDR_sparse_t data )
+        { initialize( dimensions, data ); }
 
-    void SparseDistributedRepresentation::initialize( const vector<UInt> dimensions ) {
+    void SparseDistributedRepresentation::initialize( const vector<UInt> dimensions,
+		                                      const SDR_sparse_t data ) {
         dimensions_ = dimensions;
         NTA_CHECK( dimensions.size() > 0 ) << "SDR has no dimensions!";
 
@@ -121,10 +123,11 @@ namespace sdr {
         // Initialize the dense array storage, when it's needed.
         dense_valid = false;
         // Initialize the flatSparse array, nothing to do.
-        sparse_valid = true;
-        // Initialize the index tuple.
-        coordinates_.assign( dimensions.size(), {} );
-        coordinates_valid = true;
+	sparse_ = data;
+	setSparseInplace();
+        // Initialize the coordinate format only when it's needed.
+	coordinates_.assign( dimensions.size(), {} );
+        coordinates_valid = false;
     }
 
     SparseDistributedRepresentation::SparseDistributedRepresentation(
@@ -436,9 +439,9 @@ namespace sdr {
         }
         // Check data
         return std::equal(
-            getDense().begin(),
-            getDense().end(), 
-            sdr.getDense().begin());
+            getDense().cbegin(),
+            getDense().cend(), 
+            sdr.getDense().cbegin());
     }
 
 

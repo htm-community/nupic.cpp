@@ -60,6 +60,16 @@ TEST(SdrTest, TestConstructor) {
     ASSERT_EQ( c.dimensions, vector<UInt>({11u, 15u, 3u}) );
 }
 
+
+TEST(SdrTest, testConstructorWithData) {
+  SDR_sparse_t initData = {1,3,5};
+  EXPECT_NO_THROW(const SDR sdrData({10}, initData));
+
+  const SDR sdrData({10}, initData);
+  ASSERT_EQ(sdrData.getSparse(), initData);
+}
+
+
 TEST(SdrTest, TestEmptyPlaceholder) { //for NetworkAPI
     EXPECT_NO_THROW( SDR({0})  );
     EXPECT_EQ( SDR({0}).size, 0u  );
@@ -89,12 +99,12 @@ TEST(SdrTest, TestSDR_Examples) {
     // Make an SDR with 9 values, arranged in a (3 x 3) grid.
     // "SDR" is an alias/typedef for SparseDistributedRepresentation.
     SDR  X( {3, 3} );
-    vector<Byte> data({
+    SDR_dense_t data({
         0, 1, 0,
         0, 1, 0,
         0, 0, 1 });
 
-    // These three statements are equivalent.
+    // These four statements are equivalent.
     X.setDense(SDR_dense_t({ 0, 1, 0,
                              0, 1, 0,
                              0, 0, 1 }));
@@ -103,6 +113,9 @@ TEST(SdrTest, TestSDR_Examples) {
     ASSERT_EQ( data, X.getDense() );
     X.setCoordinates(SDR_coordinate_t({{ 0, 1, 2,}, { 1, 1, 2 }}));
     ASSERT_EQ( data, X.getDense() );
+//    EXPECT_ANY_THROW(const SDR Xd({3,3}, data)); //data is dense, expected sparse
+    const SDR Xd({3,3}, SDR_sparse_t{1,4,8});
+    ASSERT_EQ(data, Xd.getDense());
 
     // Access data in any format, SDR will automatically convert data formats.
     ASSERT_EQ( X.getDense(),      SDR_dense_t({ 0, 1, 0, 0, 1, 0, 0, 0, 1 }) );
@@ -735,10 +748,10 @@ TEST(SdrTest, TestSaveLoad) {
     ASSERT_TRUE(ret == 0) << "Failed to delete " << filename;
 
     // Check that all of the data is OK
-    ASSERT_EQ( zero, zero_2 );
-    ASSERT_EQ( dense, dense_2 );
-    ASSERT_EQ( sparse, sparse_2 );
-    ASSERT_EQ( coord, coord_2 );
+    EXPECT_EQ( zero, zero_2 );
+    EXPECT_EQ( dense, dense_2 );
+    EXPECT_EQ( sparse, sparse_2 );
+    EXPECT_EQ( coord, coord_2 );
 
     dense.setDense(SDR_dense_t({ 0, 1, 0, 0, 1, 0, 0, 0, 1 }));
     stringstream ss;

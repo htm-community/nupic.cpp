@@ -213,10 +213,16 @@ public:
      *
      * @param dimensions A list of dimension sizes, defining the shape of the
      * SDR.  The product of the dimensions must be greater than zero.
+     *
+     * @param (optional) data: default (sparse) data, same as calling sdr.setSparse(data);
+     * Default value is empty{}.
+     *
      */
-    SparseDistributedRepresentation( const std::vector<UInt> dimensions );
+    SparseDistributedRepresentation( const std::vector<UInt> dimensions,
+		                     const SDR_sparse_t data = SDR_sparse_t{});
 
-    void initialize( const std::vector<UInt> dimensions );
+    void initialize( const std::vector<UInt> dimensions,
+		     const SDR_sparse_t data = SDR_sparse_t{} );
 
     /**
      * Initialize this SDR as a deep copy of the given SDR.  This SDR and the
@@ -571,16 +577,14 @@ public:
     template<class Archive>
     void save_ar(Archive & ar) const
     {
-        getSparse(); // to make sure sparse is valid.
-        ar(cereal::make_nvp("dimensions", dimensions_), cereal::make_nvp("sparse", sparse_) );
+        ar(cereal::make_nvp("dimensions", dimensions_), cereal::make_nvp("sparse", getSparse()) );
     }
 
     template<class Archive>
     void load_ar(Archive & ar)
     {
         ar( dimensions_, sparse_ );
-        initialize( dimensions_ );
-        setSparseInplace();
+        initialize( dimensions_, sparse_ );
     }
 
     /**
