@@ -113,7 +113,7 @@ char *ArrayBase::allocateBuffer(size_t count) {
 
 char *ArrayBase::allocateBuffer( const std::vector<UInt>& dimensions) { // only for SDR
   NTA_CHECK(type_ == NTA_BasicType_SDR) << "Dimensions can only be set on the SDR payload";
-  sdr::SDR *sdr = new sdr::SDR(dimensions);
+  sdr::SDR *sdr = new sdr::SDR(dimensions, sdr::SDR_sparse_t{});
   std::shared_ptr<char> sp(reinterpret_cast<char *>(sdr));
   buffer_ = sp;
   count_ = sdr->size;

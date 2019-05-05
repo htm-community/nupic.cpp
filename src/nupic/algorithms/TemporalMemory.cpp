@@ -51,7 +51,7 @@
 
 using namespace std;
 using namespace nupic;
-using nupic::sdr::SDR;
+using namespace nupic::sdr;
 using namespace nupic::algorithms::temporal_memory;
 
 
@@ -637,8 +637,8 @@ void TemporalMemory::compute(const SDR &activeColumns,
 }
 
 void TemporalMemory::compute(const SDR &activeColumns, const bool learn) {
-  SDR extraActive({ extra });
-  SDR extraWinners({ extra });
+  SDR extraActive({ extra }, SDR_sparse_t{});
+  SDR extraWinners({extra }, SDR_sparse_t{});
   compute( activeColumns, learn, extraActive, extraWinners );
 }
 
@@ -674,14 +674,12 @@ SDR TemporalMemory::cellsToColumns(const SDR& cells) const {
   NTA_CHECK(cells.dimensions == correctDims) 
 	  << "cells.dimensions must match TM's (column dims x cellsPerColumn) ";
 
-  SDR cols(getColumnDimensions());
-  auto& dense = cols.getDense();
+  SDR cols(getColumnDimensions(), SDR_sparse_t{});
+  auto& s = cols.getSparse();
   for(const auto cell : cells.getSparse()) {
     const auto col = columnForCell(cell);
-    dense[col] = 1;
+    s.push_back(col);
   }
-  cols.setDense(dense);
-
   NTA_ASSERT(cols.size == numColumns_); 
   return cols;
 }
@@ -716,8 +714,7 @@ SDR TemporalMemory::getPredictiveCells() const {
 
   auto correctDims = getColumnDimensions();
   correctDims.push_back(getCellsPerColumn());
-  SDR predictive(correctDims);
-
+  SDR predictive(correctDims, SDR_sparse_t{});
   auto& predictiveCells = predictive.getSparse();
 
   for (auto segment = activeSegments_.cbegin(); segment != activeSegments_.cend();

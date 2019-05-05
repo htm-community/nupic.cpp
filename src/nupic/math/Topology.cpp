@@ -30,7 +30,7 @@
 using std::vector;
 using namespace nupic;
 using namespace nupic::math::topology;
-using nupic::sdr::SDR;
+using namespace nupic::sdr;
 
 namespace nupic {
 namespace math {
@@ -65,7 +65,7 @@ Topology_t  DefaultTopology(
                               (inputTopology[i] / (Real)cell.dimensions[i]);
       inputCoords.push_back({ (UInt32)floor(inputCoord) });
     }
-    SDR inputTopologySDR( inputTopology );
+    SDR inputTopologySDR( inputTopology, SDR_sparse_t{} );
     inputTopologySDR.setCoordinates( inputCoords );
     const auto centerInput = inputTopologySDR.getSparse()[0];
 
@@ -88,8 +88,7 @@ Topology_t  DefaultTopology(
 
     const UInt numPotential = (UInt)round(columnInputs.size() * potentialPct);
     const auto selectedInputs = rng.sample<UInt>(columnInputs, numPotential);
-    SDR potentialPool( potentialPoolDimensions );
-    potentialPool.setSparse( selectedInputs );
+    const SDR potentialPool( potentialPoolDimensions, selectedInputs );
     return potentialPool;
   };
 }
@@ -100,7 +99,7 @@ Topology_t NoTopology(Real potentialPct)
   NTA_CHECK( potentialPct >= 0.0f );
   NTA_CHECK( potentialPct <= 1.0f );
   return [=](const SDR& cell, const vector<UInt>& potentialPoolDimensions, Random &rng) -> SDR {
-    SDR potentialPool( potentialPoolDimensions );
+    SDR potentialPool( potentialPoolDimensions, SDR_sparse_t{} );
     potentialPool.randomize( potentialPct, rng );
     return potentialPool;
   };

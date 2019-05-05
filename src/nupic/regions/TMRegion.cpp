@@ -217,7 +217,7 @@ void TMRegion::compute() {
   SDR& activeColumns = bottomUpIn.getSDR();
 
   // Check for 'extra' inputs
-  static SDR nullSDR({0});
+  static SDR nullSDR({0}, sdr::SDR_sparse_t{});
   Array &extraActive = getInput("extraActive")->getData();
   SDR& extraActiveCells = (args_.extra) ? (extraActive.getSDR()) : nullSDR;
 

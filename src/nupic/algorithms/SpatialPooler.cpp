@@ -38,7 +38,7 @@ using namespace std;
 using namespace nupic;
 using namespace nupic::algorithms::spatial_pooler;
 using namespace nupic::math::topology;
-using nupic::sdr::SDR;
+using namespace nupic::sdr;
 using nupic::utils::VectorHelpers;
 
 class CoordinateConverterND {
@@ -479,10 +479,10 @@ void SpatialPooler::initialize(
 
 
 void SpatialPooler::compute(const UInt inputArray[], bool learn, UInt activeArray[]) {
-  SDR input( inputDimensions_ );
+  SDR input( inputDimensions_, SDR_sparse_t{});
   input.setDense( inputArray );
 
-  SDR active( columnDimensions_ );
+  SDR active( columnDimensions_, SDR_sparse_t{} );
   compute( input, learn, active );
   copy(
       active.getDense().begin(),
@@ -665,11 +665,11 @@ void SpatialPooler::updateDutyCycles_(const vector<SynapseIdx> &overlaps,
 
   // Turn the overlaps array into an SDR. Convert directly to flat-sparse to
   // avoid copies and  type convertions.
-  SDR newOverlap({ numColumns_ });
+  SDR newOverlap({ numColumns_}, SDR_sparse_t{});
   auto &overlapsSparseVec = newOverlap.getSparse();
   for (UInt i = 0; i < numColumns_; i++) {
     if( overlaps[i] != 0 )
-      overlapsSparseVec.push_back( i );
+      overlapsSparseVec.push_back( i ); //TODO use setDense overlaps
   }
   newOverlap.setSparse( overlapsSparseVec );
 

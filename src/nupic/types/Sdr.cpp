@@ -132,8 +132,8 @@ namespace sdr {
 
     SparseDistributedRepresentation::SparseDistributedRepresentation(
                                 const SparseDistributedRepresentation &value )
-        : SparseDistributedRepresentation( value.dimensions )
-        { setSDR( value ); }
+        : SparseDistributedRepresentation( value.dimensions , value.getSparse())
+        { }
 
     SparseDistributedRepresentation::~SparseDistributedRepresentation()
         { deconstruct(); }
@@ -555,7 +555,7 @@ namespace sdr {
     /**************************************************************************/
 
     Reshape::Reshape(const SDR &sdr, const vector<UInt> &dimensions)
-        : SDR( dimensions )
+        : SDR( dimensions, sdr.getSparse() )
     {
         clear();
         parent = &sdr;
@@ -582,8 +582,8 @@ namespace sdr {
     SDR_coordinate_t& Reshape::getCoordinates() const {
         NTA_CHECK( parent != nullptr ) << "Parent SDR has been destroyed!";
         if( dimensions.size() == parent->dimensions.size() &&
-            equal( dimensions.begin(), dimensions.end(),
-                   parent->dimensions.begin() )) {
+            equal( dimensions.cbegin(), dimensions.cend(),
+                   parent->dimensions.cbegin() )) {
             // All things equal, prefer reusing the parent's cached value.
             return parent->getCoordinates();
         }

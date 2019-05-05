@@ -73,7 +73,7 @@ protected:
 
     void initialize(const std::vector<UInt> dimensions) {
         dimensions_ = dimensions;
-        size_       = sdr::SDR(dimensions).size;
+        size_       = sdr::SDR(dimensions, sdr::SDR_sparse_t{}).size;
     }
 
 private:

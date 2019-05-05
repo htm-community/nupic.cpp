@@ -50,7 +50,7 @@ Real computeRawAnomalyScore(const SDR& active,
   NTA_CHECK(active.dimensions == predicted.dimensions);
 
   // Calculate and return percent of active columns that were not predicted.
-  SDR both(active.dimensions);
+  SDR both(active.dimensions, SDR_sparse_t{});
   both.intersection(active, predicted);
 
   return (active.getSum() - both.getSum()) / Real(active.getSum());

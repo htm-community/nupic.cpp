@@ -219,7 +219,7 @@ public:
      *
      */
     SparseDistributedRepresentation( const std::vector<UInt> dimensions,
-		                     const SDR_sparse_t data = SDR_sparse_t{});
+		                     const SDR_sparse_t data);
 
     void initialize( const std::vector<UInt> dimensions,
 		     const SDR_sparse_t data = SDR_sparse_t{} );

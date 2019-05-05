@@ -85,13 +85,12 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
   tInit.stop();
 
   // data for processing input
-  SDR input(enc.dimensions);
-  SDR outSPglobal(spGlobal.getColumnDimensions()); // active array, output of SP/TM
-  SDR outSPlocal(spLocal.getColumnDimensions()); //for SPlocal
-  SDR outSP(vector<UInt>{COLS});
-  SDR outTM(spGlobal.getColumnDimensions()); 
+  SDR input(enc.dimensions, SDR_sparse_t{});
+  SDR outSPglobal(spGlobal.getColumnDimensions(), SDR_sparse_t{});  // active array, output of SP/TM
+  SDR outSPlocal(spLocal.getColumnDimensions(), SDR_sparse_t{}); //for SPlocal
+  SDR outSP(vector<UInt>{COLS}, SDR_sparse_t{});
+  SDR outTM(spGlobal.getColumnDimensions(), SDR_sparse_t{}); 
   Real res = 0.0; //for anomaly:
-  SDR prevPred_(outTM.dimensions); //holds T-1 TM.predictive cells
 
   // Start a stopwatch timer
   printf("starting:  %d iterations.", EPOCHS);
@@ -131,22 +130,21 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
     if(useTM) {
     tTM.start();
     tm.compute(outSP, true /*learn*/); //to uses output of SPglobal
+    tTM.stop();
     tm.activateDendrites(); //required to enable tm.getPredictiveCells()
     outTM = tm.cellsToColumns( tm.getPredictiveCells() );
-    tTM.stop();
     }
 
 
     //Anomaly (pure x likelihood)
     tAn.start();
-    res = an.compute(outSP /*active*/, prevPred_ /*prev predicted*/);
+//!    res = an.compute(outSP /*active*/, prevPred_ /*prev predicted*/);
     tAn.stop();
 
     tAnLikelihood.start();
-    anLikelihood.compute(outSP /*active*/, prevPred_ /*prev predicted*/);
+//!    anLikelihood.compute(outSP /*active*/, prevPred_ /*prev predicted*/);
     tAnLikelihood.stop();
 
-    prevPred_ = outTM; //to be used as predicted T-1
 
     // print
     if (e == EPOCHS - 1) {
@@ -168,29 +166,25 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
       cout << "AN:\t" << tAnLikelihood.getElapsed() << endl;
 
       // check deterministic SP, TM output 
-      SDR goldEnc({DIM_INPUT});
       const SDR_sparse_t deterministicEnc{
         0, 4, 13, 21, 24, 30, 32, 37, 40, 46, 47, 48, 50, 51, 64, 68, 79, 81, 89, 97, 99, 114, 120, 135, 136, 140, 141, 143, 144, 147, 151, 155, 161, 162, 164, 165, 169, 172, 174, 179, 181, 192, 201, 204, 205, 210, 213, 226, 237, 242, 247, 249, 254, 255, 262, 268, 271, 282, 283, 295, 302, 306, 307, 317, 330, 349, 353, 366, 368, 380, 393, 399, 404, 409, 410, 420, 422, 441,446, 447, 456, 458, 464, 468, 476, 497, 499, 512, 521, 528, 531, 534, 538, 539, 541, 545, 550, 557, 562, 565, 575, 581, 589, 592, 599, 613, 617, 622, 647, 652, 686, 687, 691, 699, 704, 710, 713, 716, 722, 729, 736, 740, 747, 749, 753, 754, 758, 766, 778, 790, 791, 797, 800, 808, 809, 812, 815, 826, 828, 830, 837, 838, 852, 853, 856, 863, 864, 873, 878, 882, 885, 893, 894, 895, 905, 906, 914, 915, 920, 924, 927, 937, 939, 944, 947, 951, 954, 956, 967, 968, 969, 973, 975, 976, 981, 991, 998
       };
-      goldEnc.setSparse(deterministicEnc);
+      const SDR goldEnc({DIM_INPUT}, deterministicEnc);
 
-      SDR goldSP({COLS});
       const SDR_sparse_t deterministicSP{
         72, 75, 284, 303, 305, 317, 329, 525, 1095, 2027
       };
-      goldSP.setSparse(deterministicSP);
+      const SDR goldSP({COLS}, deterministicSP);
 
-      SDR goldSPlocal({COLS});
       const SDR_sparse_t deterministicSPlocal{
         6, 12, 26, 57, 63, 72, 75, 76, 77, 80, 82, 103, 105, 124, 135, 154, 171, 174, 175, 185, 192, 193, 195, 198, 263, 284, 296, 302, 303, 305, 313, 317, 319, 320, 356, 363, 364, 401, 403, 404, 410, 413, 425, 426, 428, 449, 491, 496, 511, 515, 516, 518, 520, 525, 529, 536, 550, 556, 574, 583, 592, 597, 598, 603, 609, 622, 626, 636, 645, 652, 704, 706, 722, 726, 727, 728, 729, 747, 751, 766, 779, 808, 833, 837, 838, 840, 848, 850, 853, 860, 908, 912, 918, 919, 923, 927, 929, 930, 931, 932, 970, 989, 1006, 1038, 1066, 1082, 1085, 1087, 1092, 1094, 1095, 1113, 1115, 1125, 1128, 1174, 1179, 1180, 1182, 1185, 1205, 1206, 1232, 1236, 1238, 1239, 1240, 1245, 1271, 1292, 1295, 1300, 1303, 1307, 1311, 1319, 1320, 1322, 1382, 1401, 1412, 1415, 1421, 1426, 1431, 1434, 1438, 1470, 1474, 1492, 1501, 1511, 1521, 1524, 1525, 1530, 1532, 1537, 1540, 1600, 1617, 1620, 1622, 1632, 1638, 1641, 1667, 1672, 1680, 1684, 1686, 1690, 1699, 1702, 1742, 1744, 1745, 1746, 1765, 1770, 1774, 1801, 1807, 1808, 1816, 1830, 1834, 1849, 1861, 1867, 1871, 1882, 1902, 1907, 1943, 1945, 1955, 1956, 1966, 1968, 1969, 1971, 1986, 2018, 2025, 2027
       };
-      goldSPlocal.setSparse(deterministicSPlocal);
+      const SDR goldSPlocal({COLS}, deterministicSPlocal);
 
-      SDR goldTM({COLS});
       const SDR_sparse_t deterministicTM{
         26, 75 
       };
-      goldTM.setSparse(deterministicTM);
+      const SDR goldTM({COLS}, deterministicTM);
 
       const float goldAn = 0.920001f;
 

@@ -222,12 +222,12 @@ std::ostream& operator<< (std::ostream& stream,
 
 Overlap::Overlap( const vector<UInt> &dimensions, UInt period )
     : MetricsHelper_( dimensions, period ),
-      previous_( dimensions )
+      previous_( dimensions, SDR_sparse_t{} )
     { initialize(); }
 
 Overlap::Overlap( const SDR &dataSource, UInt period )
     : MetricsHelper_( dataSource, period ),
-      previous_( dataSource.dimensions )
+      previous_( dataSource.dimensions, SDR_sparse_t{} )
     { initialize(); }
 
 void Overlap::initialize() {
