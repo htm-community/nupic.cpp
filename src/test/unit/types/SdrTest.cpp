@@ -1006,4 +1006,17 @@ TEST(SdrTest, TestAssignmentOperator)
   EXPECT_EQ(a.dimensions, copy.dimensions);
 }
 
+/**
+ *  This test demonstrates a problem wher vectors would be treated as SDRs
+ *  in function arguments, which causes nasty hidden bugs. 
+ */
+TEST(SdrTest, testVectorIsNotSDR) {
+  const auto fooSDR = [](SDR arg1) {return;}; //function expects a SDR arg
+  SDR sdr({10});
+  vector<UInt> vector{10};
+
+  EXPECT_ANY_THROW(fooSDR(vector)) << "Function expects a SDR argument, but got vector. This should fail!";
+  EXPECT_NO_THROW(fooSDR(sdr));
+}
+
 } // End namespace testing
