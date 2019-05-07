@@ -41,12 +41,12 @@
 #include <iostream> // for ostream, istream
 #include <string>
 #include <memory>	// for shared_ptr
+#include <vector>
 
-#include <nupic/types/Types.hpp>
-#include <nupic/types/Sdr.hpp>
 #include <nupic/types/Serializable.hpp>
 
-
+#include <nupic/ntypes/BasicType.hpp>
+#include <nupic/types/Sdr.hpp>
 
 namespace nupic
 {
@@ -71,7 +71,7 @@ namespace nupic
     /**
      * Create an ArrayBase containing a copy of an SDR.
      */
-    ArrayBase(const SDR &sdr);
+    ArrayBase(const sdr::SDR &sdr);
 
     /**
      * Caller does not provide a buffer --
@@ -102,8 +102,8 @@ namespace nupic
      * Ask ArrayBase to allocate its buffer
      * NOTE: for NTA_BasicType_Sparse this sets the size of the dense buffer is describes.
      */
-    virtual void allocateBuffer(size_t count);
-    virtual void allocateBuffer(const std::vector<UInt> dimensions);  // only for SDR
+    virtual char* allocateBuffer(size_t count);
+    virtual char* allocateBuffer(const std::vector<UInt>& dimensions);  // only for SDR
 
     /**
      * Ask ArrayBase to zero fill its buffer
@@ -123,26 +123,18 @@ namespace nupic
     const void* getBuffer() const;
 
     /**
-     * Returns a pointer to the underlining SDR.
+     * Returns a reference to the underlining SDR.
      * If it is not an SDR type, throws exception.
      */
-    SDR* getSDR();
-    const SDR* getSDR() const;
+    sdr::SDR& getSDR();
+    const sdr::SDR& getSDR() const;
 
     /**
      * number of elements of given type in the buffer
      */
     size_t getCount() const;
 
-    /**
-     * max number of elements this buffer can hold (capacity)
-     */
-	  size_t getMaxElementsCount() const;
 
-	  /**
-     * Returns the allocated buffer size in bytes independent of array length
-     */
-    size_t getBufferSize() const;
 
     /**
      * Returns true if the buffer is allocated a size > 0.  A capacity == 0 could
@@ -159,13 +151,8 @@ namespace nupic
      * ArrayBase will NOT free the pointer when this instance goes out of scope.
      */
     virtual void setBuffer(void *buffer, size_t count);
-    virtual void setBuffer(SDR &sdr);
+    virtual void setBuffer(sdr::SDR &sdr);
 
-    /**
-     * Set the number of elements.  This is used to truncate the array.
-     * For NTA_BasicTypeSparse, this sets the current length of the sparse array.
-     */
-    void setCount(size_t count);
 
     /**
      * Return the type of data contained in the ArrayBase object.
@@ -183,19 +170,83 @@ namespace nupic
      */
     void inline RefreshCache() {
       if (type_ == NTA_BasicType_SDR) {
-        SDR *sdr = getSDR();
-        sdr->setDense(sdr->getDense());
+        sdr::SDR& sdr = getSDR();
+        sdr.setDense(sdr.getDense());
       }
     }
     /**
     * serialization and deserialization for an Array and ArrayBase
     */
     // binary representation
-    void save(std::ostream &outStream) const override;
+    void save(std::ostream &outStream) const override;  // TODO:Cereal- remove when Cereal is complete.
     void load(std::istream &inStream) override;
+
+		CerealAdapter;  // see Serializable.hpp
+		
+    // FOR Cereal Serialization
+    template<class Archive>
+    void save_ar(Archive& ar) const {
+      ar(cereal::make_nvp("type", std::string(BasicType::getName(getType()))));
+      if (type_ == NTA_BasicType_SDR) {
+        ar(cereal::make_nvp("SDR", getSDR()));
+      }
+      else {
+        const void* ptr = getBuffer();
+        size_t count = getCount();
+        switch (type_) {
+        case NTA_BasicType_Byte:  save_array(ar, reinterpret_cast<const Byte*>(ptr),   count); break;
+	      case NTA_BasicType_Int16: save_array(ar, reinterpret_cast<const Int16*>(ptr),  count); break;
+	      case NTA_BasicType_UInt16:save_array(ar, reinterpret_cast<const UInt16*>(ptr), count); break;
+	      case NTA_BasicType_Int32: save_array(ar, reinterpret_cast<const Int32*>(ptr),  count); break;
+	      case NTA_BasicType_UInt32:save_array(ar, reinterpret_cast<const UInt32*>(ptr), count); break;
+	      case NTA_BasicType_Int64: save_array(ar, reinterpret_cast<const Int64*>(ptr),  count); break;
+	      case NTA_BasicType_UInt64:save_array(ar, reinterpret_cast<const UInt64*>(ptr), count); break;
+	      case NTA_BasicType_Real32:save_array(ar, reinterpret_cast<const Real32*>(ptr), count); break;
+	      case NTA_BasicType_Real64:save_array(ar, reinterpret_cast<const Real64*>(ptr), count); break;
+	      case NTA_BasicType_Bool:  save_array(ar, reinterpret_cast<const bool*>(ptr),   count); break;
+	      default:
+	        NTA_THROW << "Unexpected Element Type: " << type_;
+	        break;
+	      }
+      }
+    }
+
+    // FOR Cereal Deserialization
+    template<class Archive>
+    void load_ar(Archive& ar) {
+      std::string name;
+      ar(cereal::make_nvp("type", name));
+      type_ = BasicType::parse(name);
+      if (type_ == NTA_BasicType_SDR){
+        sdr::SDR *sdr = new sdr::SDR();
+        ar(cereal::make_nvp("SDR", *sdr));
+        buffer_.reset(reinterpret_cast<char*>(sdr));
+        count_ = sdr->size;
+      } else {
+        void* ptr = getBuffer();
+        size_t count = getCount();
+	      switch (type_) {
+        case NTA_BasicType_Byte:  load_array(ar, reinterpret_cast<Byte*>(ptr),   count); break;
+	      case NTA_BasicType_Int16: load_array(ar, reinterpret_cast<Int16*>(ptr),  count); break;
+	      case NTA_BasicType_UInt16:load_array(ar, reinterpret_cast<UInt16*>(ptr), count); break;
+	      case NTA_BasicType_Int32: load_array(ar, reinterpret_cast<Int32*>(ptr),  count); break;
+	      case NTA_BasicType_UInt32:load_array(ar, reinterpret_cast<UInt32*>(ptr), count); break;
+	      case NTA_BasicType_Int64: load_array(ar, reinterpret_cast<Int64*>(ptr),  count); break;
+	      case NTA_BasicType_UInt64:load_array(ar, reinterpret_cast<UInt64*>(ptr), count); break;
+	      case NTA_BasicType_Real32:load_array(ar, reinterpret_cast<Real32*>(ptr), count); break;
+	      case NTA_BasicType_Real64:load_array(ar, reinterpret_cast<Real64*>(ptr), count); break;
+	      case NTA_BasicType_Bool:  load_array(ar, reinterpret_cast<bool*>(ptr),   count); break;
+	      default:
+	        NTA_THROW << "Unexpected Element Type: " << type_;
+	        break;
+	      }
+      }
+    }
+
 
     // ascii text representation
     //    [ type count ( item item item ...) ... ]
+    std::string toString() const;
     friend std::ostream &operator<<(std::ostream &outStream, const ArrayBase &a);
     friend std::istream &operator>>(std::istream &inStream, ArrayBase &a);
 
@@ -204,15 +255,29 @@ namespace nupic
     // cast to/from void* as necessary
     std::shared_ptr<char> buffer_;
     size_t count_;      // number of elements in the buffer
-    size_t capacity_;   // size of the allocated buffer in bytes
     NTA_BasicType type_;// type of data in this buffer
-    bool own_;
 
     // Buffer array conversion routines
     void convertInto(ArrayBase &a, size_t offset=0, size_t maxsize=0) const;
 
-
   private:
+    // helpers for Cereal Serialization of raw pointers to arrays
+		// copy the array to a vector and let Cereal handle it.
+    template<class Archive, class T>
+    void save_array(Archive& ar, const T* ptr, size_t count) const {
+      std::vector<T> a(ptr, ptr+count);
+      ar(cereal::make_nvp("data", a));
+    }
+
+    template<class Archive, class T>
+    void load_array(Archive& ar, T* ptr, size_t count) {
+      std::vector<T> a;
+      ar(a);
+      allocateBuffer(a.size());
+      // Note that the ptr argument provides type but its value is changed by
+      // allocateBuffer() so we have to get it again.
+      std::copy(a.begin(), a.end(), reinterpret_cast<T*>(getBuffer()));
+    }
 
   };
 
@@ -233,10 +298,17 @@ namespace nupic
   std::istream &operator>>(std::istream &inStream, ArrayBase &a);
 
   // Compare contents of two ArrayBase objects
-  // Note: An Array and an ArrayRef could be the same if type, count, and buffer
-  // contents are the same.
+  // Note: An Array and an ArrayBase are the same if type, count, and buffer
+  // contents are the same.  If this is an SDR, we also compare the dimensions.
   bool operator==(const ArrayBase &lhs,const  ArrayBase &rhs);
   inline bool operator!=(const ArrayBase &lhs, const ArrayBase &rhs) {return !(lhs == rhs);}
+
+  // Compare an Array or ArrayBase against a vector, comparing size and 
+  // binary (zero or non-zero) content.
+  bool operator==(const ArrayBase &lhs, const std::vector<nupic::Byte> &rhs);
+  inline bool operator!=(const ArrayBase &lhs, const std::vector<nupic::Byte> &rhs) {return !(lhs == rhs);}
+  bool operator==(const std::vector<nupic::Byte> &rhs, const ArrayBase &lhs);
+  inline bool operator!=(const std::vector<nupic::Byte> &rhs, const ArrayBase &lhs) {return !(lhs == rhs);}
 
 } // namespace
 

@@ -24,9 +24,11 @@
  * Implementation of unit tests for SpatialPooler
  */
 
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <stdio.h>
+#include <numeric>
 
 #include "gtest/gtest.h"
 #include <nupic/algorithms/SpatialPooler.hpp>
@@ -41,6 +43,9 @@ namespace testing {
 using namespace std;
 using namespace nupic;
 using namespace nupic::algorithms::spatial_pooler;
+using nupic::sdr::SDR;
+using nupic::sdr::SDR_dense_t;
+using nupic::sdr::SDR_sparse_t;
 
 UInt countNonzero(const vector<UInt> &vec) {
   UInt count = 0;
@@ -64,6 +69,13 @@ bool check_vector_eq(UInt arr[], vector<UInt> vec) {  //TODO replace with ArrayB
     if (arr[i] != vec[i]) {
       return false;
     }
+  }
+  return true;
+}
+
+bool check_vector_eq(UInt arr[], vector<SynapseIdx> vec) {
+  for(UInt i = 0; i < vec.size(); i++) {
+    if(arr[i] != (UInt)vec[i]) return false;
   }
   return true;
 }
@@ -507,7 +519,7 @@ TEST(SpatialPoolerTest, testUpdateDutyCycles) {
   UInt numInputs = 5;
   UInt numColumns = 5;
   setup(sp, numInputs, numColumns);
-  vector<UInt> overlaps;
+  vector<SynapseIdx> overlaps;
   SDR active({numColumns});
 
   Real initOverlapArr1[] = {1, 1, 1, 1, 1};
@@ -811,7 +823,7 @@ TEST(SpatialPoolerTest, testAdaptSynapses) {
 
   SDR input1({8});
   input1.setDense(SDR_dense_t{1, 0, 0, 1, 1, 0, 1, 0});
-  activeColumns.setFlatSparse(SDR_flatSparse_t({ 0, 1, 2 }));
+  activeColumns.setSparse(SDR_sparse_t({ 0, 1, 2 }));
 
   for (UInt column = 0; column < numColumns; column++) {
     sp.setPotential(column, potentialArr1[column]);
@@ -856,7 +868,7 @@ TEST(SpatialPoolerTest, testAdaptSynapses) {
     sp.setPermanence(column, permanencesArr2[column]);
   }
 
-  activeColumns.setFlatSparse(activeColumnsArr2, 3);
+  activeColumns.setSparse(activeColumnsArr2, 3);
 
   sp.adaptSynapses_(input2, activeColumns);
   for (UInt column = 0; column < numColumns; column++) {
@@ -1064,7 +1076,7 @@ TEST(SpatialPoolerTest, testCalculateOverlap) {
   }
 
   for (UInt i = 0; i < numTrials; i++) {
-    vector<UInt> overlaps;
+    vector<SynapseIdx> overlaps;
     SDR input({numInputs});
     input.setDense(SDR_dense_t(inputs[i], inputs[i] + numInputs));
     sp.calculateOverlap_(input, overlaps);
@@ -1108,7 +1120,7 @@ TEST(SpatialPoolerTest, testCalculateOverlapPct) {
 
   for (UInt i = 0; i < numTrials; i++) {
     vector<Real> overlapsPct;
-    vector<UInt> overlaps;
+    vector<SynapseIdx> overlaps;
     overlaps.assign(&overlapsArr[i][0], &overlapsArr[i][numColumns]);
     sp.calculateOverlapPct_(overlaps, overlapsPct);
     ASSERT_TRUE(check_vector_eq(trueOverlapsPct[i], overlapsPct));
@@ -1227,14 +1239,14 @@ TEST(SpatialPoolerTest, testValidateGlobalInhibitionParameters) {
   SpatialPooler sp;
   setup(sp, 10, 10);
   sp.setGlobalInhibition(true);
-  const vector<UInt> input(sp.getNumInputs(), 1);
-  vector<UInt> out1(sp.getNumColumns(), 0);
+  SDR input( {sp.getNumInputs()} );
+  SDR out1( {sp.getNumColumns()} );
   //throws
   sp.setLocalAreaDensity(0.02f);
-  EXPECT_THROW(sp.compute(input.data(), false, out1.data()), nupic::LoggingException);
+  EXPECT_THROW(sp.compute(input, false, out1), nupic::LoggingException);
   //good parameter
   sp.setLocalAreaDensity(0.1f);
-  EXPECT_NO_THROW(sp.compute(input.data(), false, out1.data()));
+  EXPECT_NO_THROW(sp.compute(input, false, out1));
 }
 
 
@@ -1247,10 +1259,10 @@ TEST(SpatialPoolerTest, testFewColumnsGlobalInhibitionCrash) {
   sp.setGlobalInhibition(true);
   sp.setLocalAreaDensity(0.02f);
 
-  vector<UInt> input(sp.getNumInputs(), 1);
-  vector<UInt> out1(sp.getNumColumns(), 0);
+  SDR input( {sp.getNumInputs()} );
+  SDR out1(  {sp.getNumColumns()} );
 
-  EXPECT_NO_THROW(sp.compute(input.data(), false, out1.data()));
+  EXPECT_NO_THROW(sp.compute(input, false, out1));
 }
 
 
@@ -1635,7 +1647,7 @@ TEST(SpatialPoolerTest, testinitMapPotential1D) {
   sp.setPotentialPct(0.5);
   UInt supersetMask1[12] = {1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1};
   mask = sp.initMapPotential_(0, true);
-  ASSERT_TRUE(sum(mask) == 3);
+  ASSERT_TRUE(accumulate(mask.begin(), mask.end(), 0.0f) == 3u);
 
   UInt unionMask1[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   for (UInt i = 0; i < 12; i++) {
@@ -1694,59 +1706,6 @@ TEST(SpatialPoolerTest, testinitMapPotential2D) {
   ASSERT_TRUE(check_vector_eq(expectedMask4, mask));
 }
 
-TEST(SpatialPoolerTest, testStripUnlearnedColumns) {
-  SpatialPooler sp;
-  vector<UInt> inputDim{5}, columnDim{3};
-  sp.initialize(inputDim, columnDim);
-
-  // None learned, none active
-  {
-    Real activeDutyCycles[3] = {0, 0, 0};
-    UInt activeArray[3] = {0, 0, 0};
-    UInt expected[3] = {0, 0, 0};
-
-    sp.setActiveDutyCycles(activeDutyCycles);
-    sp.stripUnlearnedColumns(activeArray);
-
-    ASSERT_TRUE(check_vector_eq(activeArray, expected, 3));
-  }
-
-  // None learned, some active
-  {
-    Real activeDutyCycles[3] = {0, 0, 0};
-    UInt activeArray[3] = {1, 0, 1};
-    UInt expected[3] = {0, 0, 0};
-
-    sp.setActiveDutyCycles(activeDutyCycles);
-    sp.stripUnlearnedColumns(activeArray);
-
-    ASSERT_TRUE(check_vector_eq(activeArray, expected, 3));
-  }
-
-  // Some learned, none active
-  {
-    Real activeDutyCycles[3] = {1, 1, 0};
-    UInt activeArray[3] = {0, 0, 0};
-    UInt expected[3] = {0, 0, 0};
-
-    sp.setActiveDutyCycles(activeDutyCycles);
-    sp.stripUnlearnedColumns(activeArray);
-
-    ASSERT_TRUE(check_vector_eq(activeArray, expected, 3));
-  }
-
-  // Some learned, some active
-  {
-    Real activeDutyCycles[3] = {1, 1, 0};
-    UInt activeArray[3] = {1, 0, 1};
-    UInt expected[3] = {1, 0, 0};
-
-    sp.setActiveDutyCycles(activeDutyCycles);
-    sp.stripUnlearnedColumns(activeArray);
-
-    ASSERT_TRUE(check_vector_eq(activeArray, expected, 3));
-  }
-}
 
 TEST(SpatialPoolerTest, getOverlaps) {
   SpatialPooler sp;
@@ -1769,12 +1728,14 @@ TEST(SpatialPoolerTest, getOverlaps) {
   vector<Real> boostFactors = {1.0f, 2.0f, 3.0f};
   sp.setBoostFactors(boostFactors.data());
 
-  vector<UInt> input = {1, 1, 1, 1, 1};
-  vector<UInt> activeColumns = {0, 0, 0};
-  sp.compute(input.data(), true, activeColumns.data());
+  SDR input( {5}); 
+  input.setDense(vector<UInt>{1, 1, 1, 1, 1});
+  SDR activeColumns( {3} );
+  activeColumns.setDense(vector<UInt>{0, 0, 0});
+  sp.compute(input, true, activeColumns);
 
-  const vector<UInt> &overlaps = sp.getOverlaps();
-  const vector<UInt> expectedOverlaps = {0, 3, 5};
+  const auto &overlaps = sp.getOverlaps();
+  const vector<SynapseIdx> expectedOverlaps = {0, 3, 5};
   EXPECT_EQ(expectedOverlaps, overlaps);
 
   const vector<Real> &boostedOverlaps = sp.getBoostedOverlaps();
@@ -1803,11 +1764,11 @@ TEST(SpatialPoolerTest, ZeroOverlap_NoStimulusThreshold_GlobalInhibition) {
                    /*spVerbosity*/ 0,
                    /*wrapAround*/ true);
 
-  vector<UInt> input(inputSize, 0);
-  vector<UInt> activeColumns(nColumns, 0);
-  sp.compute(input.data(), true, activeColumns.data());
+  SDR input( {inputSize} );
+  SDR activeColumns( {nColumns} );
+  sp.compute(input, true, activeColumns);
 
-  EXPECT_EQ(3ul, countNonzero(activeColumns));
+  EXPECT_EQ(3ul, activeColumns.getSum());
 }
 
 TEST(SpatialPoolerTest, ZeroOverlap_StimulusThreshold_GlobalInhibition) {
@@ -1831,11 +1792,11 @@ TEST(SpatialPoolerTest, ZeroOverlap_StimulusThreshold_GlobalInhibition) {
                    /*spVerbosity*/ 0,
                    /*wrapAround*/ true);
 
-  vector<UInt> input(inputSize, 0);
-  vector<UInt> activeColumns(nColumns, 0);
-  sp.compute(input.data(), true, activeColumns.data());
+  SDR input( {inputSize} );
+  SDR activeColumns( {nColumns} );
+  sp.compute(input, true, activeColumns);
 
-  EXPECT_EQ(0ul, countNonzero(activeColumns));
+  EXPECT_EQ(0ul, activeColumns.getSum());
 }
 
 
@@ -1860,14 +1821,11 @@ TEST(SpatialPoolerTest, ZeroOverlap_NoStimulusThreshold_LocalInhibition) {
                    /*spVerbosity*/ 0,
                    /*wrapAround*/ true);
 
-  vector<UInt> input(inputSize, 0);
-  vector<UInt> activeColumns(nColumns, 0);
-  sp.compute(input.data(), true, activeColumns.data());
+  SDR input( {inputSize} );
+  SDR activeColumns( {nColumns} );
+  sp.compute(input, true, activeColumns);
 
-  // This exact number of active columns is determined by the inhibition
-  // radius, which changes based on the random synapses (i.e. weird math).
-  EXPECT_GT(countNonzero(activeColumns), 2u);
-  EXPECT_LT(countNonzero(activeColumns), 10u);
+  EXPECT_EQ(activeColumns.getSum(), 4u);
 }
 
 TEST(SpatialPoolerTest, ZeroOverlap_StimulusThreshold_LocalInhibition) {
@@ -1891,11 +1849,11 @@ TEST(SpatialPoolerTest, ZeroOverlap_StimulusThreshold_LocalInhibition) {
                    /*spVerbosity*/ 0,
                    /*wrapAround*/ true);
 
-  vector<UInt> input(inputSize, 0);
-  vector<UInt> activeColumns(nColumns, 0);
-  sp.compute(input.data(), true, activeColumns.data());
+  SDR input({inputSize});
+  SDR activeColumns({nColumns});
+  sp.compute(input, true, activeColumns);
 
-  EXPECT_EQ(0ul, countNonzero(activeColumns));
+  EXPECT_EQ(0ul, activeColumns.getSum());
 }
 
 
@@ -1925,58 +1883,37 @@ TEST(SpatialPoolerTest, testSaveLoad) {
 TEST(SpatialPoolerTest, testSerialization2) {
   Random random(10);
 
-  const UInt inputSize = 500;
-  const UInt numColumns = 500;
-  const UInt w = 50;
-
-  vector<UInt> inputDims{inputSize};
-  vector<UInt> colDims{numColumns};
+  const UInt inputSize = 200;
+  const UInt numColumns = 200;
 
   SpatialPooler sp1;
-  sp1.initialize(inputDims, colDims);
+  sp1.initialize({inputSize}, {numColumns});
 
-  UInt input[inputSize];
-  for (UInt i = 0; i < inputSize; ++i) {
-    if (i < w) {
-      input[i] = 1;
-    } else {
-      input[i] = 0;
-    }
-  }
-  UInt output[numColumns];
+  SDR input({inputSize});
+  SDR output({numColumns});
 
-  for (UInt i = 0; i < 10000; ++i) {
-    random.shuffle(input, input + inputSize);
+  for (UInt i = 0; i < 100; ++i) {
+    input.randomize(0.15f, random); //15% bits change
+    EXPECT_GT(input.getSum(), (size_t)0) << "No input!";
     sp1.compute(input, true, output);
   }
 
-  // Now we reuse the last input to test after serialization
-
-  vector<UInt> activeColumnsBefore;
-  for (UInt i = 0; i < numColumns; ++i) {
-    if (output[i] == 1) {
-      activeColumnsBefore.push_back(i);
-    }
-  }
 
   // Save initial trained model
   ofstream osC("outC.stream", ofstream::binary);
   sp1.save(osC);
   osC.close();
 
-  SpatialPooler sp2;
-
   nupic::Timer testTimer;
 
   for (UInt i = 0; i < 10; ++i) {
     // Create new input
-    random.shuffle(input, input + inputSize);
+    input.randomize(0.24f, random);
 
     // Get expected output
-    UInt outputBaseline[numColumns];
+    SDR  outputBaseline({numColumns});
     sp1.compute(input, true, outputBaseline);
 
-    // C - Next do old version
     {
       SpatialPooler spTemp;
 
@@ -1988,7 +1925,7 @@ TEST(SpatialPoolerTest, testSerialization2) {
       is.close();
 
       // Feed new record through
-      UInt outputC[numColumns];
+      SDR outputC({numColumns});
       spTemp.compute(input, true, outputC);
 
       // Serialize
@@ -1998,16 +1935,99 @@ TEST(SpatialPoolerTest, testSerialization2) {
 
       testTimer.stop();
 
-      for (UInt i = 0; i < numColumns; ++i) {
-        EXPECT_EQ(outputBaseline[i], outputC[i]);
-      }
+      EXPECT_EQ(outputBaseline, outputC);
     }
   }
 
-  cout << "Timing for SpatialPooler serialization (smaller is better):" << endl;
-  cout << "Stream: " << testTimer.getElapsed() << endl;
+//  cout << "[          ] Timing for SP serialization: " << testTimer.getElapsed() << "sec" << endl;
 
   remove("outC.stream");
+}
+
+
+TEST(SpatialPoolerTest, testSaveLoad_ar) {
+  const char *filename = "SpatialPoolerSerializationAR.tmp";
+  SpatialPooler sp1, sp2;
+  UInt numInputs = 6;
+  UInt numColumns = 12;
+  setup(sp1, numInputs, numColumns);
+
+  sp1.saveToFile(filename);
+  sp2.loadFromFile(filename);
+
+  int ret = ::remove(filename);
+  ASSERT_TRUE(ret == 0) << "Failed to delete " << filename;
+
+  check_spatial_eq(sp1, sp2);
+}
+
+
+
+TEST(SpatialPoolerTest, testSerialization_ar) {
+  Random random(10);
+
+  const UInt inputSize = 200;
+  const UInt numColumns = 200;
+
+  vector<UInt> inputDims{inputSize};
+  vector<UInt> colDims{numColumns};
+
+  SpatialPooler sp1;
+  sp1.initialize(inputDims, colDims);
+
+  SDR input(inputDims);
+  SDR output(colDims);
+
+  for (UInt i = 0; i < 100; ++i) {
+    input.randomize(0.05f, random); //5% random ON
+    sp1.compute(input, true, output);
+  }
+
+  // Now we reuse the last input to test after serialization
+
+  auto activeColumnsBefore = output.getSparse();
+
+  // Save initial trained model
+  stringstream ss;
+  sp1.saveToStream_ar(ss);
+
+  SpatialPooler sp2;
+
+  nupic::Timer testTimer;
+
+  for (UInt i = 0; i < 6; ++i) {
+    // Create new input
+    input.randomize(0.05f, random);
+
+    // Get expected output
+    SDR outputBaseline(output);
+    sp1.compute(input, true, outputBaseline);
+
+    // C - Next do old version
+    {
+      SpatialPooler spTemp;
+      testTimer.start();
+
+      // Deserialize
+      ss.seekg(0);
+      spTemp.loadFromStream_ar(ss);
+
+      // Feed new record through
+      SDR outputC({numColumns});
+      spTemp.compute(input, true, outputC);
+
+      // Serialize
+      ss.clear();
+      spTemp.saveToStream_ar(ss);
+
+      testTimer.stop();
+
+      EXPECT_EQ(outputBaseline, outputC);
+    }
+  }
+  ss.clear();
+
+  cout << "[          ] Timing for SP serialization: " << testTimer.getElapsed() << "sec" << endl;
 }
 
 
@@ -2059,7 +2079,7 @@ TEST(SpatialPoolerTest, testConstructorVsInitialize) {
   EXPECT_TRUE(sp1 == sp2) << "Spatial Poolers not equal";
 }
 
-TEST(SpatialPoolerTest, ExactOutput) {
+TEST(SpatialPoolerTest, ExactOutput) { 
   string gold =
     "SDR 1 "
     "1 200 "
@@ -2094,8 +2114,7 @@ TEST(SpatialPoolerTest, ExactOutput) {
     inputs.randomize( 0.15f, rng );
     sp.compute(inputs, true, columns);
   }
-  cerr << "OUTPUT SDR:" << endl; columns.save( cerr ); cerr << endl;
-  ASSERT_TRUE( columns == gold_sdr );
+  ASSERT_EQ( columns, gold_sdr );
 }
 
 } // end anonymous namespace

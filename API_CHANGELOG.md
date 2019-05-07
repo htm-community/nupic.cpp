@@ -8,10 +8,12 @@ The API is specified in the [API Docs](http://nupic.docs.numenta.org/prerelease/
 We try to remain compatible where possible, to make it easy for the users and programmers to switch/use 
 our implementation. And for developers to be easily able to navigate within the (known) codebase. 
 Despite of this, sometimes changes need to happen - be it for optimization, removal/replacement of some 
-features or implemenation detail, etc. 
+features or implementation detail, etc.
 
 
 ## API breaking changes in this repo
+
+Compared to `Numenta/nupic.core`; the changes here are listed in order from oldest to newest (at the bottom). 
 
 * CapnProto serialization is replaced with binary streams in PR #62.  
 Calls to `read()` and `write()` are no longer available. Use `save()` and `load()`. 
@@ -37,7 +39,49 @@ bool raisePerm = true)`  due to SP implementation now using Connections. PR #153
 
 * SpatialPooler now always applies boosting, even when `learn=false`. PR #206
 
-* Removed methods `SpatialPooler::setSynPermConnected` and `TemporalMemory::setConnectedPermanence`. The connected synapse permanence threshold should instead be given to the constructor or the initialize method. PR #221
+* Removed methods `SpatialPooler::setSynPermConnected` and `TemporalMemory::setConnectedPermanence`. 
+  The connected synapse permanence threshold should instead be given to the constructor or the initialize method. PR #221
 
 * When building with MS Visual Studio 2017, it will build bindings only for Python 3.4 and above.  
-(i.e. No Python 2.7 under Windows)
+  (i.e. No Python 2.7 under Windows)
+
+* Setting dimensions on a region is now optional.  If given, it overrides any region parameters that set 
+  the width of the default output buffer.
+
+* The splitter maps (and the LinkPolicy that creates them) were removed.  These were used as a way to 
+re-arrange bits in the input buffer based on user defined patterns. However, thinking about how this 
+works in biology, the neurons make connections to the synapse of other neurons. There is no order or 
+pattern involved and in fact it needs to be fairly random as to how the neurons connect. It is the 
+job of the Spatial Pooler to simulate that set of random connections. So in effect, any re-mapping 
+of bits by a splitter map prior to being presented to the Spatial Pooler should have no affect on 
+functionality. This is probably why this feature was not used anyplace except in the unit tests.
+As a side-effect of this change, the LinkType and LinkParam parameters in the Network.Link( ) call 
+are ignored.  PR #271
+
+* Removed all matrix libraries.  Use the `Connections` class instead.  PR #169
+
+* Removed `void SpatialPooler::stripUnlearnedColumns()` as unused and not useful (did not effectively remove any columns). PR #286 
+
+* Changed SDRClassifier::compute() signature to take parameter `ClassifierResult& result`, instead of a raw pointer. PR #301
+
+* Rewrote ScalarEncoder API, all code using it needs to be rewritten. PR #314
+
+* Removed old `TP` (Temporal Pooler, `Cells4.hpp`) as it was not maintained, users should default to `TemporalMemory, TM`. 
+  With this we are also removing `BacktrackingTM` (and its NetworkAPI Region), which was based on TP. BackTM had slightly better
+  anomaly scores results (+5% compared to TM), but did not have complete tests and verified (peer-reviewed) functionality. PR #356
+
+* Connections class must be initialized with a connectedPermanence.  Methods
+`Connections::computeActivity` and `Connections::raisePermanencesToThreshold` no
+longer accept a synapse permanence threshold argument. PR #305
+
+* SDRClassifier class is replaced by `Classifier` and `Predictor` classes.
+
+* Anomaly class removed as obsolete, use `TM.anomaly` which is simpler to use, and `MovingAverage` when you need to emulate 
+  running averages. Internaly the code still uses `computeRawAnomalyScore()` but there's no need to call it directly. `AnomalyLikelihood` 
+  is still available and can be used in addition to TM.getAnomalyScore(). PR #406 
+
+* TemporalMemory::getPredictiveCells() now returns a SDR. This ensures more convenient API and that the SDR object has correct
+  dimensions matching TM. use TM.getPredictiveCells().getSparse() to obtain the sparse vector as before. PR #437, #442 
+
+* TemporalMemory `compute()` and `activateCells()` now use only SDR variants, old overloads with C-style arrays removed. Bindings and 
+  tests also updated. 

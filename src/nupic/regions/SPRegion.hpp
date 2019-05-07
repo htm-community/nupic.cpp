@@ -42,11 +42,14 @@ namespace nupic
 {
 
 
-class SPRegion  : public RegionImpl
+class SPRegion  : public RegionImpl, Serializable
 {		
   public:
     SPRegion(const ValueMap& params, Region *region);
     SPRegion(BundleIO& bundle, Region* region);
+    SPRegion(ArWrapper& wrapper, Region *region) : RegionImpl(region) {
+      // TODO:cereal  complete.
+    }
     virtual ~SPRegion();
 
 
@@ -75,8 +78,8 @@ class SPRegion  : public RegionImpl
     // Per-node size (in elements) of the given output.
     // For per-region outputs, it is the total element count.
     // This method is called only for outputs whose size is not
-    // specified in the spec.
-    size_t getNodeOutputElementCount(const std::string& outputName) override;
+    // specified in the spec and no region dimensions.
+    size_t getNodeOutputElementCount(const std::string& outputName) const override;
 
 		/* -----------  Optional RegionImpl Interface methods ------- */
     UInt32 getParameterUInt32(const std::string& name, Int64 index) override;
@@ -119,6 +122,7 @@ private:
       bool wrapAround;
       bool learningMode;
     } args_;
+
 
     typedef void (*computeCallbackFunc)(const std::string &);
     computeCallbackFunc computeCallback_;

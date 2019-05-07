@@ -74,7 +74,7 @@
 #include "RegionTestUtilities.hpp"
 
 #define VERBOSE if(verbose)std::cerr << "[          ] "
-static bool verbose = true;  // turn this on to print extra stuff for debugging the test.
+static bool verbose = false;  // turn this on to print extra stuff for debugging the test.
 
 // The following string should contain a valid expected Spec - manually verified. 
 #define EXPECTED_SPEC_COUNT  22  // The number of parameters expected in the SPRegion Spec
@@ -311,7 +311,7 @@ TEST(SPRegionTest, testSerialization)
 	  try {
 
 		  VERBOSE << "Setup first network and save it" << std::endl;
-      std::shared_ptr<Region> n1region1 = net1->addRegion("region1", "ScalarSensor", "{n: 100,w: 10,minValue: 0,maxValue: 10}");
+      std::shared_ptr<Region> n1region1 = net1->addRegion("region1", "ScalarSensor", "{n: 100,w: 10,minValue: 1,maxValue: 10}");
       std::shared_ptr<Region> n1region2 = net1->addRegion("region2", "SPRegion", "{columnCount: 200}");
       net1->link("region1", "region2", "UniformLink", "", "encoded", "bottomUpIn");
       net1->initialize();

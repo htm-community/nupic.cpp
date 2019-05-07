@@ -58,10 +58,10 @@ class ValueMap;
  *  nodeSpec.
  *
  */
-class VectorFileEffector : public RegionImpl {
+class VectorFileEffector : public RegionImpl, Serializable {
 public:
   static Spec *createSpec();
-  size_t getNodeOutputElementCount(const std::string &outputName) override;
+  size_t getNodeOutputElementCount(const std::string &outputName) const override;
   void setParameterString(const std::string &name, Int64 index,
                           const std::string &s) override;
   std::string getParameterString(const std::string &name, Int64 index) override;
@@ -71,6 +71,9 @@ public:
   VectorFileEffector(const ValueMap &params, Region *region);
 
   VectorFileEffector(BundleIO &bundle, Region *region);
+  VectorFileEffector(ArWrapper& wrapper, Region *region) : RegionImpl(region) {
+    // TODO:cereal  complete.
+  }
 
   virtual ~VectorFileEffector();
 

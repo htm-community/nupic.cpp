@@ -29,13 +29,16 @@
 #include <iostream>
 #include <nupic/algorithms/Connections.hpp>
 
+namespace testing {
+    
 using namespace std;
 using namespace nupic;
 using namespace nupic::algorithms::connections;
+using nupic::sdr::SDR;
+using nupic::sdr::SDR_dense_t;
 
 #define EPSILON 0.0000001
 
-namespace {
 
 void setupSampleConnections(Connections &connections) {
   // Cell with 1 segment.
@@ -76,12 +79,12 @@ void setupSampleConnections(Connections &connections) {
 void computeSampleActivity(Connections &connections) {
   vector<UInt32> input = {50, 52, 53, 80, 81, 82, 150, 151};
 
-  vector<UInt32> numActiveConnectedSynapsesForSegment(
+  vector<SynapseIdx> numActiveConnectedSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
-  vector<UInt32> numActivePotentialSynapsesForSegment(
+  vector<SynapseIdx> numActivePotentialSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
   connections.computeActivity(numActiveConnectedSynapsesForSegment,
-                              numActivePotentialSynapsesForSegment, input, 0.5f);
+                              numActivePotentialSynapsesForSegment, input);
 }
 
 /**
@@ -158,13 +161,13 @@ TEST(ConnectionsTest, testDestroySegment) {
   ASSERT_EQ(3ul, connections.numSegments());
   ASSERT_EQ(0ul, connections.numSynapses());
 
-  vector<UInt32> numActiveConnectedSynapsesForSegment(
+  vector<SynapseIdx> numActiveConnectedSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
-  vector<UInt32> numActivePotentialSynapsesForSegment(
+  vector<SynapseIdx> numActivePotentialSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
   connections.computeActivity(numActiveConnectedSynapsesForSegment,
                               numActivePotentialSynapsesForSegment,
-                              {80, 81, 82}, 0.5f);
+                              {80, 81, 82});
 
   ASSERT_EQ(0ul, numActiveConnectedSynapsesForSegment[segment2]);
   ASSERT_EQ(0ul, numActivePotentialSynapsesForSegment[segment2]);
@@ -189,13 +192,13 @@ TEST(ConnectionsTest, testDestroySynapse) {
   ASSERT_EQ(2ul, connections.numSynapses());
   ASSERT_EQ(2ul, connections.synapsesForSegment(segment).size());
 
-  vector<UInt32> numActiveConnectedSynapsesForSegment(
+  vector<SynapseIdx> numActiveConnectedSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
-  vector<UInt32> numActivePotentialSynapsesForSegment(
+  vector<SynapseIdx> numActivePotentialSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
   connections.computeActivity(numActiveConnectedSynapsesForSegment,
                               numActivePotentialSynapsesForSegment,
-                              {80, 81, 82}, 0.5f);
+                              {80, 81, 82});
 
   ASSERT_EQ(1ul, numActiveConnectedSynapsesForSegment[segment]);
   ASSERT_EQ(2ul, numActivePotentialSynapsesForSegment[segment]);
@@ -347,12 +350,12 @@ TEST(ConnectionsTest, testComputeActivity) {
 
   vector<UInt32> input = {50, 52, 53, 80, 81, 82, 150, 151};
 
-  vector<UInt32> numActiveConnectedSynapsesForSegment(
+  vector<SynapseIdx> numActiveConnectedSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
-  vector<UInt32> numActivePotentialSynapsesForSegment(
+  vector<SynapseIdx> numActivePotentialSynapsesForSegment(
       connections.segmentFlatListLength(), 0);
   connections.computeActivity(numActiveConnectedSynapsesForSegment,
-                              numActivePotentialSynapsesForSegment, input, 0.5f);
+                              numActivePotentialSynapsesForSegment, input);
 
   ASSERT_EQ(1ul, numActiveConnectedSynapsesForSegment[segment1_1]);
   ASSERT_EQ(2ul, numActivePotentialSynapsesForSegment[segment1_1]);
@@ -419,7 +422,6 @@ TEST(ConnectionsTest, testAdaptSynapses) {
 TEST(ConnectionsTest, testRaisePermanencesToThreshold) {
   UInt stimulusThreshold = 3;
   Real synPermConnected = 0.1f;
-  Real synPermBelowStimulusInc = 0.01f;
   UInt numInputs = 5;
   UInt numCells = 7;
   Connections con(numCells, synPermConnected);
@@ -454,26 +456,26 @@ TEST(ConnectionsTest, testRaisePermanencesToThreshold) {
       }
     }
     // Run method under test.
-    con.raisePermanencesToThreshold(i, synPermConnected, stimulusThreshold);
+    con.raisePermanencesToThreshold(i, stimulusThreshold);
     // Check results.
     for(auto syn : con.synapsesForSegment(i)) {
       auto synData = con.dataForSynapse( syn );
       UInt presyn  = synData.presynapticCell;
-      ASSERT_NEAR(truePerm[i][presyn], synData.permanence,
-                                                      synPermBelowStimulusInc);
+      ASSERT_NEAR(truePerm[i][presyn], synData.permanence, 0.01f);
     }
   }
  }
 
 
 TEST(ConnectionsTest, testRaisePermanencesToThresholdOutOfBounds) {
-  Connections con(1001, 0.21f);
+  Connections con(1001, 0.666f);
  	
   // check empty segment (with no synapse data) 
   auto emptySegment = con.createSegment(0);
   auto synapses = con.synapsesForSegment(emptySegment);
-  NTA_CHECK(synapses.empty()) << "We want to create a Segment with none synapses";
-  EXPECT_NO_THROW( con.raisePermanencesToThreshold(emptySegment, (Permanence)0.1337, 3u) ) << "raisePermanence fails when empty Segment encountered";
+  NTA_CHECK(synapses.empty()) << "We want to create a Segment with no synapses";
+  EXPECT_NO_THROW( con.raisePermanencesToThreshold(emptySegment, 3u) )
+    << "raisePermanence fails when empty Segment encountered";
 
   // check segment with 3 synapses, but wanted to raise 5
   auto segWith3Syn = con.createSegment(0);
@@ -482,8 +484,8 @@ TEST(ConnectionsTest, testRaisePermanencesToThresholdOutOfBounds) {
   con.createSynapse( segWith3Syn, 18, 0.25f);
   con.createSynapse( segWith3Syn, 121, 0.00001f);
   NTA_CHECK(con.synapsesForSegment(segWith3Syn).size() == 3) << "We failed to create 3 synapses on a segment";
-  EXPECT_NO_THROW( con.raisePermanencesToThreshold(segWith3Syn, (Permanence)0.666, 5u) ) << "raisePermanence fails when lower number of available synapses than requested by threshold";
-
+  EXPECT_NO_THROW( con.raisePermanencesToThreshold(segWith3Syn, 5u) )
+    << "raisePermanence fails when lower number of available synapses than requested by threshold";
 }
 
 TEST(ConnectionsTest, testBumpSegment) {
@@ -667,11 +669,81 @@ TEST(ConnectionsTest, testSaveLoad) {
 
   {
     stringstream ss;
-    c1.save(ss);
-    c2.load(ss);
+    c1.saveToStream_ar(ss);
+    c2.loadFromStream_ar(ss);
   }
 
   ASSERT_EQ(c1, c2);
+}
+
+TEST(ConnectionsTest, testCreateSegmentOverflow) {
+    const auto LIMIT = std::numeric_limits<Segment>::max();
+    if(LIMIT <= 256) { //connections::Segment is too large (likely uint32), so this test would run, but memory 
+      // would kill the machine! 
+      // to test this test and the code works OK, change connections::Segment to unsigned char
+      //TODO use GTEST_SKIP() when we can have gtest > 1.8.1 to skip at runtime
+
+    Connections c(1024);
+    size_t i = 0;
+    for(i=0; i < LIMIT; i++) {
+      EXPECT_NO_THROW(c.createSegment(0));
+    }
+    EXPECT_ANY_THROW(c.createSegment(0)) << "num segments on cell c0 " << (size_t)c.numSegments(0) 
+	    << " total num segs: " << (size_t)c.numSegments() << "data-type limit " << LIMIT;
+  }
+}
+
+TEST(ConnectionsTest, testCreateSynapseOverflow) {
+  const auto LIMIT = std::numeric_limits<Synapse>::max();
+  if(LIMIT <= 256) { //connections::Synapse is too large (likely uint32), so this test would run, but memory
+    // would kill the machine!
+    // to test this test and the code works OK, change connections::Synapse to unsigned char
+    //TODO use GTEST_SKIP() when we can have gtest > 1.8.1 to skip at runtime
+    Connections c(1024);
+    const Segment seg = c.createSegment(0);
+
+    size_t i = 0;
+    for(i=0; i < LIMIT; i++) {
+      EXPECT_NO_THROW(c.createSynapse(seg, (CellIdx)99, (Permanence)0.1337));
+    }
+    EXPECT_ANY_THROW(c.createSynapse(seg, (CellIdx)99, (Permanence)0.1337)) << "num synapses on segment s0 " << (size_t)c.numSynapses(seg)
+      << " total num syns: " << (size_t)c.numSynapses() << "data-type limit " << LIMIT;
+  }
+}
+
+TEST(ConnectionsTest, testTimeseries) {
+  Connections C( 1, .5, true );
+  auto seg = C.createSegment(0);
+  SDR presyn({ 10u });
+  for( UInt cell = 0; cell < presyn.size; cell++ ) {
+    C.createSynapse(seg, cell, 0.5f );
+  }
+  // Use the same SDR many times.  Hold the segment active & learning.
+  presyn.randomize( 0.5f );
+  vector<SynapseIdx> output( 1u );
+  for( int i = 0; i < 10; i++ ) {
+    C.computeActivity( output, presyn.getSparse() );
+    C.adaptSegment( seg, presyn, 0.1f, 0.1f );
+  }
+  // Check that the synapse permanences did not saturate.
+  for( const auto syn : C.synapsesForSegment( seg ) ) {
+    const auto &synData = C.dataForSynapse( syn );
+    ASSERT_GT( synData.permanence, 0.01f );
+    ASSERT_LT( synData.permanence, 0.99f );
+  }
+  // Retry this test except call Connections::reset() before every cycle, which
+  // effectively turns off the timeseries parameter.
+  for( int i = 0; i < 10; i++ ) {
+    C.reset();
+    C.computeActivity( output, presyn.getSparse() );
+    C.adaptSegment( seg, presyn, 0.1f, 0.1f );
+  }
+  // Check that the synapse permanences staturated.  This is the failure
+  // condition which the timeseries modifications prevent.
+  for( const auto syn : C.synapsesForSegment( seg ) ) {
+    const auto &synData = C.dataForSynapse( syn );
+    ASSERT_TRUE( (synData.permanence == 0.0f) or (synData.permanence == 1.0f) );
+  }
 }
 
 } // namespace

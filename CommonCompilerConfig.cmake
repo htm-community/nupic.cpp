@@ -26,14 +26,13 @@
 # NOTE SETTINGS THAT ARE SPECIFIC TO THIS OR THAT MODULE DO NOT BELONG HERE.
 
 # INPUTS:
-#	INTERNAL_CPP_STANDARD  i.e. C++11, C++14, C++17 , defaults to C++11 or C++17
+#	CMAKE_CXX_STANDARD  i.e. (C++) 11, 14, 17; defaults to C++11 or C++17
 #	BITNESS   32,64, defaults to bitness of current machine.
 #	PLATFORM:   defaults to ${CMAKE_SYSTEM_NAME}  
 #	CMAKE_BUILD_TYPE   Debug, Release   defaults to Release
 
 # OUTPUTS:
 #
-#	INTERNAL_CPP_STANDARD  and compiler options are set in flags
 #	PLATFORM:   lowercase
 #	BITNESS: Platform bitness: 32 or 64
 #
@@ -98,16 +97,16 @@ string(TOLOWER ${PLATFORM} PLATFORM)
 # 
 
 set(extra_lib_for_filesystem)   # sometimes -libc++experimental or -lstdc++fs
-set(INTERNAL_CPP_STANDARD "c++11")
+set(CMAKE_CXX_STANDARD 11) # -std=c++11 by default
 set(boost_required ON)
 
 if(NOT FORCE_CPP11)
   if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "9")
-         set(INTERNAL_CPP_STANDARD "c++17")
+         set(CMAKE_CXX_STANDARD 17)
 	 set(boost_required OFF)
     elseif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8")
-         set(INTERNAL_CPP_STANDARD "c++17")
+         set(CMAKE_CXX_STANDARD 17)
 	 set(extra_lib_for_filesystem "stdc++fs")
 	 set(boost_required "OFF")
     endif()	 
@@ -115,12 +114,12 @@ if(NOT FORCE_CPP11)
     # does not support C++17 and filesystem (as of XCode 10.1)
   elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "7")
-         set(INTERNAL_CPP_STANDARD "c++17")
+         set(CMAKE_CXX_STANDARD 17)
 	 set(boost_required OFF)
     endif()
   elseif(MSVC)
       if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.14")
-            set(INTERNAL_CPP_STANDARD "c++17")
+            set(CMAKE_CXX_STANDARD 17)
 	    set(boost_required OFF)
       endif()
   endif()
@@ -132,9 +131,6 @@ else()
   set(NEEDS_BOOST ${FORCE_BOOST})
 endif()
 
-# https://stackoverflow.com/questions/44960715/how-to-enable-stdc17-in-vs2017-with-cmake
-string(SUBSTRING ${INTERNAL_CPP_STANDARD} 3 -1 std_ver)
-set_property(GLOBAL PROPERTY CXX_STANDARD ${std_ver})
 set_property(GLOBAL PROPERTY CXX_STANDARD_REQUIRED ON)
 
 
@@ -166,7 +162,7 @@ if(MSVC)
 	#	Common Stuff:  /permissive- /W3 /Gy /Gm- /O2 /Oi /EHsc /FC /nologo /Zc:__cplusplus
 	#      Release Only:    /O2 /Oi /Gy  /MD
 	#      Debug Only:       /Od /Zi /sdl /RTC1 /MDd
-	set(INTERNAL_CXX_FLAGS /permissive- /W3 /Gm- /EHsc /FC /nologo /Zc:__cplusplus /std:c++${std_ver}
+	set(INTERNAL_CXX_FLAGS /permissive- /W3 /Gm- /EHsc /FC /nologo /Zc:__cplusplus
 							$<$<CONFIG:Release>:/O2 /Oi /Gy  /GL /MD> 
 							$<$<CONFIG:Debug>:/Ob0 /Od /Zi /sdl /RTC1 /MDd>)
 	#linker flags
@@ -182,7 +178,6 @@ if(MSVC)
 		_MBCS
 		NTA_OS_WINDOWS
 		NTA_COMPILER_MSVC
-		NTA_INTERNAL=1
 		NTA_ARCH_${BITNESS}
 		_CRT_SECURE_NO_WARNINGS
 		_SCL_SECURE_NO_WARNINGS
@@ -222,7 +217,6 @@ else()
 		-DNTA_OS_${platform_uppercase}
 		-DNTA_ARCH_${BITNESS}
 		-DHAVE_CONFIG_H
-		-DNTA_INTERNAL=1
 		-DBOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
 		-DBOOST_NO_WREGEX
 		)
@@ -282,8 +276,6 @@ else()
 	# Hide all symbols in DLLs except the ones with explicit visibility;
         # see https://gcc.gnu.org/wiki/Visibility
         set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -fvisibility-inlines-hidden )
-        set(cxx_flags_unoptimized ${cxx_flags_unoptimized}  -std=c++${std_ver})
-	
 
 
 	# LLVM Clang / Gnu GCC
@@ -346,9 +338,8 @@ else()
         # set OPTIMIZATION flags
 	#
 	#TODO: CMake automatically generates optimisation flags. Do we need this? - "I think yes ~breznak"
-        set(optimization_flags_cc ${optimization_flags_cc} -O2)
-        set(optimization_flags_cc -pipe ${optimization_flags_cc}) #TODO use -Ofast instead of -O3
-        set(optimization_flags_lt -O2 ${optimization_flags_lt})
+        set(optimization_flags_cc ${optimization_flags_cc} -pipe -O3)
+        set(optimization_flags_lt ${optimization_flags_lt} -O3)
         if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
                 set(optimization_flags_cc ${optimization_flags_cc} -mtune=generic)
         endif()

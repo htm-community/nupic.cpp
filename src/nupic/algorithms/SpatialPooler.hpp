@@ -41,6 +41,8 @@ namespace algorithms {
 namespace spatial_pooler {
 
 using namespace std;
+using nupic::algorithms::connections::SynapseIdx;
+
 static const int DISABLED = -1; //value denoting a feature is disabled
 
 /**
@@ -192,11 +194,11 @@ public:
         likely to oscillate.
 
   @param boostStrength A number greater or equal than 0, used to
-  control boosting strength. No boosting is applied if it is set to 0.
-  The strength of boosting increases as a function of boostStrength.
-  Boosting encourages columns to have similar activeDutyCycles as their
-  neighbors, which will lead to more efficient use of columns. However,
-  too much boosting may also lead to instability of SP outputs.
+        control boosting strength. No boosting is applied if it is set to 0.
+        The strength of boosting increases as a function of boostStrength.
+        Boosting encourages columns to have similar activeDutyCycles as their
+        neighbors, which will lead to more efficient use of columns. However,
+        too much boosting may also lead to instability of SP outputs.
 
 
   @param seed Seed for our random number generator. If seed is < 0
@@ -220,38 +222,6 @@ public:
              UInt dutyCyclePeriod = 1000u, Real boostStrength = 0.0f,
              Int seed = 1, UInt spVerbosity = 0u, bool wrapAround = true);
 
-  /**
-  This is the main workshorse method of the SpatialPooler class. This
-  method takes an input vector and computes the set of output active
-  columns. If 'learn' is set to True, this method also performs
-  learning.
-
-  @param inputVector An array of integer 0's and 1's that comprises
-        the input to the spatial pooler. The length of the
-        array must match the total number of input bits implied by
-        the constructor (also returned by the method getNumInputs). In
-        cases where the input is multi-dimensional, inputVector is a
-        flattened array of inputs.
-
-  @param learn A boolean value indicating whether learning should be
-        performed. Learning entails updating the permanence values of
-        the synapses, duty cycles, etc. Learning is typically on but
-        setting learning to 'off' is useful for analyzing the current
-        state of the SP. For example, you might want to feed in various
-        inputs and examine the resulting SDR's. Note that if learning
-        is off, boosting is turned off and columns that have never won
-        will be removed from activeVector.  TODO: we may want to keep
-        boosting on even when learning is off.
-
-  @param activeVector An array representing the winning columns after
-        inhibition. The size of the array is equal to the number of
-        columns (also returned by the method getNumColumns). This array
-        will be populated with 1's at the indices of the active columns,
-        and 0's everywhere else. In the case where the output is
-        multi-dimensional, activeVector represents a flattened array
-        of outputs.
-   */
-  virtual void compute(const UInt inputVector[], bool learn, UInt activeVector[]);
 
   /**
   This is the main workshorse method of the SpatialPooler class. This
@@ -277,20 +247,8 @@ public:
         inhibition. The size of the SDR is equal to the number of
         columns (also returned by the method getNumColumns).
    */
-  virtual void compute(SDR &input, bool learn, SDR &active);
+  virtual void compute(const sdr::SDR &input, const bool learn, sdr::SDR &active);
 
-  /**
-   Removes the set of columns who have never been active from the set
-   of active columns selected in the inhibition round. Such columns
-   cannot represent learned pattern and are therefore meaningless if
-   only inference is required.
-
-   @param activeArray  An array of 1's and 0's representing winning
-         columns calculated by the 'compute' method after disabling
-         any columns that are not learned.
-  */
-  void stripUnlearnedColumns(UInt activeArray[]) const;
-  void stripUnlearnedColumns(SDR& active) const;
 
   /**
    * Get the version number of this spatial pooler.
@@ -316,15 +274,82 @@ public:
    */
   virtual void load(istream &inStream) override;
 
+  CerealAdapter;  // see Serializable.hpp
+  // FOR Cereal Serialization
+  template<class Archive>
+  void save_ar(Archive& ar) const {
+    ar(CEREAL_NVP(numInputs_),
+       CEREAL_NVP(numColumns_),
+       CEREAL_NVP(potentialRadius_),
+       CEREAL_NVP(potentialPct_),
+       CEREAL_NVP(initConnectedPct_),
+       CEREAL_NVP(globalInhibition_),
+       CEREAL_NVP(numActiveColumnsPerInhArea_),
+       CEREAL_NVP(localAreaDensity_),
+       CEREAL_NVP(stimulusThreshold_),
+       CEREAL_NVP(inhibitionRadius_),
+       CEREAL_NVP(dutyCyclePeriod_),
+       CEREAL_NVP(boostStrength_),
+       CEREAL_NVP(iterationNum_),
+       CEREAL_NVP(iterationLearnNum_),
+       CEREAL_NVP(spVerbosity_),
+       CEREAL_NVP(updatePeriod_),
+       CEREAL_NVP(synPermInactiveDec_),
+       CEREAL_NVP(synPermActiveInc_),
+       CEREAL_NVP(synPermBelowStimulusInc_),
+       CEREAL_NVP(synPermConnected_),
+       CEREAL_NVP(minPctOverlapDutyCycles_),
+       CEREAL_NVP(wrapAround_),
+       CEREAL_NVP(inputDimensions_),
+       CEREAL_NVP(columnDimensions_),
+       CEREAL_NVP(boostFactors_),
+       CEREAL_NVP(overlapDutyCycles_),
+       CEREAL_NVP(activeDutyCycles_),
+       CEREAL_NVP(minOverlapDutyCycles_),
+       CEREAL_NVP(tieBreaker_),
+       CEREAL_NVP(connections_),
+       CEREAL_NVP(rng_));
+  }
+  // FOR Cereal Deserialization
+  template<class Archive>
+  void load_ar(Archive& ar) {
+    ar(CEREAL_NVP(numInputs_),
+       CEREAL_NVP(numColumns_),
+       CEREAL_NVP(potentialRadius_),
+       CEREAL_NVP(potentialPct_),
+       CEREAL_NVP(initConnectedPct_),
+       CEREAL_NVP(globalInhibition_),
+       CEREAL_NVP(numActiveColumnsPerInhArea_),
+       CEREAL_NVP(localAreaDensity_),
+       CEREAL_NVP(stimulusThreshold_),
+       CEREAL_NVP(inhibitionRadius_),
+       CEREAL_NVP(dutyCyclePeriod_),
+       CEREAL_NVP(boostStrength_),
+       CEREAL_NVP(iterationNum_),
+       CEREAL_NVP(iterationLearnNum_),
+       CEREAL_NVP(spVerbosity_),
+       CEREAL_NVP(updatePeriod_),
+       CEREAL_NVP(synPermInactiveDec_),
+       CEREAL_NVP(synPermActiveInc_),
+       CEREAL_NVP(synPermBelowStimulusInc_),
+       CEREAL_NVP(synPermConnected_),
+       CEREAL_NVP(minPctOverlapDutyCycles_),
+       CEREAL_NVP(wrapAround_));
+    ar(CEREAL_NVP(inputDimensions_),
+       CEREAL_NVP(columnDimensions_));
+    ar(CEREAL_NVP(boostFactors_),
+       CEREAL_NVP(overlapDutyCycles_),
+       CEREAL_NVP(activeDutyCycles_),
+       CEREAL_NVP(minOverlapDutyCycles_),
+       CEREAL_NVP(tieBreaker_));
+    ar(CEREAL_NVP(connections_));
+    ar(CEREAL_NVP(rng_));
 
-  /**
-  Returns the number of bytes that a save operation would result in.
-  Note: this method is currently somewhat inefficient as it just does
-  a full save into an ostream and counts the resulting size.
-
-  @returns Integer number of bytes
-   */
-  virtual UInt persistentSize() const;
+    // initialize ephemeral members
+    overlaps_.resize(numColumns_);
+    overlapsPct_.resize(numColumns_);
+    boostedOverlaps_.resize(numColumns_);
+  }
 
   /**
   Returns the dimensions of the columns in the region.
@@ -762,10 +787,15 @@ public:
    */
   void printParameters() const;
 
+  friend std::ostream& operator<< (std::ostream& stream, const SpatialPooler& self) {
+    stream << "SpatialPooler " << self.connections_;
+    return stream;
+  }
+
   /**
   Returns the overlap score for each column.
    */
-  const vector<UInt> &getOverlaps() const;
+  const std::vector<SynapseIdx> &getOverlaps() const;
 
   /**
   Returns the boosted overlap score for each column.
@@ -778,7 +808,7 @@ public:
   // NOT part of the public API
 
 
-  void boostOverlaps_(const vector<UInt> &overlaps, vector<Real> &boostedOverlaps) const;
+  void boostOverlaps_(const vector<SynapseIdx> &overlaps, vector<Real> &boostedOverlaps) const;
 
   /**
     Maps a column to its respective input index, keeping to the topology of
@@ -900,8 +930,8 @@ public:
      a "connected state" (connected synapses) that are connected to
      input bits which are turned on.
   */
-  void calculateOverlap_(SDR &input, vector<UInt> &overlap) const;
-  void calculateOverlapPct_(const vector<UInt> &overlaps, vector<Real> &overlapPct) const;
+  void calculateOverlap_(const sdr::SDR &input, vector<SynapseIdx> &overlap);
+  void calculateOverlapPct_(const vector<SynapseIdx> &overlaps, vector<Real> &overlapPct) const;
 
   /**
       Performs inhibition. This method calculates the necessary values needed to
@@ -990,7 +1020,7 @@ public:
       @param  activeColumns  an int vector containing the indices of the columns
      that survived inhibition.
    */
-  void adaptSynapses_(SDR &input, SDR &active);
+  void adaptSynapses_(const sdr::SDR &input, const sdr::SDR &active);
 
   /**
       This method increases the permanence values of synapses of columns whose
@@ -1080,9 +1110,12 @@ public:
       @param newValues      A int vector used to update the duty cycle.
 
       @param period         A int number indicating the period of the duty cycle
+
+      @return type void, the argument dutyCycles is updated with new values.
   */
   static void updateDutyCyclesHelper_(vector<Real> &dutyCycles,
-                                      SDR &newValues, UInt period);
+                                      const sdr::SDR &newValues, 
+				      const UInt period);
 
   /**
   Updates the duty cycles for each column. The OVERLAP duty cycle is a moving
@@ -1098,7 +1131,7 @@ public:
   @param activeArray  An int array containing the indices of the active columns,
                   the sprase set of columns which survived inhibition
   */
-  void updateDutyCycles_(const vector<UInt> &overlaps, SDR &active);
+  void updateDutyCycles_(const vector<SynapseIdx> &overlaps, sdr::SDR &active);
 
   /**
     Update the boost factors for all columns. The boost factors are used to
@@ -1217,7 +1250,7 @@ protected:
    */
   connections::Connections connections_;
 
-  vector<UInt> overlaps_;
+  vector<SynapseIdx> overlaps_;
   vector<Real> overlapsPct_;
   vector<Real> boostedOverlaps_;
   vector<Real> tieBreaker_;
@@ -1225,6 +1258,9 @@ protected:
 
   UInt version_;
   Random rng_;
+
+public:
+  const connections::Connections &connections = connections_;
 };
 
 } // end namespace spatial_pooler

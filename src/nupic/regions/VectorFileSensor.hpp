@@ -94,7 +94,7 @@ class ValueMap;
  *
  */
 
-class VectorFileSensor : public RegionImpl {
+class VectorFileSensor : public RegionImpl, Serializable {
 public:
   //------ Static methods for plug-in API ------------------------------------
 
@@ -269,7 +269,7 @@ public:
   //    }
 
   static Spec *createSpec();
-  size_t getNodeOutputElementCount(const std::string &outputName) override;
+  size_t getNodeOutputElementCount(const std::string &outputName) const override;
 
   virtual UInt32 getParameterUInt32(const std::string &name, Int64 index = -1) override;
   virtual std::string getParameterString(const std::string &name, Int64 index = -1) override;
@@ -285,6 +285,9 @@ public:
   VectorFileSensor(const ValueMap &params, Region *region);
 
   VectorFileSensor(BundleIO &bundle, Region *region);
+  VectorFileSensor(ArWrapper& wrapper, Region *region) : RegionImpl(region) {
+    // TODO:cereal  complete.
+  }
 
   virtual ~VectorFileSensor();
 

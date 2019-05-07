@@ -39,6 +39,7 @@ execute_process(COMMAND ${CMAKE_COMMAND}
                         -D NEEDS_BOOST:BOOL=${NEEDS_BOOST}
                         -D BINDING_BUILD:STRING=${BINDING_BUILD}
 			-D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+			-D REPOSITORY_DIR=${REPOSITORY_DIR}
 			 ../../external
                 WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
                 RESULT_VARIABLE result
@@ -56,7 +57,7 @@ if(MSVC)
 #                    OUTPUT_QUIET      ### Disable this to debug external buiilds
         )
   if(result)
-    message(FATAL_ERROR "build step for MSVC Relase Third Party builds failed: ${result}")
+    message(FATAL_ERROR "build step for MSVC Release Third Party builds failed: ${result}")
   endif()
   execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug 
                     WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
@@ -97,6 +98,8 @@ set(EXTERNAL_INCLUDES
 	${yaml-cpp_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIRS}
 	${eigen_INCLUDE_DIRS}
+	${mnist_INCLUDE_DIRS}
+	${cereal_INCLUDE_DIRS}
 	${REPOSITORY_DIR}/external/common/include
 )
 

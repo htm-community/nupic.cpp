@@ -17,14 +17,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  *
  * http://numenta.org/licenses/
- * --------------------------------------------------------------------- 
+ * ---------------------------------------------------------------------
  */
 
-#if defined(NTA_ARCH_64) && defined(NTA_OS_SPARC)
-#include <string>
-#else
-#include <string.h>
-#endif
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <iterator>
@@ -48,10 +44,10 @@ namespace nupic {
 
 TestNode::TestNode(const ValueMap &params, Region *region)
     : RegionImpl(region), computeCallback_(nullptr), nodeCount_(1)
-
 {
   // params for get/setParameter testing
     // Populate the parameters with values.
+  outputElementCount_ = params.getScalarT<UInt32>("count", 0);
   int32Param_ = params.getScalarT<Int32>("int32Param", 32);
   uint32Param_ = params.getScalarT<UInt32>("uint32Param", 33);
   int64Param_ = params.getScalarT<Int64>("int64Param", 64);
@@ -59,10 +55,9 @@ TestNode::TestNode(const ValueMap &params, Region *region)
   real32Param_ = params.getScalarT<Real32>("real32Param", 32.1f);
   real64Param_ = params.getScalarT<Real64>("real64Param", 64.1);
   boolParam_ = params.getScalarT<bool>("boolParam", false);
-  outputElementCount_ = params.getScalarT<UInt32>("count", 64);
+
 
   shouldCloneParam_ = params.getScalarT<UInt32>("shouldCloneParam", 1) != 0;
-
   stringParam_ = params.getString("stringParam");
 
   real32ArrayParam_.resize(8);
@@ -92,46 +87,115 @@ TestNode::TestNode(const ValueMap &params, Region *region)
   unclonedInt64ArrayParam_[0] = v;
 
   // params used for computation
-  outputElementCount_ = 2;  // TODO: remove this when dimensions are removed.
   delta_ = 1;
   iter_ = 0;
+  ArWrapper arw;
 }
 
-TestNode::TestNode(BundleIO &bundle, Region *region) :
-    RegionImpl(region),
-	computeCallback_(nullptr)
-{
+TestNode::TestNode(BundleIO &bundle, Region *region) 
+  : RegionImpl(region), computeCallback_(nullptr), nodeCount_(1)
+{   // TODO:cereal remove when Cereal is complete
   deserialize(bundle);
+}
+TestNode::TestNode(ArWrapper& wrapper, Region *region)
+  : RegionImpl(region), computeCallback_(nullptr), nodeCount_(1) 
+{
+  cereal_adapter_load(wrapper);
 }
 
 
 TestNode::~TestNode() {}
 
+
+void TestNode::initialize() {
+  bottomUpOut_ = getOutput("bottomUpOut");
+  bottomUpIn_ = getInput("bottomUpIn");
+  Dimensions dim = bottomUpOut_->getDimensions();
+	NTA_CHECK(dim.isSpecified());
+  // does not really handle dimensions > 2 right but this will do.
+	nodeCount_ = 1;
+  if (dim.size() > 1) {
+  	nodeCount_ = dim.getCount()/dim[0];
+  }
+  outputElementCount_ = dim[0];
+
+  unclonedParam_.resize(nodeCount_);
+  for (unsigned int i = 1; i < nodeCount_; i++) {
+    unclonedParam_[i] = unclonedParam_[0];
+  }
+
+  if (!shouldCloneParam_) {
+    possiblyUnclonedParam_.resize(nodeCount_);
+    for (unsigned int i = 1; i < nodeCount_; i++) {
+      possiblyUnclonedParam_[i] = possiblyUnclonedParam_[0];
+    }
+  }
+
+  unclonedInt64ArrayParam_.resize(nodeCount_);
+  std::vector<Int64> v(4, 0); // length 4 vector, each element == 0
+  for (unsigned int i = 1; i < nodeCount_; i++) {
+    unclonedInt64ArrayParam_[i] = v;
+  }
+}
+
+// This is the per-output buffer size
+size_t TestNode::getNodeOutputElementCount(const std::string &outputName) const {
+  if (outputName == "bottomUpOut") {
+    return outputElementCount_;
+  }
+  return RegionImpl::getNodeOutputElementCount(outputName);  // default behavior
+}
+
+std::string TestNode::executeCommand(const std::vector<std::string> &args,
+                                     Int64 index) {
+  return "";
+}
+
+
+
 void TestNode::compute() {
   if (computeCallback_ != nullptr)
     computeCallback_(getName());
 
+  bottomUpOut_ = getOutput("bottomUpOut");
+  bottomUpIn_ = getInput("bottomUpIn");
+
   Array &outputArray = bottomUpOut_->getData();
+  NTA_CHECK(outputArray.getCount() > 0) << "buffer not allocated.";
   NTA_CHECK(outputArray.getCount() == nodeCount_ * outputElementCount_)
        			<< "buffer size: " << outputArray.getCount()
 				<< " expected: " << (nodeCount_ * outputElementCount_);
   NTA_CHECK(outputArray.getType() == NTA_BasicType_Real64);
   Real64 *baseOutputBuffer = (Real64 *)outputArray.getBuffer();
 
+  // get the incoming buffer
+  Array &inputArray = bottomUpIn_->getData();
+  Real64* inputBuffer = (Real64*)inputArray.getBuffer();
+  size_t count = inputArray.getCount();
+	
   // See TestNode.hpp for description of the computation
-  std::vector<Real64> nodeInput;
+	
   Real64 *nodeOutputBuffer;
   for (UInt32 node = 0; node < nodeCount_; node++) {
     nodeOutputBuffer = baseOutputBuffer + node * outputElementCount_;
-    bottomUpIn_->getInputForNode(node, nodeInput);
 
-    // output[0] = number of inputs to this baby node + current iteration number
-    nodeOutputBuffer[0] = nupic::Real64(nodeInput.size() + iter_);
+	  // output[0] = number of inputs + current iteration number
+	  nodeOutputBuffer[0] = nupic::Real64(count + iter_);
 
-    // output[n] = node + sum(inputs) + (n-1) * delta
-    Real64 sum = std::accumulate(nodeInput.begin(), nodeInput.end(), 0.0);
-    for (size_t i = 1; i < outputElementCount_; i++)
-      nodeOutputBuffer[i] = node + sum + (i - 1) * delta_;
+    if (outputArray.getCount() > 1) {
+	    // output[n] = node + sum(inputs) + (n-1) * delta
+      Real64 sum = 0.0;
+      if (count > 0) {
+        // simulate indexing by node
+        size_t y = count / nodeCount_;
+		    Real64 *start = inputBuffer + (node * y);
+		    Real64 *end   = start + y;
+	      sum = std::accumulate(start, end, 0.0);
+      }
+	    for (size_t i = 1; i < outputElementCount_; i++) {
+	        nodeOutputBuffer[i] = node + sum + (i - 1) * delta_;
+		  }
+    }
   }
 
   iter_++;
@@ -146,12 +210,14 @@ Spec *TestNode::createSpec() {
   /* ---- parameters ------ */
   ns->parameters.add( "count",
                      ParameterSpec(
-							       "Buffer size override for bottomUpOut Output",  // description
+							                   "Buffer size for bottomUpOut Output. "
+                                 "Syntax: {count: 64}",  // description
 	                               NTA_BasicType_UInt32,
-							       1,                         // elementCount
-							       "",                        // constraints
-							       "2",                      // defaultValue
-							       ParameterSpec::ReadWriteAccess));
+							                   1,                         // elementCount 
+							                   "",                        // constraints
+							                   "",                        // defaultValue
+							                   ParameterSpec::ReadWriteAccess));
+
 
   ns->parameters.add("int32Param",
                      ParameterSpec("Int32 scalar parameter", // description
@@ -285,7 +351,7 @@ Spec *TestNode::createSpec() {
 				           NTA_BasicType_Real64,
                            0,     // count. omit?
                            true,  // required?
-                           false, // isRegionLevel,
+                           true, // isRegionLevel,
                            true   // isDefaultInput
                            ));
 
@@ -294,7 +360,7 @@ Spec *TestNode::createSpec() {
                   OutputSpec("Primary output for the node",
                             NTA_BasicType_Real64,
                             0,     // count is dynamic
-                            false, // isRegionLevel
+                            true, // isRegionLevel
                             true   // isDefaultOutput
                             ));
 
@@ -394,15 +460,16 @@ void TestNode::getParameterArray(const std::string &name, Int64 index, Array &ar
   }
   else if (name == "real32ArrayParam") {
   	Array a(NTA_BasicType_Real32, &real32ArrayParam_[0], real32ArrayParam_.size());
-	array = a;
+    array = a;
   } else if (name == "unclonedInt64ArrayParam") {
     if (index < 0) {
       NTA_THROW << "uncloned parameters cannot be accessed at region level";
     }
-	if (index >= (Int64)unclonedInt64ArrayParam_.size()) {
+	  if (index >= (Int64)unclonedInt64ArrayParam_.size()) {
       NTA_THROW << "uncloned parameter index out of range";
-	}
-	Array a(NTA_BasicType_Int64, &unclonedInt64ArrayParam_[(size_t)index][0], unclonedInt64ArrayParam_[(size_t)index].size());
+    }
+	  Array a(NTA_BasicType_Int64, &unclonedInt64ArrayParam_[static_cast<size_t>(index)][0], 
+                                  unclonedInt64ArrayParam_[static_cast<size_t>(index)].size());
     array = a;
   } else {
     NTA_THROW << "TestNode::getParameterArray -- unknown parameter " << name;
@@ -426,10 +493,10 @@ void TestNode::setParameterUInt32(const std::string &name, Int64 index, UInt32 v
     uint32Param_ = value;
   }
   else if (name == "unclonedParam") {
-    if (index < 0 || index >= (Int64)unclonedParam_.size()) {
+    if (index < 0 || index >= static_cast<Int64>(unclonedParam_.size())) {
       NTA_THROW << "uncloned parameters index out of range";
     }
-	unclonedParam_[(size_t)index] = value;
+	unclonedParam_[static_cast<size_t>(index)] = value;
   }
   else if (name == "shouldCloneParam") {
       shouldCloneParam_ = !(value == 0);
@@ -438,7 +505,7 @@ void TestNode::setParameterUInt32(const std::string &name, Int64 index, UInt32 v
     if (shouldCloneParam_) {
       possiblyUnclonedParam_[0] = value;
     } else {
-      if (index < 0 || index >= (Int64)possiblyUnclonedParam_.size()) {
+      if (index < 0 || index >= static_cast<Int64>(possiblyUnclonedParam_.size())) {
         NTA_THROW << "uncloned parameters index out of range.";
       }
       possiblyUnclonedParam_[(size_t)index] = value;
@@ -516,7 +583,7 @@ void TestNode::setParameterArray(const std::string &name, Int64 index, const Arr
     if (index < 0) {
       NTA_THROW << "uncloned parameters cannot be accessed at region level";
     }
-    unclonedInt64ArrayParam_[(size_t)index] = array.asVector<Int64>();
+    unclonedInt64ArrayParam_[static_cast<Int64>(index)] = array.asVector<Int64>();
   }
   else {
     RegionImpl::setParameterArray(name, index, array);
@@ -535,64 +602,10 @@ size_t TestNode::getParameterArrayCount(const std::string &name, Int64 index) {
     if (index < 0) {
       NTA_THROW << "uncloned parameters cannot be accessed at region level";
     }
-    return unclonedInt64ArrayParam_[(UInt)index].size();
+    return unclonedInt64ArrayParam_[index].size();
   } else {
     NTA_THROW << "TestNode::getParameterArrayCount -- unknown parameter "
               << name;
-  }
-}
-
-void TestNode::initialize() {
-  nodeCount_ = getDimensions().getCount();
-  bottomUpOut_ = getOutput("bottomUpOut");
-  bottomUpIn_ = getInput("bottomUpIn");
-
-  unclonedParam_.resize(nodeCount_);
-  for (unsigned int i = 1; i < nodeCount_; i++) {
-    unclonedParam_[i] = unclonedParam_[0];
-  }
-
-  if (!shouldCloneParam_) {
-    possiblyUnclonedParam_.resize(nodeCount_);
-    for (unsigned int i = 1; i < nodeCount_; i++) {
-      possiblyUnclonedParam_[i] = possiblyUnclonedParam_[0];
-    }
-  }
-
-  unclonedInt64ArrayParam_.resize(nodeCount_);
-  std::vector<Int64> v(4, 0); // length 4 vector, each element == 0
-  for (unsigned int i = 1; i < nodeCount_; i++) {
-    unclonedInt64ArrayParam_[i] = v;
-  }
-}
-
-// This is the per-node output size
-size_t TestNode::getNodeOutputElementCount(const std::string &outputName) {
-  if (outputName == "bottomUpOut") {
-    return outputElementCount_;
-  }
-    NTA_THROW << "TestNode::getNodeOutputElementCount() -- unknown output " << outputName;
-}
-
-std::string TestNode::executeCommand(const std::vector<std::string> &args,
-                                     Int64 index) {
-  return "";
-}
-
-bool TestNode::isParameterShared(const std::string &name) {
-  if ((name == "int32Param") || (name == "uint32Param") ||
-      (name == "int64Param") || (name == "uint64Param") ||
-      (name == "real32Param") || (name == "real64Param") ||
-      (name == "boolParam") || (name == "stringParam") ||
-      (name == "int64ArrayParam") || (name == "real32ArrayParam") ||
-      (name == "boolArrayParam") || (name == "shouldCloneParam")) {
-    return true;
-  } else if ((name == "unclonedParam") || (name == "unclonedInt64ArrayParam")) {
-    return false;
-  } else if (name == "possiblyUnclonedParam") {
-    return shouldCloneParam_;
-  } else {
-    NTA_THROW << "TestNode::isParameterShared -- Unknown parameter " << name;
   }
 }
 
@@ -633,7 +646,7 @@ void TestNode::serialize(BundleIO &bundle) {
       << " " << nodeCount_ << " " << int32Param_ << " " << uint32Param_ << " "
       << int64Param_ << " " << uint64Param_ << " " << real32Param_ << " "
       << real64Param_ << " " << boolParam_ << " " << outputElementCount_ << " "
-      << delta_ << " " << iter_ << " ";
+      << delta_ << " " << iter_ << " " << dim_ << " ";
 
     arrayOut(f, real32ArrayParam_, "real32ArrayParam_");
     arrayOut(f, int64ArrayParam_, "int64ArrayParam_");
@@ -689,6 +702,7 @@ void TestNode::deserialize(BundleIO &bundle) {
     f >> outputElementCount_;
     f >> delta_;
     f >> iter_;
+    f >> dim_;
 
     arrayIn(f, real32ArrayParam_, "real32ArrayParam_");
     arrayIn(f, int64ArrayParam_, "int64ArrayParam_");

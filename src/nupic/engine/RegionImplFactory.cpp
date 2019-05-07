@@ -23,14 +23,14 @@
 #include <stdexcept>
 
 
-#include <nupic/regions/ScalarSensor.hpp>
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/RegionImpl.hpp>
 #include <nupic/engine/RegionImplFactory.hpp>
 #include <nupic/engine/RegisteredRegionImpl.hpp>
 #include <nupic/engine/RegisteredRegionImplCpp.hpp>
+#include <nupic/engine/Output.hpp>
+#include <nupic/engine/Input.hpp>
 #include <nupic/engine/Spec.hpp>
-#include <nupic/regions/TestNode.hpp>
 #include <nupic/engine/YAMLUtils.hpp>
 #include <nupic/ntypes/BundleIO.hpp>
 #include <nupic/ntypes/Value.hpp>
@@ -38,9 +38,14 @@
 #include <nupic/os/OS.hpp>
 #include <nupic/os/Path.hpp>
 
+// Built-in Region implementations
+#include <nupic/regions/TestNode.hpp>
+#include <nupic/regions/ScalarSensor.hpp>
 #include <nupic/regions/VectorFileEffector.hpp>
 #include <nupic/regions/VectorFileSensor.hpp>
 #include <nupic/regions/SPRegion.hpp>
+#include <nupic/regions/TMRegion.hpp>
+
 
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/StringUtils.hpp>
@@ -95,7 +100,7 @@ RegionImplFactory &RegionImplFactory::getInstance() {
     instance.addRegionType("VectorFileEffector", new RegisteredRegionImplCpp<VectorFileEffector>());
     instance.addRegionType("VectorFileSensor",   new RegisteredRegionImplCpp<VectorFileSensor>());
     instance.addRegionType("SPRegion",           new RegisteredRegionImplCpp<SPRegion>());
-
+    instance.addRegionType("TMRegion",            new RegisteredRegionImplCpp<TMRegion>());
   }
 
   return instance;
@@ -125,17 +130,35 @@ RegionImpl *RegionImplFactory::createRegionImpl(const std::string nodeType,
     NTA_THROW << "Unregistered node type '" << nodeType << "'";
   }
 
+  // If the parameter 'dim' was defined, parse that out as a global parameter.
+  if (vm.contains("dim")) {
+    std::shared_ptr<Array> dim = vm.getArray("dim");
+    Dimensions d(dim->asVector<UInt32>());
+    impl->setDimensions(d);
+  }
+
   return impl;
 }
 
 RegionImpl *RegionImplFactory::deserializeRegionImpl(const std::string nodeType,
                                                      BundleIO &bundle,
                                                      Region *region) {
-
+  //  TODO:cereal Remove when Cereal is complete.
   RegionImpl *impl = nullptr;
 
   if (regionTypeMap.find(nodeType) != regionTypeMap.end()) {
     impl = regionTypeMap[nodeType]->deserializeRegionImpl(bundle, region);
+  } else {
+    NTA_THROW << "Unsupported node type '" << nodeType << "'";
+  }
+  return impl;
+}
+RegionImpl *RegionImplFactory::deserializeRegionImpl(const std::string nodeType,
+                                                     ArWrapper &wrapper,
+                                                     Region *region) {
+  RegionImpl *impl = nullptr;
+  if (regionTypeMap.find(nodeType) != regionTypeMap.end()) {
+    impl = regionTypeMap[nodeType]->deserializeRegionImpl(wrapper, region);
   } else {
     NTA_THROW << "Unsupported node type '" << nodeType << "'";
   }

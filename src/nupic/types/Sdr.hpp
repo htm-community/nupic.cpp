@@ -12,8 +12,7 @@
  *
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
- * ----------------------------------------------------------------------
- */
+ * ---------------------------------------------------------------------- */
 
 /** @file
  * Definitions for SparseDistributedRepresentation class
@@ -27,18 +26,21 @@
 #include <algorithm> //sort
 #include <functional>
 #include <vector>
+
 #include <nupic/types/Types.hpp>
 #include <nupic/types/Serializable.hpp>
 #include <nupic/utils/Random.hpp>
 
-using namespace std;
-
 namespace nupic {
+namespace sdr {
 
-typedef vector<Byte>          SDR_dense_t;
-typedef vector<UInt>          SDR_flatSparse_t;
-typedef vector<vector<UInt>>  SDR_sparse_t;
-typedef function<void()>      SDR_callback_t;
+using ElemDense        = Byte; //TODO allow changing this
+using ElemSparse       = UInt32; //must match with connections::CellIdx 
+
+using SDR_dense_t      = std::vector<ElemDense>;
+using SDR_sparse_t     = std::vector<ElemSparse>;
+using SDR_coordinate_t = std::vector<std::vector<UInt>>;
+using SDR_callback_t   = std::function<void()>;
 
 /**
  * SparseDistributedRepresentation class
@@ -50,7 +52,7 @@ typedef function<void()>      SDR_callback_t;
  * represent the state of a group of neurons or their associated processes. 
  *
  * This class automatically converts between the commonly used SDR data formats:
- * which are dense, sparse, and flat-sparse.  Converted values are cached by
+ * which are dense, sparse, and coordinates.  Converted values are cached by
  * this class, so getting a value in one format many times incurs no extra
  * performance cost.  Assigning to the SDR via a setter method will clear these
  * cached values and cause them to be recomputed as needed.
@@ -59,19 +61,19 @@ typedef function<void()>      SDR_callback_t;
  *    the bits in the SDR.  This format allows random-access queries of the SDRs
  *    values.
  *
- *    Sparse Flat Index Format: Contains the indices of only the true values in
+ *    Sparse Index Format: Contains the indices of only the true values in
  *    the SDR.  This is a list of the indices, indexed into the flattened SDR.
  *    This format allows for quickly accessing all of the true bits in the SDR.
  *
- *    Sparse Index Format: Contains the indices of only the true values in the
- *    SDR.  This is a list of lists: the outter list contains an entry for
- *    each dimension in the SDR. The inner lists contain the coordinates of each
- *    true bit.  The inner lists run in parallel. This format is useful because
- *    it contains the location of each true bit inside of the SDR's dimensional
- *    space.
+ *    Coordinate Format: Contains the indices of only the true values in the
+ *    SDR.  This is a list of lists: the outter list contains an entry for each
+ *    dimension in the SDR. The inner lists contain the coordinates of each true
+ *    bit in that dimension.  The inner lists run in parallel. This format is
+ *    useful because it contains the location of each true bit inside of the
+ *    SDR's dimensional space.
  *
- * Flat Formats: This class uses C-order throughout, meaning that when iterating
- * through the SDR, the last/right-most index changes fastest.
+ * Array Memory Layout: This class uses C-order throughout, meaning that when
+ * iterating through the SDR, the last/right-most index changes fastest.
  *
  * Example usage:
  *
@@ -83,19 +85,19 @@ typedef function<void()>      SDR_callback_t;
  *    X.setDense({ 0, 1, 0,
  *                 0, 1, 0,
  *                 0, 0, 1 });
- *    X.setFlatSparse({ 1, 4, 8 });
- *    X.setSparse({{ 0, 1, 2,}, { 1, 1, 2 }});
+ *    X.setSparse({ 1, 4, 8 });
+ *    X.setCoordinates({{ 0, 1, 2,}, { 1, 1, 2 }});
  *
  *    // Access data in any format, SDR will automatically convert data formats.
- *    X.getDense()     -> { 0, 1, 0, 0, 1, 0, 0, 0, 1 }
- *    X.getSparse()     -> {{ 0, 1, 2 }, {1, 1, 2}}
- *    x.getFlatSparse() -> { 1, 4, 8 }
+ *    X.getDense()       -> { 0, 1, 0, 0, 1, 0, 0, 0, 1 }
+ *    X.getCoordinates() -> {{ 0, 1, 2 }, {1, 1, 2}}
+ *    x.getSparse()      -> { 1, 4, 8 }
  *
  *    // Data format conversions are cached, and when an SDR value changes the
  *    // cache is cleared.
- *    X.setFlatSparse({});  // Assign new data to the SDR, clearing the cache.
- *    X.getDense();        // This line will convert formats.
- *    X.getDense();        // This line will resuse the result of the previous line
+ *    X.setSparse({});  // Assign new data to the SDR, clearing the cache.
+ *    X.getDense();     // This line will convert formats.
+ *    X.getDense();     // This line will resuse the result of the previous line
  *
  *
  * Avoiding Copying:  To avoid copying call the setter methods with the correct
@@ -104,11 +106,11 @@ typedef function<void()>      SDR_callback_t;
  * can be modified and reassigned to the SDR, or the caller can allocate their
  * own data vectors as one of the following types:
  *     vector<Byte>            aka SDR_dense_t
- *     vector<UInt>            aka SDR_flatSparse_t
- *     vector<vector<UInt>>    aka SDR_sparse_t
+ *     vector<UInt>            aka SDR_sparse_t
+ *     vector<vector<UInt>>    aka SDR_coordinate_t
  *
- * Example Usage:
- *    X.zero();
+ * Example Usage With Out Copying:
+ *    SDR  X( {3, 3} );
  *    SDR_dense_t newData({ 1, 0, 0, 1, 0, 0, 1, 0, 0 });
  *    X.setDense( newData );
  *    // X now points to newData, and newData points to X's old data.
@@ -119,40 +121,44 @@ typedef function<void()>      SDR_callback_t;
  *    dense[2] = true;
  *    // Notify the SDR of the changes, even if using the SDR's own data inplace.
  *    X.setDense( dense );
- *    X.getFlatSparse() -> { 2 }
+ *    X.getSparse() -> { 2 }
  */
 class SparseDistributedRepresentation : public Serializable
 {
 private:
-    vector<UInt> dimensions_;
-    UInt         size_;
+    std::vector<UInt> dimensions_;
+    UInt              size_;
 
-    // internal representation in given data format (not all must match at a time),
-    // see *_valid below
+protected:
+    /**
+     * Internal representations in each data format.  Not all must match at a
+     * time, see *_valid below.
+     */
     mutable SDR_dense_t      dense_;
-    mutable SDR_flatSparse_t flatSparse_;
     mutable SDR_sparse_t     sparse_;
+    mutable SDR_coordinate_t coordinates_;
 
     /**
      * These flags remember which data formats are up-to-date and which formats
      * need to be updated.
      */
     mutable bool dense_valid;
-    mutable bool flatSparse_valid;
     mutable bool sparse_valid;
+    mutable bool coordinates_valid;
 
+private:
     /**
      * These hooks are called every time the SDR's value changes.  These can be
      * NULL pointers!  See methods addCallback & removeCallback for API details.
      */
-    vector<SDR_callback_t> callbacks;
+    mutable std::vector<SDR_callback_t> callbacks;
 
     /**
      * These hooks are called when the SDR is destroyed.  These can be NULL
      * pointers!  See methods addDestroyCallback & removeDestroyCallback for API
      * details.
      */
-    vector<SDR_callback_t> destroyCallbacks;
+    mutable std::vector<SDR_callback_t> destroyCallbacks;
 
 protected:
     /**
@@ -160,39 +166,39 @@ protected:
      * not actually change any of the data.  Attempting to get the SDR's value
      * immediately after this operation will raise an exception.
      */
-    virtual void clear();
+    virtual void clear() const;
 
     /**
      * Notify everyone that this SDR's value has officially changed.
      */
-    void do_callbacks();
+    void do_callbacks() const;
 
     /**
      * Update the SDR to reflect the value currently inside of the dense array.
      * Use this method after modifying the dense buffer inplace, in order to
-     * propigate any changes to the sparse & flatSparse formats.
+     * propigate any changes to the sparse & coordinate formats.
      */
-    virtual void setDenseInplace();
+    virtual void setDenseInplace() const;
 
     /**
      * Update the SDR to reflect the value currently inside of the flatSparse
      * vector. Use this method after modifying the flatSparse vector inplace, in
-     * order to propigate any changes to the dense & sparse formats.
+     * order to propigate any changes to the dense & coordinate formats.
      */
-    virtual void setFlatSparseInplace();
+    virtual void setSparseInplace() const;
 
     /**
      * Update the SDR to reflect the value currently inside of the sparse
      * vector. Use this method after modifying the sparse vector inplace, in
-     * order to propigate any changes to the dense & flatSparse formats.
+     * order to propigate any changes to the dense & sparse formats.
      */
-    virtual void setSparseInplace();
+    virtual void setCoordinatesInplace() const;
 
     /**
      * Destroy this SDR.  Makes SDR unusable, should error or clearly fail if
      * used.  Also sends notification to all watchers via destroyCallbacks.
      * This is a separate method from ~SDR so that SDRs can be destroyed long
-     * before they're deallocated; SDR Proxy does this.
+     * before they're deallocated.
      */
     virtual void deconstruct();
 
@@ -208,9 +214,9 @@ public:
      * @param dimensions A list of dimension sizes, defining the shape of the
      * SDR.  The product of the dimensions must be greater than zero.
      */
-    SparseDistributedRepresentation( const vector<UInt> dimensions );
+    SparseDistributedRepresentation( const std::vector<UInt> dimensions );
 
-    void initialize( const vector<UInt> dimensions );
+    void initialize( const std::vector<UInt> dimensions );
 
     /**
      * Initialize this SDR as a deep copy of the given SDR.  This SDR and the
@@ -226,7 +232,7 @@ public:
     /**
      * @attribute dimensions A list of dimensions of the SDR.
      */
-    const vector<UInt> &dimensions = dimensions_;
+    const std::vector<UInt> &dimensions = dimensions_;
 
     /**
      * @attribute size The total number of boolean values in the SDR.
@@ -254,11 +260,10 @@ public:
      * @param value A dense vector to copy into the SDR.
      */
      template<typename T>
-     void setDense( const vector<T> &value ) {
+     void setDense( const std::vector<T> &value ) {
        NTA_ASSERT(value.size() == size);
        setDense(value.data());
      }
-
 
     /**
      * Copy a new value into the SDR, overwritting the current value.
@@ -292,7 +297,7 @@ public:
      *
      * @returns The value of the SDR at the given location.
      */
-    Byte at(const vector<UInt> &coordinates) const;
+    Byte at(const std::vector<UInt> &coordinates) const;
 
     /**
      * Swap a new value into the SDR, replacing the current value.  This
@@ -301,8 +306,7 @@ public:
      *
      * @param value A sparse vector<UInt> to swap into the SDR.
      */
-    void setFlatSparse( SDR_flatSparse_t &value );
-
+    void setSparse( SDR_sparse_t &value );
 
     /**
      * Copy a vector of sparse indices of true values.  These indicies are into
@@ -311,12 +315,11 @@ public:
      * @param value A vector of flat indices to copy into the SDR.
      */
     template<typename T>
-    void setFlatSparse( const vector<T> &value ) {
-      flatSparse_.assign( value.begin(), value.end() );
-      setFlatSparseInplace();
+    void setSparse( const std::vector<T> &value ) {
+      sparse_.assign( value.begin(), value.end() );
+      setSparseInplace();
     }
 
-    
     /**
      * Copy an array of sparse indices of true values.  These indicies are into
      * the flattened SDR space.  This overwrites the SDR's current value.
@@ -325,68 +328,71 @@ public:
      * @param num_values The number of elements in the 'value' array.
      */
     template<typename T>
-    void setFlatSparse( const T *value, const UInt num_values ) {
-      flatSparse_.assign( value, value + num_values );
-      setFlatSparseInplace();
+    void setSparse( const T *value, const UInt num_values ) {
+      sparse_.assign( value, value + num_values );
+      setSparseInplace();
     }
-
 
     /**
      * Gets the current value of the SDR.  The result of this method call is
      * saved inside of this SDR until the SDRs value changes.  After modifying
-     * the flatSparse vector you MUST call sdr.setFlatSparse() in order to
-     * notify the SDR that its flatSparse vector has changed and its cached data
-     * is out of date.
+     * the sparse vector you MUST call sdr.setSparse() in order to notify the
+     * SDR that its flatSparse vector has changed and its cached data is out of
+     * date.
      *
      * @returns A reference to a vector of the indices of the true values in the
      * flattened SDR.
      */
-    virtual SDR_flatSparse_t& getFlatSparse() const;
+    virtual SDR_sparse_t& getSparse() const;
 
     /**
-     * Swap a list of indices into the SDR, replacing the SDRs current value.
-     * These indices are into the SDR space with dimensions.  The outter list is
-     * indexed using an index into the sdr.dimensions list.  The inner lists are
-     * indexed in parallel, they contain the coordinates of the true values in
+     * Swap a list of coordinates into the SDR, replacing the SDRs current
+     * value.  These are indices into the SDR space with dimensions.  This
+     * accepts a list of lists, containing the coordinates of the true values in
      * the SDR.
      *
      * This method is fast since it swaps the vector content, however it does
      * modify its argument!
      *
-     * @param value A vector<vector<UInt>> containing the coordinates of the
-     * true values to swap into the SDR.
+     * @param value A vector<vector<UInt>> containing the coordinates of the true
+     * values to swap into the SDR.  The outter list is indexed using an index
+     * into the sdr.dimensions list.  The inner lists are indexed in parallel.
      */
-    void setSparse( SDR_sparse_t &value );
+    void setCoordinates( SDR_coordinate_t &value );
 
     /**
-     * Copy a list of indices into the SDR, overwritting the SDRs current value.
-     * These indices are into the SDR space with dimensions.  The outter list is
-     * indexed using an index into the sdr.dimensions list.  The inner lists are
-     * indexed in parallel, they contain the coordinates of the true values in
+     * Copy a list of coordinates into the SDR, overwritting the SDRs current
+     * value.  These are indices into the SDR space with dimensions.  This
+     * accepts a list of lists, containing the coordinates of the true values in
      * the SDR.
      *
      * @param value A list of lists containing the coordinates of the true
-     * values to copy into the SDR.
+     * values to copy into the SDR.  The outter list is indexed using an index
+     * into the sdr.dimensions list.  The inner lists are indexed in parallel.
      */
     template<typename T>
-    void setSparse( const vector<vector<T>> &value ) {
+    void setCoordinates( const std::vector<std::vector<T>> &value ) {
       NTA_ASSERT(value.size() == dimensions.size());
       for(UInt dim = 0; dim < dimensions.size(); dim++) {
-        sparse_[dim].clear();
-        sparse_[dim].assign(value[dim].cbegin(), value[dim].cend());
+        coordinates_[dim].clear();
+		coordinates_[dim].resize(value[dim].size());
+        // Use an explicit type cast.  Otherwise Microsoft Visual Studio will
+        // print an excessive number of warnings.  Do NOT replace this with:
+        // coordinates_[dim].assign(value[dim].cbegin(), value[dim].cend());
+        for (UInt i = 0; i < value[dim].size(); i++)
+          coordinates_[dim][i] = (UInt)value[dim][i];
       }
-      setSparseInplace();
+      setCoordinatesInplace();
     }
-
 
     /**
      * Gets the current value of the SDR.  The result of this method call is
      * saved inside of this SDR until the SDRs value changes.
      *
      * @returns A reference to a list of lists which contain the coordinates of
-     * the true values in the SDR.     
+     * the true values in the SDR.
      */
-    virtual SDR_sparse_t& getSparse() const;
+    virtual SDR_coordinate_t& getCoordinates() const;
 
     /**
      * Deep Copy the given SDR to this SDR.  This overwrites the current value of
@@ -397,13 +403,15 @@ public:
      */
     virtual void setSDR( const SparseDistributedRepresentation &value );
 
+    SparseDistributedRepresentation& operator=(const SparseDistributedRepresentation& value);
+
     /**
      * Calculates the number of true / non-zero values in the SDR.
      *
      * @returns The number of true values in the SDR.
      */
     inline UInt getSum() const
-        { return (UInt)getFlatSparse().size(); }
+        { return (UInt)getSparse().size(); }
 
     /**
      * Calculates the sparsity of the SDR, which is the fraction of bits which
@@ -456,6 +464,62 @@ public:
     void addNoise(Real fractionNoise, Random &rng);
 
     /**
+     * This method calculates the set intersection of the active bits in each
+     * input SDR.
+     *
+     * @params This method has two overloads:
+     *          1) Accepts two SDRs, for convenience.
+     *          2) Accepts a list of SDRs, must contain at least two SDRs, can
+     *             contain as many SDRs as needed.
+     *
+     * @returns In both cases the output is stored in this SDR.  This method
+     * modifies this SDR and discards its current value!
+     *
+     * Example Usage:
+     *     SDR A({ 10 });
+     *     SDR B({ 10 });
+     *     SDR C({ 10 });
+     *     A.setSparse({0, 1, 2, 3});
+     *     B.setSparse(      {2, 3, 4, 5});
+     *     C.intersection(A, B);
+     *     C.getSparse() -> {2, 3}
+     */
+    void intersection(const SparseDistributedRepresentation &input1,
+                      const SparseDistributedRepresentation &input2);
+
+    void intersection(std::vector<const SparseDistributedRepresentation*> inputs);
+
+    /**
+     * Concatenates SDRs and stores the result in this SDR.
+     *
+     * @params This method has two overloads:
+     *          1) Accepts two SDRs, for convenience.
+     *          2) Accepts a list of SDR*, must contain at least two SDRs, can
+     *             contain as many SDRs as needed.
+     *
+     * @param UInt axis: This can concatenate along any axis, as long as the
+     * result has the same dimensions as this SDR.  The default axis is 0.
+     *
+     * @returns In both overloads the output is stored in this SDR.  This method
+     * modifies this SDR and discards its current value!
+     *
+     * Example Usage:
+     *      SDR A({ 10 });
+     *      SDR B({ 10 });
+     *      SDR C({ 20 });
+     *      A.setSparse({ 0, 1, 2 });
+     *      B.setSparse({ 0, 1, 2 });
+     *      C.concatenate( A, B );
+     *      C.getSparse() -> {0, 1, 2, 10, 11, 12}
+     */
+    void concatenate(const SparseDistributedRepresentation &inp1,
+                     const SparseDistributedRepresentation &inp2,
+                     UInt  axis = 0u);
+
+    void concatenate(std::vector<const SparseDistributedRepresentation*> inputs,
+                     UInt axis = 0u);
+
+    /**
      * Print a human readable version of the SDR.
      */
     friend std::ostream& operator<< (std::ostream& stream, const SparseDistributedRepresentation &sdr)
@@ -467,14 +531,14 @@ public:
                 stream << ", ";
         }
         stream << " ) ";
-        auto data = sdr.getFlatSparse();
+        auto data = sdr.getSparse();
         std::sort( data.begin(), data.end() );
         for( UInt i = 0; i < data.size(); i++ ) {
             stream << data[i];
             if( i + 1 != data.size() )
                 stream << ", ";
         }
-        return stream << endl;
+        return stream << std::endl;
     }
 
     bool operator==(const SparseDistributedRepresentation &sdr) const;
@@ -482,6 +546,8 @@ public:
     inline bool operator!=(const SparseDistributedRepresentation &sdr) const
         { return not ((*this) == sdr); }
 
+
+// TODO:Cereal- Remove these when Cereal is complete
     /**
      * Save (serialize) the current state of the SDR to the specified file.
      * This method can NOT save callbacks!  Only the dimensions and current data
@@ -500,6 +566,23 @@ public:
      */
     void load(std::istream &inStream) override;
 
+    CerealAdapter;
+
+    template<class Archive>
+    void save_ar(Archive & ar) const
+    {
+        getSparse(); // to make sure sparse is valid.
+        ar(cereal::make_nvp("dimensions", dimensions_), cereal::make_nvp("sparse", sparse_) );
+    }
+
+    template<class Archive>
+    void load_ar(Archive & ar)
+    {
+        ar( dimensions_, sparse_ );
+        initialize( dimensions_ );
+        setSparseInplace();
+    }
+
     /**
      * Callbacks notify you when this SDR's value changes.
      *
@@ -511,7 +594,7 @@ public:
      *
      * @returns UInt Handle for the given callback, needed to remove callback.
      */
-    UInt addCallback(SDR_callback_t callback);
+    UInt addCallback(SDR_callback_t callback) const;
 
     /**
      * Remove a previously registered callback.
@@ -519,7 +602,7 @@ public:
      * @param UInt Handle which was returned by addCallback when you registered
      * your callback.
      */
-    void removeCallback(UInt index);
+    void removeCallback(UInt index) const;
 
     /**
      * This callback notifies you when this SDR is deconstructed and freed from
@@ -533,7 +616,7 @@ public:
      *
      * @returns UInt Handle for the given callback, needed to remove callback.
      */
-    UInt addDestroyCallback(SDR_callback_t callback);
+    UInt addDestroyCallback(SDR_callback_t callback) const;
 
     /**
      * Remove a previously registered destroy callback.
@@ -541,10 +624,91 @@ public:
      * @param UInt Handle which was returned by addDestroyCallback when you
      * registered your callback.
      */
-    void removeDestroyCallback(UInt index);
+    void removeDestroyCallback(UInt index) const;
 };
 
 typedef SparseDistributedRepresentation SDR;
 
+/**
+ * Reshape class
+ *
+ * ### Description
+ * Reshape presents a view onto an SDR with different dimensions.
+ *      + Reshape is a subclass of SDR and be safely typecast to an SDR.
+ *      + The resulting SDR has the same value as the source SDR, at all times
+ *        and automatically.
+ *      + The resulting SDR is read only.
+ *
+ * SDR and Reshape classes tell each other when they are created and
+ * destroyed.  Reshape can be created and destroyed as needed.  Reshape
+ * will throw an exception if it is used after its source SDR has been
+ * destroyed.
+ *
+ * Example Usage:
+ *      // Convert SDR dimensions from (4 x 4) to (8 x 2)
+ *      SDR     A(    { 4, 4 })
+ *      Reshape B( A, { 8, 2 })
+ *      A.setCoordinates( {1, 1, 2}, {0, 1, 2}} )
+ *      B.getCoordinates()  ->  {{2, 2, 5}, {0, 1, 0}}
+ *
+ * Reshape partially supports the Serializable interface.  Reshape can
+ * be saved but can not be loaded.
+ *
+ * Note: Reshape used to be called SDR_Proxy. See PR #298
+ */
+class Reshape : public SDR
+{
+public:
+    /**
+     * Reshape an SDR.
+     *
+     * @param sdr Source SDR to make a view of.
+     *
+     * @param dimensions A list of dimension sizes, defining the shape of the
+     * SDR.  Optional, if not given then this SDR will have the same
+     * dimensions as the given SDR.
+     */
+    Reshape(const SDR &sdr, const std::vector<UInt> &dimensions);
+
+    Reshape(const SDR &sdr)
+        : Reshape(sdr, sdr.dimensions) {}
+
+    SDR_dense_t& getDense() const override;
+
+    SDR_sparse_t& getSparse() const override;
+
+    SDR_coordinate_t& getCoordinates() const override;
+
+    void save(std::ostream &outStream) const override;
+
+    ~Reshape() override
+        { deconstruct(); }
+
+protected:
+    /**
+     * This SDR shall always have the same value as the parent SDR.
+     */
+    const SDR *parent;
+    UInt callback_handle;
+    UInt destroyCallback_handle;
+
+    void deconstruct() override;
+
+private:
+    const std::string _error_message = "This SDR is read only.";
+
+    void setDenseInplace() const override
+        { NTA_THROW << _error_message; }
+    void setSparseInplace() const override
+        { NTA_THROW << _error_message; }
+    void setCoordinatesInplace() const override
+        { NTA_THROW << _error_message; }
+    void setSDR( const SparseDistributedRepresentation &value ) override
+        { NTA_THROW << _error_message; }
+    void load(std::istream &inStream) override
+        { NTA_THROW << _error_message; }
+};
+
+} // end namespace sdr
 } // end namespace nupic
 #endif // end ifndef SDR_HPP

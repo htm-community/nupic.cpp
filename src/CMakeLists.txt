@@ -76,27 +76,10 @@ set(algorithm_files
     nupic/algorithms/Anomaly.hpp
     nupic/algorithms/AnomalyLikelihood.cpp
     nupic/algorithms/AnomalyLikelihood.hpp
-    nupic/algorithms/ArrayBuffer.hpp
-    nupic/algorithms/BacktrackingTMCpp.cpp
-    nupic/algorithms/BacktrackingTMCpp.hpp
-    nupic/algorithms/Cell.cpp
-    nupic/algorithms/Cell.hpp
-    nupic/algorithms/Cells4.cpp
-    nupic/algorithms/Cells4.hpp
-    nupic/algorithms/ClassifierResult.cpp
-    nupic/algorithms/ClassifierResult.hpp
     nupic/algorithms/Connections.cpp
     nupic/algorithms/Connections.hpp
-    nupic/algorithms/InSynapse.cpp
-    nupic/algorithms/InSynapse.hpp
-    nupic/algorithms/OutSynapse.cpp
-    nupic/algorithms/OutSynapse.hpp
     nupic/algorithms/SDRClassifier.cpp
     nupic/algorithms/SDRClassifier.hpp
-    nupic/algorithms/Segment.cpp
-    nupic/algorithms/Segment.hpp
-    nupic/algorithms/SegmentUpdate.cpp
-    nupic/algorithms/SegmentUpdate.hpp
     nupic/algorithms/SpatialPooler.cpp
     nupic/algorithms/SpatialPooler.hpp
     nupic/algorithms/TemporalMemory.cpp
@@ -105,8 +88,11 @@ set(algorithm_files
 
 
 set(encoders_files 
+    nupic/encoders/BaseEncoder.hpp
     nupic/encoders/ScalarEncoder.cpp
     nupic/encoders/ScalarEncoder.hpp
+    nupic/encoders/RandomDistributedScalarEncoder.hpp
+    nupic/encoders/RandomDistributedScalarEncoder.cpp
 )
     
 set(engine_files
@@ -114,9 +100,6 @@ set(engine_files
     nupic/engine/Input.hpp
     nupic/engine/Link.cpp
     nupic/engine/Link.hpp
-    nupic/engine/LinkPolicy.hpp
-    nupic/engine/LinkPolicyFactory.cpp
-    nupic/engine/LinkPolicyFactory.hpp
     nupic/engine/Network.cpp
     nupic/engine/Network.hpp
     nupic/engine/NuPIC.cpp
@@ -133,31 +116,18 @@ set(engine_files
     nupic/engine/RegisteredRegionImplCpp.hpp
     nupic/engine/Spec.cpp
     nupic/engine/Spec.hpp
-    nupic/engine/TestFanIn2LinkPolicy.cpp
-    nupic/engine/TestFanIn2LinkPolicy.hpp
-    nupic/engine/UniformLinkPolicy.cpp
-    nupic/engine/UniformLinkPolicy.hpp
     nupic/engine/YAMLUtils.cpp
     nupic/engine/YAMLUtils.hpp
+    nupic/engine/Watcher.cpp
+    nupic/engine/Watcher.hpp
 )
   
 set(math_files
-    nupic/math/ArrayAlgo.hpp
-    nupic/math/DenseMatrix.hpp
-    nupic/math/Domain.hpp
-    nupic/math/Functions.hpp
-    nupic/math/Index.hpp
     nupic/math/Math.hpp
-    nupic/math/Set.hpp
-    nupic/math/SparseBinaryMatrix.hpp
-    nupic/math/SparseMatrix.hpp
-    nupic/math/SparseTensor.hpp
     nupic/math/StlIo.cpp
     nupic/math/StlIo.hpp
     nupic/math/Topology.cpp
     nupic/math/Topology.hpp
-    nupic/math/Types.hpp
-    nupic/math/Utils.hpp
 )
 
 
@@ -165,13 +135,11 @@ set(ntypes_files
     nupic/ntypes/Array.hpp
     nupic/ntypes/ArrayBase.cpp
     nupic/ntypes/ArrayBase.hpp
+    nupic/ntypes/BasicType.cpp
+    nupic/ntypes/BasicType.hpp
     nupic/ntypes/BundleIO.hpp
     nupic/ntypes/Collection.hpp
-    nupic/ntypes/Dimensions.cpp
     nupic/ntypes/Dimensions.hpp
-    nupic/ntypes/MemParser.cpp
-    nupic/ntypes/MemParser.hpp
-    nupic/ntypes/MemStream.hpp
     nupic/ntypes/Scalar.cpp
     nupic/ntypes/Scalar.hpp
     nupic/ntypes/Value.cpp
@@ -201,6 +169,8 @@ set(regions_files
     nupic/regions/SPRegion.hpp
     nupic/regions/TestNode.cpp
     nupic/regions/TestNode.hpp
+    nupic/regions/TMRegion.cpp
+    nupic/regions/TMRegion.hpp
     nupic/regions/VectorFile.cpp
     nupic/regions/VectorFile.hpp
     nupic/regions/VectorFileEffector.cpp
@@ -210,17 +180,11 @@ set(regions_files
 )
 
 set(types_files
-    nupic/types/BasicType.cpp
-    nupic/types/BasicType.hpp
     nupic/types/Exception.hpp
-    nupic/types/Fraction.cpp
-    nupic/types/Fraction.hpp
-    nupic/types/Serializable.hpp
     nupic/types/Types.hpp
     nupic/types/Serializable.hpp
     nupic/types/Sdr.hpp
     nupic/types/Sdr.cpp
-    nupic/types/SdrProxy.hpp
 )
 
 set(utils_files
@@ -238,15 +202,17 @@ set(utils_files
     nupic/utils/StringUtils.cpp
     nupic/utils/StringUtils.hpp
     nupic/utils/VectorHelpers.hpp
+    nupic/utils/SdrMetrics.cpp
     nupic/utils/SdrMetrics.hpp
-    nupic/utils/Watcher.cpp
-    nupic/utils/Watcher.hpp
+    nupic/utils/MurmurHash3.hpp
+    nupic/utils/MurmurHash3.cpp
 )
 
 set(examples_files
-    examples/hotgym/Hotgym.cpp
+    examples/hotgym/Hotgym.cpp # contains conflicting main()
     examples/hotgym/HelloSPTP.cpp
     examples/hotgym/HelloSPTP.hpp
+    examples/mnist/MNIST_SP.cpp
 )
 
 #set up file tabs in Visual Studio
@@ -282,7 +248,6 @@ add_library(${src_objlib} OBJECT
     ${regions_files} 
     ${types_files} 
     ${utils_files}
-    ${examples_files} 
 )
 # shared libraries need PIC
 target_compile_options( ${src_objlib} PUBLIC ${INTERNAL_CXX_FLAGS})
@@ -369,26 +334,16 @@ add_subdirectory(test)
 #
 ## Setup benchmark_hotgym
 #
-source_group("examples" FILES 
-    examples/hotgym/Hotgym.cpp 
-    examples/hotgym/HelloSPTP.hpp
-    )
-
 set(src_executable_hotgym benchmark_hotgym)
-add_executable(${src_executable_hotgym} examples/hotgym/Hotgym.cpp examples/hotgym/HelloSPTP.hpp)
-if(MSVC)
-  # for Windows, link with the static library
-  target_link_libraries(${src_executable_hotgym} 
+add_executable(${src_executable_hotgym} examples/hotgym/Hotgym.cpp examples/hotgym/HelloSPTP.hpp examples/hotgym/HelloSPTP.cpp)
+# link with the static library
+target_link_libraries(${src_executable_hotgym} 
     ${core_library}
-    ${COMMON_OS_LIBS}
-		)
-else()
-  # for Linux,OSx, link with the shared library
-  target_link_libraries(${src_executable_hotgym} 
-    ${src_lib_shared}
-    ${COMMON_OS_LIBS}
-		)
-endif()
+    ${COMMON_OS_LIBS})
+    
+# for future reference; to link to shared library, (Not on MSVC)
+#          link with ${src_lib_shared} rather than ${core_library}
+                  
 target_compile_options( ${src_executable_hotgym} PUBLIC ${INTERNAL_CXX_FLAGS})
 target_compile_definitions(${src_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${src_executable_hotgym} PRIVATE 
@@ -401,6 +356,47 @@ add_custom_target(hotgym
           COMMENT "Executing ${src_executable_hotgym}"
           VERBATIM)
 
+#########################################################
+## Dynamicly linked version of hotgym
+if(MSVC)
+else()
+  set(src_dyn_executable_hotgym dynamic_hotgym)
+  add_executable(${src_dyn_executable_hotgym} examples/hotgym/Hotgym.cpp examples/hotgym/HelloSPTP.hpp examples/hotgym/HelloSPTP.cpp)
+  # for Linux,OSx, link with the shared library
+  target_link_libraries(${src_dyn_executable_hotgym} 
+    ${src_lib_shared}
+    ${COMMON_OS_LIBS}
+		)
+  target_compile_options( ${src_dyn_executable_hotgym} PUBLIC ${INTERNAL_CXX_FLAGS})
+  target_compile_definitions(${src_dyn_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+  target_include_directories(${src_dyn_executable_hotgym} PRIVATE 
+		${CORE_LIB_INCLUDES} 
+		${EXTERNAL_INCLUDES}
+		)
+endif()
+#########################################################
+## MNIST Spatial Pooler Example
+#
+set(src_executable_mnistsp mnist_sp)
+add_executable(${src_executable_mnistsp} examples/mnist/MNIST_SP.cpp)
+target_link_libraries(${src_executable_mnistsp} 
+        ${core_library}
+        ${COMMON_OS_LIBS}
+	    )
+  target_compile_options(${src_executable_mnistsp} PUBLIC ${INTERNAL_CXX_FLAGS})
+  target_compile_definitions(${src_executable_mnistsp} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+  # Pass MNIST data directory to main.cpp
+  target_compile_definitions(${src_executable_mnistsp} PRIVATE MNIST_DATA_LOCATION=${mnist_SOURCE_DIR})
+  target_include_directories(${src_executable_mnistsp} PRIVATE 
+        ${CORE_LIB_INCLUDES} 
+        ${EXTERNAL_INCLUDES}
+        )
+add_custom_target(mnist
+                  COMMAND ${src_executable_mnistsp}
+                  DEPENDS ${src_executable_mnistsp}
+                  COMMENT "Executing ${src_executable_mnistsp}"
+                  VERBATIM)
+
 
 ############ INSTALL ######################################
 #
@@ -409,14 +405,16 @@ add_custom_target(hotgym
 install(TARGETS
         ${core_library}
         ${src_executable_hotgym}
-        RUNTIME DESTINATION bin
+        ${src_executable_mnistsp}
+	RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
 
 if(MSVC)
 else()	
   install(TARGETS
-	    ${src_lib_shared}
+        ${src_dyn_executable_hotgym}
+        ${src_lib_shared}
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
@@ -436,13 +434,12 @@ install(DIRECTORY "${REPOSITORY_DIR}/external/common/include/"
 	  MESSAGE_NEVER
 	  DESTINATION include)
 
-
           
 #
 # `make package` results in
-# nupic_core-${NUPIC_CORE_VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}.tar.gz binary release
+# nupic_cpp-${NUPIC_CORE_VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}.tar.gz binary release
 #
 
 set(CPACK_GENERATOR "TGZ")
-set(CPACK_PACKAGE_FILE_NAME "nupic_core-${NUPIC_CORE_VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}")
+set(CPACK_PACKAGE_FILE_NAME "nupic_cpp-${NUPIC_CORE_VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}")
 include(CPack)

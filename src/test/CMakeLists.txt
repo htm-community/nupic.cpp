@@ -40,18 +40,18 @@ set(unit_tests_executable unit_tests)
 
 set(algorithm_tests
 	   unit/algorithms/AnomalyTest.cpp
-	   unit/algorithms/Cells4Test.cpp
+	   unit/algorithms/AnomalyLikelihoodTest.cpp
 	   unit/algorithms/ConnectionsPerformanceTest.cpp
 	   unit/algorithms/ConnectionsTest.cpp
 	   unit/algorithms/HelloSPTPTest.cpp
 	   unit/algorithms/SDRClassifierTest.cpp
-	   unit/algorithms/SegmentTest.cpp
 	   unit/algorithms/SpatialPoolerTest.cpp
 	   unit/algorithms/TemporalMemoryTest.cpp
 	   )
                
 set(encoders_tests
            unit/encoders/ScalarEncoderTest.cpp
+           unit/encoders/RandomDistributedScalarEncoderTest.cpp
            )
 	   
 set(engine_tests
@@ -60,35 +60,20 @@ set(engine_tests
 	   unit/engine/InputTest.cpp
 	   unit/engine/LinkTest.cpp
 	   unit/engine/NetworkTest.cpp
-           unit/engine/UniformLinkPolicyTest.cpp
 	   unit/engine/YAMLUtilsTest.cpp
+	   unit/engine/WatcherTest.cpp
 	   )
 	   
 
 set(math_tests
-	   unit/math/DenseTensorUnitTest.cpp
-	   unit/math/DenseTensorUnitTest.hpp
-	   unit/math/DomainUnitTest.cpp
-	   unit/math/DomainUnitTest.hpp
-	   unit/math/IndexUnitTest.cpp
-	   unit/math/IndexUnitTest.hpp
-	   unit/math/MathsTest.cpp
-	   unit/math/MathsTest.hpp
-	   unit/math/SparseBinaryMatrixTest.cpp
-	   unit/math/SparseMatrixTest.cpp
-	   unit/math/SparseMatrixUnitTest.cpp
-	   unit/math/SparseMatrixUnitTest.hpp
-	   unit/math/SparseTensorUnitTest.cpp
-	   unit/math/SparseTensorUnitTest.hpp
 	   unit/math/TopologyTest.cpp
 	   )
 	   
 set(ntypes_tests
 	   unit/ntypes/ArrayTest.cpp
+	   unit/ntypes/BasicTypeTest.cpp
 	   unit/ntypes/CollectionTest.cpp
 	   unit/ntypes/DimensionsTest.cpp
-	   unit/ntypes/MemParserTest.cpp
-	   unit/ntypes/MemStreamTest.cpp
 	   unit/ntypes/ScalarTest.cpp
 	   unit/ntypes/ValueTest.cpp
 	   )
@@ -105,14 +90,13 @@ set(regions_tests
 	   unit/regions/RegionTestUtilities.cpp
 	   unit/regions/RegionTestUtilities.hpp
 	   unit/regions/SPRegionTest.cpp
+           unit/regions/TMRegionTest.cpp
 	   )
+
 	   
 set(types_tests
-	   unit/types/BasicTypeTest.cpp
 	   unit/types/ExceptionTest.cpp
-	   unit/types/FractionTest.cpp
 	   unit/types/SdrTest.cpp
-	   unit/types/SdrProxyTest.cpp
 	   )
 	   
 set(utils_tests
@@ -121,8 +105,14 @@ set(utils_tests
 	   unit/utils/RandomTest.cpp
 	   unit/utils/VectorHelpersTest.cpp
 	   unit/utils/SdrMetricsTest.cpp
-	   unit/utils/WatcherTest.cpp
 	   )
+
+set(examples_files
+	   # examples/hotgym/Hotgym.cpp # contains conflicting main()
+           ../examples/hotgym/HelloSPTP.cpp
+           ../examples/hotgym/HelloSPTP.hpp
+	   # examples/mnist/MNIST_SP.cpp
+)
 	   
 
 	   
@@ -150,6 +140,7 @@ set(src_executable_gtests
     ${regions_tests}
     ${types_tests} 
     ${utils_tests} 
+    ${examples_files}
 )
 
 add_executable(${unit_tests_executable} ${src_executable_gtests})

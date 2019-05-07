@@ -38,6 +38,13 @@
 #include <string>
 #include <vector>
 
+#include <nupic/engine/Output.hpp>
+#include <nupic/engine/Input.hpp>
+#include <nupic/engine/Region.hpp>
+#include <nupic/ntypes/Dimensions.hpp>
+#include <nupic/ntypes/BundleIO.hpp>
+#include <nupic/types/Serializable.hpp>
+
 namespace nupic {
 
 class Spec;
@@ -47,7 +54,6 @@ class Input;
 class Output;
 class Array;
 class NodeSet;
-class BundleIO;
 
 class RegionImpl
 {
@@ -104,38 +110,67 @@ public:
   /* -------- Methods that must be implemented by subclasses -------- */
 
   /**
+   * Region implimentations must implement createSpec().
    * Can't declare a static method in an interface. But RegionFactory
    * expects to find this method. Caller gets ownership of Spec pointer.
+   * The returned spec pointer is cached by RegionImplFactory in regionSpecMap
+   * which is a map of shared_ptr's.
    */
-
   // static Spec* createSpec();
 
-  // Serialize state.
+  // Serialize/Deserialize state.
   virtual void serialize(BundleIO &bundle) = 0;
-
-  // De-serialize state. Must be called from deserializing constructor
   virtual void deserialize(BundleIO &bundle) = 0;
 
-    /**
-     * Inputs/Outputs are made available in initialize()
-     * It is always called after the constructor (or load from serialized state)
-     */
-    virtual void initialize() = 0;
+  virtual void cereal_adapter_save(ArWrapper& a) const {};
+  virtual void cereal_adapter_load(ArWrapper& a) {};
+
+  /**
+    * Inputs/Outputs are made available in initialize()
+    * It is always called after the constructor (or load from serialized state)
+    */
+  virtual void initialize() = 0;
 
   // Compute outputs from inputs and internal state
   virtual void compute() = 0;
 
+  /* -------- Methods that may be overridden by subclasses -------- */
+
   // Execute a command
   virtual std::string executeCommand(const std::vector<std::string> &args,
-                                     Int64 index) = 0;
+                                     Int64 index);
 
-  // Per-node size (in elements) of the given output.
-  // For per-region outputs, it is the total element count.
-  // This method is called only for outputs whose size is not
-  // specified in the nodespec.
-  virtual size_t getNodeOutputElementCount(const std::string &outputName) = 0;
 
-  /* -------- Methods that may be overridden by subclasses -------- */
+  // Buffer size (in elements) of the given input/output.
+  // It is the total element count.
+  // This method is called only for buffers whose size is not
+  // specified in the Spec.  This is used to allocate
+  // buffers during initialization.  New implementations should instead
+  // override askImplForOutputDimensions() or askImplForInputDimensions()
+  // and return a full dimension.
+  // Return 0 for outputs that are not used or size does not matter.
+  virtual size_t getNodeInputElementCount(const std::string &outputName) const {
+    return Dimensions::DONTCARE;
+  }
+  virtual size_t getNodeOutputElementCount(const std::string &outputName) const {
+    return Dimensions::DONTCARE;
+  }
+
+
+  // The dimensions for the specified input or output.  This is called by
+  // Link when it allocates buffers during initialization.
+  // If this region sets topology (an SP for example) and will be
+  // setting the dimensions (i.e. from parameters) then
+  // return the dimensions that should be placed in its Array buffer.
+  // Return an isDontCare() Dimension if this region should inherit
+  // dimensions from elsewhere.
+  //
+  // If this is not overridden, the default implementation will call
+  // getNodeOutputElementCount() or getNodeInputElementCount() to obtain
+  // a 1D dimension for this input/output.
+  virtual Dimensions askImplForInputDimensions(const std::string &name);
+  virtual Dimensions askImplForOutputDimensions(const std::string &name);
+
 
   /**
    * Array-valued parameters may have a size determined at runtime.
@@ -148,24 +183,33 @@ public:
   virtual size_t getParameterArrayCount(const std::string &name, Int64 index);
 
   /**
-   * isParameterShared must be available after construction
-   * Default implementation -- all parameters are shared
-   * Tests whether a parameter is node or region level
+   * Set Global dimensions on a region.
+   * Normally a Region Impl will use this to set the dimensions on the default output.
+   * This cannot be used to override a fixed buffer setting in the Spec.
+   * Args: dim   - The dimensions to set
    */
-  virtual bool isParameterShared(const std::string &name);
+  virtual void setDimensions(Dimensions dim) { dim_ = dim; }
+  virtual Dimensions getDimensions() const { return dim_; }
+
 
 protected:
-    // A pointer to the Region object. This is the portion visible
+  // A pointer to the Region object. This is the portion visible
 	// to the applications.  This class and it's subclasses are the
 	// hidden implementations behind the Region class.
 	// Note: this cannot be a shared_ptr. Its pointer is passed via
 	//       the API so it must be a bare pointer so we don't have
 	//       a copy of the shared_ptr held by the Collection in Network.
 	//       This pointer must NOT be deleted.
-    Region* region_;
+  Region* region_;
 
   /* -------- Methods provided by the base class for use by subclasses --------
    */
+
+  // Region level dimensions.  This is set by the parameter "{dim: [2,3]}"
+  // or by region->setDimensions(d);
+  // A region implementation may use this for whatever it wants but it is normally
+  // applied to the default output buffer.
+  Dimensions dim_;
 
   // ---
   /// Callback for subclasses to get an output stream during serialize()
@@ -185,8 +229,8 @@ protected:
   // not found.
   Input *getInput(const std::string &name) const;
   Output *getOutput(const std::string &name) const;
-
-  const Dimensions &getDimensions();
+  Dimensions getInputDimensions(const std::string &name="") const;
+  Dimensions getOutputDimensions(const std::string &name="") const;
 
 };
 

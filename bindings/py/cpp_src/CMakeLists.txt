@@ -23,6 +23,8 @@
 #   algorithms.so
 #   engine_internal.so
 #   math.so
+#   encoders.so
+#   sdr.so
 #
 #
 # For PyBind11 info See: https://pybind11.readthedocs.io/en/stable/compiling.html
@@ -41,15 +43,24 @@ message(STATUS "Configuring Python interface")
 #
 set(src_py_algorithms_files
     bindings/algorithms/algorithm_module.cpp
-    bindings/algorithms/py_SDR.cpp
-    bindings/algorithms/py_SDR_Metrics.cpp
-    bindings/algorithms/py_Algorithms.cpp
-    bindings/algorithms/py_Cells4.cpp
-    bindings/algorithms/py_HTM.cpp
+    bindings/algorithms/py_Connections.cpp
+    bindings/algorithms/py_TemporalMemory.cpp
     bindings/algorithms/py_SDRClassifier.cpp
     bindings/algorithms/py_SpatialPooler.cpp
-	)
-	
+    )
+
+set(src_py_sdr_files
+    bindings/sdr/sdr_module.cpp
+    bindings/sdr/py_SDR.cpp
+    bindings/sdr/py_SDR_Metrics.cpp
+    )
+
+set(src_py_encoders_files
+    bindings/encoders/encoders_module.cpp
+    bindings/encoders/py_ScalarEncoder.cpp
+    bindings/encoders/py_RDSE.cpp
+    )
+
 set(src_py_engine_files
     plugin/PyBindRegion.cpp
     plugin/PyBindRegion.hpp
@@ -64,17 +75,9 @@ set(src_py_engine_files
 	
 set(src_py_math_files
     bindings/math/math_module.cpp    
-    bindings/math/py_ArrayAlgo.cpp
-    bindings/math/py_Domain.cpp
-    bindings/math/py_Math.cpp
     bindings/math/py_Random.cpp
     bindings/math/py_reals.cpp
-    bindings/math/py_Set.cpp
-    bindings/math/py_SparseBinaryMatrix.cpp
-    bindings/math/py_SparseMatrix.cpp
-    bindings/math/py_SparseTensor.cpp
-    bindings/math/PyBindSparseTensor.hpp
-    bindings/math/SparseTensorIndex.hpp
+    bindings/math/py_Topology.cpp
     )
     
 set(src_py_test_files
@@ -84,38 +87,28 @@ set(src_py_test_files
 	
 #set up file tabs in Visual Studio
 source_group("algorithms" FILES ${src_py_algorithms_files})
-source_group("engine" FILES ${src_py_engine_files})
-source_group("math" FILES ${src_py_math_files})
-source_group("test" FILES ${src_py_test_files})
+source_group("sdr"        FILES ${src_py_sdr_files})
+source_group("encoders"   FILES ${src_py_encoders_files})
+source_group("engine"     FILES ${src_py_engine_files})
+source_group("math"       FILES ${src_py_math_files})
+source_group("test"       FILES ${src_py_test_files})
 ############################################################
 #
-# Build the three shared binding libraries for the Python Interface
+# Build the shared binding libraries for the Python Interface
 #
 ############################################################
 
 # setup the distr directory
 set(distr ${CMAKE_INSTALL_PREFIX}/distr)
 file(MAKE_DIRECTORY ${distr})
+file(COPY ${REPOSITORY_DIR}/py/. DESTINATION ${distr} PATTERN *)
 file(COPY ../packaging/. DESTINATION ${distr} PATTERN *)
-
-# set CPP standard. default for PyBind11 is C++14.  If requested standard not available it will fall back to C++11.
-if (MSVC)
-  set(PYBIND11_CPP_STANDARD /std:c++latest) # Enables MSVC C++17
-else()
-  set(PYBIND11_CPP_STANDARD -std=${INTERNAL_CPP_STANDARD})
-endif()
-
 
 # determine which version of binding to build
 if ("${BINDING_BUILD}" STREQUAL "Python2")
   set(PYBIND11_PYTHON_VERSION 2.7)
   # else Python3
 endif()
-if (MSVC)
-  set(PYBIND11_CPP_STANDARD -std:${INTERNAL_CPP_STANDARD})
-else(MSVC)
-  set(PYBIND11_CPP_STANDARD -std=${INTERNAL_CPP_STANDARD})
-endif(MSVC)
 add_subdirectory(${pybind11_SOURCE_DIR} ${pybind11_BINARY_DIR})
 set(pybind11_INCLUDE_DIRS ${pybind11_SOURCE_DIR}/include)
 
@@ -127,18 +120,52 @@ set(pybind11_INCLUDE_DIRS ${pybind11_SOURCE_DIR}/include)
 set(algorithms_shared_lib algorithms)
 pybind11_add_module(${algorithms_shared_lib} ${src_py_algorithms_files} )
 target_link_libraries(${algorithms_shared_lib} PRIVATE 
-		${core_library}
-		${COMMON_OS_LIBS}
-		)
+        ${core_library}
+        ${COMMON_OS_LIBS}
+        )
 target_compile_options(${algorithms_shared_lib} PUBLIC ${INTERNAL_CXX_FLAGS})
 target_compile_definitions(${algorithms_shared_lib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${algorithms_shared_lib} PRIVATE 
-		${PYTHON_INCLUDE_DIRS}
-		${pybind11_INCLUDE_DIRS}
-		${CORE_LIB_INCLUDES} 
-		${EXTERNAL_INCLUDES}
-		${PROJECT_SOURCE_DIR}
-		)
+        ${PYTHON_INCLUDE_DIRS}
+        ${pybind11_INCLUDE_DIRS}
+        ${CORE_LIB_INCLUDES} 
+        ${EXTERNAL_INCLUDES}
+        ${PROJECT_SOURCE_DIR}
+        )
+
+
+set(sdr_shared_lib sdr)
+pybind11_add_module(${sdr_shared_lib} ${src_py_sdr_files} )
+target_link_libraries(${sdr_shared_lib} PRIVATE
+        ${core_library}
+        ${COMMON_OS_LIBS}
+        )
+target_compile_options(${sdr_shared_lib} PUBLIC ${INTERNAL_CXX_FLAGS})
+target_compile_definitions(${sdr_shared_lib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+target_include_directories(${sdr_shared_lib} PRIVATE
+        ${PYTHON_INCLUDE_DIRS}
+        ${pybind11_INCLUDE_DIRS}
+        ${CORE_LIB_INCLUDES}
+        ${EXTERNAL_INCLUDES}
+        ${PROJECT_SOURCE_DIR}
+        )
+
+
+set(encoders_shared_lib encoders)
+pybind11_add_module(${encoders_shared_lib} ${src_py_encoders_files} )
+target_link_libraries(${encoders_shared_lib} PRIVATE 
+        ${core_library}
+        ${COMMON_OS_LIBS}
+        )
+target_compile_options(${encoders_shared_lib} PUBLIC ${INTERNAL_CXX_FLAGS})
+target_compile_definitions(${encoders_shared_lib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+target_include_directories(${encoders_shared_lib} PRIVATE 
+        ${PYTHON_INCLUDE_DIRS}
+        ${pybind11_INCLUDE_DIRS}
+        ${CORE_LIB_INCLUDES} 
+        ${EXTERNAL_INCLUDES}
+        ${PROJECT_SOURCE_DIR}
+        )
 
 
 set(engine_shared_lib engine_internal)
@@ -156,6 +183,7 @@ target_include_directories(${engine_shared_lib} PRIVATE
 		${EXTERNAL_INCLUDES}
 		${PROJECT_SOURCE_DIR}
 		)
+
 
 set(math_shared_lib math)
 pybind11_add_module(${math_shared_lib} ${src_py_math_files})
@@ -211,6 +239,8 @@ target_include_directories(${math_shared_lib} PRIVATE
 #
 ###################################################################
 install(TARGETS
+        sdr
+        encoders
         algorithms
         engine_internal
         math

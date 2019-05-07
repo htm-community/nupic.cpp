@@ -26,7 +26,6 @@
 #include <gtest/gtest.h>
 #include <nupic/utils/Random.hpp>
 
-#include <nupic/ntypes/MemStream.hpp>
 #include <nupic/os/Env.hpp>
 #include <nupic/utils/LoggingException.hpp>
 #include <nupic/os/Timer.hpp>
@@ -118,18 +117,18 @@ TEST(RandomTest, SerializationDeserialization) {
 
   EXPECT_EQ(r1.getUInt32(), 2276275187u) << "Before serialization must be same";
   // serialize
-  OMemStream ostream;
+  std::stringstream ostream;
   ostream << r1;
 
   // print out serialization for debugging
-  std::string x(ostream.str(), ostream.pcount());
+  std::string x(ostream.str());
 //  NTA_INFO << "random serialize string: '" << x << "'";
   // Serialization should be deterministic and platform independent
   const std::string expectedString = "random-v2 862973 101 endrandom-v2 ";
   EXPECT_EQ(expectedString, x) << "De/serialization";
 
   // deserialize into r2
-  std::string s(ostream.str(), ostream.pcount());
+  std::string s(ostream.str());
   std::stringstream ss(s);
   Random r2;
   ss >> r2;
@@ -181,6 +180,35 @@ TEST(RandomTest, testSerialization2) {
   remove("random3.stream");
 
   cout << "Random serialization: " << testTimer.getElapsed() << endl;
+}
+
+
+TEST(RandomTest, testSerialization_ar) {
+  // test serialization/deserialization
+  Random r1(862973);
+  for (int i = 0; i < 100; i++)
+    r1.getUInt32();
+
+  EXPECT_EQ(r1.getUInt32(), 2276275187u) << "Before serialization must be same";
+  // serialize
+  std::stringstream ss;
+  r1.saveToStream_ar(ss);
+
+  // deserialize into r2
+  Random r2;
+  r2.loadFromStream_ar(ss);
+
+  // r1 and r2 should be identical
+  EXPECT_EQ(r1, r2) << "load from serialization";
+  EXPECT_EQ(r2.getUInt32(), 3537119063u) << "Deserialized is not deterministic";
+  r1.getUInt32(); //move the same number of steps
+
+  UInt32 v1, v2;
+  for (int i = 0; i < 100; i++) {
+    v1 = r1.getUInt32();
+    v2 = r2.getUInt32();
+    EXPECT_EQ(v1, v2) << "serialization";
+  }
 }
 
 

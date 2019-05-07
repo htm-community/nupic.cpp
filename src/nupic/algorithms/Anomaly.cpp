@@ -20,84 +20,35 @@
  * ---------------------------------------------------------------------
  */
 
-#include <algorithm>
-#include <iterator>
-#include <numeric>
-#include <set>
-#include <vector>
-
 #include "nupic/algorithms/Anomaly.hpp"
 #include "nupic/utils/Log.hpp"
-#include "nupic/utils/MovingAverage.hpp"
 
 using namespace std;
+using namespace nupic;
+using namespace nupic::algorithms::anomaly;
+using namespace nupic::sdr;
 
 namespace nupic {
 namespace algorithms {
 namespace anomaly {
 
+Real computeRawAnomalyScore(const SDR& active,
+                            const SDR& predicted) {
 
-Real computeRawAnomalyScore(const vector<UInt>& active,
-                              const vector<UInt>& predicted)
-{
+  NTA_ASSERT(active.dimensions == predicted.dimensions); 
+
   // Return 0 if no active columns are present
-  if (active.size() == 0) {
-    return 0.0f;
+  if (active.getSum() == 0) {
+    return static_cast<Real>(0);
   }
-
-  set<UInt> active_{active.begin(), active.end()};
-  set<UInt> predicted_{predicted.begin(), predicted.end()};
-  vector<UInt> predictedActiveCols;
 
   // Calculate and return percent of active columns that were not predicted.
-  set_intersection(active_.begin(), active_.end(), predicted_.begin(),
-                   predicted_.end(), back_inserter(predictedActiveCols));
+  SDR both(active.dimensions);
+  both.intersection(active, predicted);
 
-  return (active.size() - predictedActiveCols.size()) / Real(active.size());
-}
-
-Anomaly::Anomaly(UInt slidingWindowSize, AnomalyMode mode, Real binaryAnomalyThreshold)
-    : binaryThreshold_(binaryAnomalyThreshold)
-{
-  NTA_CHECK(binaryAnomalyThreshold >= 0 && binaryAnomalyThreshold <= 1) << "binaryAnomalyThreshold must be within [0.0,1.0]";
-  mode_ = mode;
-  if (slidingWindowSize > 0) {
-    movingAverage_.reset(new nupic::util::MovingAverage(slidingWindowSize));
-  }
-}
-
-
-Real Anomaly::compute(const vector<UInt>& active, const vector<UInt>& predicted, int timestamp)
-{
-  Real anomalyScore = computeRawAnomalyScore(active, predicted);
-  Real likelihood = 0.5;
-  Real score = anomalyScore;
-  switch(mode_)
-  {
-    case AnomalyMode::PURE:
-      score = anomalyScore;
-      break;
-    case AnomalyMode::LIKELIHOOD:
-      likelihood = likelihood_.anomalyProbability(anomalyScore, timestamp);
-      score = 1 - likelihood;
-      break;
-    case AnomalyMode::WEIGHTED:
-      likelihood = likelihood_.anomalyProbability(anomalyScore, timestamp);
-      score = anomalyScore * (1 - likelihood);
-      break;
-  }
-
-  if (movingAverage_) {
-    score = movingAverage_->compute(score);
-  }
-
-  if (binaryThreshold_) {
-    score = (score >= binaryThreshold_) ? 1.0f : 0.0f;
-  }
-
+  const Real score = (active.getSum() - both.getSum()) / static_cast<Real>(active.getSum());
+  NTA_ASSERT(score >= 0.0f and score <= 1.0f) << "Anomaly score out of bounds!";
   return score;
 }
 
-} // namespace anomaly
-} // namespace algorithms
-} // namespace nupic
+}}} // End namespace

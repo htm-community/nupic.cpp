@@ -31,6 +31,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <nupic/engine/Output.hpp>
+#include <nupic/engine/Input.hpp>
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/Spec.hpp>
 #include <nupic/regions/VectorFileSensor.hpp>
@@ -47,22 +49,16 @@ namespace nupic {
 VectorFileSensor::VectorFileSensor(const ValueMap &params, Region *region)
     : RegionImpl(region),
 
-      repeatCount_(1), iterations_(0), curVector_(0), activeOutputCount_(0),
-      hasCategoryOut_(false), hasResetOut_(false),
+      iterations_(0), curVector_(0),
       dataOut_(NTA_BasicType_Real32), categoryOut_(NTA_BasicType_Real32),
       resetOut_(NTA_BasicType_Real32), filename_(""), scalingMode_("none"),
       recentFile_("") {
-  activeOutputCount_ =
-      params.getScalar("activeOutputCount")->getValue<UInt32>();
-  if (params.contains("hasCategoryOut"))
-    hasCategoryOut_ =
-        params.getScalar("hasCategoryOut")->getValue<UInt32>() == 1;
-  if (params.contains("hasResetOut"))
-    hasResetOut_ = params.getScalar("hasResetOut")->getValue<UInt32>() == 1;
+  repeatCount_ = params.getScalarT<UInt32>("repeatCount", 1);
+  activeOutputCount_ = params.getScalarT<UInt32>("activeOutputCount", 0);
+  hasCategoryOut_ = params.getScalarT<UInt32>("hasCategoryOut", 0) == 1;
+  hasResetOut_ = params.getScalarT<UInt32>("hasResetOut", 0) == 1;
   if (params.contains("inputFile"))
     filename_ = params.getString("inputFile");
-  if (params.contains("repeatCount"))
-    repeatCount_ = params.getScalar("repeatCount")->getValue<UInt32>();
 }
 
 VectorFileSensor::VectorFileSensor(BundleIO &bundle, Region *region)
@@ -76,14 +72,16 @@ VectorFileSensor::VectorFileSensor(BundleIO &bundle, Region *region)
 
 
 void VectorFileSensor::initialize() {
+  // NOTE: this is not called after deserialize.
   NTA_CHECK(region_ != nullptr);
   dataOut_ = region_->getOutput("dataOut")->getData();
-  categoryOut_ = region_->getOutput("categoryOut")->getData();
-  resetOut_ = region_->getOutput("resetOut")->getData();
 
-  if (dataOut_.getCount() != activeOutputCount_) {
+  if (activeOutputCount_ == 0)
+    activeOutputCount_ = (UInt32)dataOut_.getCount();
+  else if (dataOut_.getCount() != activeOutputCount_) {
     NTA_THROW << "VectorFileSensor::init - wrong output size: "
-              << dataOut_.getCount() << " should be: " << activeOutputCount_;
+              << dataOut_.getCount() << " should be: " << activeOutputCount_
+              << ". Are activeOutputCount parameter and dimensions both specified?";
   }
 }
 
@@ -94,6 +92,7 @@ VectorFileSensor::~VectorFileSensor() {}
 void VectorFileSensor::compute() {
   // It's not necessarily an error to have no outputs. In this case we just
   // return
+  dataOut_ = region_->getOutput("dataOut")->getData();
   if (dataOut_.getCount() == 0)
     return;
 
@@ -120,18 +119,23 @@ void VectorFileSensor::compute() {
   UInt offset = 0;
 
   if (hasCategoryOut_) {
+    categoryOut_ = region_->getOutput("categoryOut")->getData();
     Real *categoryOut = reinterpret_cast<Real *>(categoryOut_.getBuffer());
     vectorFile_.getRawVector((nupic::UInt)curVector_, categoryOut, offset, 1);
     offset++;
+    NTA_DEBUG << "compute " << *region_->getOutput("categoryOut") << "\n";
   }
 
   if (hasResetOut_) {
+    resetOut_ = region_->getOutput("resetOut")->getData();
     Real *resetOut = reinterpret_cast<Real *>(resetOut_.getBuffer());
     vectorFile_.getRawVector((nupic::UInt)curVector_, resetOut, offset, 1);
     offset++;
+    NTA_DEBUG << "compute " << *region_->getOutput("reset") << "\n";
   }
 
   vectorFile_.getScaledVector((nupic::UInt)curVector_, out, offset, count);
+  NTA_DEBUG << "compute " << *region_->getOutput("dataOut") << "\n";
   iterations_++;
 }
 
@@ -280,7 +284,7 @@ void VectorFileSensor::seek(int n) {
 }
 
 size_t
-VectorFileSensor::getNodeOutputElementCount(const std::string &outputName) {
+VectorFileSensor::getNodeOutputElementCount(const std::string &outputName) const {
   NTA_CHECK(outputName == "dataOut") << "Invalid output name: " << outputName;
   return activeOutputCount_;
 }
@@ -292,6 +296,17 @@ void VectorFileSensor::serialize(BundleIO &bundle) {
     << ((filename_ == "")?std::string("empty"):filename_) << " "
     << ((scalingMode_ == "")?std::string("empty"):scalingMode_) << " "
     << ((recentFile_ == "")?std::string("empty"):recentFile_) << std::endl;
+  f << "outputs [";
+  std::map<std::string, Output *> outputs = region_->getOutputs();
+  for (auto iter : outputs) {
+    const Array &outputBuffer = iter.second->getData();
+    if (outputBuffer.getCount() != 0) {
+      f << iter.first << " ";
+      outputBuffer.save(f);
+    }
+  }
+  f << "] "; // end of all output buffers
+  
   f << "[" << std::endl;
   vectorFile_.save(f);
   f << "]" << std::endl;
@@ -307,6 +322,18 @@ void VectorFileSensor::deserialize(BundleIO &bundle) {
   if (filename_ == "empty") filename_ = "";
   if (scalingMode_ == "empty") scalingMode_ = "";
   if (recentFile_ == "empty") recentFile_ = "";
+  f >> tag;
+  NTA_CHECK(tag == "outputs");
+  f.ignore(1);
+  NTA_CHECK(f.get() == '['); // start of outputs
+  while (true) {
+    f >> tag;
+    f.ignore(1);
+    if (tag == "]")
+      break;
+    Array& a = getOutput(tag)->getData();
+    a.load(f);
+  }
   f >> tag;
   NTA_CHECK(tag == "[");
   f.ignore(1);

@@ -29,6 +29,7 @@
 
 #include <nupic/algorithms/Connections.hpp>
 #include <nupic/types/Types.hpp>
+#include <nupic/types/Sdr.hpp>
 #include <nupic/types/Serializable.hpp>
 #include <nupic/utils/Random.hpp>
 #include <vector>
@@ -41,11 +42,7 @@ namespace temporal_memory {
 
 using namespace std;
 using namespace nupic;
-using nupic::algorithms::connections::Connections;
-using nupic::algorithms::connections::Permanence;
-using nupic::algorithms::connections::Segment;
-using nupic::algorithms::connections::CellIdx;
-using nupic::algorithms::connections::Synapse;
+using namespace nupic::algorithms::connections;
 
 /**
  * Temporal Memory implementation in C++.
@@ -140,37 +137,37 @@ public:
    * something like 4% * 0.01 = 0.0004).
    */
   TemporalMemory(
-      vector<UInt>    columnDimensions,
-      UInt            cellsPerColumn              = 32,
-      UInt            activationThreshold         = 13,
+      vector<CellIdx> columnDimensions,
+      CellIdx         cellsPerColumn              = 32,
+      SynapseIdx      activationThreshold         = 13,
       Permanence      initialPermanence           = 0.21,
       Permanence      connectedPermanence         = 0.50,
-      UInt            minThreshold                = 10,
-      UInt            maxNewSynapseCount          = 20,
+      SynapseIdx      minThreshold                = 10,
+      SynapseIdx      maxNewSynapseCount          = 20,
       Permanence      permanenceIncrement         = 0.10,
       Permanence      permanenceDecrement         = 0.10,
       Permanence      predictedSegmentDecrement   = 0.0,
       Int             seed                        = 42,
-      UInt            maxSegmentsPerCell          = 255,
-      UInt            maxSynapsesPerSegment       = 255,
+      SegmentIdx      maxSegmentsPerCell          = 255,
+      SynapseIdx      maxSynapsesPerSegment       = 255,
       bool            checkInputs                 = true,
       UInt            extra                       = 0);
 
   virtual void
   initialize(
-    vector<UInt>  columnDimensions            = {2048},
-    UInt          cellsPerColumn              = 32,
-    UInt          activationThreshold         = 13,
+    vector<CellIdx>  columnDimensions            = {2048},
+    CellIdx          cellsPerColumn              = 32,
+    SynapseIdx       activationThreshold         = 13,
     Permanence    initialPermanence           = 0.21,
     Permanence    connectedPermanence         = 0.50,
-    UInt          minThreshold                = 10,
-    UInt          maxNewSynapseCount          = 20,
+    SynapseIdx    minThreshold                = 10,
+    SynapseIdx    maxNewSynapseCount          = 20,
     Permanence    permanenceIncrement         = 0.10,
     Permanence    permanenceDecrement         = 0.10,
     Permanence    predictedSegmentDecrement   = 0.0,
     Int           seed                        = 42,
-    UInt          maxSegmentsPerCell          = 255,
-    UInt          maxSynapsesPerSegment       = 255,
+    SegmentIdx    maxSegmentsPerCell          = 255,
+    SynapseIdx    maxSynapsesPerSegment       = 255,
     bool          checkInputs                 = true,
     UInt          extra                       = 0);
 
@@ -188,11 +185,6 @@ public:
   virtual UInt version() const;
 
   /**
-   * This *only* updates _rng to a new Random using seed.
-   */
-  void seed_(UInt64 seed);
-
-  /**
    * Indicates the start of a new sequence.
    * Resets sequence state of the TM.
    */
@@ -202,17 +194,14 @@ public:
    * Calculate the active cells, using the current active columns and
    * dendrite segments. Grow and reinforce synapses.
    *
-   * @param activeColumnsSize
-   * Size of activeColumns array (the 2nd param)
-   *
    * @param activeColumns
    * A sorted list of active column indices.
    *
    * @param learn
    * If true, reinforce / punish / grow synapses.
    */
-  void activateCells(const size_t activeColumnsSize, const UInt activeColumns[],
-                     bool learn = true);
+  void activateCells(const sdr::SDR &activeColumns, 
+		     const bool learn = true);
 
   /**
    * Calculate dendrite segment activity, using the current active cells.  Call
@@ -226,18 +215,27 @@ public:
    * used during segment cleanup.
    *
    * @param extraActive
-   * Vector of active external predictive inputs.  External inputs must be cell
+   * (optional) SDR of active external predictive inputs.  External inputs must be cell
    * indexes in the range [0, extra).
    *
    * @param extraWinners
-   * Vector of winning external predictive inputs.  When learning, only these
-   * inputs are considered active.  ExtraWinners should be a subset of
-   * extraActive.  External inputs must be cell indexes in the range [0,
-   * extra).
+   * (optional) SDR of winning external predictive inputs.  When learning, only these
+   * inputs are considered active.  
+   * ExtraWinners must be a subset of extraActive.  
+   * External inputs must be cell indices in the range [0, extra).
+   *
+   * See TM::compute() for details of the parameters. 
+   *
    */
-  void activateDendrites(bool learn = true,
-                         const vector<UInt> &extraActive  = {std::numeric_limits<UInt>::max()},
-                         const vector<UInt> &extraWinners = {std::numeric_limits<UInt>::max()});
+  void activateDendrites(const bool learn,
+                         const sdr::SDR &extraActive, 
+			                   const sdr::SDR &extraWinners);
+
+  inline void activateDendrites(const bool learn = true) {
+    const sdr::SDR extraActive(std::vector<UInt>{ extra });
+    const sdr::SDR extraWinners(std::vector<UInt>{extra });
+    activateDendrites(learn, extraActive, extraWinners);
+  }
 
   /**
    * Perform one time step of the Temporal Memory algorithm.
@@ -246,29 +244,31 @@ public:
    * the TemporalMemory via its compute method ensures that you'll always
    * be able to call getActiveCells at the end of the time step.
    *
-   * @param activeColumnsSize
-   * Number of active columns.
-   *
    * @param activeColumns
-   * Sorted list of indices of active columns.
+   * Sorted SDR of active columns.
    *
    * @param learn
    * Whether or not learning is enabled.
    *
    * @param extraActive
-   * Vector of active external predictive inputs.  External inputs must be cell
-   * indexes in the range [0, extra).
+   * (optional) Vector of active external predictive inputs.  
+   * External inputs must be cell indexes in the range [0, extra). 
+   * TM must be set up with the 'extra' constructor parameter for this use.
    *
    * @param extraWinners
-   * Vector of winning external predictive inputs.  When learning, only these
-   * inputs are considered active.  ExtraWinners should be a subset of
-   * extraActive.  External inputs must be cell indexes in the range [0,
-   * extra).
+   * (optional) Vector of winning external predictive inputs.  When learning, only these
+   * inputs are considered active.  
+   * ExtraWinners must be a subset of extraActive.  
+   * External inputs must be cell indexes in the range [0, extra).
+   *
    */
-  virtual void compute(size_t activeColumnsSize, const UInt activeColumns[],
-                       bool learn = true,
-                       const vector<UInt> &extraActive  = {std::numeric_limits<UInt>::max()},
-                       const vector<UInt> &extraWinners = {std::numeric_limits<UInt>::max()});
+  virtual void compute(const sdr::SDR &activeColumns, 
+		       const bool learn,
+                       const sdr::SDR &extraActive, 
+		       const sdr::SDR &extraWinners);
+
+  virtual void compute(const sdr::SDR &activeColumns, 
+		       const bool learn = true); 
 
   // ==============================
   //  Helper functions
@@ -286,44 +286,45 @@ public:
    * @return Segment
    * The created segment.
    */
-  Segment createSegment(CellIdx cell);
+  Segment createSegment(const CellIdx& cell);
 
   /**
-   * Returns the indices of cells that belong to a column.
+   * Returns the indices of cells that belong to a mini-column.
    *
    * @param column Column index
    *
    * @return (vector<CellIdx>) Cell indices
    */
-  vector<CellIdx> cellsForColumn(Int column);
+  vector<CellIdx> cellsForColumn(CellIdx column);
 
   /**
    * Returns the number of cells in this layer.
    *
-   * @return (int) Number of cells
+   * @return (size_t) Number of cells
    */
-  UInt numberOfCells(void) const;
+  size_t numberOfCells(void) const { return connections.numCells(); }
 
   /**
    * Returns the indices of the active cells.
    *
    * @returns (std::vector<CellIdx>) Vector of indices of active cells.
    */
-  vector<CellIdx> getActiveCells() const;
+  vector<CellIdx> getActiveCells() const; //TODO remove
+  void getActiveCells(sdr::SDR &activeCells) const;
 
   /**
-   * Returns the indices of the predictive cells.
-   *
-   * @returns (std::vector<CellIdx>) Vector of indices of predictive cells.
+   * @return SDR with indices of the predictive cells.
+   * SDR dimensions are {TM column dims x TM cells per column}
    */
-  vector<CellIdx> getPredictiveCells() const;
+  sdr::SDR getPredictiveCells() const;
 
   /**
    * Returns the indices of the winner cells.
    *
    * @returns (std::vector<CellIdx>) Vector of indices of winner cells.
    */
-  vector<CellIdx> getWinnerCells() const;
+  vector<CellIdx> getWinnerCells() const; //TODO remove?
+  void getWinnerCells(sdr::SDR &winnerCells) const;
 
   vector<Segment> getActiveSegments() const;
   vector<Segment> getMatchingSegments() const;
@@ -333,29 +334,29 @@ public:
    *
    * @returns Integer number of column dimension
    */
-  vector<UInt> getColumnDimensions() const;
+  vector<CellIdx> getColumnDimensions() const { return columnDimensions_; }
 
   /**
    * Returns the total number of columns.
    *
    * @returns Integer number of column numbers
    */
-  UInt numberOfColumns() const;
+  size_t numberOfColumns() const { return numColumns_; }
 
   /**
    * Returns the number of cells per column.
    *
    * @returns Integer number of cells per column
    */
-  UInt getCellsPerColumn() const;
+  size_t getCellsPerColumn() const { return cellsPerColumn_; }
 
   /**
    * Returns the activation threshold.
    *
    * @returns Integer number of the activation threshold
    */
-  UInt getActivationThreshold() const;
-  void setActivationThreshold(UInt);
+  SynapseIdx getActivationThreshold() const;
+  void setActivationThreshold(const SynapseIdx);
 
   /**
    * Returns the initial permanence.
@@ -363,7 +364,7 @@ public:
    * @returns Initial permanence
    */
   Permanence getInitialPermanence() const;
-  void setInitialPermanence(Permanence);
+  void setInitialPermanence(const Permanence);
 
   /**
    * Returns the connected permanance.
@@ -377,8 +378,8 @@ public:
    *
    * @returns Integer number of minimum threshold
    */
-  UInt getMinThreshold() const;
-  void setMinThreshold(UInt);
+  SynapseIdx getMinThreshold() const;
+  void setMinThreshold(const SynapseIdx);
 
   /**
    * Returns the maximum number of synapses that can be added to a segment
@@ -386,8 +387,8 @@ public:
    *
    * @returns Integer number of maximum new synapse count
    */
-  UInt getMaxNewSynapseCount() const;
-  void setMaxNewSynapseCount(UInt);
+  SynapseIdx getMaxNewSynapseCount() const;
+  void setMaxNewSynapseCount(const SynapseIdx);
 
   /**
    * Get and set the checkInputs parameter.
@@ -424,21 +425,14 @@ public:
    *
    * @returns Max segments per cell
    */
-  UInt getMaxSegmentsPerCell() const;
+  SegmentIdx getMaxSegmentsPerCell() const;
 
   /**
    * Returns the maxSynapsesPerSegment.
    *
    * @returns Max synapses per segment
    */
-  UInt getMaxSynapsesPerSegment() const;
-
-	/**
-	 * Raises an error if cell index is invalid.
-	 *
-	 * @param cell Cell index
-	 */
-	bool _validateCell(const CellIdx cell) const;
+  SynapseIdx getMaxSynapsesPerSegment() const;
 
   /**
    * Save (serialize) the current state of the spatial pooler to the
@@ -447,7 +441,7 @@ public:
    * @param fd A valid file descriptor.
    */
   virtual void save(ostream &outStream) const override;
-
+  
 
   /**
    * Load (deserialize) and initialize the spatial pooler from the
@@ -457,18 +451,117 @@ public:
    */
   virtual void load(istream &inStream) override;
 
+  CerealAdapter;
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar(CEREAL_NVP(numColumns_),
+       CEREAL_NVP(cellsPerColumn_),
+       CEREAL_NVP(activationThreshold_),
+       CEREAL_NVP(initialPermanence_),
+       CEREAL_NVP(connectedPermanence_),
+       CEREAL_NVP(minThreshold_),
+       CEREAL_NVP(maxNewSynapseCount_),
+       CEREAL_NVP(checkInputs_),
+       CEREAL_NVP(permanenceIncrement_),
+       CEREAL_NVP(permanenceDecrement_),
+       CEREAL_NVP(predictedSegmentDecrement_),
+       CEREAL_NVP(extra_),
+       CEREAL_NVP(maxSegmentsPerCell_),
+       CEREAL_NVP(maxSynapsesPerSegment_),
+       CEREAL_NVP(iteration_),
+       CEREAL_NVP(rng_),
+       CEREAL_NVP(columnDimensions_),
+       CEREAL_NVP(activeCells_),
+       CEREAL_NVP(winnerCells_),
+       CEREAL_NVP(segmentsValid_),
+       CEREAL_NVP(anomaly_),
+       CEREAL_NVP(connections));
 
-  /**
-   * Returns the number of bytes that a save operation would result in.
-   * Note: this method is currently somewhat inefficient as it just does
-   * a full save into an ostream and counts the resulting size.
-   *
-   * @returns Integer number of bytes
-   */
-  virtual size_t persistentSize() const;
+    ar( cereal::make_size_tag(activeSegments_.size()));
+    for (Segment segment : activeSegments_) {
+      const CellIdx cell = connections.cellForSegment(segment);
+      const vector<Segment> &segments = connections.segmentsForCell(cell);
 
-  bool operator==(const TemporalMemory &other);
-  bool operator!=(const TemporalMemory &other);
+      SegmentIdx idx = (SegmentIdx)std::distance(
+                          segments.begin(), 
+                          std::find(segments.begin(), 
+                          segments.end(), segment));
+      ar(idx, cell, numActiveConnectedSynapsesForSegment_[segment]);
+    }
+
+    ar(cereal::make_size_tag(matchingSegments_.size()));
+    for (Segment segment : matchingSegments_) {
+      const CellIdx cell = connections.cellForSegment(segment);
+      const vector<Segment> &segments = connections.segmentsForCell(cell);
+
+      SegmentIdx idx = (SegmentIdx)std::distance(
+                          segments.begin(), 
+                          std::find(segments.begin(), 
+                          segments.end(), segment));
+      ar(idx, cell, numActivePotentialSynapsesForSegment_[segment]);
+    }
+
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    ar(CEREAL_NVP(numColumns_),
+       CEREAL_NVP(cellsPerColumn_),
+       CEREAL_NVP(activationThreshold_),
+       CEREAL_NVP(initialPermanence_),
+       CEREAL_NVP(connectedPermanence_),
+       CEREAL_NVP(minThreshold_),
+       CEREAL_NVP(maxNewSynapseCount_),
+       CEREAL_NVP(checkInputs_),
+       CEREAL_NVP(permanenceIncrement_),
+       CEREAL_NVP(permanenceDecrement_),
+       CEREAL_NVP(predictedSegmentDecrement_),
+       CEREAL_NVP(extra_),
+       CEREAL_NVP(maxSegmentsPerCell_),
+       CEREAL_NVP(maxSynapsesPerSegment_),
+       CEREAL_NVP(iteration_),
+       CEREAL_NVP(rng_),
+       CEREAL_NVP(columnDimensions_),
+       CEREAL_NVP(activeCells_),
+       CEREAL_NVP(winnerCells_),
+       CEREAL_NVP(segmentsValid_),
+       CEREAL_NVP(anomaly_),
+       CEREAL_NVP(connections));
+
+    numActiveConnectedSynapsesForSegment_.assign(connections.segmentFlatListLength(), 0);
+    cereal::size_type numActiveSegments;
+    ar(cereal::make_size_tag(numActiveSegments));
+    activeSegments_.resize(numActiveSegments);
+    for (cereal::size_type i = 0; i < numActiveSegments; i++) {
+      SegmentIdx idx;
+      CellIdx cellIdx;
+      SynapseIdx syn;
+      ar(idx, cellIdx, syn);
+      Segment segment = connections.getSegment(cellIdx, idx);
+      activeSegments_[i] = segment;
+      numActiveConnectedSynapsesForSegment_[segment] = syn;
+    }
+
+    numActivePotentialSynapsesForSegment_.assign(connections.segmentFlatListLength(), 0);
+    cereal::size_type numMatchingSegments;
+    ar(cereal::make_size_tag(numMatchingSegments));
+    matchingSegments_.resize(numMatchingSegments);
+    for (size_t i = 0; i < numMatchingSegments; i++) {
+      SegmentIdx idx;
+      CellIdx cellIdx;
+      SynapseIdx syn;
+      ar(idx, cellIdx, syn);
+      Segment segment = connections.getSegment(cellIdx, idx);
+      matchingSegments_[i] = segment;
+      numActivePotentialSynapsesForSegment_[segment] = syn;
+    }
+
+    lastUsedIterationForSegment_.resize(connections.segmentFlatListLength());
+
+  }
+
+
+  virtual bool operator==(const TemporalMemory &other) const;
+  inline bool operator!=(const TemporalMemory &other) const { return not this->operator==(other); }
 
   //----------------------------------------------------------------------
   // Debugging helpers
@@ -480,7 +573,14 @@ public:
   void printParameters();
 
   /**
-   * Returns the index of the column that a cell belongs to.
+   * Returns the index of the (mini-)column that a cell belongs to.
+   * 
+   * Mini columns are an organizational unit in TM, 
+   * each mini column consists for cellsPerColumns cells. 
+   * There's no topology between cells within a mini-column, cells
+   * are organized as a flat array 
+   * `col{i} = [cell{i*CPS}, cell{i*CPS +1}, ..., cell{i*CPS + CPS-1}], 
+   * where CPS stands for cellsPerColumn`
    *
    * @param cell Cell index
    *
@@ -489,22 +589,27 @@ public:
   UInt columnForCell(const CellIdx cell) const;
 
   /**
-   * Print the given UInt array in a nice format
+   *  cellsToColumns
+   *  converts active cells to columnar representation, 
+   *  see columnForCell() for details.
+   *
+   *  @param const SDR& cells - input cells, size must be a multiple of cellsPerColumn; ie. 
+   *    all SDRs obtained from TM's get*Cells(SDR) are valid. 
+   *    The SDR cells dimensions must be: {TM.getColumnDimensions, TM.getCellsPerColumn()}
+   *
+   *  @return SDR cols - which is size of TM's getColumnDimensions()
+   *
    */
-  void printState(vector<UInt> &state);
-
-  /**
-   * Print the given Real array in a nice format
-   */
-  void printState(vector<Real> &state);
+  sdr::SDR cellsToColumns(const sdr::SDR& cells) const;
 
 protected:
-  UInt numColumns_;
-  vector<UInt> columnDimensions_;
-  UInt cellsPerColumn_;
-  UInt activationThreshold_;
-  UInt minThreshold_;
-  UInt maxNewSynapseCount_;
+  //all these could be const
+  CellIdx numColumns_;
+  vector<CellIdx> columnDimensions_;
+  CellIdx cellsPerColumn_;
+  SynapseIdx activationThreshold_;
+  SynapseIdx minThreshold_;
+  SynapseIdx maxNewSynapseCount_;
   bool checkInputs_;
   Permanence initialPermanence_;
   Permanence connectedPermanence_;
@@ -512,24 +617,36 @@ protected:
   Permanence permanenceDecrement_;
   Permanence predictedSegmentDecrement_;
   UInt extra_;
+  SegmentIdx maxSegmentsPerCell_;
+  SynapseIdx maxSynapsesPerSegment_;
 
+private:
   vector<CellIdx> activeCells_;
   vector<CellIdx> winnerCells_;
   bool segmentsValid_;
   vector<Segment> activeSegments_;
   vector<Segment> matchingSegments_;
-  vector<UInt32> numActiveConnectedSynapsesForSegment_;
-  vector<UInt32> numActivePotentialSynapsesForSegment_;
+  vector<SynapseIdx> numActiveConnectedSynapsesForSegment_;
+  vector<SynapseIdx> numActivePotentialSynapsesForSegment_;
 
-  UInt maxSegmentsPerCell_;
-  UInt maxSynapsesPerSegment_;
   UInt64 iteration_;
   vector<UInt64> lastUsedIterationForSegment_;
+
+  Real anomaly_;
 
   Random rng_;
 
 public:
-  Connections connections;
+  Connections connections; //TODO not public!
+  const UInt &extra = extra_;
+  /*
+   *  anomaly score computed for the current inputs
+   *  (auto-updates after each call to TM::compute())
+   *
+   *  @return a float value from computeRawAnomalyScore()
+   *  from Anomaly.hpp
+   */
+  const Real &anomaly = anomaly_;
 };
 
 } // end namespace temporal_memory

@@ -109,7 +109,7 @@
 // A.setBuffer(sdr)                  -- set un-owned SDR
 // A.zeroBuffer()                    -- fills A with 0's, A retains type and size.
 // A.releaseBuffer()                 -- free everything (if owned)
-// A.getSDR()                        -- get pointer to enclosed SDR
+// A.getSDR()                        -- get reference to enclosed SDR
 // A.getBufferSize( )                -- size of buffer in bytes
 // A.getMaxElementsCount()           -- capacity in number of elements 
 // A.setCount(count)                 -- truncate buffer size to this length, keeping capacity.   (not SDR)
@@ -122,6 +122,7 @@
 // cout << A << std::endl;           -- stream out
 // cin  >> A;                        -- stream in
 // A == B                            -- equals overload
+// A == v                            -- equals a vector
 // A != B                            -- not equals overload
 //
 // SERIALIZATION
@@ -164,10 +165,13 @@
 #define NTA_ARRAY_HPP
 
 #include <cstring>
+
 #include <nupic/ntypes/ArrayBase.hpp>
-#include <nupic/types/BasicType.hpp>
+
+#include <nupic/ntypes/BasicType.hpp>
 #include <nupic/ntypes/Dimensions.hpp>
 #include <nupic/utils/Log.hpp>
+#include <nupic/types/Serializable.hpp>
 
 namespace nupic {
 class Array : public ArrayBase {
@@ -191,14 +195,16 @@ public:
   /**
    * Create an ArrayBase containing a copy of an SDR.
    */
-  Array(const SDR &sdr) : ArrayBase(sdr) {}
+  Array(const sdr::SDR &sdr) : ArrayBase(sdr) {}
 
   /**
    * Create an ArrayBase with type and data from vector
+   *  -- The templated constructor did not seem to work so
+   *  defining explicitly.
    */
   template <typename T> 
-  Array(const std::vector<T> &vect) {
-    type_ = BasicType::getType<T>();
+  Array(const std::vector<T> &vect) 
+      : ArrayBase(BasicType::getType<T>()) {
     allocateBuffer(vect.size());
     if (has_buffer())
       memcpy(getBuffer(), vect.data(), count_ * BasicType::getSize(type_));
@@ -224,15 +230,14 @@ public:
     Array a(type_);
     if (getCount() > 0) {
       if (type_ == NTA_BasicType_SDR)
-        a.allocateBuffer(getSDR()->dimensions);
+        a.allocateBuffer(getSDR().dimensions);
       else
         a.allocateBuffer(getCount());
-      memcpy((char *)a.getBuffer(), (char *)getBuffer(),
+      std::memcpy(static_cast<char *>(a.getBuffer()), static_cast<const char *>(getBuffer()),
              getCount() * BasicType::getSize(type_));
     }
     return a;
   }
-
 
   /**
    * Convert to a vector; copies buffer, With conversion
@@ -259,12 +264,12 @@ public:
     * The vector is assumed to contain only dense format data.
     */
   template <typename T> void populate(const std::vector<T> &v) {
-    NTA_CHECK(typeid(T) != typeid(SDR)) << "A vector<SDR> not allowed.";
+    NTA_CHECK(typeid(T) != typeid(sdr::SDR)) << "A vector<SDR> not allowed.";
     NTA_BasicType fromType = BasicType::getType<T>();
     allocateBuffer(v.size());
     if (getCount() > 0) {
       if (getType() == NTA_BasicType_SDR) {
-        getSDR()->setDense(v);
+        getSDR().setDense(v);
         RefreshCache(); 
       } else {
         BasicType::convertArray(getBuffer(), getType(), v.data(), fromType,v.size());
@@ -279,7 +284,7 @@ public:
     */
   Array get_as(NTA_BasicType type) const {
     Array a(type);
-    a.allocateBuffer(getMaxElementsCount());
+    a.allocateBuffer(getCount());
     a.zeroBuffer();
     convertInto(a);
     return a;
@@ -309,12 +314,17 @@ public:
     NTA_CHECK(type_ != NTA_BasicType_SDR) << "subset() not valid for SDR";
     Array a(type_);
     a.allocateBuffer(count);
-    memcpy(a.getBuffer(),
-            (char *)getBuffer() + offset * BasicType::getSize(type_),
+    std::memcpy(a.getBuffer(),
+            static_cast<const char *>(getBuffer()) + offset * BasicType::getSize(type_),
             count * BasicType::getSize(type_));
     return a;
   }
 };
 } // namespace nupic
+
+CEREAL_REGISTER_TYPE(nupic::Array)
+CEREAL_REGISTER_POLYMORPHIC_RELATION(nupic::ArrayBase, nupic::Array)
+
+
 
 #endif

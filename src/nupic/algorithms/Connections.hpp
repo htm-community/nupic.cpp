@@ -28,10 +28,11 @@
 #define NTA_CONNECTIONS_HPP
 
 #include <climits>
+#include <map>
+#include <set>
 #include <utility>
 #include <vector>
 
-#include <nupic/math/Math.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/types/Serializable.hpp>
 #include <nupic/types/Sdr.hpp>
@@ -40,16 +41,16 @@ namespace nupic {
 namespace algorithms {
 namespace connections {
 
-typedef UInt32 CellIdx;
-typedef UInt16 SegmentIdx; /** Index of segment in cell. */
-typedef UInt16 SynapseIdx; /** Index of synapse in segment. */
-typedef UInt32 Segment;    /** Index of segment's data. */
-typedef UInt32 Synapse;    /** Index of synapse's data. */
-typedef Real32 Permanence;
+//TODO instead of typedefs, use templates for proper type-checking?
+using CellIdx   = nupic::sdr::ElemSparse; // CellIdx must match with sdr::ElemSparse, to change, change it there
+using SegmentIdx= UInt16; /** Index of segment in cell. */
+using SynapseIdx= UInt16; /** Index of synapse in segment. */ //TODO profile to use better (smaller?) types
+using Segment   = UInt32;    /** Index of segment's data. */
+using Synapse   = UInt32;    /** Index of synapse's data. */
+using Permanence= Real32; //TODO experiment with half aka float16
 const Permanence minPermanence = 0.0f;
 const Permanence maxPermanence = 1.0f;
 
-static const Permanence EPSILON = 0.00001f;
 
 /**
  * SynapseData class used in Connections.
@@ -90,6 +91,7 @@ struct SegmentData {
 
 /**
  * CellData class used in Connections.
+ * A cell consists of segments and in Connections is indexed by CellIdx.
  *
  * @b Description
  * The CellData contains the underlying data for a Cell.
@@ -184,8 +186,17 @@ public:
    * @param numCells           Number of cells.
    * @param connectedThreshold Permanence threshold for synapses connecting or
    *                           disconnecting.
+   *
+   * @params timeseries - Optional, default false.  If true AdaptSegment will not
+   * apply the same learning update to a synapse on consequetive cycles, because
+   * then staring at the same object for too long will mess up the synapses.
+   * IE Highly correlated inputs will cause the synapse permanences to saturate.
+   * This change allows it to work with timeseries data which moves very slowly,
+   * instead of the usual HTM inputs which reliably change every cycle.  See
+   * also (Kropff & Treves, 2007. http://dx.doi.org/10.2976/1.2793335).
    */
-  Connections(CellIdx numCells, Permanence connectedThreshold = 0.5f);
+  Connections(CellIdx numCells, Permanence connectedThreshold = 0.5f,
+              bool timeseries = false);
 
   virtual ~Connections() {}
 
@@ -195,8 +206,10 @@ public:
    * @param numCells           Number of cells.
    * @param connectedThreshold Permanence threshold for synapses connecting or
    *                           disconnecting.
+   * @param timeseries         See constructor.
    */
-  void initialize(CellIdx numCells, Permanence connectedThreshold = 0.5f);
+  void initialize(CellIdx numCells, Permanence connectedThreshold = 0.5f,
+                  bool timeseries = false);
 
   /**
    * Creates a segment on the specified cell.
@@ -333,7 +346,7 @@ public:
    *
    * @retval A vector length
    */
-  UInt32 segmentFlatListLength() const;
+  size_t segmentFlatListLength() const { return segments_.size(); };
 
   /**
    * Compare two segments. Returns true if a < b.
@@ -358,6 +371,11 @@ public:
   synapsesForPresynapticCell(CellIdx presynapticCell) const;
 
   /**
+   * For use with time-series datasets.
+   */
+  void reset();
+
+  /**
    * Compute the segment excitations for a vector of active presynaptic
    * cells.
    *
@@ -373,44 +391,13 @@ public:
    *
    * @param activePresynapticCells
    * Active cells in the input.
-   *
-   * @param connectedPermanence
-   * Minimum permanence for a synapse to be "connected".
    */
-  void
-  computeActivity(std::vector<UInt32> &numActiveConnectedSynapsesForSegment,
-                  std::vector<UInt32> &numActivePotentialSynapsesForSegment,
-                  const std::vector<CellIdx> &activePresynapticCells,
-                  Permanence connectedPermanence) const;
+  void computeActivity(std::vector<SynapseIdx> &numActiveConnectedSynapsesForSegment,
+                       std::vector<SynapseIdx> &numActivePotentialSynapsesForSegment,
+                       const std::vector<CellIdx> &activePresynapticCells);
 
-  void
-  computeActivity(std::vector<UInt32> &numActiveConnectedSynapsesForSegment,
-                  const std::vector<CellIdx> &activePresynapticCells) const;
-
-  /**
-   * Compute the segment excitations for a single active presynaptic cell.
-   *
-   * The output vectors aren't grown or cleared. They must be
-   * preinitialized with the length returned by
-   * getSegmentFlatVectorLength().
-   *
-   * @param numActiveConnectedSynapsesForSegment
-   * An output vector for active connected synapse counts per segment.
-   *
-   * @param numActivePotentialSynapsesForSegment
-   * An output vector for active potential synapse counts per segment.
-   *
-   * @param activePresynapticCells
-   * Active cells in the input.
-   *
-   * @param connectedPermanence
-   * Minimum permanence for a synapse to be "connected".
-   */
-  void
-  computeActivity(std::vector<UInt32> &numActiveConnectedSynapsesForSegment,
-                  std::vector<UInt32> &numActivePotentialSynapsesForSegment,
-                  CellIdx activePresynapticCell,
-                  Permanence connectedPermanence) const;
+  void computeActivity(std::vector<SynapseIdx> &numActiveConnectedSynapsesForSegment,
+                       const std::vector<CellIdx> &activePresynapticCells);
 
   /**
    * The primary method in charge of learning.   Adapts the permanence values of
@@ -425,21 +412,20 @@ public:
    * @param increment  Change in permanence for synapses with active presynapses.
    * @param decrement  Change in permanence for synapses with inactive presynapses.
    */
-  void adaptSegment(const Segment segment, SDR &inputs,
+  void adaptSegment(const Segment segment,
+                    const sdr::SDR &inputs,
                     const Permanence increment,
                     const Permanence decrement);
 
   /**
    * Ensures a minimum number of connected synapses.  This raises permance
    * values until the desired number of synapses have permanences above the
-   * permanenceThreshold.  This is applied to a single segment.
+   * connectedThreshold.  This is applied to a single segment.
    *
    * @param segment  Index of segment on cell.   Is returned by method getSegment.
-   * @param permanenceThreshold  Connected threshold of synapses
-   * @param segmentThreshold  Desired number of connected synapses
+   * @param segmentThreshold  Desired number of connected synapses.
    */
   void raisePermanencesToThreshold(const Segment    segment,
-                                   const Permanence permanenceThreshold,
                                    const UInt       segmentThreshold);
 
   /**
@@ -449,6 +435,13 @@ public:
    * @param delta  Change in permanence value
    */
   void bumpSegment(const Segment segment, const Permanence delta);
+
+
+  /**
+   * Print diagnostic info
+   */
+  friend std::ostream& operator<< (std::ostream& stream, const Connections& self);
+
 
   // Serialization
 
@@ -463,49 +456,104 @@ public:
    */
   virtual void load(std::istream &inStream) override;
 
+  CerealAdapter;
+  template<class Archive>
+  void save_ar(Archive & ar) const {
+    ar( CEREAL_NVP(connectedThreshold_), cereal::make_size_tag(cells_.size()));
+    for (CellData cellData : cells_) {
+      const std::vector<Segment> &segments = cellData.segments;
+      ar(cereal::make_size_tag(segments.size()));
 
-  // Debugging
+      for (Segment segment : segments) {
+        const SegmentData &segmentData = segments_[segment];
+
+        const std::vector<Synapse> &synapses = segmentData.synapses;
+        ar(cereal::make_size_tag(synapses.size()));
+
+        for (Synapse synapse : synapses) {
+          const SynapseData &synapseData = synapses_[synapse];
+          ar(CEREAL_NVP(synapseData.presynapticCell), 
+             CEREAL_NVP(synapseData.permanence));
+        }
+      }
+    }
+  }
+  template<class Archive>
+  void load_ar(Archive & ar) {
+    Permanence  connectedThreshold;
+    cereal::size_type numCells;
+    ar(connectedThreshold, cereal::make_size_tag(numCells));
+    CellIdx idx = static_cast<CellIdx>(numCells);
+    initialize(idx, connectedThreshold);
+
+    for (UInt cell = 0; cell < numCells; cell++) {
+
+      cereal::size_type numSegments;
+      ar(cereal::make_size_tag(numSegments));
+
+      for (SegmentIdx j = 0; j < static_cast<SegmentIdx>(numSegments); j++) {
+        Segment segment = createSegment( cell );
+
+        cereal::size_type numSynapses;
+        ar(cereal::make_size_tag(numSynapses));
+
+        for (SynapseIdx k = 0; k < static_cast<SynapseIdx>(numSynapses); k++) {
+          CellIdx     presyn;
+          Permanence  perm;
+          ar(presyn, perm);
+          createSynapse( segment, presyn, perm );
+        }
+      }
+    }
+  }
 
   /**
    * Gets the number of cells.
    *
    * @retval Number of cells.
    */
-  CellIdx numCells() const;
+  size_t numCells() const { return cells_.size(); }
+
+  Permanence getConnectedThreshold() const { return connectedThreshold_; }
 
   /**
    * Gets the number of segments.
    *
    * @retval Number of segments.
    */
-  UInt numSegments() const;
+  size_t numSegments() const { 
+	  NTA_ASSERT(segments_.size() >= destroyedSegments_.size());
+	  return segments_.size() - destroyedSegments_.size(); }
 
   /**
    * Gets the number of segments on a cell.
    *
    * @retval Number of segments.
    */
-  UInt numSegments(CellIdx cell) const;
+  size_t numSegments(CellIdx cell) const { return cells_[cell].segments.size(); }
 
   /**
    * Gets the number of synapses.
    *
    * @retval Number of synapses.
    */
-  UInt numSynapses() const;
+  size_t numSynapses() const {
+    NTA_ASSERT(synapses_.size() >= destroyedSynapses_.size());
+    return synapses_.size() - destroyedSynapses_.size();
+  }
 
   /**
    * Gets the number of synapses on a segment.
    *
    * @retval Number of synapses.
    */
-  UInt numSynapses(Segment segment) const;
+  size_t numSynapses(Segment segment) const { return segments_[segment].synapses.size(); }
 
   /**
    * Comparison operator.
    */
   bool operator==(const Connections &other) const;
-  bool operator!=(const Connections &other) const;
+  inline bool operator!=(const Connections &other) const { return !operator==(other); }
 
   /**
    * Add a connections events handler.
@@ -566,8 +614,8 @@ protected:
    * connected or not.
    */
   void removeSynapseFromPresynapticMap_(const Synapse index,
-                                  vector<Synapse> &synapsesForPresynapticCell,
-                                  vector<Synapse> &segmentsForPresynapticCell);
+                              std::vector<Synapse> &synapsesForPresynapticCell,
+                              std::vector<Segment> &segmentsForPresynapticCell);
 
 private:
   std::vector<CellData>    cells_;
@@ -575,7 +623,7 @@ private:
   std::vector<Segment>     destroyedSegments_;
   std::vector<SynapseData> synapses_;
   std::vector<Synapse>     destroyedSynapses_;
-  Permanence               connectedThreshold_;
+  Permanence               connectedThreshold_; //TODO make const
 
   // Extra bookkeeping for faster computing of segment activity.
   std::map<CellIdx, std::vector<Synapse>> potentialSynapsesForPresynapticCell_;
@@ -583,19 +631,23 @@ private:
   std::map<CellIdx, std::vector<Segment>> potentialSegmentsForPresynapticCell_;
   std::map<CellIdx, std::vector<Segment>> connectedSegmentsForPresynapticCell_;
 
-  std::vector<UInt64> segmentOrdinals_;
-  std::vector<UInt64> synapseOrdinals_;
-  UInt64 nextSegmentOrdinal_;
-  UInt64 nextSynapseOrdinal_;
+  std::vector<Segment> segmentOrdinals_;
+  std::vector<Synapse> synapseOrdinals_;
+  Segment nextSegmentOrdinal_;
+  Synapse nextSynapseOrdinal_;
+
+  // These three members should be used when working with highly correlated
+  // data. The vectors store the permanence changes made by adaptSegment.
+  bool timeseries_;
+  std::vector<Permanence> previousUpdates_;
+  std::vector<Permanence> currentUpdates_;
 
   UInt32 nextEventToken_;
   std::map<UInt32, ConnectionsEventHandler *> eventHandlers_;
 }; // end class Connections
 
 } // end namespace connections
-
 } // end namespace algorithms
-
 } // end namespace nupic
 
 #endif // NTA_CONNECTIONS_HPP

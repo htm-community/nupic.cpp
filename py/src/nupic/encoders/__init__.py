@@ -35,3 +35,6 @@ from .sparse_pass_through import SparsePassThroughEncoder
 # multiencoder must be imported last because it imports * from this module!
 from .multi import MultiEncoder
 from .utils import bitsToString
+
+#for bindings
+from nupic.bindings.encoders import __doc__

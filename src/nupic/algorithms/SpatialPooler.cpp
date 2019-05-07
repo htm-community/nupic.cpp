@@ -30,24 +30,16 @@
 #include <cmath> //fmod
 
 #include <nupic/algorithms/SpatialPooler.hpp>
-#include <nupic/math/Math.hpp>
 #include <nupic/math/Topology.hpp>
+#include <nupic/math/Math.hpp> // nupic::Epsilon
 #include <nupic/utils/VectorHelpers.hpp>
 
-#define VERSION 2  // version for stream serialization
-
+using namespace std;
 using namespace nupic;
-using nupic::algorithms::spatial_pooler::SpatialPooler;
+using namespace nupic::algorithms::spatial_pooler;
 using namespace nupic::math::topology;
+using nupic::sdr::SDR;
 using nupic::utils::VectorHelpers;
-
-// Round f to 5 digits of precision. This is used to set
-// permanence values and help avoid small amounts of drift between
-// platforms/implementations
-static Real round5_(const Real f)
-{
-  return ((Real) ((Int) (f * 100000.0f))) / 100000.0f;
-}
 
 class CoordinateConverterND {
 
@@ -98,7 +90,7 @@ SpatialPooler::SpatialPooler(
     : SpatialPooler::SpatialPooler()
 {
   // The current version number for serialzation.
-  version_ = VERSION;
+  version_ = 2;
 
   initialize(inputDimensions,
              columnDimensions,
@@ -373,7 +365,7 @@ void SpatialPooler::getConnectedSynapses(UInt column,
   const auto &synapses = connections_.synapsesForSegment( column );
   for( const auto &syn : synapses ) {
     const auto &synData = connections_.dataForSynapse( syn );
-    if( synData.permanence >= synPermConnected_ - connections::EPSILON )
+    if( synData.permanence >= synPermConnected_ - nupic::Epsilon )
       connectedSynapses[ synData.presynapticCell ] = 1;
   }
 }
@@ -385,7 +377,7 @@ void SpatialPooler::getConnectedCounts(UInt connectedCounts[]) const {
   }
 }
 
-const vector<UInt> &SpatialPooler::getOverlaps() const { return overlaps_; }
+const vector<SynapseIdx> &SpatialPooler::getOverlaps() const { return overlaps_; }
 
 const vector<Real> &SpatialPooler::getBoostedOverlaps() const {
   return boostedOverlaps_;
@@ -415,7 +407,9 @@ void SpatialPooler::initialize(
   }
   NTA_CHECK(numColumns_ > 0);
   NTA_CHECK(numInputs_ > 0);
-  NTA_CHECK(inputDimensions_.size() == columnDimensions_.size());
+
+  // 1D input produces 1D output; 2D => 2D, etc.
+  NTA_CHECK(inputDimensions_.size() == columnDimensions_.size()); 
 
   NTA_CHECK((numActiveColumnsPerInhArea > 0 && localAreaDensity < 0) ||
             (localAreaDensity > 0 && localAreaDensity <= MAX_LOCALAREADENSITY
@@ -472,7 +466,7 @@ void SpatialPooler::initialize(
         connections_.createSynapse( (connections::Segment)i, presyn, perm[presyn] );
     }
 
-    connections_.raisePermanencesToThreshold( (connections::Segment)i, synPermConnected_, stimulusThreshold_ );
+    connections_.raisePermanencesToThreshold( (connections::Segment)i, stimulusThreshold_ );
   }
 
   updateInhibitionRadius_();
@@ -484,32 +478,21 @@ void SpatialPooler::initialize(
 }
 
 
-void SpatialPooler::compute(const UInt inputArray[], bool learn, UInt activeArray[]) {
-  SDR input( inputDimensions_ );
-  input.setDense( inputArray );
-
-  SDR active( columnDimensions_ );
-  compute( input, learn, active );
-  copy(
-      active.getDense().begin(),
-      active.getDense().end(),
-      activeArray);
-}
-
-
-void SpatialPooler::compute(SDR &input, bool learn, SDR &active) {
+void SpatialPooler::compute(const SDR &input, const bool learn, SDR &active) {
+  NTA_CHECK( input.dimensions  == inputDimensions_ );
+  NTA_CHECK( active.dimensions == columnDimensions_ );
   updateBookeepingVars_(learn);
   calculateOverlap_(input, overlaps_);
   calculateOverlapPct_(overlaps_, overlapsPct_);
 
   boostOverlaps_(overlaps_, boostedOverlaps_);
 
-  auto &activeVector = active.getFlatSparse();
+  auto &activeVector = active.getSparse();
   inhibitColumns_(boostedOverlaps_, activeVector);
   // Notify the active SDR that its internal data vector has changed.  Always
   // call SDR's setter methods even if when modifying the SDR's own data
   // inplace.
-  active.setFlatSparse( activeVector );
+  active.setSparse( activeVector );
 
   if (learn) {
     adaptSynapses_(input, active);
@@ -523,31 +506,8 @@ void SpatialPooler::compute(SDR &input, bool learn, SDR &active) {
   }
 }
 
-// old API version
-void SpatialPooler::stripUnlearnedColumns(UInt activeArray[]) const {
-  SDR active(columnDimensions_);
-  active.setDense(activeArray);
-  stripUnlearnedColumns(active);
-  std::copy(active.getDense().begin(), active.getDense().end(), activeArray);
-}
 
-// performs activeColumns AND current-round learned columns: active & activeDutyCyc_
-void SpatialPooler::stripUnlearnedColumns(SDR& active) const {
-  auto sparseCols = active.getFlatSparse();
-  vector<UInt> res;
-  res.reserve(sparseCols.size());
-
-  for (const auto& col: sparseCols) {
-    if (activeDutyCycles_[col] > 0) {
-      res.push_back(col);
-    }
-  }
-  //update original SDR with changed values
-  active.setFlatSparse(res);
-}
-
-
-void SpatialPooler::boostOverlaps_(const vector<UInt> &overlaps, //TODO use Eigen sparse vector here
+void SpatialPooler::boostOverlaps_(const vector<SynapseIdx> &overlaps, //TODO use Eigen sparse vector here
                                    vector<Real> &boosted) const {
   for (UInt i = 0; i < numColumns_; i++) {
     boosted[i] = overlaps[i] * boostFactors_[i];
@@ -598,16 +558,12 @@ vector<UInt> SpatialPooler::initMapPotential_(UInt column, bool wrapAround) {
 
 
 Real SpatialPooler::initPermConnected_() {
-  Real p =
-      synPermConnected_ + (Real)((connections::maxPermanence - synPermConnected_) * rng_.getReal64());
-
-  return round5_(p);
+  return rng_.realRange(synPermConnected_, connections::maxPermanence);
 }
 
 
 Real SpatialPooler::initPermNonConnected_() {
-  Real p = (Real)(synPermConnected_ * rng_.getReal64());
-  return round5_(p);
+  return rng_.realRange(connections::minPermanence, synPermConnected_);
 }
 
 
@@ -633,7 +589,7 @@ vector<Real> SpatialPooler::initPermanence_(const vector<UInt> &potential, //TOD
 void SpatialPooler::updateInhibitionRadius_() {
   if (globalInhibition_) {
     inhibitionRadius_ =
-        *max_element(columnDimensions_.begin(), columnDimensions_.end());
+        *max_element(columnDimensions_.cbegin(), columnDimensions_.cend());
     return;
   }
 
@@ -691,18 +647,18 @@ void SpatialPooler::updateMinDutyCyclesLocal_() {
 }
 
 
-void SpatialPooler::updateDutyCycles_(const vector<UInt> &overlaps,
+void SpatialPooler::updateDutyCycles_(const vector<SynapseIdx> &overlaps,
                                       SDR &active) {
 
   // Turn the overlaps array into an SDR. Convert directly to flat-sparse to
   // avoid copies and  type convertions.
   SDR newOverlap({ numColumns_ });
-  auto &overlapsSparseVec = newOverlap.getFlatSparse();
+  auto &overlapsSparseVec = newOverlap.getSparse();
   for (UInt i = 0; i < numColumns_; i++) {
     if( overlaps[i] != 0 )
       overlapsSparseVec.push_back( i );
   }
-  newOverlap.setFlatSparse( overlapsSparseVec );
+  newOverlap.setSparse( overlapsSparseVec );
 
   const UInt period = std::min(dutyCyclePeriod_, iterationNum_);
 
@@ -758,12 +714,11 @@ Real SpatialPooler::avgConnectedSpanForColumnND_(UInt column) const {
 }
 
 
-void SpatialPooler::adaptSynapses_(SDR &input,
-                                   SDR &active) {
-  for(const auto &column : active.getFlatSparse()) {
+void SpatialPooler::adaptSynapses_(const SDR &input,
+                                   const SDR &active) {
+  for(const auto &column : active.getSparse()) {
     connections_.adaptSegment(column, input, synPermActiveInc_, synPermInactiveDec_);
-    connections_.raisePermanencesToThreshold(
-                                column, synPermConnected_, stimulusThreshold_);
+    connections_.raisePermanencesToThreshold( column, stimulusThreshold_ );
   }
 }
 
@@ -779,10 +734,10 @@ void SpatialPooler::bumpUpWeakColumns_() {
 
 
 void SpatialPooler::updateDutyCyclesHelper_(vector<Real> &dutyCycles,
-                                            SDR &newValues,
-                                            UInt period) {
+                                            const SDR &newValues,
+                                            const UInt period) {
   NTA_ASSERT(period > 0);
-  NTA_ASSERT(dutyCycles.size() == newValues.size);
+  NTA_ASSERT(dutyCycles.size() == newValues.size) << "duty dims: " << dutyCycles.size() << " SDR dims: " << newValues.size;
 
   // Duty cycles are exponential moving averages, typically written like:
   //   alpha = 1 / period
@@ -790,12 +745,12 @@ void SpatialPooler::updateDutyCyclesHelper_(vector<Real> &dutyCycles,
   // However since the values are sparse this equation is split into two loops,
   // and the second loop iterates over only the non-zero values.
 
-  const Real decay = (Real) (period - 1) / period;
+  const Real decay = (period - 1) / static_cast<Real>(period);
   for (Size i = 0; i < dutyCycles.size(); i++)
     dutyCycles[i] *= decay;
 
   const Real increment = 1.0f / period;  // All non-zero values are 1.
-  for(const auto &idx : newValues.getFlatSparse())
+  for(const auto idx : newValues.getSparse())
     dutyCycles[idx] += increment;
 }
 
@@ -860,14 +815,14 @@ void SpatialPooler::updateBookeepingVars_(bool learn) {
 }
 
 
-void SpatialPooler::calculateOverlap_(SDR &input,
-                                      vector<UInt> &overlaps) const {
+void SpatialPooler::calculateOverlap_(const SDR &input,
+                                      vector<SynapseIdx> &overlaps) {
   overlaps.assign( numColumns_, 0 );
-  connections_.computeActivity(overlaps, input.getFlatSparse());
+  connections_.computeActivity(overlaps, input.getSparse());
 }
 
 
-void SpatialPooler::calculateOverlapPct_(const vector<UInt> &overlaps,
+void SpatialPooler::calculateOverlapPct_(const vector<SynapseIdx> &overlaps,
                                          vector<Real> &overlapPct) const {
   overlapPct.assign(numColumns_, 0);
   vector<UInt> connectedCounts( numColumns_ );
@@ -1000,16 +955,6 @@ void SpatialPooler::inhibitColumnsLocal_(const vector<Real> &overlaps,
 
 bool SpatialPooler::isUpdateRound_() const {
   return (iterationNum_ % updatePeriod_) == 0;
-}
-
-
-UInt SpatialPooler::persistentSize() const {
-  // TODO: this won't scale!
-  stringstream s;
-  s.flags(ios::scientific);
-  s.precision(numeric_limits<double>::digits10 + 1);
-  this->save(s);
-  return (UInt)s.str().size();
 }
 
 

@@ -36,6 +36,8 @@ namespace testing {
 
 using namespace nupic;
 
+static bool verbose = false;
+
 TEST(HelloRegionTest, demo) {
 
   // Write test data
@@ -70,12 +72,6 @@ TEST(HelloRegionTest, demo) {
   std::shared_ptr<Region> region =
       net.addRegion("region", "VectorFileSensor", params);
 
-  // Set region dimensions
-  Dimensions dims;
-  dims.push_back(1);  // 1 means variable size, in this case set by activeOutputCount.
-  std::cout << "Setting region dimensions" << dims.toString() << std::endl;
-  region->setDimensions(dims);
-
 
   // Load data
   // This will read in all data into a vector of vectors.
@@ -89,10 +85,10 @@ TEST(HelloRegionTest, demo) {
   net.initialize();
 
   // Compute
-  region->compute();  // This should fetch the first row into buffer
+  net.run(1);  // This should fetch the first row into buffer
 
   // Get output
-  const Array outputArray = region->getOutputData("dataOut");
+  const Array& outputArray = region->getOutputData("dataOut");
   EXPECT_TRUE(outputArray.getType() == NTA_BasicType_Real32);
   EXPECT_EQ(outputArray.getCount(), testdata[0].size());
   const Real32 *buffer = (const Real32 *)outputArray.getBuffer();
@@ -105,28 +101,33 @@ TEST(HelloRegionTest, demo) {
   {
     std::stringstream ss;
     net.save(ss);
-	//std::cout << "Loading from stream. \n";
-    //std::cout << ss.str() << std::endl;
+	  if(verbose) std::cout << "Loading from stream. \n";
+    if(verbose) std::cout << ss.str() << std::endl;
     ss.seekg(0);
     net2.load(ss);
   }
+
+  // Note: this compares the structure (regions, links, etc) not data content or state.
   EXPECT_EQ(net, net2) << "Restored network should be the same as original.";
 
   std::shared_ptr<Region> region2 = net2.getRegion("region");
-  const Array outputArray2 = region2->getOutputData("dataOut");
+  const Array& outputArray2 = region2->getOutputData("dataOut");
 
   // fetch the data rows for both networks.
   net.run((int)data_rows-1);
   net2.run((int)data_rows-1);
 
   // The last row should be currently in the buffer
+  if (verbose) std::cout << "outputArray =" << outputArray << std::endl;
+  if (verbose) std::cout << "outputArray2=" << outputArray2 << std::endl;
+
   const Real32 *buffer2 = (const Real32 *)outputArray2.getBuffer();
   EXPECT_EQ(data_cols, outputArray.getCount());
   ASSERT_EQ(outputArray2.getCount(), outputArray.getCount());
   for (size_t i = 0; i < outputArray2.getCount(); i++) {
     EXPECT_NEAR(buffer[i], testdata[data_rows -1][i], 0.001);
 	  EXPECT_NEAR(buffer[i], buffer2[i], 0.001);
-	  std::cout << "testdata=" << testdata[data_rows -1][i]
+	  if(verbose) std::cout << "testdata=" << testdata[data_rows -1][i]
               << ", buffer=" << buffer[i]
               << ", buffer2=" << buffer2[i] << std::endl;
   }

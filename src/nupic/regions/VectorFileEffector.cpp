@@ -30,6 +30,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <nupic/engine/Output.hpp>
+#include <nupic/engine/Input.hpp>
 #include <nupic/engine/Region.hpp>
 #include <nupic/engine/Spec.hpp>
 #include <nupic/ntypes/Value.hpp>
@@ -59,14 +61,17 @@ VectorFileEffector::~VectorFileEffector() { closeFile(); }
 void VectorFileEffector::initialize() {
   NTA_CHECK(region_ != nullptr);
   // We have no outputs or parameters; just need our input.
-  dataIn_ = region_->getInput("dataIn")->getData();
+  Input *in = region_->getInput("dataIn");
+  NTA_ASSERT(in) << "VectorFileEffector::init - 'dataIn' input not configured\n";
 
-  if (dataIn_.getCount() == 0) {
-    NTA_THROW << "VectorFileEffector::init - no input found\n";
+  if (!in->hasIncomingLinks() || in->getData().getCount() == 0) {
+    NTA_THROW << "VectorFileEffector::init - no input Data found\n";
   }
+  dataIn_ = in->getData();
 }
 
 void VectorFileEffector::compute() {
+  NTA_DEBUG << *region_->getInput("dataIn") << "\n";
 
   // It's not necessarily an error to have no inputs. In this case we just
   // return
@@ -85,6 +90,7 @@ void VectorFileEffector::compute() {
     NTA_THROW << "VectorFileEffector: There was an error writing to the file "
               << filename_.c_str() << "\n";
   }
+
 
   Real *inputVec = (Real *)(dataIn_.getBuffer());
   NTA_CHECK(inputVec != nullptr);
@@ -180,34 +186,34 @@ Spec *VectorFileEffector::createSpec() {
 
   auto ns = new Spec;
   ns->description =
-      "VectorFileEffector is a node that simply writes its\n"
-      "input vectors to a text file. The target filename is specified\n"
-      "using the 'outputFile' parameter at run time. On each\n"
-      "compute, the current input vector is written (but not flushed)\n"
+      "VectorFileEffector is a node that simply writes its "
+      "input vectors to a text file. The target filename is specified "
+      "using the 'outputFile' parameter at run time. On each "
+      "compute, the current input vector is written (but not flushed) "
       "to the file.\n";
 
   ns->inputs.add("dataIn",
-                 InputSpec("Data to be written to file", 
-                           NTA_BasicType_Real32,
-                           0,     // count
-                           false, // required?
-                           false, // isRegionLevel
-                           true   // isDefaultInput
-                           ));
+              InputSpec("Data to be written to file",
+                        NTA_BasicType_Real32,
+                        0,     // count
+                        false, // required?
+                        true, // isRegionLevel
+                        true   // isDefaultInput
+                        ));
 
   ns->parameters.add("outputFile",
-                     ParameterSpec("Writes output vectors to this file on each "
-                                   "compute. Will append to any\n"
-                                   "existing data in the file. This parameter "
-                                   "must be set at runtime before\n"
-                                   "the first compute is called. Throws an "
-                                   "exception if it is not set or\n"
-                                   "the file cannot be written to.\n",
-                                   NTA_BasicType_Byte,
-                                   0,  // elementCount
-                                   "", // constraints
-                                   "", // defaultValue
-                                   ParameterSpec::ReadWriteAccess));
+              ParameterSpec("Writes output vectors to this file on each "
+                            "compute. Will append to any "
+                            "existing data in the file. This parameter "
+                            "must be set at runtime before "
+                            "the first compute is called. Throws an "
+                            "exception if it is not set or "
+                            "the file cannot be written to.\n",
+                            NTA_BasicType_Byte,
+                            0,  // elementCount
+                            "", // constraints
+                            "", // defaultValue
+                            ParameterSpec::ReadWriteAccess));
 
   ns->commands.add("flushFile", CommandSpec("Flush file data to disk"));
 
@@ -218,7 +224,7 @@ Spec *VectorFileEffector::createSpec() {
 }
 
 size_t
-VectorFileEffector::getNodeOutputElementCount(const std::string &outputName) {
+VectorFileEffector::getNodeOutputElementCount(const std::string &outputName) const {
   NTA_THROW
       << "VectorFileEffector::getNodeOutputElementCount -- unknown output '"
       << outputName << "'";

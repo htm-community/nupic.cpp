@@ -47,12 +47,14 @@ public:
    *
    * @param region
    *        The region that the output belongs to.
+   * @param outputName
+   *        The region's output name
    * @param type
-   *        The type of the output, TODO
-   * @param isRegionLevel
-   *        Whether the output is region level, i.e. TODO
+   *        The type of the output
    */
-  Output(Region* region, NTA_BasicType type, bool isRegionLevel);
+  Output(Region* region,
+         const std::string& outputName,
+         NTA_BasicType type);
 
   /**
    * Destructor
@@ -82,14 +84,11 @@ public:
   /**
    * Initialize the Output .
    *
-   * @param size
-   *        The count of node output element, i.e. TODO
-   *
    * @note It's safe to reinitialize an initialized Output with the same
    * parameters.
    *
    */
-  void initialize(size_t size);
+  void initialize();
 
   /**
    *
@@ -103,7 +102,7 @@ public:
    * @param link
    *        The Link to add
    */
-  void addLink(std::shared_ptr<Link> link);
+  void addLink(const std::shared_ptr<Link> link);
 
   /**
    * Removing an existing link from the output.
@@ -127,31 +126,21 @@ public:
   bool hasOutgoingLinks();
 
   /**
-   *
    * Get the data of the output.
-   *
    * @returns
-   *         A reference to the data of the output as an @c Array
-   *
-   * @note we should return a const Array ref so caller can't
+   *     A reference to the data of the output as an @c Array
+   * @note we should return a const Array so caller can't
    * reallocate the buffer. Howerver, we do need to be able to
    * change the content of the buffer. So it cannot be const.
    */
   Array &getData() { return data_; }
+  const Array &getData() const { return data_;}
 
   /**
    *  Get the data type of the output
    */
   NTA_BasicType getDataType() const;
 
-  /**
-   *
-   * Tells whether the output is region level.
-   *
-   * @returns
-   *     Whether the output is region level, i.e. TODO
-   */
-  bool isRegionLevel() const;
 
   /**
    *
@@ -170,17 +159,40 @@ public:
    */
   size_t getNodeOutputElementCount() const;
 
+  /**
+   * Figure out what the dimensions should be for this output buffer.
+   * Call this to find out the configured dimensions. Adjust number
+   * of dimensions by adding 1's as needed.
+   * Then call setDimensions();
+   * Call initialize to actually create the buffers. Once buffers are
+   * created the dimensions cannot be changed.
+   */
+  Dimensions determineDimensions();
+
+  /**
+   * Get dimensions for this output
+   */
+  Dimensions &getDimensions() { return dim_; }
+
+  /**
+   * Set dimensions for this output
+   */
+  void setDimensions(const Dimensions& dim) { dim_ = dim; }
+
+  /**
+   *  Print raw data...for debugging
+   */
+  friend std::ostream &operator<<(std::ostream &f, const Output &d);
 
 private:
   // Cannot use the shared_ptr here
   Region* region_;
+  Dimensions dim_;
   Array data_;
-  bool isRegionLevel_;
   // order of links never matters, so store as a set
   // this is different from Input, where they do matter
   std::set<std::shared_ptr<Link>> links_;
   std::string name_;
-  size_t nodeOutputElementCount_;
 };
 
 

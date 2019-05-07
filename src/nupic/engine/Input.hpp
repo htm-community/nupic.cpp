@@ -59,7 +59,8 @@ public:
    * @param isRegionLevel
    *        Whether the input is region level, i.e. TODO
    */
-  Input(Region* region, NTA_BasicType type, bool isRegionLevel);
+  Input(Region* region, const std::string& inputName, 
+        NTA_BasicType type);
 
   /**
    *
@@ -96,7 +97,7 @@ public:
    * @param srcOutput
    *        The output of previous Region, which is also the source of the input
    */
-  void addLink(std::shared_ptr<Link> link, Output *srcOutput);
+  void addLink(const std::shared_ptr<Link> link, Output *srcOutput);
 
   /**
    * Locate an existing Link to the input.
@@ -134,7 +135,7 @@ public:
    *        The Link to remove, possibly retrieved by findLink(), note that
    *        it is a reference to the pointer, not the pointer itself.
    */
-  void removeLink(std::shared_ptr<Link>& link);
+  void removeLink(const std::shared_ptr<Link>& link);
 
   /**
    * Make input data available.
@@ -150,12 +151,12 @@ public:
    * @returns
    *         A mutable reference to the data of the input as an @c Array
    */
-  Array &getData();
-
+  Array &getData() { NTA_CHECK(initialized_); return data_; }
+  const Array &getData() const { NTA_CHECK(initialized_); return data_; }
   /**
    *  Get the data type of the output
    */
-  NTA_BasicType getDataType() const;
+  NTA_BasicType getDataType() const { return data_.getType(); }
 
   /**
    *
@@ -164,7 +165,7 @@ public:
    * @returns
    *         The mutable reference to the Region that the input belongs to
    */
-  Region* getRegion();
+  const Region *getRegion() const { return region_; }
 
   /**
    *
@@ -173,39 +174,18 @@ public:
    * @returns
    *         All the Link objects added to the input
    */
-  std::vector<std::shared_ptr<Link>> &getLinks();
-
-  /**
-   *
-   * Tells whether the input is region level.
-   *
-   * @returns
-   *     Whether the input is region level, i.e. TODO
-   */
-  bool isRegionLevel();
+  std::vector<std::shared_ptr<Link>> &getLinks() { return links_; }
 
   /**
    * Called by Region.evaluateLinks() as part
    * of network initialization.
    *
    * 1. Tries to make sure that dimensions at both ends
-   *    of a link are specified by calling setSourceDimensions()
-   *    if possible, and then calling getDestDimensions()
-   * 2. Ensures that region dimensions are consistent with
-   *    either by setting destination region dimensions (this is
-   *    where links "induce" dimensions) or by raising an exception
-   *    if they are inconsistent.
+   *    of a link are specified.
+   * 2. Ensures that region input dimensions are consistent
+   *    either by setting source and destination dimensions 
+   *    or by raising an exception if they are inconsistent.
    *
-   * @returns
-   *         Number of links that could not be fully evaluated, i.e. incomplete
-   */
-  size_t evaluateLinks();
-
-  /**
-   * Initialize the Input .
-   *
-   * After the input has all the information it needs, it is initialized by
-   * this method. Volatile data structures (e.g. the input buffer) are set up。
    */
   void initialize();
 
@@ -217,79 +197,37 @@ public:
    */
   bool isInitialized();
 
-  /* ------------ Methods normally called by the RegionImpl ------------- */
+    /**
+   * Get dimensions for this input
+   */
+  Dimensions &getDimensions() { return dim_; }
 
   /**
-   *
-   * @see Link.buildSplitterMap()
-   *
+   * Set dimensions for this input
    */
-  typedef std::vector<std::vector<size_t>> SplitterMap;
+  void setDimensions(Dimensions dim) { dim_ = std::move(dim); }
 
   /**
-   *
-   * Get splitter map from an initialized input
-   *
-   * @returns
-   *         The splitter map
+   * true if we have links connected to this input.
    */
-  const SplitterMap &getSplitterMap() const;
-
-  /** explicitly instantiated for various types */
-  template <typename T>
-  void getInputForNode(size_t nodeIndex, std::vector<T> &input) const;
-
   bool hasIncomingLinks() { return !links_.empty(); }
-  bool hasSplitterMap() { return !splitterMap_.empty(); }
 
+  /**
+   *  Print raw data...for debugging
+   */
+  friend std::ostream &operator<<(std::ostream &f, const Input &d);
 
 private:
   // Cannot use the shared_ptr here.
   Region* region_;
 
-  bool isRegionLevel_;
 
   // Use a vector of links because order is important.
   std::vector<std::shared_ptr<Link>> links_;
 
-  // volatile (non-serialized) state
   bool initialized_;
+  Dimensions dim_;
   Array data_;
-
-  /*
-   * cached splitter map -- only created if requested
-   * mutable because getSplitterMap() is const and logically
-   * getting the splitter map doesn't change the Input
-   *
-   * What is a SplitterMap?
-   * When there is more than one output going to one input (FAN-IN)
-   * then we need a way to determine how to combine them.
-   * By default each output is appended to the width of the
-   * input buffer. But if you want some other behaviour then
-   * you use a splitterMap to re-map where each bit goes
-   * in the resulting input buffer.  
-   *
-   * There are cases where remapping of incoming data
-   * may be useful even if it is not a FAN-IN condition.
-   *
-   * The mapping in the splitterMap is determined by the
-   * LinkPolicy.
-   * 
-   * The SplitterMap is a vector of vectors.  The inner
-   * vector is the index of where the correspoinding bit 
-   * should go in the resulting input buffer.  The outter
-   * vector is which output is being sent to the input.
-   *
-   */
-  mutable SplitterMap splitterMap_;
-
-  /*
-   * Cache of information about link offsets so we can
-   * easily copy data from each link.
-   * the first link starts at offset 0
-   * the next link starts at offset 0 + size(link[0])
-   */
-  std::vector<size_t> linkOffsets_;
 
   // Useful for us to know our own name
   std::string name_;
