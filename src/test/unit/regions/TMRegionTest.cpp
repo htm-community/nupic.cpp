@@ -81,7 +81,7 @@ static bool verbose = false; // turn this on to print extra stuff for debugging 
 
 // The following string should contain a valid expected Spec - manually
 // verified.
-#define EXPECTED_SPEC_COUNT 17 // The number of parameters expected in the TMRegion Spec
+#define EXPECTED_SPEC_COUNT 18 // The number of parameters expected in the TMRegion Spec
 
 using namespace nupic;
 using namespace nupic::utils;
@@ -259,6 +259,11 @@ TEST(TMRegionTest, testLinking) {
   VERBOSE << "    " << r1OutputArray << "\n";
   EXPECT_EQ(r1OutputArray.getCount(), dataWidth);
   EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32);
+
+  // check anomaly
+  EXPECT_FLOAT_EQ(region3->getParameterReal32("anomaly"), 1.0f);
+  const Real32 *anomalyBuffer = reinterpret_cast<const Real32*>(region3->getOutputData("anomaly").getBuffer());
+  EXPECT_FLOAT_EQ(anomalyBuffer[0], 0.0f); // Note: it is zero because no links are connected to this output.
 
 
   VERBOSE << "  SPRegion Output " << std::endl;

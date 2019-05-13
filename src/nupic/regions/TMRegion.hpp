@@ -33,7 +33,8 @@
 
 #include <nupic/engine/RegionImpl.hpp>
 #include <nupic/algorithms/TemporalMemory.hpp>
-#include <nupic/types/Serializable.hpp>
+
+#include <nupic/ntypes/Value.hpp>
 //----------------------------------------------------------------------
 
 namespace nupic {
@@ -97,16 +98,6 @@ public:
 		ar(cereal::make_nvp("dim", dim_));  // from RegionImpl
     ar(cereal::make_nvp("init", init));
     if (init) {
-      // save the output buffers
-      // The output buffers are saved as part of the Region Implementation.
-      cereal::size_type numBuffers = 0;
-      std::map<std::string, Output *> outputs = region_->getOutputs();
-      numBuffers = outputs.size();
-      ar(cereal::make_nvp("outputs", cereal::make_size_tag(numBuffers)));
-      for (auto iter : outputs) {
-        const Array &outputBuffer = iter.second->getData();
-        ar(cereal::make_map_item(iter.first, outputBuffer));
-      }
       // Save the algorithm state
       ar(cereal::make_nvp("TM", tm_));
     }
@@ -138,17 +129,6 @@ public:
 		ar(cereal::make_nvp("dim", dim_));  // from RegionImpl
     ar(cereal::make_nvp("init", args_.init));
     if (args_.init) {
-      // restore the output buffers
-      // The output buffers are saved as part of the Region Implementation.
-      cereal::size_type numBuffers;
-      ar(cereal::make_nvp("outputs", cereal::make_size_tag(numBuffers)));
-      for (cereal::size_type i = 0; i < numBuffers; i++) {
-        std::string name;
-        Array output;
-        ar(cereal::make_map_item(name, output));
-        Array& outputBuffer = getOutput(name)->getData();
-        outputBuffer = output;
-      }
       // Restore algorithm state
       nupic::algorithms::temporal_memory::TemporalMemory* tm = new nupic::algorithms::temporal_memory::TemporalMemory();
       tm_.reset(tm);
