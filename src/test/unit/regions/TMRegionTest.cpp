@@ -107,11 +107,11 @@ TEST(TMRegionTest, testSpecAndParameters) {
 TEST(TMRegionTest, checkTMRegionImpl) {
   Network net;
 
-  size_t regionCntBefore = net.getRegions().getCount();
+  size_t regionCntBefore = net.getRegions().size();
 
   VERBOSE << "Adding a built-in TMRegion region..." << std::endl;
   std::shared_ptr<Region> region1 = net.addRegion("region1", "TMRegion", "");
-  size_t regionCntAfter = net.getRegions().getCount();
+  size_t regionCntAfter = net.getRegions().size();
   ASSERT_TRUE(regionCntBefore + 1 == regionCntAfter)
       << " Expected number of regions to increase by one.  ";
   ASSERT_TRUE(region1->getType() == "TMRegion")
@@ -130,7 +130,7 @@ TEST(TMRegionTest, initialization_with_custom_impl) {
   VERBOSE << "Creating network..." << std::endl;
   Network net;
 
-  size_t regionCntBefore = net.getRegions().getCount();
+  size_t regionCntBefore = net.getRegions().size();
 
   // make sure the custom region registration works for CPP.
   // We will just use the same TMRegion class but it could be a subclass or some
@@ -150,7 +150,7 @@ TEST(TMRegionTest, initialization_with_custom_impl) {
   VERBOSE << "Adding a custom-built TMRegion region..." << std::endl;
   net.registerRegion("TMRegionCustom", new RegisteredRegionImplCpp<TMRegion>());
   std::shared_ptr<Region> region2 = net.addRegion("region2", "TMRegionCustom", nodeParams);
-  size_t regionCntAfter = net.getRegions().getCount();
+  size_t regionCntAfter = net.getRegions().size();
   ASSERT_TRUE(regionCntBefore + 1 == regionCntAfter)
       << "  Expected number of regions to increase by one.  ";
   ASSERT_TRUE(region2->getType() == "TMRegionCustom")

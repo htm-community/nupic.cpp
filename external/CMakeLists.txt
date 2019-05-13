@@ -107,3 +107,7 @@ include(mnist_data.cmake)
 # Cereal serialization package
 include(cereal.cmake)
 
+##################
+# MurmurHash3
+include(murmurhash.cmake)
+
