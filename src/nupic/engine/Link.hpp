@@ -478,24 +478,22 @@ public:
   void save_ar(Archive& ar) const {
     ar(cereal::make_nvp("srcRegionName", srcRegionName_),
        cereal::make_nvp("srcOutputName", srcOutputName_),
-       cereal::make_nvp("destRegionName",destRegionName_),
+       cereal::make_nvp("destRegionName", destRegionName_),
        cereal::make_nvp("destInputName", destInputName_),
-       cereal::make_nvp("destOffset",    destOffset_),
-       cereal::make_nvp("is_FanIn",      is_FanIn_),
-       cereal::make_nvp("propagationDelayBuffer", propagationDelayBuffer_)
-      );
+       cereal::make_nvp("destOffset", destOffset_),
+       cereal::make_nvp("is_FanIn", is_FanIn_));
+    ar(cereal::make_nvp("propagationDelayBuffer", propagationDelayBuffer_));
   }
   // FOR Cereal Deserialization
   template<class Archive>
   void load_ar(Archive& ar) {
     ar(cereal::make_nvp("srcRegionName", srcRegionName_),
        cereal::make_nvp("srcOutputName", srcOutputName_),
-       cereal::make_nvp("destRegionName",destRegionName_),
+       cereal::make_nvp("destRegionName", destRegionName_),
        cereal::make_nvp("destInputName", destInputName_),
-       cereal::make_nvp("destOffset",    destOffset_),
-       cereal::make_nvp("is_FanIn",      is_FanIn_),
-       cereal::make_nvp("propagationDelayBuffer", propagationDelayBuffer_)
-      );
+       cereal::make_nvp("destOffset", destOffset_),
+       cereal::make_nvp("is_FanIn", is_FanIn_));
+    ar(cereal::make_nvp("propagationDelayBuffer", propagationDelayBuffer_));
     propagationDelay_ = propagationDelayBuffer_.size();
     initialized_ = false;
   }
