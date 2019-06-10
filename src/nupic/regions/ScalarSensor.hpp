@@ -30,8 +30,8 @@
 #include <string>
 #include <vector>
 
-#include <nupic/engine/RegionImpl.hpp>
-#include <nupic/ntypes/Value.hpp>
+#include <nupic/networkapi/RegionImpl.hpp>
+#include <nupic/networkapi/Value.hpp>
 #include <nupic/types/Serializable.hpp>
 #include <nupic/encoders/ScalarEncoder.hpp>
 

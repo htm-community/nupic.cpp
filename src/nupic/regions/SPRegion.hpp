@@ -33,7 +33,7 @@
 
 #include <memory> //unique_ptr
 
-#include <nupic/engine/RegionImpl.hpp>
+#include <nupic/networkapi/RegionImpl.hpp>
 #include <nupic/algorithms/SpatialPooler.hpp>
 //----------------------------------------------------------------------
 

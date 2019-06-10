@@ -29,13 +29,13 @@
 #include <vector>
 
 #include <nupic/algorithms/SpatialPooler.hpp>
-#include <nupic/engine/Input.hpp>
-#include <nupic/engine/Output.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Spec.hpp>
-#include <nupic/ntypes/Array.hpp>
-#include <nupic/ntypes/ArrayBase.hpp>
-#include <nupic/ntypes/Value.hpp>
+#include <nupic/networkapi/Input.hpp>
+#include <nupic/networkapi/Output.hpp>
+#include <nupic/networkapi/Region.hpp>
+#include <nupic/networkapi/Spec.hpp>
+#include <nupic/networkapi/Array.hpp>
+#include <nupic/networkapi/ArrayBase.hpp>
+#include <nupic/networkapi/Value.hpp>
 #include <nupic/regions/SPRegion.hpp>
 #include <nupic/utils/Log.hpp>
 using nupic::sdr::SDR_sparse_t;

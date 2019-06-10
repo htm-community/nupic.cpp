@@ -31,8 +31,8 @@
 
 //----------------------------------------------------------------------
 
-#include <nupic/engine/RegionImpl.hpp>
-#include <nupic/ntypes/Array.hpp>
+#include <nupic/networkapi/RegionImpl.hpp>
+#include <nupic/networkapi/Array.hpp>
 #include <nupic/types/Types.hpp>
 #include <nupic/types/Serializable.hpp>
 

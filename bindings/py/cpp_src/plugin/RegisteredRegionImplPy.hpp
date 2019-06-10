@@ -68,8 +68,8 @@
 
 #include <plugin/PyBindRegion.hpp>
 
-#include <nupic/engine/RegisteredRegionImpl.hpp>
-#include <nupic/engine/RegionImplFactory.hpp>
+#include <nupic/networkapi/RegisteredRegionImpl.hpp>
+#include <nupic/networkapi/RegionImplFactory.hpp>
 #include <string>
 
 namespace py = pybind11;

@@ -30,7 +30,7 @@
 #define REGIONTESTUITLITIES_HPP
  
 #include <iostream>
-#include <nupic/engine/Region.hpp>
+#include <nupic/networkapi/Region.hpp>
 
 #include "gtest/gtest.h"
 

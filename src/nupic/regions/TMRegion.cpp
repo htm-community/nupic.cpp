@@ -31,8 +31,8 @@
 
 #include <nupic/regions/TMRegion.hpp>
 
-#include <nupic/engine/Spec.hpp>
-#include <nupic/ntypes/Array.hpp>
+#include <nupic/networkapi/Spec.hpp>
+#include <nupic/networkapi/Array.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/utils/VectorHelpers.hpp>
 

@@ -28,13 +28,13 @@
 #include <sstream>
 
 
-#include <nupic/engine/Input.hpp>
-#include <nupic/engine/Output.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Spec.hpp>
 #include <nupic/regions/TestNode.hpp>
-#include <nupic/ntypes/Array.hpp>
-#include <nupic/ntypes/Value.hpp>
+#include <nupic/networkapi/Input.hpp>
+#include <nupic/networkapi/Output.hpp>
+#include <nupic/networkapi/Region.hpp>
+#include <nupic/networkapi/Spec.hpp>
+#include <nupic/networkapi/Array.hpp>
+#include <nupic/networkapi/Value.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/types/Types.hpp>
 

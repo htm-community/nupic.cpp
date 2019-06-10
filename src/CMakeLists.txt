@@ -95,31 +95,42 @@ set(encoders_files
     nupic/encoders/RandomDistributedScalarEncoder.cpp
 )
     
-set(engine_files
-    nupic/engine/Input.cpp
-    nupic/engine/Input.hpp
-    nupic/engine/Link.cpp
-    nupic/engine/Link.hpp
-    nupic/engine/Network.cpp
-    nupic/engine/Network.hpp
-    nupic/engine/NuPIC.cpp
-    nupic/engine/NuPIC.hpp
-    nupic/engine/Output.cpp
-    nupic/engine/Output.hpp
-    nupic/engine/Region.cpp
-    nupic/engine/Region.hpp
-    nupic/engine/RegionImpl.cpp
-    nupic/engine/RegionImpl.hpp
-    nupic/engine/RegionImplFactory.cpp
-    nupic/engine/RegionImplFactory.hpp
-    nupic/engine/RegisteredRegionImpl.hpp
-    nupic/engine/RegisteredRegionImplCpp.hpp
-    nupic/engine/Spec.cpp
-    nupic/engine/Spec.hpp
-    nupic/engine/YAMLUtils.cpp
-    nupic/engine/YAMLUtils.hpp
-    nupic/engine/Watcher.cpp
-    nupic/engine/Watcher.hpp
+set(networkapi_files
+    nupic/networkapi/Input.cpp
+    nupic/networkapi/Input.hpp
+    nupic/networkapi/Link.cpp
+    nupic/networkapi/Link.hpp
+    nupic/networkapi/Network.cpp
+    nupic/networkapi/Network.hpp
+    nupic/networkapi/NuPIC.cpp
+    nupic/networkapi/NuPIC.hpp
+    nupic/networkapi/Output.cpp
+    nupic/networkapi/Output.hpp
+    nupic/networkapi/Region.cpp
+    nupic/networkapi/Region.hpp
+    nupic/networkapi/RegionImpl.cpp
+    nupic/networkapi/RegionImpl.hpp
+    nupic/networkapi/RegionImplFactory.cpp
+    nupic/networkapi/RegionImplFactory.hpp
+    nupic/networkapi/RegisteredRegionImpl.hpp
+    nupic/networkapi/RegisteredRegionImplCpp.hpp
+    nupic/networkapi/Spec.cpp
+    nupic/networkapi/Spec.hpp
+    nupic/networkapi/YAMLUtils.cpp
+    nupic/networkapi/YAMLUtils.hpp
+    nupic/networkapi/Watcher.cpp
+    nupic/networkapi/Watcher.hpp
+    nupic/networkapi/Array.hpp
+    nupic/networkapi/ArrayBase.cpp
+    nupic/networkapi/ArrayBase.hpp
+    nupic/networkapi/BasicType.cpp
+    nupic/networkapi/BasicType.hpp
+    nupic/networkapi/Collection.hpp
+    nupic/networkapi/Dimensions.hpp
+    nupic/networkapi/Scalar.cpp
+    nupic/networkapi/Scalar.hpp
+    nupic/networkapi/Value.cpp
+    nupic/networkapi/Value.hpp
 )
   
 set(math_files
@@ -131,19 +142,6 @@ set(math_files
 )
 
 
-set(ntypes_files
-    nupic/ntypes/Array.hpp
-    nupic/ntypes/ArrayBase.cpp
-    nupic/ntypes/ArrayBase.hpp
-    nupic/ntypes/BasicType.cpp
-    nupic/ntypes/BasicType.hpp
-    nupic/ntypes/Collection.hpp
-    nupic/ntypes/Dimensions.hpp
-    nupic/ntypes/Scalar.cpp
-    nupic/ntypes/Scalar.hpp
-    nupic/ntypes/Value.cpp
-    nupic/ntypes/Value.hpp
-)
   
 set(os_files
     nupic/os/Directory.cpp
@@ -215,9 +213,8 @@ set(examples_files
 #set up file tabs in Visual Studio
 source_group("algorithms" FILES ${algorithm_files})
 source_group("encoders" FILES ${encoders_files})
-source_group("engine" FILES ${engine_files})
+source_group("networkapi" FILES ${networkapi_files})
 source_group("math" FILES ${math_files})
-source_group("ntypes" FILES ${ntypes_files})
 source_group("os" FILES ${os_files})
 source_group("regions" FILES ${regions_files})
 source_group("types" FILES ${types_files})
@@ -238,9 +235,8 @@ source_group("examples" FILES ${examples_files})
 add_library(${src_objlib} OBJECT 
     ${algorithm_files} 
     ${encoders_files} 
-    ${engine_files} 
+    ${networkapi_files} 
     ${math_files} 
-    ${ntypes_files} 
     ${os_files} 
     ${regions_files} 
     ${types_files} 

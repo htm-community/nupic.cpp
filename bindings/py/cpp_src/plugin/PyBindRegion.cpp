@@ -33,11 +33,11 @@ In this case, the C++ engine is actually calling into the Python code.
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Input.hpp>
-#include <nupic/engine/Output.hpp>
-#include <nupic/ntypes/Array.hpp>
-#include <nupic/ntypes/BasicType.hpp>
+#include <nupic/networkapi/Region.hpp>
+#include <nupic/networkapi/Input.hpp>
+#include <nupic/networkapi/Output.hpp>
+#include <nupic/networkapi/Array.hpp>
+#include <nupic/networkapi/BasicType.hpp>
 #include <nupic/utils/Log.hpp>
 #include <nupic/os/Path.hpp>
 

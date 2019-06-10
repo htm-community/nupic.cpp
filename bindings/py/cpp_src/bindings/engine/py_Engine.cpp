@@ -38,12 +38,12 @@ PyBind11 bindings for Engine classes
 #include <nupic/os/OS.hpp>
 #include <nupic/os/Timer.hpp>
 
-#include <nupic/ntypes/Array.hpp>
+#include <nupic/networkapi/Array.hpp>
 
-#include <nupic/engine/Link.hpp>
-#include <nupic/engine/Network.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Spec.hpp>
+#include <nupic/networkapi/Link.hpp>
+#include <nupic/networkapi/Network.hpp>
+#include <nupic/networkapi/Region.hpp>
+#include <nupic/networkapi/Spec.hpp>
 #include <plugin/PyBindRegion.hpp>
 #include <plugin/RegisteredRegionImplPy.hpp>
 

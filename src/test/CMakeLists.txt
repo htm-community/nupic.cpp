@@ -54,14 +54,20 @@ set(encoders_tests
            unit/encoders/RandomDistributedScalarEncoderTest.cpp
            )
 	   
-set(engine_tests
-	   unit/engine/CppRegionTest.cpp
-	   unit/engine/HelloRegionTest.cpp
-	   unit/engine/InputTest.cpp
-	   unit/engine/LinkTest.cpp
-	   unit/engine/NetworkTest.cpp
-	   unit/engine/YAMLUtilsTest.cpp
-	   unit/engine/WatcherTest.cpp
+set(networkapi_tests
+	   unit/networkapi/CppRegionTest.cpp
+	   unit/networkapi/HelloRegionTest.cpp
+	   unit/networkapi/InputTest.cpp
+	   unit/networkapi/LinkTest.cpp
+	   unit/networkapi/NetworkTest.cpp
+	   unit/networkapi/YAMLUtilsTest.cpp
+	   unit/networkapi/WatcherTest.cpp
+	   unit/networkapi/ArrayTest.cpp
+	   unit/networkapi/BasicTypeTest.cpp
+	   unit/networkapi/CollectionTest.cpp
+	   unit/networkapi/DimensionsTest.cpp
+	   unit/networkapi/ScalarTest.cpp
+	   unit/networkapi/ValueTest.cpp
 	   )
 	   
 
@@ -69,14 +75,6 @@ set(math_tests
 	   unit/math/TopologyTest.cpp
 	   )
 	   
-set(ntypes_tests
-	   unit/ntypes/ArrayTest.cpp
-	   unit/ntypes/BasicTypeTest.cpp
-	   unit/ntypes/CollectionTest.cpp
-	   unit/ntypes/DimensionsTest.cpp
-	   unit/ntypes/ScalarTest.cpp
-	   unit/ntypes/ValueTest.cpp
-	   )
 	   
 set(os_tests
 	   unit/os/DirectoryTest.cpp
@@ -120,9 +118,8 @@ set(examples_files
 #set up file tabs in Visual Studio
 source_group("algorithm" FILES ${algorithm_tests})
 source_group("encoders" FILES ${encoders_tests})
-source_group("engine" FILES ${engine_tests})
+source_group("networkapi" FILES ${networkapi_tests})
 source_group("math" FILES ${math_tests})
-source_group("ntypes" FILES ${ntypes_tests})
 source_group("os" FILES ${os_tests})
 source_group("regions" FILES ${regions_tests})
 source_group("types" FILES ${types_tests})
@@ -134,9 +131,8 @@ set(src_executable_gtests
     unit/UnitTestMain.cpp
     ${algorithm_tests} 
     ${encoders_tests} 
-    ${engine_tests} 
+    ${networkapi_tests} 
     ${math_tests} 
-    ${ntypes_tests} 
     ${os_tests} 
     ${regions_tests}
     ${types_tests} 

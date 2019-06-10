@@ -39,22 +39,22 @@
   */
 
 
-#include <nupic/engine/NuPIC.hpp>
-#include <nupic/engine/Network.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Spec.hpp>
-#include <nupic/engine/Input.hpp>
-#include <nupic/engine/Output.hpp>
-#include <nupic/engine/Link.hpp>
-#include <nupic/engine/RegisteredRegionImpl.hpp>
-#include <nupic/engine/RegisteredRegionImplCpp.hpp>
-#include <nupic/ntypes/Array.hpp>
+#include <nupic/networkapi/NuPIC.hpp>
+#include <nupic/networkapi/Network.hpp>
+#include <nupic/networkapi/Region.hpp>
+#include <nupic/networkapi/Spec.hpp>
+#include <nupic/networkapi/Input.hpp>
+#include <nupic/networkapi/Output.hpp>
+#include <nupic/networkapi/Link.hpp>
+#include <nupic/networkapi/RegisteredRegionImpl.hpp>
+#include <nupic/networkapi/RegisteredRegionImplCpp.hpp>
+#include <nupic/networkapi/Array.hpp>
 #include <nupic/types/Exception.hpp>
 #include <nupic/os/Env.hpp>
 #include <nupic/os/Path.hpp>
 #include <nupic/os/Timer.hpp>
 #include <nupic/os/Directory.hpp>
-#include <nupic/engine/YAMLUtils.hpp>
+#include <nupic/networkapi/YAMLUtils.hpp>
 #include <nupic/regions/SPRegion.hpp>
 #include <nupic/utils/LogItem.hpp>
 

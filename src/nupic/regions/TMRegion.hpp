@@ -31,10 +31,10 @@
 #ifndef NTA_TMREGION_HPP
 #define NTA_TMREGION_HPP
 
-#include <nupic/engine/RegionImpl.hpp>
+#include <nupic/networkapi/RegionImpl.hpp>
 #include <nupic/algorithms/TemporalMemory.hpp>
 
-#include <nupic/ntypes/Value.hpp>
+#include <nupic/networkapi/Value.hpp>
 //----------------------------------------------------------------------
 
 namespace nupic {

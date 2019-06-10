@@ -32,7 +32,7 @@ PyBind11 bindings for the Real data type.
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
-#include <nupic/ntypes/BasicType.hpp>
+#include <nupic/networkapi/BasicType.hpp>
 
 
 namespace nupic_ext
