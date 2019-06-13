@@ -60,7 +60,7 @@ bool almost_eq(Real a, Real b) {
   return (diff > -1e-5 && diff < 1e-5);
 }
 
-bool check_vector_eq(UInt arr[], vector<UInt> vec) {  //TODO replace with ArrayBase, VectorHelpers or teplates
+bool check_vector_eq(UInt arr[], vector<UInt> vec) {  //TODO replace with ArrayBase, or teplates
   for (UInt i = 0; i < vec.size(); i++) {
     if (arr[i] != vec[i]) {
       return false;
@@ -123,6 +123,14 @@ bool check_vector_eq(vector<Real> vec1, vector<Real> vec2) {
     if (!almost_eq(vec1[i], vec2[i])) {
       return false;
     }
+  }
+  return true;
+}
+
+bool check_vector_eq(UInt arr[], SDR &sdr) {
+  const auto vec = sdr.getSparse();
+  for(UInt i = 0; i < vec.size(); i++) {
+    if(arr[i] != vec[i]) return false;
   }
   return true;
 }
@@ -1615,39 +1623,39 @@ TEST(SpatialPoolerTest, testinitMapPotential1D) {
   sp.initialize(inputDim, columnDim);
   sp.setPotentialRadius(potentialRadius);
 
-  vector<UInt> mask;
+  SDR mask({sp.getNumInputs()});
 
   // Test without wrapAround and potentialPct = 1
   sp.setPotentialPct(1.0);
 
   UInt expectedMask1[12] = {1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0};
-  mask = sp.initMapPotential_(0, false);
+  sp.initMapPotential_(0, false, mask);
   ASSERT_TRUE(check_vector_eq(expectedMask1, mask));
 
   UInt expectedMask2[12] = {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0};
-  mask = sp.initMapPotential_(2, false);
+  sp.initMapPotential_(2, false, mask);
   ASSERT_TRUE(check_vector_eq(expectedMask2, mask));
 
   // Test with wrapAround and potentialPct = 1
   sp.setPotentialPct(1.0);
 
   UInt expectedMask3[12] = {1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1};
-  mask = sp.initMapPotential_(0, true);
+  sp.initMapPotential_(0, true, mask);
   ASSERT_TRUE(check_vector_eq(expectedMask3, mask));
 
   UInt expectedMask4[12] = {1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1};
-  mask = sp.initMapPotential_(3, true);
+  sp.initMapPotential_(3, true, mask);
   ASSERT_TRUE(check_vector_eq(expectedMask4, mask));
 
   // Test with potentialPct < 1
   sp.setPotentialPct(0.5);
   UInt supersetMask1[12] = {1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1};
-  mask = sp.initMapPotential_(0, true);
-  ASSERT_TRUE(accumulate(mask.begin(), mask.end(), 0.0f) == 3u);
+  sp.initMapPotential_(0, true, mask);
+  ASSERT_TRUE(mask.getSum() == 3u);
 
   UInt unionMask1[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   for (UInt i = 0; i < 12; i++) {
-    unionMask1[i] = supersetMask1[i] | mask.at(i);
+    unionMask1[i] = supersetMask1[i] | mask.getDense().at(i);
   }
 
   ASSERT_TRUE(check_vector_eq(unionMask1, supersetMask1, 12));
@@ -1667,21 +1675,21 @@ TEST(SpatialPoolerTest, testinitMapPotential2D) {
   sp.setPotentialRadius(potentialRadius);
   sp.setPotentialPct(potentialPct);
 
-  vector<UInt> mask;
+  SDR mask({sp.getNumInputs()});
 
   // Test without wrapAround
   UInt expectedMask1[72] = {
       1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  mask = sp.initMapPotential_(0, false);
+  sp.initMapPotential_(0, false, mask);
   ASSERT_TRUE(check_vector_eq(expectedMask1, mask));
 
   UInt expectedMask2[72] = {
       0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  mask = sp.initMapPotential_(2, false);
+  sp.initMapPotential_(2, false, mask);
   ASSERT_TRUE(check_vector_eq(expectedMask2, mask));
 
   // Test with wrapAround
@@ -1691,14 +1699,14 @@ TEST(SpatialPoolerTest, testinitMapPotential2D) {
       1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1,
       1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1};
-  mask = sp.initMapPotential_(0, true);
+  sp.initMapPotential_(0, true, mask);
   ASSERT_TRUE(check_vector_eq(expectedMask3, mask));
 
   UInt expectedMask4[72] = {
       1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
       1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1};
-  mask = sp.initMapPotential_(3, true);
+  sp.initMapPotential_(3, true, mask);
   ASSERT_TRUE(check_vector_eq(expectedMask4, mask));
 }
 

@@ -31,7 +31,6 @@
 
 #include <nupic/algorithms/SpatialPooler.hpp>
 #include <nupic/utils/Topology.hpp>
-#include <nupic/utils/VectorHelpers.hpp>
 
 using namespace std;
 using namespace nupic;
@@ -450,18 +449,17 @@ void SpatialPooler::initialize(
   inhibitionRadius_ = 0;
 
   connections_.initialize(numColumns_, synPermConnected_);
-  for (Size i = 0; i < numColumns_; ++i) {
-    connections_.createSegment( (CellIdx)i );
+  for (Size column = 0; column < numColumns_; column++) {
+    connections_.createSegment( static_cast<CellIdx>(column) );
 
-    // Note: initMapPotential_ & initPermanence_ return dense arrays.
-    vector<UInt> potential = initMapPotential_((UInt)i, wrapAround_);
-    vector<Real> perm = initPermanence_(potential, initConnectedPct_);
-    for(UInt presyn = 0; presyn < numInputs_; presyn++) {
-      if( potential[presyn] )
-        connections_.createSynapse( (Segment)i, presyn, perm[presyn] );
+    SDR potential({numInputs_});
+    initMapPotential_(static_cast<UInt>(column), wrapAround_, potential);
+    const vector<Real> perm = initPermanence_(potential, initConnectedPct_);
+    for(const auto presyn : potential.getSparse()) {
+        connections_.createSynapse( static_cast<Segment>(column), presyn, perm[presyn] );
     }
 
-    connections_.raisePermanencesToThreshold( (Segment)i, stimulusThreshold_ );
+    connections_.raisePermanencesToThreshold( static_cast<Segment>(column), stimulusThreshold_ );
   }
 
   updateInhibitionRadius_();
@@ -505,6 +503,7 @@ void SpatialPooler::compute(const SDR &input, const bool learn, SDR &active) {
 
 void SpatialPooler::boostOverlaps_(const vector<SynapseIdx> &overlaps, //TODO use Eigen sparse vector here
                                    vector<Real> &boosted) const {
+  NTA_ASSERT(overlaps.size() == numColumns_);
   for (UInt i = 0; i < numColumns_; i++) {
     boosted[i] = overlaps[i] * boostFactors_[i];
   }
@@ -530,8 +529,10 @@ UInt SpatialPooler::initMapColumn_(UInt column) const {
 }
 
 
-vector<UInt> SpatialPooler::initMapPotential_(UInt column, bool wrapAround) {
-  NTA_ASSERT(column < numColumns_);
+void SpatialPooler::initMapPotential_(UInt column, bool wrapAround, SDR& potential) {
+  NTA_CHECK(potential.size == numInputs_);
+  NTA_CHECK(column < numColumns_);
+
   const UInt centerInput = initMapColumn_(column);
 
   vector<UInt> columnInputs;
@@ -547,9 +548,9 @@ vector<UInt> SpatialPooler::initMapPotential_(UInt column, bool wrapAround) {
   }
 
   const UInt numPotential = (UInt)round(columnInputs.size() * potentialPct_);
-  const auto selectedInputs = rng_.sample<UInt>(columnInputs, numPotential);
-  const vector<UInt> potential = VectorHelpers::sparseToBinary<UInt>(selectedInputs, numInputs_);
-  return potential;
+  auto selectedInputs = rng_.sample<UInt>(columnInputs, numPotential);
+  std::sort(selectedInputs.begin(), selectedInputs.end()); 
+  potential.setSparse(selectedInputs);
 }
 
 
@@ -563,14 +564,9 @@ Real SpatialPooler::initPermNonConnected_() {
 }
 
 
-vector<Real> SpatialPooler::initPermanence_(const vector<UInt> &potential, //TODO make potential sparse
-                                            Real connectedPct) {
+const vector<Real> SpatialPooler::initPermanence_(const SDR &potential, const Real connectedPct) {
   vector<Real> perm(numInputs_, 0);
-  for (UInt i = 0; i < numInputs_; i++) {
-    if (potential[i] < 1) {
-      continue;
-    }
-
+  for (const auto i : potential.getSparse()) {
     if (rng_.getReal64() <= connectedPct) {
       perm[i] = initPermConnected_();
     } else {

@@ -190,7 +190,6 @@ set(utils_files
     nupic/utils/Random.cpp
     nupic/utils/Random.hpp
     nupic/utils/SlidingWindow.hpp
-    nupic/utils/VectorHelpers.hpp
     nupic/utils/SdrMetrics.cpp
     nupic/utils/SdrMetrics.hpp
     nupic/utils/StlIo.cpp

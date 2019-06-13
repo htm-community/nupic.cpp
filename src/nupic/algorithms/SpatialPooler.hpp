@@ -839,8 +839,10 @@ public:
 
     @param wrapAround  A boolean value indicating that boundaries should be
                        ignored.
+    @param potential  A SDR (sized as input), the return values are written to
+    this field
   */
-  vector<UInt> initMapPotential_(UInt column, bool wrapAround);
+  void initMapPotential_(UInt column, bool wrapAround, SDR& potential);
 
   /**
   Returns a randomly generated permanence value for a synapses that is
@@ -880,7 +882,7 @@ public:
     @param connectedPct   A real value between 0 or 1 specifying the percent of
     the input bits that will start off in a connected state.
   */
-  vector<Real> initPermanence_(const vector<UInt> &potential, Real connectedPct);
+  const vector<Real> initPermanence_(const SDR &potential, const Real connectedPct);
 
   void clip_(vector<Real> &perm) const;
 

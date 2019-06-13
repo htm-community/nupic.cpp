@@ -104,7 +104,6 @@ set(utils_tests
 	   unit/utils/GroupByTest.cpp
 	   unit/utils/MovingAverageTest.cpp
 	   unit/utils/RandomTest.cpp
-	   unit/utils/VectorHelpersTest.cpp
 	   unit/utils/SdrMetricsTest.cpp
 	   )
 
