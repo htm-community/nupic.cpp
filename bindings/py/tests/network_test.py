@@ -165,7 +165,6 @@ class NetworkTest(unittest.TestCase):
     network.link("from", "to", "", "", "UInt32", "Real32")
 	
 
-  @pytest.mark.skip(reason="parameter types don't match.")
   def testParameters(self):
 
     n = engine.Network()
