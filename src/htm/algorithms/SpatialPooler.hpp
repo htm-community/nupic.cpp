@@ -64,15 +64,23 @@ class SpatialPooler : public Serializable
 {
 public:
   SpatialPooler();
-  SpatialPooler(const vector<UInt> inputDimensions, const vector<UInt> columnDimensions,
-                UInt potentialRadius = 16u, Real potentialPct = 0.5f,
-                bool globalInhibition = true, Real localAreaDensity = DISABLED,
-                Int numActiveColumnsPerInhArea = 10u,
-                UInt stimulusThreshold = 0u, Real synPermInactiveDec = 0.008f,
-                Real synPermActiveInc = 0.05f, Real synPermConnected = 0.1f,
-                Real minPctOverlapDutyCycles = 0.001f,
-                UInt dutyCyclePeriod = 1000u, Real boostStrength = 0.0f,
-                Int seed = 1, UInt spVerbosity = 0u, bool wrapAround = true);
+  SpatialPooler(const vector<UInt> inputDimensions, 
+		const vector<UInt> columnDimensions,
+                const UInt potentialRadius = 16u, 
+		const Real potentialPct = 0.5f,
+                const bool globalInhibition = true, 
+		const Real localAreaDensity = 0.02f,
+                const Int numActiveColumnsPerInhArea = -1u,
+                const UInt stimulusThreshold = 3u, 
+		const Real synPermInactiveDec = 0.008f,
+                const Real synPermActiveInc = 0.05f, 
+		const Real synPermConnected = 0.1f,
+                const Real minPctOverlapDutyCycles = 0.001f,
+                const UInt dutyCyclePeriod = 1000u, 
+		const Real boostStrength = 0.0f,
+                const Int seed = 1, 
+		const UInt spVerbosity = 0u, 
+		const bool wrapAround = false);
 
   virtual ~SpatialPooler() {}
 
@@ -99,7 +107,7 @@ public:
         columns use 2000, or [2000]. For a three dimensional
         topology of 32x64x16 use [32, 64, 16].
 
-  @param potentialRadius This parameter deteremines the extent of the
+  @param potentialRadius This parameter deteremines the extent of the //TODO change this to potentialRadiusPct 0.0..1.0
         input that each column can potentially be connected to. This
         can be thought of as the input bits that are visible to each
         column, or a 'receptive field' of the field of vision. A large
@@ -109,13 +117,14 @@ public:
         column will have a max square potential pool with sides of
         length (2 * potentialRadius + 1).
 
-  @param potentialPct The percent of the inputs, within a column's
-        potential radius, that a column can be connected to. If set to
-        1, the column will be connected to every input within its
+  @param potentialPct The percent of the inputs, within a column's //TODO make this "automated" depending on #potentialRadius & numColumns. 
+        @ref `potentialRadius`, that a column can be connected to. //TODO change to similar `columnOverlapPct` 0..1.0
+	If set to 1.0, the column will be connected to every input within its
         potential radius. This parameter is used to give each column a
         unique potential pool when a large potentialRadius causes
-        overlap between the columns. At initialization time we choose
-        ((2*potentialRadius + 1)^(# inputDimensions) * potentialPct)
+        overlap between the columns. 
+	At initialization time we choose
+        `((2*potentialRadius + 1)^(# inputDimensions) * potentialPct)`
         input bits to comprise the column's potential pool.
 
   @param globalInhibition If true, then during inhibition phase the
@@ -130,13 +139,12 @@ public:
         internally calculated inhibitionRadius, which is in turn
         determined from the average size of the connected potential
         pools of all columns). The inhibition logic will insure that at
-        most N columns remain ON within a local inhibition area, where
-        N = localAreaDensity * (total number of columns in inhibition
-        area). 
+        most `N` columns remain ON within a local inhibition area, where
+        `N = localAreaDensity * (total number of columns in inh area)`. 
 	If localAreaDensity is set to any value less than  0, 
-	output sparsity will be determined by the numActivePerInhArea.
+	output sparsity will be determined by the @ref numActivePerInhArea.
 
-  @param numActiveColumnsPerInhArea An alternate way to control the sparsity of
+  @param numActiveColumnsPerInhArea An alternate way to control the sparsity of //TODO remove this method of operation?!
         active columns. When numActivePerInhArea > 0, the inhibition logic will insure that
         at most 'numActivePerInhArea' columns remain ON within a local
         inhibition area (the size of which is set by the internally
@@ -148,20 +156,20 @@ public:
         columns the same regardless of the size of their receptive
         fields.
 	If numActivePerInhArea is specified then 
-	localAreaDensity must be < 0, and vice versa.
+	@ref localAreaDensity must be < 0, and vice versa.
 
-  @param stimulusThreshold This is a number specifying the minimum
+  @param stimulusThreshold This is a number specifying the minimum //TODO replace with `robustness` 0..1.0, which will affect this & synPermInc/Dec
         number of synapses that must be active in order for a column to
         turn ON. The purpose of this is to prevent noisy input from
         activating columns.
 
-  @param synPermInactiveDec The amount by which the permanence of an
+  @param synPermInactiveDec The amount by which the permanence of an //TODO make fixed and only depend on robustness?
         inactive synapse is decremented in each learning step.
 
-  @param synPermActiveInc The amount by which the permanence of an
+  @param synPermActiveInc The amount by which the permanence of an //TODO ditto
         active synapse is incremented in each round.
 
-  @param synPermConnected The default connected threshold. Any synapse
+  @param synPermConnected The default connected threshold. Any synapse //TODO remove, hard-coded in Connections, raise to 0.5 from 0.2? 
         whose permanence value is above the connected threshold is
         a "connected synapse", meaning it can contribute to
         the cell's firing.
@@ -171,10 +179,11 @@ public:
         stimulusThreshold active inputs. Periodically, each column looks
         at the overlap duty cycle of all other column within its
         inhibition radius and sets its own internal minimal acceptable
-        duty cycle to: minPctDutyCycleBeforeInh * max(other columns'
-        duty cycles). On each iteration, any column whose overlap duty
+        duty cycle to: 
+	`minPctDutyCycleBeforeInh * max(other columns' duty cycles)`. 
+	On each iteration, any column whose overlap duty
         cycle falls below this computed value will get all of its
-        permanence values boosted up by synPermActiveInc. Raising all
+        permanence values boosted up by @ref synPermActiveInc. Raising all
         permanences in response to a sub-par duty cycle before
         inhibition allows a cell to search for new inputs when either
         its previously learned inputs are no longer ever active, or when
@@ -183,9 +192,12 @@ public:
   @param dutyCyclePeriod The period used to calculate duty cycles.
         Higher values make it take longer to respond to changes in
         boost. Shorter values make it potentially more unstable and
-        likely to oscillate.
+        likely to oscillate. //TODO do not allow too small
+	//TODO make this to dutyCyclePeriodPct 0..1.0, which uses 
+	//TODO new `samplesPerEpoch`, if known. For MNIST (image dataset) this would be #image samples, 
+	//for stream with a weekly period this would be #samples per week. 
 
-  @param boostStrength A number greater or equal than 0, used to
+  @param boostStrength A number greater or equal than 0, used to //TODO no biological background(?), remove
         control boosting strength. No boosting is applied if it is set to 0.
         The strength of boosting increases as a function of boostStrength.
         Boosting encourages columns to have similar activeDutyCycles as their
@@ -202,6 +214,7 @@ public:
   @param wrapAround boolean value that determines whether or not inputs
         at the beginning and end of an input dimension are considered
         neighbors for the purpose of mapping inputs to columns.
+	//TODO does it hurt to set this to always true? We could rm NonWrappingNeighbourhood
 
    */
   virtual void
