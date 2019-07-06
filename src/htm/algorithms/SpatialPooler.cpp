@@ -839,44 +839,81 @@ void SpatialPooler::inhibitColumns_(const vector<Real> &overlaps,
   }
 }
 
+static int missed = 0;
 
 void SpatialPooler::inhibitColumnsGlobal_(const vector<Real> &overlaps,
-                                          Real density,
-                                          vector<UInt> &activeColumns) const {
+                                          const Real density,
+                                          SDR_sparse_t &activeColumns) const {
   NTA_ASSERT(!overlaps.empty());
   NTA_ASSERT(density > 0.0f && density <= 1.0f);
 
   activeColumns.clear();
-  const UInt numDesired = (UInt)(density * numColumns_);
+  const UInt numDesired = static_cast<UInt>(density*numColumns_);
   NTA_CHECK(numDesired > 0) << "Not enough columns (" << numColumns_ << ") "
                             << "for desired density (" << density << ").";
   // Sort the columns by the amount of overlap.  First make a list of all of the
   // column indexes.
+  int zero = 0;
+  int same = 0;
+  int sub  = 0;  
   activeColumns.reserve(numColumns_);
-  for(UInt i = 0; i < numColumns_; i++)
-    activeColumns.push_back(i);
+  for(UInt i = 0; i < numColumns_; i++) {
+    activeColumns.push_back(i); //TODO use iota when debug is over: std::iota(activeColumns.begin(), activeColumns.end(), 0); //0,1,2,..,numColumns_-1
+    //some statistics
+    if(overlaps[i] < Epsilon) {zero++; continue;}
+    if(overlaps[i] < stimulusThreshold_) sub++;
+    if(i==numColumns_-2) break;
+    if(fabs(overlaps[i]-overlaps[i+1]) < Epsilon) same++;
+  }
+
   // Compare the column indexes by their overlap.
-  auto compare = [&overlaps](const UInt &a, const UInt &b) -> bool
-    {return (overlaps[a] == overlaps[b]) ? a > b : overlaps[a] > overlaps[b];};  //for determinism if overlaps match (tieBreaker does not solve that),
-  //otherwise we'd return just `return overlaps[a] > overlaps[b]`. 
+  auto compare = [&overlaps, &same](const UInt a, const UInt b) -> bool {
+	  if(overlaps[a] == overlaps[b]) return a > b;
+	  else return overlaps[a] > overlaps[b] and overlaps[a] > 6.0f;
+  };
 
   // Do a partial sort to divide the winners from the losers.  This sort is
   // faster than a regular sort because it stops after it partitions the
   // elements about the Nth element, with all elements on their correct side of
   // the Nth element.
-  std::nth_element(
+/*  
+    std::nth_element(
     activeColumns.begin(),
     activeColumns.begin() + numDesired,
     activeColumns.end(),
     compare);
+ */
   // Remove the columns which lost the competition.
-  activeColumns.resize(numDesired);
+//!  activeColumns.resize(numDesired);
   // Finish sorting the winner columns by their overlap.
   std::sort(activeColumns.begin(), activeColumns.end(), compare);
   // Remove sub-threshold winners
   while( !activeColumns.empty() &&
-         overlaps[activeColumns.back()] < stimulusThreshold_)
+         overlaps[activeColumns.back()] < stimulusThreshold_) {
       activeColumns.pop_back();
+  }
+
+      //FIXME not numDesired
+     if(iterationNum_ < 1000) return; //need time for learning
+     if(activeColumns.size() != numDesired) {
+       missed++;
+       int missing = max(0, (int)numDesired - (int)activeColumns.size());
+       int ok = numColumns_ - sub - zero;
+       if(ok > (int)numDesired and missing > 0) 
+	       cout << "missed\t" << missed << "-times; by " << missing << "\tof " << numDesired
+            << " ;\tsame % " << (Real)same/numColumns_*100 << "; \tzero % " << ((Real)zero/numColumns_)*100 
+	    << "\tsub threshold % " << (Real)sub/numColumns_*100 << "\n";
+
+       int same2=0;
+       for(size_t i = 0; i < activeColumns.size()-2; i++) {
+         if(activeColumns[i] == activeColumns[i+1]) same2++;
+       }
+       cout << "have same " << same2 << endl; //FIXME there are no same!
+
+     }
+     //FIXME same values ok?
+     //FIXME sparse overlaps from conn
+     //FIXME conn perm inc/dec multiplied by *err (sigmoid)?
 }
 
 

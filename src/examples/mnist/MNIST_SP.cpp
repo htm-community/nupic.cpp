@@ -67,12 +67,12 @@ class MNIST {
 
   public:
     UInt verbosity = 1;
-    const UInt train_dataset_iterations = 2u; //epochs somewhat help, at linear time
+    const UInt train_dataset_iterations = 1u; //epochs somewhat help, at linear time
 
 
 void setup() {
 
-  input.initialize({28, 28,1}); 
+  input.initialize({28, 28, 1}); 
   columns.initialize({28, 28, 8}); //1D vs 2D no big difference, 2D seems more natural for the problem. Speed-----, Results+++++++++; #columns HIGHEST impact. 
   sp.initialize(
     /* inputDimensions */             input.dimensions,
@@ -88,7 +88,7 @@ void setup() {
     /* synPermConnected */            0.5f, //no difference, let's leave at 0.5 in the middle
     /* minPctOverlapDutyCycles */     0.2f, //speed of re-learning?
     /* dutyCyclePeriod */             1402,
-    /* boostStrength */               2.0f, // Boosting does help, but entropy is high, on MNIST it does not matter, for learning with TM prefer boosting off (=0.0), or "neutral"=1.0
+    /* boostStrength */               7.0f, // Boosting does help, but entropy is high, on MNIST it does not matter, for learning with TM prefer boosting off (=0.0), or "neutral"=1.0
     /* seed */                        4u,
     /* spVerbosity */                 1u,
     /* wrapAround */                  true); // does not matter (helps slightly)

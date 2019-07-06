@@ -32,18 +32,18 @@
 namespace htm {
 
 /**
- * Topology_t is a function which returns the pool of potential synapses for a
- * given cell.
+ * Topology_t is a function which returns the pool of potential synapses (input field) 
+ * for a given cell C.
  *
- * Argument 1: is an SDR representing the postsynaptic cell.  Topology functions
+ * @param cell  an SDR representing the postsynaptic cell C.  Topology functions
  * return the inputs which may connect to this cell.  This SDR contains a single
  * true bit.
  *
- * Argument 2: is the dimensions of the presynaptic cells.
+ * @param inputDimension  the dimensions of the presynaptic cells.
  *
- * Argument 3: is a random number generator to use for reproducible results.
+ * @param rng  a random number generator to use for reproducible results.
  *
- * Returns: an SDR containing all presynaptic cells which are allowed to connect
+ * @returns  SDR containing all presynaptic cells which are allowed to connect
  * to the postsynaptic cell.  The dimensions of this SDR must equal argument 2.
  *
  * Example Usage:
@@ -62,7 +62,9 @@ namespace htm {
  *      };
  *    }
  */
-typedef std::function<SDR (const SDR&, const std::vector<UInt>&, Random&)> Topology_t;
+typedef std::function<SDR (const SDR& cell, 
+		           const std::vector<UInt>& inputDimensions, 
+			   Random& rng)> Topology_t;
 
 /**
  * @param potentialRadius: This parameter determines the extent of the

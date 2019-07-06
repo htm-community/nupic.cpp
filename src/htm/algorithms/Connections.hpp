@@ -391,11 +391,11 @@ public:
    * @param numActiveConnectedSynapsesForSegment
    * An output vector for active connected synapse counts per segment.
    *
-   * @param numActivePotentialSynapsesForSegment
+   * @param (optional) numActivePotentialSynapsesForSegment
    * An output vector for active potential synapse counts per segment.
    *
    * @param activePresynapticCells
-   * Active cells in the input.
+   * Active cells in the input as a sparse indices.
    */
   void computeActivity(std::vector<SynapseIdx> &numActiveConnectedSynapsesForSegment,
                        std::vector<SynapseIdx> &numActivePotentialSynapsesForSegment,
