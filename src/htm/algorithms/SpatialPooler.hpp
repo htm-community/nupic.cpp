@@ -233,8 +233,15 @@ public:
   @param active An SDR representing the winning columns after
         inhibition. The size of the SDR is equal to the number of
         columns (also returned by the method getNumColumns).
+
+  @param  spatialAnomalyInputValue (optional) `Real` used for computing "spatial anomaly", see @ref `this.spatial_anomaly.compute()`,
+          obtained by @ref `SP.anomaly`
+
    */
-  virtual void compute(const SDR &input, const bool learn, SDR &active);
+  virtual void compute(const SDR &input, 
+		       const bool learn, 
+		       SDR &active, 
+		       const Real spatialAnomalyInputValue = std::numeric_limits<Real>::min());
 
 
   /**
@@ -276,7 +283,11 @@ public:
        CEREAL_NVP(synPermBelowStimulusInc_),
        CEREAL_NVP(synPermConnected_),
        CEREAL_NVP(minPctOverlapDutyCycles_),
-       CEREAL_NVP(wrapAround_));
+       CEREAL_NVP(wrapAround_),
+       CEREAL_NVP(spAnomaly.minVal_),
+       CEREAL_NVP(spAnomaly.maxVal_),
+       CEREAL_NVP(spAnomaly.anomalyScore_)
+       );
     ar(CEREAL_NVP(boostFactors_));
     ar(CEREAL_NVP(overlapDutyCycles_));
     ar(CEREAL_NVP(activeDutyCycles_));
@@ -309,7 +320,11 @@ public:
        CEREAL_NVP(synPermBelowStimulusInc_),
        CEREAL_NVP(synPermConnected_),
        CEREAL_NVP(minPctOverlapDutyCycles_),
-       CEREAL_NVP(wrapAround_));
+       CEREAL_NVP(wrapAround_),
+       CEREAL_NVP(spAnomaly.minVal_),
+       CEREAL_NVP(spAnomaly.maxVal_),
+       CEREAL_NVP(spAnomaly.anomalyScore_)
+       );
     ar(CEREAL_NVP(boostFactors_));
     ar(CEREAL_NVP(overlapDutyCycles_));
     ar(CEREAL_NVP(activeDutyCycles_));
@@ -1209,6 +1224,89 @@ protected:
   Random rng_;
 
 public:
+  /**
+   *  holds together functionality for computing
+   *  `spatial anomaly`. This is used in NAB.
+   */
+  struct spatial_anomaly {
+
+    /** Fraction outside of the range of values seen so far that will be considered
+     * a spatial anomaly regardless of the anomaly likelihood calculation. 
+     * This accounts for the human labelling bias for spatial values larger than what
+     * has been seen so far.
+     * Default value 0.05f aka 5%, as used in NAB.
+     */
+    Real SPATIAL_TOLERANCE = 0.05;
+
+    /**
+     * toggle whether we should compute spatial anomaly
+     * Default true.
+     */
+    bool enabled = true;
+
+    /**
+     *  compute if the current input `value` is considered spatial-anomaly.
+     *  update internal variables.
+     *
+     *  @param value Real, input #TODO currently handles only 1 variable input, and requires value passed to compute! 
+     *  # later remove, and implement using SP's internal state. But for now we are compatible with NAB's implementation. 
+     *
+     * @return nothing, but updates internal variable `anomalyScore_`, which is either `NO_ANOMALY` (0.0f) , 
+     *   or `SPATIAL_ANOMALY` (exactly 0.9995947141f). Accessed by public @ref `SP.anomaly`.
+     *
+     */
+    void compute(const Real value) {
+      anomalyScore_ = NO_ANOMALY;
+      if(not enabled) return;
+      NTA_CHECK(SPATIAL_TOLERANCE >= 0.0f and SPATIAL_TOLERANCE <= 1.0f); 
+
+      if(minVal_ != maxVal_) {
+        const Real tolerance = (maxVal_ - minVal_) * SPATIAL_TOLERANCE;
+        const Real maxExpected = maxVal_ + tolerance;
+        const Real minExpected = minVal_ - tolerance;
+
+        if(value > maxExpected or value < minExpected) { //spatial anomaly
+          anomalyScore_ = SPATIAL_ANOMALY; 
+	}
+      }
+      if(value > maxVal_ or maxVal_ == INF_) maxVal_ = value;
+      if(value < minVal_ or minVal_ == INF_) minVal_ = value;
+      NTA_ASSERT(anomalyScore_ == NO_ANOMALY or anomalyScore_ == SPATIAL_ANOMALY) << "Out of bounds of acceptable values";
+    }
+
+    bool operator==(const spatial_anomaly& o) const noexcept {
+      return minVal_ == o.minVal_ and
+	     maxVal_ == o.maxVal_ and
+	     anomalyScore_ == o.anomalyScore_ and
+	     enabled == o.enabled and
+	     SPATIAL_TOLERANCE == o.SPATIAL_TOLERANCE;
+    }
+
+    inline bool operator!=(const spatial_anomaly& o) const noexcept {
+      return !this->operator==(o);
+    }
+
+    private:
+      friend class SpatialPooler;
+      static const constexpr Real INF_ = std::numeric_limits<Real>::infinity();
+      Real minVal_ = INF_;
+      Real maxVal_ = INF_;
+      Real anomalyScore_ = NO_ANOMALY; //default score = no anomaly
+
+    public:
+      static const constexpr Real NO_ANOMALY = 0.0f;
+      static const constexpr Real SPATIAL_ANOMALY = 0.9995947141f; //almost 1.0 = max anomaly. Encodes value specific to spatial anomaly (so this can be recognized on results),
+        // "5947141" would translate in l33t speech to "spatial" :)
+  } spAnomaly;
+
+  /**
+   *  spatial anomaly
+   *
+   *  updated on each @ref `compute()`. 
+   *
+   *  @return either 0.0f (no anomaly), or exactly 0.9995947141f (spatial anomaly). This specific value can be recognized in results. 
+   */
+  const Real& anomaly = spAnomaly.anomalyScore_;
   const Connections &connections = connections_;
 };
 

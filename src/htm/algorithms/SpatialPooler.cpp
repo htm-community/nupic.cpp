@@ -459,7 +459,11 @@ void SpatialPooler::initialize(
 }
 
 
-void SpatialPooler::compute(const SDR &input, const bool learn, SDR &active) {
+void SpatialPooler::compute(const SDR &input, 
+		            const bool learn, 
+			    SDR &active,
+			    const Real spatialAnomalyInputValue) {
+
   input.reshape(  inputDimensions_ );
   active.reshape( columnDimensions_ );
   updateBookeepingVars_(learn);
@@ -484,6 +488,11 @@ void SpatialPooler::compute(const SDR &input, const bool learn, SDR &active) {
       updateInhibitionRadius_();
       updateMinDutyCycles_();
     }
+  }
+
+  //update spatial anomaly
+  if(this->spAnomaly.enabled) {
+    spAnomaly.compute(spatialAnomalyInputValue);
   }
 }
 
@@ -1018,6 +1027,10 @@ bool SpatialPooler::operator==(const SpatialPooler& o) const{
 
   //Random
   if (rng_ != o.rng_) return false;
+
+  //spatial anomaly
+  if (spAnomaly != o.spAnomaly) return false;
+
   return true;
 
 }

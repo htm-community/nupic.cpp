@@ -32,6 +32,7 @@
 #include <htm/types/Types.hpp>
 #include <htm/utils/Log.hpp>
 #include <htm/os/Timer.hpp>
+#include <htm/encoders/ScalarEncoder.hpp>
 
 namespace testing {
 
@@ -2103,5 +2104,70 @@ TEST(SpatialPoolerTest, ExactOutput) {
   ASSERT_EQ( columns, gold_sdr );
 }
 
+TEST(SpatialPoolerTest, spatialAnomaly) {
+  SDR inputs({ 1000 });
+  SDR columns({ 200 });
+
+  {
+  SpatialPooler sp(inputs.dimensions, columns.dimensions);
+  // test too large threshold
+  sp.spAnomaly.SPATIAL_TOLERANCE = 1.2345f; //out of bounds, will crash!
+  EXPECT_ANY_THROW(sp.compute(inputs, false, columns, 0.1f /*whatever, fails on TOLERANCE */)) << "Spatial anomaly should fail if SPATIAL_TOLERANCE is out of bounds!";
+  sp.spAnomaly.SPATIAL_TOLERANCE = 0.01f; //within bounds, OK
+  EXPECT_NO_THROW(sp.compute(inputs, false, columns, 0.1f /*whatever */));
+  }
+
+  {
+  SpatialPooler sp({inputs.dimensions}, {columns.dimensions},
+    /*potentialRadius*/ 99999,
+    /*potentialPct*/ 0.5f,
+    /*globalInhibition*/ true,
+    /*localAreaDensity*/ 0.05f,
+    /*stimulusThreshold*/ 3u,
+    /*synPermInactiveDec*/ 0.008f,
+    /*synPermActiveInc*/ 0.05f,
+    /*synPermConnected*/ 0.1f,
+    /*minPctOverlapDutyCycles*/ 0.001f,
+    /*dutyCyclePeriod*/ 200,
+    /*boostStrength*/ 10.0f,
+    /*seed*/ 42,
+    /*spVerbosity*/ 0,
+    /*wrapAround*/ true);
+
+  //test spatial anomaly computation
+  sp.spAnomaly.SPATIAL_TOLERANCE = 0.2f; //threshold 20%
+  ScalarEncoderParameters params;
+  params.minimum = 0.0f;
+  params.maximum = 100.0f;
+  params.size = 1000;
+  params.sparsity = 0.3f;
+  ScalarEncoder enc(params);
+  
+  Real val;
+
+  val = 0.0f;
+  enc.encode(val, inputs); //TODO can SDR hold .origValue = Real which encoders would set? Classifier,Predictor, and spatia_anomaly would use that
+  sp.compute(inputs, true, columns, val);
+  EXPECT_EQ(0.0f, sp.anomaly);
+  EXPECT_EQ(sp.spAnomaly.NO_ANOMALY, sp.anomaly) << "should be the same as above";
+
+  val = 10.0f;
+  enc.encode(val, inputs); 
+  sp.compute(inputs, true, columns, val);
+  EXPECT_EQ(sp.spAnomaly.NO_ANOMALY, sp.anomaly);
+
+  val = 11.99f; //(10-0) * 0.2 == 2 -> <-2, +12> is not anomalous
+  enc.encode(val, inputs); 
+  sp.compute(inputs, true, columns, val);
+  EXPECT_EQ(0.0f, sp.anomaly) << "This shouldn't be an anomaly!";
+
+  val = 100.0f; //(12-0) * 0.2 == ~2.2 -> <-2.2, +14.2> is not anomalous, but 100 is!
+  enc.encode(val, inputs);
+  sp.compute(inputs, true, columns, val);
+  EXPECT_EQ(0.9995947141f, sp.anomaly) << "This should be an anomaly!";
+  EXPECT_EQ(sp.spAnomaly.SPATIAL_ANOMALY, sp.anomaly) << "Should be same as above!";
+  }
+  
+}
 
 } // end anonymous namespace

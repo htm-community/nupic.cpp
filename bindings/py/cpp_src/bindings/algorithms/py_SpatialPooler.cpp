@@ -225,6 +225,14 @@ Argument wrapAround boolean value that determines whether or not inputs
         py_SpatialPooler.def("getMinPctOverlapDutyCycles", &SpatialPooler::getMinPctOverlapDutyCycles);
         py_SpatialPooler.def("setMinPctOverlapDutyCycles", &SpatialPooler::setMinPctOverlapDutyCycles);
 
+	py_SpatialPooler.def("anomaly", [](const SpatialPooler& self) {
+			return self.anomaly;
+	});
+	py_SpatialPooler.def("anomalyThreshold", [](const SpatialPooler& self) {
+			return &self.spAnomaly.SPATIAL_TOLERANCE;
+	});
+
+
         // loadFromString
         py_SpatialPooler.def("loadFromString", [](SpatialPooler& self, const py::bytes& inString)
         {
@@ -245,8 +253,8 @@ Argument wrapAround boolean value that determines whether or not inputs
         });
 
         // compute
-        py_SpatialPooler.def("compute", [](SpatialPooler& self, SDR& input, bool learn, SDR& output)
-            { self.compute( input, learn, output ); },
+        py_SpatialPooler.def("compute", [](SpatialPooler& self, const SDR& input, const bool learn, SDR& output, const Real spatialAnomalyInputValue)
+            { self.compute( input, learn, output, spatialAnomalyInputValue ); },
 R"(
 This is the main workhorse method of the SpatialPooler class. This method
 takes an input SDR and computes the set of output active columns. If 'learn' is
@@ -269,10 +277,15 @@ Argument learn A boolean value indicating whether learning should be
 Argument output An SDR representing the winning columns after
         inhibition. The size of the SDR is equal to the number of
         columns (also returned by the method getNumColumns).
+
+Argument spatialAnomalyInputValue (optional) A `Real` value of the original input
+        that was given to encoder. Used only for spatial anomaly computation.
+        See @ref `SP.anomaly`
 )",
         py::arg("input"),
         py::arg("learn") = true,
-        py::arg("output")
+        py::arg("output"),
+	py::arg("spatialAnomalyInputValue") = std::numeric_limits<Real>::min()
         ); 
 
         // setBoostFactors

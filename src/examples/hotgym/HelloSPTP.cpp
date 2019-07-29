@@ -106,8 +106,9 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
     //Encode
     tEnc.start();
     x+=0.01f; //step size for fn(x)
-    enc.encode(sin(x), input); //model sin(x) function //TODO replace with CSV data
-//    cout << x << "\n" << sin(x) << "\n" << input << "\n\n";
+    const Real value = sin(x);
+    enc.encode(value, input); //model sin(x) function //TODO replace with CSV data
+//    cout << x << "\n" << value << "\n" << input << "\n\n";
     tEnc.stop();
 
     tRng.start();
@@ -117,13 +118,13 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
     //SP (global x local)
     if(useSPlocal) {
     tSPloc.start();
-    spLocal.compute(input, true, outSPlocal);
+    spLocal.compute(input, true, outSPlocal, value /* optional for spatial anomaly*/);
     tSPloc.stop();
     }
 
     if(useSPglobal) {
     tSPglob.start();
-    spGlobal.compute(input, true, outSPglobal);
+    spGlobal.compute(input, true, outSPglobal, value /* optional for spatial anomaly */);
     tSPglob.stop();
     }
     outSP = outSPglobal; //toggle if local/global SP is used further down the chain (TM, Anomaly)
@@ -168,6 +169,7 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
       // output values
       cout << "Epoch = " << e << endl;
       cout << "Anomaly = " << an << endl;
+      cout << "Anomaly (spatial) = " << spGlobal.anomaly << endl;
       cout << "Anomaly (avg) = " << avgAnom10.getCurrentAvg() << endl;
       cout << "Anomaly (Likelihood) = " << anLikely << endl;
       cout << "SP (g)= " << outSP << endl;
@@ -217,10 +219,12 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
         if(useSPglobal) { NTA_CHECK(outSPglobal == goldSP) << "Deterministic output of SP (g) failed!\n" << outSP << "should be:\n" << goldSP; }
         if(useSPlocal) {  NTA_CHECK(outSPlocal == goldSPlocal) << "Deterministic output of SP (l) failed!\n" << outSPlocal << "should be:\n" << goldSPlocal; }
         if(useTM) {       NTA_CHECK(outTM == goldTM) << "Deterministic output of TM failed!\n" << outTM << "should be:\n" << goldTM; }
-        NTA_CHECK(static_cast<UInt>(an *10000.0f) == static_cast<UInt>(goldAn *10000.0f)) //compare to 4 decimal places
+        // anomalies
+	NTA_CHECK(static_cast<UInt>(an *10000.0f) == static_cast<UInt>(goldAn *10000.0f)) //compare to 4 decimal places
 		               << "Deterministic output of Anomaly failed! " << an << "should be: " << goldAn;
 	NTA_CHECK(static_cast<UInt>(avgAnom10.getCurrentAvg() * 10000.0f) == static_cast<UInt>(goldAnAvg * 10000.0f)) 
 		<< "Deterministic average anom score failed:" << avgAnom10.getCurrentAvg() << " should be: " << goldAnAvg;
+	if(useSPglobal) { NTA_CHECK(0.0f == spGlobal.anomaly) << "Deterministic spatial anomaly mismatch!" << spGlobal.anomaly; }
       }
 
       // check runtime speed
