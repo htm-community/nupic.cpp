@@ -423,7 +423,7 @@ endif()
 install(FILES ${PROJECT_BINARY_DIR}/Version.hpp
       DESTINATION include)
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR} DESTINATION include
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/htm DESTINATION include
       MESSAGE_NEVER
       DESTINATION include
       FILES_MATCHING PATTERN "htm/*/*.h*"
