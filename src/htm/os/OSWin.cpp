@@ -51,33 +51,6 @@ std::string OS::getUserName() {
   return username;
 }
 
-int OS::getLastErrorCode() { return ::GetLastError(); }
-
-std::string OS::getErrorMessageFromErrorCode(int errorCode) {
-  // Retrieve the system error message for the last-error code
-  LPVOID lpMsgBuf;
-
-  DWORD msgLen = ::FormatMessageA(
-      FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-          FORMAT_MESSAGE_IGNORE_INSERTS,
-      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-      (LPSTR)&lpMsgBuf, 0, NULL);
-
-  std::ostringstream errMessage;
-  if (msgLen > 0) {
-    errMessage.write((LPSTR)lpMsgBuf, msgLen);
-  } else {
-    errMessage << "code: " << errorCode;
-  }
-
-  LocalFree(lpMsgBuf);
-
-  return errMessage.str();
-}
-
-std::string OS::getErrorMessage() {
-  return getErrorMessageFromErrorCode(getLastErrorCode());
-}
 
 
 #endif //#if defined(NTA_OS_WINDOWS)

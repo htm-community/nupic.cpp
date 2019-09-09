@@ -49,14 +49,13 @@ namespace testing {
 
 static std::string getCurrDir() {
     char buff[PATH_MAX];
-#if defined(NTA_OS_WINDOWS)
-    DWORD res = ::GetCurrentDirectoryA(PATH_MAX - 1, (LPSTR)buff);
-    NTA_CHECK(res > 0) << OS::getErrorMessage();
-
-#else
+    errno = 0;
     char * s = ::getcwd(buff, PATH_MAX - 1);
-    NTA_CHECK(s != nullptr) << OS::getErrorMessage();
-#endif
+    int e = errno;
+    if (e) {
+      strerror_s(buff, sizeof(buff), e);
+      NTA_THROW << "Error: " << buff;
+    }
     return buff;
 }
 

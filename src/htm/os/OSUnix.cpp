@@ -34,10 +34,6 @@
 
 using namespace htm;
 
-std::string OS::getErrorMessage() {
-  std::string err = getErrorMessageFromErrorCode(getLastErrorCode());
-  return err;
-}
 
 std::string OS::getHomeDir() {
   std::string home;
@@ -67,30 +63,5 @@ std::string OS::getUserName() {
   return username;
 }
 
-
-
-
-
-int OS::getLastErrorCode() { return errno; }
-
-
-std::string OS::getErrorMessageFromErrorCode(int errorCode) {
-  std::stringstream errorMessage;
-  char errorBuffer[1024];
-  errorBuffer[0] = '\0';
-
-#if defined(__APPLE__) || (defined(NTA_ARCH_64) && defined(NTA_OS_SPARC))
-  int result = ::strerror_r(errorCode, errorBuffer, sizeof(errorBuffer));
-  if (result == 0)
-    errorMessage << errorBuffer;
-#else
-  char *result = ::strerror_r(errorCode, errorBuffer, sizeof(errorBuffer));
-  if (result != nullptr)
-    errorMessage << errorBuffer;
-#endif
-  else
-    errorMessage << "Error code " << errorCode;
-  return errorMessage.str();
-}
 
 #endif
