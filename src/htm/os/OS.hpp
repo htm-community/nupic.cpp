@@ -48,6 +48,9 @@ namespace htm {
  * isProcessAliveWin32
  * killWin32
  * getStackTrace
+ * getErrorMessage
+ * getLastErrorCode
+ * getErrorMessageFromErrorCode
  */
 
 /**
@@ -61,32 +64,7 @@ namespace htm {
 
 class OS {
 public:
-  /**
-   * Get the last error string
-   *
-   * @retval Returns character string containing the last error message.
-   */
-  static std::string getErrorMessage();
 
-  /**
-   *
-   *
-   * @return An OS/system library error code.
-   */
-  static int getLastErrorCode();
-
-  /**
-   * Get an OS-level error message associated with an error code.
-   *
-   * If no error code is specified, gets the error message associated
-   * with the last error code.
-   *
-   * @param An error code, usually reported by getLastErrorCode().
-   *
-   * @return An error message string.
-   */
-  static std::string
-  getErrorMessageFromErrorCode(int errorCode = getLastErrorCode());
 
   /**
    * Get the user's home directory
