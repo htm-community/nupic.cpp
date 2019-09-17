@@ -167,18 +167,6 @@ void SpatialPooler::setBoostStrength(Real boostStrength) {
   boostStrength_ = boostStrength;
 }
 
-UInt SpatialPooler::getIterationNum() const { return iterationNum_; }
-
-void SpatialPooler::setIterationNum(UInt iterationNum) {
-  iterationNum_ = iterationNum;
-}
-
-UInt SpatialPooler::getIterationLearnNum() const { return iterationLearnNum_; }
-
-void SpatialPooler::setIterationLearnNum(UInt iterationLearnNum) {
-  iterationLearnNum_ = iterationLearnNum;
-}
-
 UInt SpatialPooler::getSpVerbosity() const { return spVerbosity_; }
 
 void SpatialPooler::setSpVerbosity(UInt spVerbosity) {
@@ -359,10 +347,6 @@ void SpatialPooler::getConnectedCounts(UInt connectedCounts[]) const {
 }
 
 
-const vector<Real> &SpatialPooler::getBoostedOverlaps() const {
-  return boostedOverlaps_;
-}
-
 void SpatialPooler::initialize(
     const vector<UInt>& inputDimensions, 
     const vector<UInt>& columnDimensions,
@@ -422,14 +406,11 @@ void SpatialPooler::initialize(
   wrapAround_ = wrapAround;
   updatePeriod_ = 50u;
   initConnectedPct_ = 0.5f; //FIXME make SP's param, and much lower 0.01 https://discourse.numenta.org/t/spatial-pooler-implementation-for-mnist-dataset/2317/25?u=breznak 
-  iterationNum_ = 0u;
-  iterationLearnNum_ = 0u;
 
   overlapDutyCycles_.assign(numColumns_, 0); //TODO make all these sparse or rm to reduce footprint
   activeDutyCycles_.assign(numColumns_, 0);
   minOverlapDutyCycles_.assign(numColumns_, 0.0);
   boostFactors_.assign(numColumns_, 1.0); //1 is neutral value for boosting
-  boostedOverlaps_.resize(numColumns_);
 
   inhibitionRadius_ = 0;
 
@@ -457,17 +438,16 @@ void SpatialPooler::initialize(
 }
 
 
-const vector<SynapseIdx> SpatialPooler::compute(const SDR &input, const bool learn, SDR &active) {
+vector<SynapseIdx> SpatialPooler::compute(const SDR &input, const bool learn, SDR &active) const {
   input.reshape(  inputDimensions_ );
   active.reshape( columnDimensions_ );
-  updateBookeepingVars_(learn);
 
+  //now calculate overlaps of input and input synapses
   const auto& overlaps = connections_.computeActivity(input.getSparse(), learn);
-
-  boostOverlaps_(overlaps, boostedOverlaps_);
+  const auto& boostedOverlaps = getBoostedOverlaps(overlaps);
 
   auto &activeVector = active.getSparse();
-  inhibitColumns_(boostedOverlaps_, activeVector);
+  inhibitColumns_(boostedOverlaps, activeVector);
   // Notify the active SDR that its internal data vector has changed.  Always
   // call SDR's setter methods even if when modifying the SDR's own data
   // inplace.
@@ -484,20 +464,19 @@ const vector<SynapseIdx> SpatialPooler::compute(const SDR &input, const bool lea
       updateMinDutyCycles_();
     }
   }
-
   return overlaps;
 }
 
 
-void SpatialPooler::boostOverlaps_(const vector<SynapseIdx> &overlaps, //TODO use Eigen sparse vector here
-                                   vector<Real> &boosted) const {
+vector<Real> SpatialPooler::getBoostedOverlaps(const vector<SynapseIdx> &overlaps) const { //TODO use Eigen sparse vector here
+  vector<Real> boosted(overlaps.begin(), overlaps.end()); //copy
   if(boostStrength_ < htm::Epsilon) { //boost ~ 0.0, we can skip these computations, just copy the data
-    boosted.assign(overlaps.begin(), overlaps.end());
-    return;
+    return boosted;
   }
   for (UInt i = 0; i < numColumns_; i++) {
-    boosted[i] = overlaps[i] * boostFactors_[i];
+    boosted[i] = overlaps[i] * boostFactors_[i]; //TODO vectorize boosted * factors
   }
+  return boosted;
 }
 
 
@@ -646,7 +625,7 @@ void SpatialPooler::updateDutyCycles_(const vector<SynapseIdx> &overlaps,
   }
   newOverlap.setSparse( overlapsSparseVec );
 
-  const UInt period = std::min(dutyCyclePeriod_, iterationNum_);
+  const UInt period = dutyCyclePeriod_;
 
   updateDutyCyclesHelper_(overlapDutyCycles_, newOverlap, period);
   updateDutyCyclesHelper_(activeDutyCycles_, active, period);
@@ -792,14 +771,6 @@ void SpatialPooler::updateBoostFactorsLocal_() {
 }
 
 
-void SpatialPooler::updateBookeepingVars_(bool learn) {
-  iterationNum_++;
-  if (learn) {
-    iterationLearnNum_++;
-  }
-}
-
-
 void SpatialPooler::inhibitColumns_(const vector<Real> &overlaps,
                                     vector<CellIdx> &activeColumns) const {
   const Real density = localAreaDensity_;
@@ -909,7 +880,7 @@ void SpatialPooler::inhibitColumnsLocal_(const vector<Real> &overlaps,
 
 
 bool SpatialPooler::isUpdateRound_() const {
-  return (iterationNum_ % updatePeriod_) == 0;
+  return (rng_.getReal64() < 1.0/updatePeriod_); //approx every updatePeriod steps
 }
 
 namespace htm {
@@ -927,9 +898,7 @@ std::ostream& operator<< (std::ostream& stream, const SpatialPooler& self)
 
 // Print the main SP creation parameters
 void SpatialPooler::printParameters(std::ostream& out) const {
-  out << "------------CPP SpatialPooler Parameters ------------------\n";
-  out << "iterationNum                = " << getIterationNum() << std::endl
-      << "iterationLearnNum           = " << getIterationLearnNum() << std::endl
+  out << "------------CPP SpatialPooler Parameters ------------------\n"
       << "numInputs                   = " << getNumInputs() << std::endl
       << "numColumns                  = " << getNumColumns() << std::endl
       << std::endl
@@ -987,8 +956,6 @@ bool SpatialPooler::operator==(const SpatialPooler& o) const{
   if (inhibitionRadius_ != o.inhibitionRadius_) return false;
   if (dutyCyclePeriod_ != o.dutyCyclePeriod_) return false;
   if (boostStrength_ != o.boostStrength_) return false;
-  if (iterationNum_ != o.iterationNum_) return false;
-  if (iterationLearnNum_ != o.iterationLearnNum_) return false;
   if (spVerbosity_ != o.spVerbosity_) return false;
   if (updatePeriod_ != o.updatePeriod_) return false;
   if (synPermInactiveDec_ != o.synPermInactiveDec_) return false;

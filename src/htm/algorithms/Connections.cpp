@@ -379,7 +379,7 @@ void Connections::reset()
   currentUpdates_.clear();
 }
 
-vector<SynapseIdx> Connections::computeActivity(const vector<CellIdx> &activePresynapticCells, const bool learn) {
+vector<SynapseIdx> Connections::computeActivity(const vector<CellIdx> &activePresynapticCells, const bool learn) const {
 
   vector<SynapseIdx> numActiveConnectedSynapsesForSegment(segments_.size(), 0);
   if(learn) iteration_++;
@@ -406,7 +406,7 @@ vector<SynapseIdx> Connections::computeActivity(const vector<CellIdx> &activePre
 vector<SynapseIdx> Connections::computeActivity(
     vector<SynapseIdx> &numActivePotentialSynapsesForSegment,
     const vector<CellIdx> &activePresynapticCells,
-    const bool learn) {
+    const bool learn) const {
   NTA_ASSERT(numActivePotentialSynapsesForSegment.size() == segments_.size());
 
   // Iterate through all connected synapses.

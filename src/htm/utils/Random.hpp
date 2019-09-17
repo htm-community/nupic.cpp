@@ -27,6 +27,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <mutex>
 
 #include <htm/types/Types.hpp>
 #include <htm/types/Serializable.hpp>
@@ -94,7 +95,7 @@ public:
   //main API methods:
   /** return a value (uniformly) distributed between [0,max)
    */
-  inline UInt32 getUInt32(const UInt32 max = MAX32) {
+  inline UInt32 getUInt32(const UInt32 max = MAX32) const {
     NTA_ASSERT(max > 0);
     steps_++;
     return gen() % max; //uniform_int_distribution(gen) replaced, as is not same on all platforms! 
@@ -103,9 +104,10 @@ public:
   /** return a double uniformly distributed on [0,1.0)
    * May not be cross-platform (but currently is to our experience)
    */
-  inline Real64 getReal64() {
+  inline Real64 getReal64() const { //FIXME may break with parallel
     steps_++;
-    return gen() / static_cast<Real64>(max());
+    const auto randValue = gen();
+    return randValue / static_cast<Real64>(max());
   }
 
   // populate choices with a random selection of nChoices elements from
@@ -113,7 +115,7 @@ public:
   // templated functions must be defined in header
   //TODO replace with std::sample in c++17 : https://en.cppreference.com/w/cpp/algorithm/sample 
   template <class T>
-  std::vector<T> sample(const std::vector<T>& population, UInt nChoices) {
+  std::vector<T> sample(const std::vector<T>& population, const UInt nChoices) const {
     if (nChoices == 0) {
       return std::vector<T>{};
     }
@@ -128,7 +130,7 @@ public:
   /**
    * return random from range [from, to)
    */
-  Real realRange(Real from, Real to) {
+  Real realRange(const Real from, const Real to) const {
     NTA_ASSERT(from <= to);
     const Real split = to - from;
     return from + static_cast<Real>(split * getReal64());
@@ -137,26 +139,28 @@ public:
 
   // randomly shuffle the elements
   template <class RandomAccessIterator>
-  void shuffle(RandomAccessIterator first, RandomAccessIterator last) {
+  void shuffle(RandomAccessIterator first, RandomAccessIterator last) const {
     //std::shuffle(first, last, gen); //not platform independent results :(
     platform_independent_shuffle(first, last);
   }
 
+
   // for STL compatibility
-  UInt32 operator()(UInt32 n = MAX32) { 
+  UInt32 operator()(const UInt32 n = MAX32) const { 
     NTA_ASSERT(n > 0);
     return getUInt32(n);
   }
+
 
   // normally used for debugging only
   UInt64 getSeed() const { return seed_; }
 
   // for STL
-  typedef unsigned long argument_type;
-  typedef unsigned long result_type;
+  using argument_type = unsigned long;
+  using result_type   = unsigned long;
   result_type max() const { return gen.max(); }
   result_type min() const { return gen.min(); }
-  static const UInt32 MAX32 = std::numeric_limits<UInt32>::max();
+  static const constexpr UInt32 MAX32 = std::numeric_limits<UInt32>::max();
 
 protected:
   friend class RandomTest;
@@ -165,9 +169,9 @@ protected:
   friend UInt32 GetRandomSeed();
 private:
   UInt64 seed_;
-  UInt64 steps_ = 0;  //step counter, used in serialization. It is important that steps_ is in sync with number of 
+  mutable UInt64 steps_ = 0;  //step counter, used in serialization. It is important that steps_ is in sync with number of 
   // calls to RNG
-  std::mt19937 gen; //Standard mersenne_twister_engine 64bit seeded with seed_
+  mutable std::mt19937 gen; //Standard mersenne_twister_engine 64bit seeded with seed_
 //  std::random_device rd; //HW random for random seed cases, undeterministic -> problems with op= and copy-constructor, therefore disabled
 
   // our reimpementation of std::shuffle, 
@@ -175,13 +179,11 @@ private:
   // resuting in differences between impementations (OS, stdlib,...) :(
   // https://en.cppreference.com/w/cpp/algorithm/random_shuffle 
   template<class RandomIt>
-  void platform_independent_shuffle(RandomIt first, RandomIt last)
+  void platform_independent_shuffle(RandomIt first, RandomIt last) const
   {
-    typename std::iterator_traits<RandomIt>::difference_type i, n;
-    n = last - first;
-    for (i = n-1; i > 0; --i) {
-        using std::swap;
-        swap(first[i], first[this->getUInt32(static_cast<UInt32>(i+1))]);
+    const auto n = last - first;
+    for (auto i = n-1; i > 0; --i) {
+      std::swap(first[i], first[this->getUInt32(static_cast<UInt32>(i+1))]);
     }
   }
 };

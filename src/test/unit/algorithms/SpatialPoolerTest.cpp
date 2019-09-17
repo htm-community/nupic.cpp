@@ -135,8 +135,6 @@ void check_spatial_eq(const SpatialPooler& sp1, const SpatialPooler& sp2) {
   ASSERT_TRUE(sp1.getStimulusThreshold() == sp2.getStimulusThreshold());
   ASSERT_TRUE(sp1.getDutyCyclePeriod() == sp2.getDutyCyclePeriod());
   ASSERT_TRUE(almost_eq(sp1.getBoostStrength(), sp2.getBoostStrength()));
-  ASSERT_TRUE(sp1.getIterationNum() == sp2.getIterationNum());
-  ASSERT_TRUE(sp1.getIterationLearnNum() == sp2.getIterationLearnNum());
   ASSERT_TRUE(sp1.getSpVerbosity() == sp2.getSpVerbosity());
   ASSERT_TRUE(sp1.getWrapAround() == sp2.getWrapAround());
   ASSERT_TRUE(sp1.getUpdatePeriod() == sp2.getUpdatePeriod());
@@ -521,7 +519,6 @@ TEST(SpatialPoolerTest, testUpdateDutyCycles) {
   overlaps.assign(overlapNewVal1, overlapNewVal1 + numColumns);
   active.setDense(vector<Byte>({0, 0, 0, 0, 0}));
 
-  sp.setIterationNum(2);
   sp.updateDutyCycles_(overlaps, active);
 
   Real resultOverlapArr1[5];
@@ -531,7 +528,6 @@ TEST(SpatialPoolerTest, testUpdateDutyCycles) {
   ASSERT_TRUE(check_vector_eq(resultOverlapArr1, trueOverlapArr1, numColumns));
 
   sp.setOverlapDutyCycles(initOverlapArr1);
-  sp.setIterationNum(2000);
   sp.setUpdatePeriod(1000);
   sp.updateDutyCycles_(overlaps, active);
 
@@ -1032,20 +1028,6 @@ TEST(SpatialPoolerTest, testUpdateBoostFactors) {
 }
 
 
-TEST(SpatialPoolerTest, testUpdateBookeepingVars) {
-  SpatialPooler sp;
-  sp.setIterationNum(5);
-  sp.setIterationLearnNum(3);
-  sp.updateBookeepingVars_(true);
-  ASSERT_TRUE(6 == sp.getIterationNum());
-  ASSERT_TRUE(4 == sp.getIterationLearnNum());
-
-  sp.updateBookeepingVars_(false);
-  ASSERT_TRUE(7 == sp.getIterationNum());
-  ASSERT_TRUE(4 == sp.getIterationLearnNum());
-}
-
-
 TEST(SpatialPoolerTest, testCalculateOverlap) {
   SpatialPooler sp;
   UInt numInputs = 10;
@@ -1084,6 +1066,7 @@ TEST(SpatialPoolerTest, testCalculateOverlap) {
     SDR input({numInputs});
     SDR output(sp.getColumnDimensions());
     input.setDense(SDR_dense_t(inputs[i], inputs[i] + numInputs));
+    //former SP.calculateOverlap_()
     const auto overlaps = sp.compute(input, false, output);
     ASSERT_TRUE(check_vector_eq(trueOverlaps[i], overlaps));
   }
@@ -1362,31 +1345,13 @@ TEST(SpatialPoolerTest, testInhibitColumnsLocal) {
 
 TEST(SpatialPoolerTest, testIsUpdateRound) {
   SpatialPooler sp;
-  sp.setUpdatePeriod(50);
-  sp.setIterationNum(1);
-  ASSERT_TRUE(!sp.isUpdateRound_());
-  sp.setIterationNum(39);
-  ASSERT_TRUE(!sp.isUpdateRound_());
-  sp.setIterationNum(50);
-  ASSERT_TRUE(sp.isUpdateRound_());
-  sp.setIterationNum(1009);
-  ASSERT_TRUE(!sp.isUpdateRound_());
-  sp.setIterationNum(1250);
-  ASSERT_TRUE(sp.isUpdateRound_());
-
-  sp.setUpdatePeriod(125);
-  sp.setIterationNum(0);
-  ASSERT_TRUE(sp.isUpdateRound_());
-  sp.setIterationNum(200);
-  ASSERT_TRUE(!sp.isUpdateRound_());
-  sp.setIterationNum(249);
-  ASSERT_TRUE(!sp.isUpdateRound_());
-  sp.setIterationNum(1330);
-  ASSERT_TRUE(!sp.isUpdateRound_());
-  sp.setIterationNum(1249);
-  ASSERT_TRUE(!sp.isUpdateRound_());
-  sp.setIterationNum(1375);
-  ASSERT_TRUE(sp.isUpdateRound_());
+  sp.setUpdatePeriod(5);
+  UInt count = 0;
+  for (int i=0; i< 100; i++) {
+    if(sp.isUpdateRound_()) count++; //should be every 50th step, we use probability, so almost every 1/50 chance -> approx 20x in 100. 
+  }
+  ASSERT_TRUE(sp.getUpdatePeriod()-2 <= count and
+	      sp.getUpdatePeriod()+2 >= count); //can fail, but should not too ofthen
 }
 
 
@@ -1698,7 +1663,7 @@ TEST(SpatialPoolerTest, getOverlaps) {
   EXPECT_EQ(expectedOverlaps, overlaps);
 
   //boosted overlaps, but boost strength=0.0
-  const auto& boostedOverlaps = sp.getBoostedOverlaps();
+  const auto& boostedOverlaps = sp.getBoostedOverlaps(overlaps);
   const vector<Real> expectedBoostedOverlaps = {0.0f, 3.0f, 5.0f}; //same as orig above (but float)
   EXPECT_EQ(expectedBoostedOverlaps, boostedOverlaps) << "SP with boost strength " << sp.getBoostStrength() << " must not change boosting ";
 
@@ -1708,9 +1673,9 @@ TEST(SpatialPoolerTest, getOverlaps) {
   sp.setBoostStrength(2.0f);
   
   activeColumns.setDense(vector<UInt>{0, 0, 0});
-  sp.compute(input, true, activeColumns);
+  overlaps = sp.compute(input, true, activeColumns);
 
-  const auto& boostedOverlaps2 = sp.getBoostedOverlaps();
+  const auto& boostedOverlaps2 = sp.getBoostedOverlaps(overlaps);
   const vector<Real> expectedBoostedOverlaps2 = {0.0f, 6.0f, 15.0f};
   EXPECT_EQ(expectedBoostedOverlaps2, boostedOverlaps2) << "SP with boost strength " << sp.getBoostStrength() << " must change boosting ";
 }

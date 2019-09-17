@@ -57,37 +57,7 @@ Random::Random(UInt64 seed) {
   steps_ = 0;
 }
 
-
 namespace htm {
-std::ostream &operator<<(std::ostream &outStream, const Random &r) {
-  outStream << "random-v2" << " ";
-  outStream << r.seed_ << " ";
-  outStream << r.steps_ << " ";
-  outStream << "endrandom-v2" << " ";
-  return outStream;
-}
-
-
-std::istream &operator>>(std::istream &inStream, Random &r) {
-  std::string version;
-
-  inStream >> version;
-  NTA_CHECK(version == "random-v2") << "Random() deserializer -- found unexpected version string '"
-              << version << "'";
-  inStream >> r.seed_;
-  r.gen.seed(static_cast<unsigned int>(r.seed_)); //reseed
-  inStream >> r.steps_;
-  r.gen.discard(r.steps_); //advance n steps
-  //FIXME we could de/serialize directly RNG gen, it should be multi-platform according to standard, 
-  //but on OSX CI it wasn't (25/11/2018). So "hacking" the above instead. 
-  std::string endtag;
-  inStream >> endtag;
-  NTA_CHECK(endtag == "endrandom-v2") << "Random() deserializer -- found unexpected end tag '" << endtag  << "'";
-  inStream.ignore(1);
-
-  return inStream;
-}
-
 // helper function for seeding RNGs across the plugin barrier
 UInt32 GetRandomSeed() {
   return htm::Random().getUInt32();

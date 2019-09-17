@@ -230,18 +230,21 @@ public:
         will be removed from activeVector.  TODO: we may want to keep
         boosting on even when learning is off.
 
-  @param active An SDR representing the winning columns after
-        inhibition. The size of the SDR is equal to the number of
-        columns (also returned by the method getNumColumns).
+  @return param `active` is filled with active output columns. 
 
-  @return overlap
-        an int vector containing the overlap score for each column. The
-        overlap score for a column is defined as the number of synapses in
-        a "connected state" (connected synapses) that are connected to
-        input bits which are turned on. 
-        Replaces: SP.calculateOverlaps_(), SP.getOverlaps()
+  @return overlaps dense vector of number of connected synapses for each column `active`.
+          Determines each column's overlap with the current input vector.
+          The overlap of a column is the number of synapses for that column
+          that are connected (permanence value is greater than
+          'synPermConnected') to input bits which are turned on.
+          The overlap score for a column is defined as the number of synapses in
+          a "connected state" (connected synapses) that are connected to
+          input bits which are turned on.
+	  This replaces deprecated method `SP.getOverlaps()`
    */
-  virtual const vector<SynapseIdx> compute(const SDR &input, const bool learn, SDR &active);
+  virtual std::vector<SynapseIdx> compute(const SDR &input, 
+		                          const bool learn, 
+					  SDR &active) const;
 
 
   /**
@@ -467,33 +470,6 @@ public:
   */
   void setBoostStrength(Real boostStrength);
 
-  /**
-  Returns the iteration number.
-
-  @returns integer number of iteration number.
-  */
-  UInt getIterationNum() const;
-
-  /**
-  Sets the iteration number.
-
-  @param iterationNum integer number of iteration number.
-  */
-  void setIterationNum(UInt iterationNum);
-
-  /**
-  Returns the learning iteration number.
-
-  @returns integer of the learning iteration number.
-  */
-  UInt getIterationLearnNum() const;
-
-  /**
-  Sets the learning iteration number.
-
-  @param iterationLearnNum integer of learning iteration number.
-  */
-  void setIterationLearnNum(UInt iterationLearnNum);
 
   /**
   Returns the verbosity level.
@@ -744,17 +720,25 @@ public:
 
 
   /**
-  Returns the boosted overlap score for each column.
+   * Apply boosting (see param @ref `boostStrength` in constructor) to the overlap.
+   *
+   * @param overlaps vector returns from @ref `compute()`. Signifies overlap of the SP with
+   * the input, aka. activation.
+   *
+   * @deprecate replaces deprecated `SP.getBoostedOverlaps_()`; now use
+   * `auto over = compute(..); auto boosted = sp.getBoostedOverlaps(over);`
+   *  Also replaces `SP.boostOverlaps_()`
+   *
+   *  @return boosted overlaps for each input.
+   *
    */
-  const vector<Real> &getBoostedOverlaps() const;
+  const vector<Real>& getBoostedOverlaps(const vector<SynapseIdx> overlaps) const;
 
   ///////////////////////////////////////////////////////////
   //
   // Implementation methods. all methods below this line are
   // NOT part of the public API
 
-
-  void boostOverlaps_(const vector<SynapseIdx> &overlaps, vector<Real> &boostedOverlaps) const;
 
   /**
     Maps a column to its respective input index, keeping to the topology of
@@ -852,6 +836,10 @@ public:
   vector<Real> initPermanence_(const vector<UInt> &potential, Real connectedPct);
 
   void clip_(vector<Real> &perm) const;
+
+  void raisePermanencesToThreshold_(vector<Real> &perm,
+                                    const vector<UInt> &potential) const;
+
 
   /**
       Performs inhibition. This method calculates the necessary values needed to
