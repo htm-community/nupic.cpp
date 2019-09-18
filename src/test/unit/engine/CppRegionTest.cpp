@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2013, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -15,26 +13,23 @@
  *
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
- *
- * http://numenta.org/licenses/
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 #include "gtest/gtest.h"
 
-#include <nupic/engine/Input.hpp>
-#include <nupic/engine/Link.hpp>
-#include <nupic/engine/Network.hpp>
-#include <nupic/engine/NuPIC.hpp>
-#include <nupic/engine/Output.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Spec.hpp>
-#include <nupic/ntypes/Array.hpp>
-#include <nupic/ntypes/Dimensions.hpp>
-#include <nupic/os/Env.hpp>
-#include <nupic/os/Path.hpp>
-#include <nupic/os/Timer.hpp>
-#include <nupic/types/Exception.hpp>
+#include <htm/engine/Input.hpp>
+#include <htm/engine/Link.hpp>
+#include <htm/engine/Network.hpp>
+#include <htm/engine/NuPIC.hpp>
+#include <htm/engine/Output.hpp>
+#include <htm/engine/Region.hpp>
+#include <htm/engine/Spec.hpp>
+#include <htm/ntypes/Array.hpp>
+#include <htm/ntypes/Dimensions.hpp>
+#include <htm/os/Env.hpp>
+#include <htm/os/Path.hpp>
+#include <htm/os/Timer.hpp>
+#include <htm/types/Exception.hpp>
 
 #include <cmath>   // fabs/abs
 #include <cstdlib> // exit
@@ -43,14 +38,15 @@
 #include <string>
 #include <vector>
 #include <algorithm>  // for max()
+#include <sstream>
 
 
 namespace testing {
 
-using namespace nupic;
+using namespace htm;
 using std::exception;
 
-static bool verbose = true;
+static bool verbose = false;
 #define VERBOSE if(verbose) std::cerr << "[          ]"
 
 
@@ -69,6 +65,11 @@ TEST(CppRegionTest, testCppLinkingFanIn) {
   net.link("region2", "region3"); 
 
   net.initialize();
+
+  VERBOSE << "Dimensions: \n";
+  VERBOSE << " TestNode out  - " << region1->getOutputDimensions("bottomUpOut")    <<"\n";
+  VERBOSE << " TestNode out  - " << region2->getOutputDimensions("bottomUpOut")<<"\n";
+  VERBOSE << " TestNode in   - " << region3->getInputDimensions("bottomUpIn")  <<"\n";
 
   const Array r1OutputArray = region1->getOutputData("bottomUpOut");
   const Array r2OutputArray = region2->getOutputData("bottomUpOut");
@@ -111,7 +112,7 @@ TEST(CppRegionTest, testCppLinkingSDR) {
   Network net;
 
   std::shared_ptr<Region> region1 = net.addRegion("region1", "ScalarSensor", "{dim: [6,1], n: 6, w: 2}");
-  std::shared_ptr<Region> region2 = net.addRegion("region2", "SPRegion", "{dim: [2,3]}");
+  std::shared_ptr<Region> region2 = net.addRegion("region2", "SPRegion", "{dim: [20,3]}");
 
   net.link("region1", "region2"); 
 
@@ -129,7 +130,7 @@ TEST(CppRegionTest, testCppLinkingSDR) {
   const Array r1OutputArray = region1->getOutputData("encoded");
   VERBOSE << r1OutputArray << "\n";
   std::vector<Byte> expected = {0, 0, 0, 0, 1, 1};
-  EXPECT_TRUE(r1OutputArray == expected);
+  EXPECT_EQ(r1OutputArray, expected);
 
   region2->prepareInputs();
   region2->compute();
@@ -138,22 +139,24 @@ TEST(CppRegionTest, testCppLinkingSDR) {
   const Array r2InputArray = region2->getInputData("bottomUpIn");
   VERBOSE << r2InputArray << "\n";
   EXPECT_EQ(r2InputArray.getType(), NTA_BasicType_SDR);
-  EXPECT_TRUE(r2InputArray == expected);
+  EXPECT_EQ(r2InputArray,  expected);
 
   VERBOSE << "Region 2 input after first iteration:" << std::endl;
   const Dimensions r2dims = region2->getOutput("bottomUpOut")->getDimensions();
   EXPECT_EQ(r2dims.size(), 2u) << " actual dims: " << r2dims.toString();
-  EXPECT_EQ(r2dims[0], 2u) << " actual dims: " << r2dims.toString();
+  EXPECT_EQ(r2dims[0], 20u) << " actual dims: " << r2dims.toString(); //match dims of SPRegion constructed above
   EXPECT_EQ(r2dims[1], 3u) << " actual dims: " << r2dims.toString();
   
   const Array r2OutputArray = region2->getOutputData("bottomUpOut");
   EXPECT_EQ(r2OutputArray.getType(), NTA_BasicType_SDR);
-  EXPECT_TRUE(r2OutputArray.getSDR()->dimensions == r2dims)
+  EXPECT_EQ(r2OutputArray.getSDR().dimensions, r2dims)
       << "Expected dimensions on the output to match dimensions on the buffer.";
   VERBOSE << r2OutputArray << "\n";
-  std::vector<Byte> expected_output = {0, 1, 0, 1, 0, 1};
-  EXPECT_TRUE(r2OutputArray == expected_output);
-
+  SDR exp({20u, 3u});
+  exp.setSparse(SDR_sparse_t{
+    4, 21, 32, 46
+  });
+  EXPECT_EQ(r2OutputArray, exp.getDense()) << "got " << r2OutputArray;
 }
 
 
@@ -195,12 +198,12 @@ TEST(CppRegionTest, testYAML) {
 TEST(CppRegionTest, realmain) {
   Network n;
 
-  size_t count1 = n.getRegions().getCount();
+  size_t count1 = n.getRegions().size();
   EXPECT_TRUE(count1 == 0u);
-  std::shared_ptr<Region> level1 = n.addRegion("level1", "TestNode", "");
+  std::shared_ptr<Region> level1 = n.addRegion("level1", "TestNode", "{count: 2}");
 
 
-  size_t count = n.getRegions().getCount();
+  size_t count = n.getRegions().size();
   EXPECT_TRUE(count == 1u);
   std::string region_type = level1->getType();
   EXPECT_STREQ(region_type.c_str(), "TestNode");
@@ -261,9 +264,25 @@ TEST(CppRegionTest, realmain) {
   const Array& output = level1->getOutputData("bottomUpOut");
   Real64 *data_actual = (Real64 *)output.getBuffer();
   size_t size = output.getCount();
-  ASSERT_TRUE(size > 1u);
+  ASSERT_EQ(size, 2u);
   // set the actual output
   data_actual[1] = 54321.0;
 }
+
+
+TEST(CppRegionTest, RegionSerialization) {
+	Network n;
+	
+	std::shared_ptr<Region> r1 = n.addRegion("testnode", "TestNode", "{count: 2}");
+	
+	std::stringstream ss;
+	r1->save(ss);
+	
+	Region r2(&n);
+	r2.load(ss);
+	EXPECT_EQ(*r1.get(), r2);
+
+}
+
 
 } //ns

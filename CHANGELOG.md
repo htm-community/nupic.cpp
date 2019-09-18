@@ -1,5 +1,11 @@
 # Changelog
 
+Also see [API_CHANGELOG](API_CHANGELOG.md).
+
+## 2.0.0
+* changed repository name from nupic.core to htm.core
+* Added support for Visual Studio 2019
+
 ## 1.1.0
 
 * Comunity release

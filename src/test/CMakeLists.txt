@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2016, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2016, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,20 +13,18 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.7)
-project(nupic_core CXX)
+project(htm_core CXX)
 
-message(STATUS "Configuring nupic_core tests")
+message(STATUS "Configuring htm_core tests")
 ###############################################################
 ###                   TESTS                      ##############
 ###############################################################
 #
-# Build TESTS of the nupic core static library
-#   ${core_library}  references the nupic_core  static library which includes depencancy libraries
+# Build TESTS of the htm core static library
+#   ${core_library}  references the htm_core  static library which includes depencancy libraries
 #
 
 set(CMAKE_VERBOSE_MAKEFILE ON) # toggle for cmake debug 
@@ -40,18 +36,19 @@ set(unit_tests_executable unit_tests)
 
 set(algorithm_tests
 	   unit/algorithms/AnomalyTest.cpp
-	   unit/algorithms/Cells4Test.cpp
+	   unit/algorithms/AnomalyLikelihoodTest.cpp
 	   unit/algorithms/ConnectionsPerformanceTest.cpp
 	   unit/algorithms/ConnectionsTest.cpp
 	   unit/algorithms/HelloSPTPTest.cpp
 	   unit/algorithms/SDRClassifierTest.cpp
-	   unit/algorithms/SegmentTest.cpp
 	   unit/algorithms/SpatialPoolerTest.cpp
 	   unit/algorithms/TemporalMemoryTest.cpp
 	   )
                
 set(encoders_tests
            unit/encoders/ScalarEncoderTest.cpp
+           unit/encoders/RandomDistributedScalarEncoderTest.cpp
+           unit/encoders/SimHashDocumentEncoderTest.cpp
            )
 	   
 set(engine_tests
@@ -71,6 +68,7 @@ set(math_tests
 	   
 set(ntypes_tests
 	   unit/ntypes/ArrayTest.cpp
+	   unit/ntypes/BasicTypeTest.cpp
 	   unit/ntypes/CollectionTest.cpp
 	   unit/ntypes/DimensionsTest.cpp
 	   unit/ntypes/ScalarTest.cpp
@@ -80,7 +78,6 @@ set(ntypes_tests
 set(os_tests
 	   unit/os/DirectoryTest.cpp
 	   unit/os/EnvTest.cpp
-	   unit/os/OSTest.cpp
 	   unit/os/PathTest.cpp
 	   unit/os/TimerTest.cpp
 	   )
@@ -89,13 +86,14 @@ set(regions_tests
 	   unit/regions/RegionTestUtilities.cpp
 	   unit/regions/RegionTestUtilities.hpp
 	   unit/regions/SPRegionTest.cpp
+           unit/regions/TMRegionTest.cpp
+           unit/regions/VectorFileTest.cpp
 	   )
+
 	   
 set(types_tests
-	   unit/types/BasicTypeTest.cpp
 	   unit/types/ExceptionTest.cpp
 	   unit/types/SdrTest.cpp
-	   unit/types/SdrProxyTest.cpp
 	   )
 	   
 set(utils_tests
@@ -148,6 +146,7 @@ target_link_libraries(${unit_tests_executable}
 #    ${src_lib_shared}
     ${gtest_LIBRARIES}
     ${COMMON_OS_LIBS}
+    ${INTERNAL_LINKER_FLAGS}
 )
 target_include_directories(${unit_tests_executable} PRIVATE 
 	${gtest_INCLUDE_DIRS}
@@ -155,7 +154,6 @@ target_include_directories(${unit_tests_executable} PRIVATE
 	${EXTERNAL_INCLUDES})
 target_compile_definitions(${unit_tests_executable} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_compile_options(${unit_tests_executable} PUBLIC ${INTERNAL_CXX_FLAGS})
-set_target_properties(${unit_tests_executable} PROPERTIES LINK_FLAGS "${INTERNAL_LINKER_FLAGS_STR}")
 add_dependencies(${unit_tests_executable} ${core_library}) 
 #add_dependencies(${unit_tests_executable} ${src_lib_shared})
 

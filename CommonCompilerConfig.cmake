@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2013-2018, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2013-2018, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,8 +13,6 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
 
@@ -87,7 +83,8 @@ string(TOLOWER ${PLATFORM} PLATFORM)
 #	GCC 9   expected to support <filesystem>
 #       AppleClang as of (XCode 10.1) does not support C++17 or filesystem
 #           (although you can get llvm 7 from brew)
-#	Clang 7 has complete <filesystem> support for C++17
+#	Clang 7 has complete <filesystem> support for C++17, link with -lc++fs (cmake "stdc++fs" library)
+#       Clang 9 has complete <filesystem> support for C++17 by default. 
 #	Visual Studio 2017 15.7 (v19.14)supports <filesystem> with C++17
 #	MinGW has no support for filesystem.
 #
@@ -108,14 +105,25 @@ if(NOT FORCE_CPP11)
     elseif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "8")
          set(CMAKE_CXX_STANDARD 17)
 	 set(extra_lib_for_filesystem "stdc++fs")
-	 set(boost_required "OFF")
+	 set(boost_required OFF)
     endif()	 
   elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "AppleClang")  # see CMake Policy CMP0025
-    # does not support C++17 and filesystem (as of XCode 10.1)
-  elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "11") # XCode 11 & AppleClang 11 do support c++17 with <filesystem>
+      ## TODO XCode11 on macOS 10.15 supports c++17 and <filesystem>,
+      # https://developer.apple.com/documentation/xcode_release_notes/xcode_11_beta_5_release_notes
+      # but for now CircleCI uses macOS 10.14, so we cannot disable boost yet.
+      # macOS 10.15 will be release in Sept 2019, so we can switch to it soon after it.
+      set(boost_required ON)
+      set(CMAKE_CXX_STANDARD 11)
+    endif()
+  # does not support C++17 and filesystem (as of XCode 10.1)
+  elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang") # clang + std::filesystem, see https://libcxx.llvm.org/docs/UsingLibcxx.html#using-filesystem
     if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "7")
          set(CMAKE_CXX_STANDARD 17)
 	 set(boost_required OFF)
+      if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "7") # special library for older clang-7
+        set(extra_lib_for_filesystem "stdc++fs")
+      endif()
     endif()
   elseif(MSVC)
       if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL "19.14")
@@ -154,7 +162,7 @@ set(COMMON_OS_LIBS)
 
 if(MSVC)
 	# MS Visual C
-	# on Windows using Visual Studio 2015, 2017   https://docs.microsoft.com/en-us/cpp/build/reference/compiler-options-listed-by-category
+	# on Windows using Visual Studio 2015, 2017, 2019   https://docs.microsoft.com/en-us/cpp/build/reference/compiler-options-listed-by-category
 	#  /permissive- forces standards behavior.  See https://docs.microsoft.com/en-us/cpp/build/reference/permissive-standards-conformance?view=vs-2017
 	#  /Zc:__cplusplus   This is required to force MSVC to pay attention to the standard setting and sets __cplusplus.
 	#                    NOTE: MSVC does not support C++11.  But does support C++14 and C++17.
@@ -167,18 +175,17 @@ if(MSVC)
 							$<$<CONFIG:Debug>:/Ob0 /Od /Zi /sdl /RTC1 /MDd>)
 	#linker flags
 	if("${BITNESS}" STREQUAL "32")
-		set(machine "/MACHINE:X86")
+		set(machine "-MACHINE:X86")
 	else()
-		set(machine "/MACHINE:X${BITNESS}")
+		set(machine "-MACHINE:X${BITNESS}")
 	endif()
-	set(INTERNAL_LINKER_FLAGS "${machine} /NOLOGO /SAFESEH:NO /NODEFAULTLIB:LIBCMT /ignore:4099 /LTCG")
+	set(INTERNAL_LINKER_FLAGS ${machine} -NOLOGO -NODEFAULTLIB:LIBCMT -ignore:4099 $<$<CONFIG:Release>:-LTCG>)
 
 	set(COMMON_COMPILER_DEFINITIONS 	
 		_CONSOLE
 		_MBCS
 		NTA_OS_WINDOWS
 		NTA_COMPILER_MSVC
-		NTA_INTERNAL=1
 		NTA_ARCH_${BITNESS}
 		_CRT_SECURE_NO_WARNINGS
 		_SCL_SECURE_NO_WARNINGS
@@ -210,7 +217,7 @@ else()
 
 	# Compiler `-D*` definitions
 	#
-	# Compiler definitions specific to nupic.core code
+	# Compiler definitions specific to htm.core code
 	#
 	string(TOUPPER ${PLATFORM} platform_uppercase)
 
@@ -218,7 +225,6 @@ else()
 		-DNTA_OS_${platform_uppercase}
 		-DNTA_ARCH_${BITNESS}
 		-DHAVE_CONFIG_H
-		-DNTA_INTERNAL=1
 		-DBOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
 		-DBOOST_NO_WREGEX
 		)
@@ -241,13 +247,22 @@ else()
 
 	#
 	# Set linker (ld)
-	# use ld.gold if available
+	# These linkers are tried for faster linking performance
+	# use ld.gold, or lld if available
 	#
-	execute_process(COMMAND ld.gold --version RESULT_VARIABLE EXIT_CODE)
-	if(EXIT_CODE EQUAL 0)
-	  message("Using ld.gold as LINKER.")
-	  set(CMAKE_LINKER "ld.gold")
-	endif()
+#	execute_process(COMMAND ld.gold --version RESULT_VARIABLE EXIT_CODE_GOLD)
+#	if(EXIT_CODE_GOLD EQUAL 0)
+#	  message("Using ld.gold as LINKER.")
+#	  set(CMAKE_LINKER "ld.gold")
+#	  set(optimization_flags_lt ${optimization_flags_lt} -fuse-ld=gold)
+#	endif()
+#	execute_process(COMMAND ld.lld --version RESULT_VARIABLE EXIT_CODE_LLD)
+#	execute_process(COMMAND ld.lld-9 --version RESULT_VARIABLE EXIT_CODE_LLD9)
+#        if(EXIT_CODE_LLD EQUAL 0 OR EXIT_CODE_LLD9 EQUAL 0)
+#          message("Using ld.lld as LINKER.")
+#          set(CMAKE_LINKER "ld.lld")
+#          set(optimization_flags_lt ${optimization_flags_lt} -fuse-ld=lld)
+#        endif()
 
 
 	#
@@ -340,18 +355,16 @@ else()
         # set OPTIMIZATION flags
 	#
 	#TODO: CMake automatically generates optimisation flags. Do we need this? - "I think yes ~breznak"
-        set(optimization_flags_cc ${optimization_flags_cc} -O2)
-        set(optimization_flags_cc -pipe ${optimization_flags_cc}) #TODO use -Ofast instead of -O3
-        set(optimization_flags_lt -O2 ${optimization_flags_lt})
+        set(optimization_flags_cc ${optimization_flags_cc} -pipe -O3)
+        set(optimization_flags_lt ${optimization_flags_lt} -O3)
         if(NOT ${CMAKE_SYSTEM_PROCESSOR} STREQUAL "armv7l")
                 set(optimization_flags_cc ${optimization_flags_cc} -mtune=generic)
         endif()
         if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" AND NOT MINGW)
-                set(optimization_flags_cc ${optimization_flags_cc} -fuse-ld=gold)
                 # NOTE -flto must go together in both cc and ld flags; also, it's presently incompatible
                 # with the -g option in at least some GNU compilers (saw in `man gcc` on Ubuntu)
-                set(optimization_flags_cc ${optimization_flags_cc} -fuse-linker-plugin -flto-report -flto) #TODO fix LTO for clang
-                set(optimization_flags_lt ${optimization_flags_lt} -flto) #TODO LTO for clang too
+                set(optimization_flags_cc ${optimization_flags_cc} -fuse-linker-plugin -flto-report -flto -fno-fat-lto-objects) #TODO fix LTO for clang
+                set(optimization_flags_lt ${optimization_flags_lt} -flto -fno-fat-lto-objects) #TODO LTO for clang too
         endif()
 
 
@@ -389,7 +402,7 @@ else()
 	# Assemble compiler and linker properties
 	#
 
-	# Settings for internal nupic.core code
+	# Settings for internal htm.core code
 	set(INTERNAL_CXX_FLAGS ${debug_specific_compile_flags} ${cxx_flags_unoptimized} ${internal_compiler_warning_flags} ${optimization_flags_cc})
 	set(INTERNAL_LINKER_FLAGS ${debug_specific_linker_flags} ${linker_flags_unoptimized} ${optimization_flags_lt})
 	
@@ -412,19 +425,13 @@ endif()
 #
 # Provide a string variant of the COMMON_COMPILER_DEFINITIONS list
 #
-set(COMMON_COMPILER_DEFINITIONS_STR)
-foreach(compiler_definition ${COMMON_COMPILER_DEFINITIONS})
-  set(COMMON_COMPILER_DEFINITIONS_STR "${COMMON_COMPILER_DEFINITIONS_STR} ${compiler_definition}")
-endforeach()
+string (REPLACE ";" " " COMMON_COMPILER_DEFINITIONS_STR "${COMMON_COMPILER_DEFINITIONS}")
 
 # Provide a string variant of the INTERNAL_CXX_FLAGS list
-set(INTERNAL_CXX_FLAGS_STR)
-foreach(flag_item ${INTERNAL_CXX_FLAGS})
-     set(INTERNAL_CXX_FLAGS_STR "${INTERNAL_CXX_FLAGS_STR} ${flag_item}")
-endforeach()
+string (REPLACE ";" " " INTERNAL_CXX_FLAGS_STR "${INTERNAL_CXX_FLAGS}")
 
-set(INTERNAL_LINKER_FLAGS_STR)
-foreach(flag_item ${INTERNAL_LINKER_FLAGS})
-  set(flags "${INTERNAL_LINKER_FLAGS_STR} ${flag_item}")
-endforeach()
+# Provide a string variant of the INTERNAL_LINKER_FLAGS list
+string (REPLACE ";" " " INTERNAL_LINKER_FLAGS_STR "${INTERNAL_LINKER_FLAGS}")
+set_property(GLOBAL PROPERTY LINK_LIBRARIES ${INTERNAL_LINKER_FLAGS})
+
 

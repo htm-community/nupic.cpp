@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2016, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2016, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,14 +13,12 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
 # Fetch pybind11 from GitHub archive
 #
-if(EXISTS ${REPOSITORY_DIR}/build/ThirdParty/share/pybind11-2.2.4.tar.gz)
-    set(URL ${REPOSITORY_DIR}/build/ThirdParty/share/pybind11-2.2.4.tar.gz)
+if(EXISTS "${REPOSITORY_DIR}/build/ThirdParty/share/pybind11.tar.gz")
+    set(URL "${REPOSITORY_DIR}/build/ThirdParty/share/pybind11.tar.gz")
 else()
     set(URL https://github.com/pybind/pybind11/archive/v2.2.4.tar.gz)
 endif()
@@ -35,6 +31,7 @@ download_project(PROJ pybind11
 	UPDATE_DISCONNECTED 1
 	QUIET
 	)
+# Note: no check for failure.  This is optional if not doing Python.
 	
 # No build. This is a header only package
 

@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2013-2015, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2013-2015, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,14 +13,12 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
 cmake_minimum_required(VERSION 3.7)
-project(nupic_core CXX)
+project(htm_core CXX)
 
-message(STATUS "Configuring nupic_core src")
+message(STATUS "Configuring htm_core src")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_VERBOSE_MAKEFILE ON) # toggle for cmake debug
 include(src/NupicLibraryUtils) # for combining static libs
@@ -31,10 +27,10 @@ include(src/ExpandStaticLib)   # for creating objects from a static lib
 #
 # NuPIC CMake options
 #
-option(NUPIC_IWYU "Enable include-what-you-use
+option(HTM_IWYU "Enable include-what-you-use
   (http://include-what-you-use.org/). This requires the iwyu binary to be
   discoverable by CMake's find_program, with a minimum CMake version of 3.3.")
-if(${NUPIC_IWYU})
+if(${HTM_IWYU})
   find_program(iwyu_path NAMES include-what-you-use iwyu)
   if(NOT iwyu_path)
     message(FATAL_ERROR "Could not find the program include-what-you-use")
@@ -43,7 +39,7 @@ endif()
 
 #--------------------------------------------------------
 # Identify includes from this directory
-set(CORE_LIB_INCLUDES  ${PROJECT_SOURCE_DIR}  # for nupic/xxx/*.h
+set(CORE_LIB_INCLUDES  ${PROJECT_SOURCE_DIR}  # for htm/xxx/*.h
 		       ${PROJECT_BINARY_DIR}  # for Version.hpp
 )
 set(CORE_LIB_INCLUDES  ${CORE_LIB_INCLUDES} PARENT_SCOPE)
@@ -51,175 +47,148 @@ set(CORE_LIB_INCLUDES  ${CORE_LIB_INCLUDES} PARENT_SCOPE)
 
 #--------------------------------------------------------
 # Create Version.hpp
-# Extract current git sha and record in nupic/Version.hpp.in
+# Extract current git sha and record in htm/Version.hpp.in
 #
-execute_process(COMMAND git rev-parse HEAD
-                OUTPUT_VARIABLE NUPIC_CORE_VERSION
-                OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(HTM_CORE_VERSION ${VERSION})
 configure_file(
-  "${PROJECT_SOURCE_DIR}/nupic/Version.hpp.in"
+  "${PROJECT_SOURCE_DIR}/htm/Version.hpp.in"
   "${PROJECT_BINARY_DIR}/Version.hpp")
   
 
-############ nupic_core Library ######################################
-# Setup nupic_core static library, consisting of our own sources and yaml libraries;
+############ htm_core Library ######################################
+# Setup htm_core static library, consisting of our own sources and yaml libraries;
 #
 # this is an intermediate archive that will be merged with external static
-# libraries in a subsequent step to produce the nupic_core "combined" static
+# libraries in a subsequent step to produce the htm_core "combined" static
 # library.
 #
 set(src_objlib LibrarySource)
 
 
 set(algorithm_files
-    nupic/algorithms/Anomaly.cpp
-    nupic/algorithms/Anomaly.hpp
-    nupic/algorithms/AnomalyLikelihood.cpp
-    nupic/algorithms/AnomalyLikelihood.hpp
-    nupic/algorithms/ArrayBuffer.hpp
-    nupic/algorithms/BacktrackingTMCpp.cpp
-    nupic/algorithms/BacktrackingTMCpp.hpp
-    nupic/algorithms/Cell.cpp
-    nupic/algorithms/Cell.hpp
-    nupic/algorithms/Cells4.cpp
-    nupic/algorithms/Cells4.hpp
-    nupic/algorithms/ClassifierResult.cpp
-    nupic/algorithms/ClassifierResult.hpp
-    nupic/algorithms/Connections.cpp
-    nupic/algorithms/Connections.hpp
-    nupic/algorithms/InSynapse.cpp
-    nupic/algorithms/InSynapse.hpp
-    nupic/algorithms/OutSynapse.cpp
-    nupic/algorithms/OutSynapse.hpp
-    nupic/algorithms/SDRClassifier.cpp
-    nupic/algorithms/SDRClassifier.hpp
-    nupic/algorithms/Segment.cpp
-    nupic/algorithms/Segment.hpp
-    nupic/algorithms/SegmentUpdate.cpp
-    nupic/algorithms/SegmentUpdate.hpp
-    nupic/algorithms/SpatialPooler.cpp
-    nupic/algorithms/SpatialPooler.hpp
-    nupic/algorithms/TemporalMemory.cpp
-    nupic/algorithms/TemporalMemory.hpp
+    htm/algorithms/Anomaly.cpp
+    htm/algorithms/Anomaly.hpp
+    htm/algorithms/AnomalyLikelihood.cpp
+    htm/algorithms/AnomalyLikelihood.hpp
+    htm/algorithms/Connections.cpp
+    htm/algorithms/Connections.hpp
+    htm/algorithms/SDRClassifier.cpp
+    htm/algorithms/SDRClassifier.hpp
+    htm/algorithms/SpatialPooler.cpp
+    htm/algorithms/SpatialPooler.hpp
+    htm/algorithms/TemporalMemory.cpp
+    htm/algorithms/TemporalMemory.hpp
 )
 
 
 set(encoders_files 
-    nupic/encoders/ScalarEncoder.cpp
-    nupic/encoders/ScalarEncoder.hpp
+    htm/encoders/BaseEncoder.hpp
+    htm/encoders/ScalarEncoder.cpp
+    htm/encoders/ScalarEncoder.hpp
+    htm/encoders/RandomDistributedScalarEncoder.hpp
+    htm/encoders/RandomDistributedScalarEncoder.cpp
+    htm/encoders/SimHashDocumentEncoder.hpp
+    htm/encoders/SimHashDocumentEncoder.cpp
 )
     
 set(engine_files
-    nupic/engine/Input.cpp
-    nupic/engine/Input.hpp
-    nupic/engine/Link.cpp
-    nupic/engine/Link.hpp
-    nupic/engine/Network.cpp
-    nupic/engine/Network.hpp
-    nupic/engine/NuPIC.cpp
-    nupic/engine/NuPIC.hpp
-    nupic/engine/Output.cpp
-    nupic/engine/Output.hpp
-    nupic/engine/Region.cpp
-    nupic/engine/Region.hpp
-    nupic/engine/RegionImpl.cpp
-    nupic/engine/RegionImpl.hpp
-    nupic/engine/RegionImplFactory.cpp
-    nupic/engine/RegionImplFactory.hpp
-    nupic/engine/RegisteredRegionImpl.hpp
-    nupic/engine/RegisteredRegionImplCpp.hpp
-    nupic/engine/Spec.cpp
-    nupic/engine/Spec.hpp
-    nupic/engine/YAMLUtils.cpp
-    nupic/engine/YAMLUtils.hpp
-    nupic/engine/Watcher.cpp
-    nupic/engine/Watcher.hpp
-)
-  
-set(math_files
-    nupic/math/Math.hpp
-    nupic/math/StlIo.cpp
-    nupic/math/StlIo.hpp
-    nupic/math/Topology.cpp
-    nupic/math/Topology.hpp
-    nupic/math/Types.hpp
-    nupic/math/Utils.hpp
+    htm/engine/Input.cpp
+    htm/engine/Input.hpp
+    htm/engine/Link.cpp
+    htm/engine/Link.hpp
+    htm/engine/Network.cpp
+    htm/engine/Network.hpp
+    htm/engine/NuPIC.cpp
+    htm/engine/NuPIC.hpp
+    htm/engine/Output.cpp
+    htm/engine/Output.hpp
+    htm/engine/Region.cpp
+    htm/engine/Region.hpp
+    htm/engine/RegionImpl.cpp
+    htm/engine/RegionImpl.hpp
+    htm/engine/RegionImplFactory.cpp
+    htm/engine/RegionImplFactory.hpp
+    htm/engine/RegisteredRegionImpl.hpp
+    htm/engine/RegisteredRegionImplCpp.hpp
+    htm/engine/Spec.cpp
+    htm/engine/Spec.hpp
+    htm/engine/YAMLUtils.cpp
+    htm/engine/YAMLUtils.hpp
+    htm/engine/Watcher.cpp
+    htm/engine/Watcher.hpp
 )
 
 
 set(ntypes_files
-    nupic/ntypes/Array.hpp
-    nupic/ntypes/ArrayBase.cpp
-    nupic/ntypes/ArrayBase.hpp
-    nupic/ntypes/BundleIO.hpp
-    nupic/ntypes/Collection.hpp
-    nupic/ntypes/Dimensions.cpp
-    nupic/ntypes/Dimensions.hpp
-    nupic/ntypes/Scalar.cpp
-    nupic/ntypes/Scalar.hpp
-    nupic/ntypes/Value.cpp
-    nupic/ntypes/Value.hpp
+    htm/ntypes/Array.hpp
+    htm/ntypes/ArrayBase.cpp
+    htm/ntypes/ArrayBase.hpp
+    htm/ntypes/BasicType.cpp
+    htm/ntypes/BasicType.hpp
+    htm/ntypes/Collection.hpp
+    htm/ntypes/Dimensions.hpp
+    htm/ntypes/Scalar.cpp
+    htm/ntypes/Scalar.hpp
+    htm/ntypes/Value.cpp
+    htm/ntypes/Value.hpp
 )
   
 set(os_files
-    nupic/os/Directory.cpp
-    nupic/os/Directory.hpp
-    nupic/os/Env.cpp
-    nupic/os/Env.hpp
-    nupic/os/ImportFilesystem.hpp
-    nupic/os/OS.cpp
-    nupic/os/OS.hpp
-    nupic/os/OSUnix.cpp
-    nupic/os/OSWin.cpp
-    nupic/os/Path.cpp
-    nupic/os/Path.hpp
-    nupic/os/Timer.cpp
-    nupic/os/Timer.hpp    
+    htm/os/Directory.cpp
+    htm/os/Directory.hpp
+    htm/os/Env.cpp
+    htm/os/Env.hpp
+    htm/os/ImportFilesystem.hpp
+    htm/os/Path.cpp
+    htm/os/Path.hpp
+    htm/os/Timer.cpp
+    htm/os/Timer.hpp    
 )
 
 set(regions_files
-    nupic/regions/ScalarSensor.cpp
-    nupic/regions/ScalarSensor.hpp
-    nupic/regions/SPRegion.cpp
-    nupic/regions/SPRegion.hpp
-    nupic/regions/TestNode.cpp
-    nupic/regions/TestNode.hpp
-    nupic/regions/VectorFile.cpp
-    nupic/regions/VectorFile.hpp
-    nupic/regions/VectorFileEffector.cpp
-    nupic/regions/VectorFileEffector.hpp
-    nupic/regions/VectorFileSensor.cpp
-    nupic/regions/VectorFileSensor.hpp   
+    htm/regions/ScalarSensor.cpp
+    htm/regions/ScalarSensor.hpp
+    htm/regions/SPRegion.cpp
+    htm/regions/SPRegion.hpp
+    htm/regions/TestNode.cpp
+    htm/regions/TestNode.hpp
+    htm/regions/TMRegion.cpp
+    htm/regions/TMRegion.hpp
+    htm/regions/VectorFile.cpp
+    htm/regions/VectorFile.hpp
+    htm/regions/VectorFileEffector.cpp
+    htm/regions/VectorFileEffector.hpp
+    htm/regions/VectorFileSensor.cpp
+    htm/regions/VectorFileSensor.hpp   
 )
 
 set(types_files
-    nupic/types/BasicType.cpp
-    nupic/types/BasicType.hpp
-    nupic/types/Exception.hpp
-    nupic/types/Serializable.hpp
-    nupic/types/Types.hpp
-    nupic/types/Serializable.hpp
-    nupic/types/Sdr.hpp
-    nupic/types/Sdr.cpp
-    nupic/types/SdrProxy.hpp
+    htm/types/Exception.hpp
+    htm/types/Types.hpp
+    htm/types/Serializable.hpp
+    htm/types/Sdr.hpp
+    htm/types/Sdr.cpp
 )
 
 set(utils_files
-    nupic/utils/GroupBy.hpp
-    nupic/utils/Log.hpp
-    nupic/utils/LoggingException.cpp
-    nupic/utils/LoggingException.hpp
-    nupic/utils/LogItem.cpp
-    nupic/utils/LogItem.hpp
-    nupic/utils/MovingAverage.cpp
-    nupic/utils/MovingAverage.hpp
-    nupic/utils/Random.cpp
-    nupic/utils/Random.hpp
-    nupic/utils/SlidingWindow.hpp
-    nupic/utils/StringUtils.cpp
-    nupic/utils/StringUtils.hpp
-    nupic/utils/VectorHelpers.hpp
-    nupic/utils/SdrMetrics.hpp
+    htm/utils/GroupBy.hpp
+    htm/utils/Log.hpp
+    htm/utils/LoggingException.cpp
+    htm/utils/LoggingException.hpp
+    htm/utils/LogItem.cpp
+    htm/utils/LogItem.hpp
+    htm/utils/MovingAverage.cpp
+    htm/utils/MovingAverage.hpp
+    htm/utils/Random.cpp
+    htm/utils/Random.hpp
+    htm/utils/SlidingWindow.hpp
+    htm/utils/VectorHelpers.hpp
+    htm/utils/SdrMetrics.cpp
+    htm/utils/SdrMetrics.hpp
+    htm/utils/StlIo.cpp
+    htm/utils/StlIo.hpp
+    htm/utils/Topology.cpp
+    htm/utils/Topology.hpp
 )
 
 set(examples_files
@@ -233,7 +202,6 @@ set(examples_files
 source_group("algorithms" FILES ${algorithm_files})
 source_group("encoders" FILES ${encoders_files})
 source_group("engine" FILES ${engine_files})
-source_group("math" FILES ${math_files})
 source_group("ntypes" FILES ${ntypes_files})
 source_group("os" FILES ${os_files})
 source_group("regions" FILES ${regions_files})
@@ -256,7 +224,6 @@ add_library(${src_objlib} OBJECT
     ${algorithm_files} 
     ${encoders_files} 
     ${engine_files} 
-    ${math_files} 
     ${ntypes_files} 
     ${os_files} 
     ${regions_files} 
@@ -265,39 +232,45 @@ add_library(${src_objlib} OBJECT
 )
 # shared libraries need PIC
 target_compile_options( ${src_objlib} PUBLIC ${INTERNAL_CXX_FLAGS})
+if(MSVC)
+  set_property(TARGET ${src_objlib} PROPERTY LINK_LIBRARIES ${INTERNAL_LINKER_FLAGS})
+endif()
 target_compile_definitions(${src_objlib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${src_objlib} PRIVATE 
 		${CORE_LIB_INCLUDES} 
 		${EXTERNAL_INCLUDES}
 		)
 
-if(${NUPIC_IWYU})
+if(${HTM_IWYU})
   set_target_properties(${src_objlib}
     PROPERTIES CXX_INCLUDE_WHAT_YOU_USE ${iwyu_path})
 endif()
 
 ############ Building Static LIB #############################################
-# build static libnupic_core_solo.a without yaml and boost.
+# build static libhtm_core_solo.a without yaml and boost.
 # uses objects compiled for src_objlib
 
-set(src_lib_static nupic_core_solo)
+set(src_lib_static htm_core_solo)
 add_library(${src_lib_static} STATIC $<TARGET_OBJECTS:${src_objlib}>)
-
+if(MSVC)
+  set_property(TARGET ${src_lib_static} PROPERTY LINK_LIBRARIES ${INTERNAL_LINKER_FLAGS})
+endif()
 #
-# Create the libnupic_core.a as a "combined" static library by merging nupic_core_static
+# Create the libhtm_core.a as a "combined" static library by merging htm_core_static
 # with our external static libraries
 # NOTE: cannot use target_link_libraries( ) with the add_library for STATIC.
 #       so we have to merge them in a different way.
 #
-set(src_combined_nupiccore_source_archives
+set(src_combined_htmcore_source_archives
     ${src_lib_static}
     ${yaml-cpp_LIBRARIES}
     ${Boost_LIBRARIES}
+    ${common_LIBRARIES}
     )
-merge_static_libraries(${core_library} "${src_combined_nupiccore_source_archives}")
+merge_static_libraries(${core_library} "${src_combined_htmcore_source_archives}")
 
 ############ Building Shared LIB #############################################
-# builds libnupic_core.so for Linux,OSx and 
+# builds libhtm_core.so for Linux,OSx and 
 # NOTE: This does not work for Windows.
 #       If there is community demand for a Windows DLL interface, we can add it later.
 #
@@ -312,6 +285,7 @@ else()
 	set(src_externLibs
             ${yaml-cpp_LIBRARIES}
             ${Boost_LIBRARIES}
+            ${common_LIBRARIES}
             )
 	set(lib_locations_separator "++++")
     string(REPLACE ";" ${lib_locations_separator}
@@ -330,7 +304,7 @@ else()
 		${all_object_locations})
 	set_target_properties(${src_lib_shared} PROPERTIES OUTPUT_NAME ${core_library})
 	target_link_libraries(${src_lib_shared}  
-    		${COMMON_OS_LIBS}
+		${COMMON_OS_LIBS}
 	        )
 endif()
 
@@ -350,19 +324,16 @@ add_subdirectory(test)
 #
 set(src_executable_hotgym benchmark_hotgym)
 add_executable(${src_executable_hotgym} examples/hotgym/Hotgym.cpp examples/hotgym/HelloSPTP.hpp examples/hotgym/HelloSPTP.cpp)
-if(MSVC)
-  # for Windows, link with the static library
-  target_link_libraries(${src_executable_hotgym} 
+# link with the static library
+target_link_libraries(${src_executable_hotgym} 
+    ${INTERNAL_LINKER_FLAGS}
     ${core_library}
     ${COMMON_OS_LIBS}
-		)
-else()
-  # for Linux,OSx, link with the shared library
-  target_link_libraries(${src_executable_hotgym} 
-    ${src_lib_shared}
-    ${COMMON_OS_LIBS}
-		)
-endif()
+)
+    
+# for future reference; to link to shared library, (Not on MSVC)
+#          link with ${src_lib_shared} rather than ${core_library}
+                  
 target_compile_options( ${src_executable_hotgym} PUBLIC ${INTERNAL_CXX_FLAGS})
 target_compile_definitions(${src_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${src_executable_hotgym} PRIVATE 
@@ -375,16 +346,35 @@ add_custom_target(hotgym
           COMMENT "Executing ${src_executable_hotgym}"
           VERBATIM)
 
-
+#########################################################
+## Dynamicly linked version of hotgym
+if(MSVC)
+else()
+  set(src_dyn_executable_hotgym dynamic_hotgym)
+  add_executable(${src_dyn_executable_hotgym} examples/hotgym/Hotgym.cpp examples/hotgym/HelloSPTP.hpp examples/hotgym/HelloSPTP.cpp)
+  # for Linux,OSx, link with the shared library
+  target_link_libraries(${src_dyn_executable_hotgym} 
+    ${INTERNAL_LINKER_FLAGS}
+    ${src_lib_shared}
+    ${COMMON_OS_LIBS}
+  )
+  target_compile_options( ${src_dyn_executable_hotgym} PUBLIC ${INTERNAL_CXX_FLAGS})
+  target_compile_definitions(${src_dyn_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+  target_include_directories(${src_dyn_executable_hotgym} PRIVATE 
+		${CORE_LIB_INCLUDES} 
+		${EXTERNAL_INCLUDES}
+		)
+endif()
 #########################################################
 ## MNIST Spatial Pooler Example
 #
 set(src_executable_mnistsp mnist_sp)
 add_executable(${src_executable_mnistsp} examples/mnist/MNIST_SP.cpp)
 target_link_libraries(${src_executable_mnistsp} 
+        ${INTERNAL_LINKER_FLAGS}
         ${core_library}
         ${COMMON_OS_LIBS}
-	    )
+)
   target_compile_options(${src_executable_mnistsp} PUBLIC ${INTERNAL_CXX_FLAGS})
   target_compile_definitions(${src_executable_mnistsp} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
   # Pass MNIST data directory to main.cpp
@@ -406,41 +396,71 @@ add_custom_target(mnist
 #
 install(TARGETS
         ${core_library}
-        ${src_executable_hotgym}
-        ${src_executable_mnistsp}
-	RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
-
+        
+install(TARGETS
+        ${src_executable_hotgym}
+        ${src_executable_mnistsp}
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
 if(MSVC)
 else()	
   install(TARGETS
+        ${src_dyn_executable_hotgym}
         ${src_lib_shared}
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib)
 endif()
 
-# Version.hpp is also used by the nupic.bindings release/deployment system
+# Version.hpp is also used by the htm.bindings release/deployment system
 install(FILES ${PROJECT_BINARY_DIR}/Version.hpp
-        DESTINATION include/nupic)
+      DESTINATION include)
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR} DESTINATION include
-	  MESSAGE_NEVER
-	  FILES_MATCHING PATTERN "nupic/*/*.h*"
-	  PATTERN "nupic/*/*.hpp.in" EXCLUDE)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/htm
+      MESSAGE_NEVER
+      DESTINATION include/
+      FILES_MATCHING PATTERN "*.h*"
+      PATTERN "*.hpp.in" EXCLUDE)
 
 
 install(DIRECTORY "${REPOSITORY_DIR}/external/common/include/"
+      MESSAGE_NEVER
+      DESTINATION include)
+      
+# include the python wheel if it exists.
+# run "python3 setup.py install --user"
+# and "python3 setup.py bdist_wheel"
+# prior to this to create the whl file.
+install(DIRECTORY "${CMAKE_INSTALL_PREFIX}/distr/dist/"
 	  MESSAGE_NEVER
-	  DESTINATION include)
+	  DESTINATION py
+	  FILES_MATCHING PATTERN "*.whl")
 
-          
+
+############### PACKAGE ###########################
 #
 # `make package` results in
-# nupic_core-${NUPIC_CORE_VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}.tar.gz binary release
+# htm_cpp-${VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}.tar.gz binary release
 #
+#   TODO:  The version numbers need to be automatically incremented.
+message(STATUS "Packaging version: ${VERSION} in CPACK")
+set(CPACK_PACKAGE_NAME "htm.core")
+set(CPACK_PACKAGE_VENDOR "https://github.com/htm-community/htm.core")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "htm.core - Community implementation of Numenta's algorthms.")
+set(CPACK_PACKAGE_VERSION ${VERSION})
+set(CPACK_PACKAGE_VERSION_MAJOR ${MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PATCH})
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "htm.core")
 
-set(CPACK_GENERATOR "TGZ")
-set(CPACK_PACKAGE_FILE_NAME "nupic_core-${NUPIC_CORE_VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}")
+if(MSVC)
+	set(CPACK_GENERATOR "ZIP")
+else()
+	set(CPACK_GENERATOR "TGZ")
+endif()
+set(CPACK_RESOURCE_FILE_LICENSE "${REPOSITORY_DIR}/LICENSE.txt")
+set(CPACK_PACKAGE_FILE_NAME "htm_core-${VERSION}-${PLATFORM}${BITNESS}${PLATFORM_SUFFIX}")
 include(CPack)

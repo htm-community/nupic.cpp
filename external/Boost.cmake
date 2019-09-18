@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2016, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2016, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,8 +13,6 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
 # Creates ExternalProject for building the boost system and filesystem static libraries
@@ -35,12 +31,10 @@
 #
 #######################################
 
-if(EXISTS ${REPOSITORY_DIR}/build/ThirdParty/share/boost_1_69_0.tar.gz)
-    set(BOOST_URL ${REPOSITORY_DIR}/build/ThirdParty/share/boost_1_69_0.tar.gz)
-    set(BOOST_HASH "9a2c2819310839ea373f42d69e733c339b4e9a19deab6bfec448281554aa4dbb")
+if(EXISTS "${REPOSITORY_DIR}/build/ThirdParty/share/boost.tar.gz")
+    set(BOOST_URL "${REPOSITORY_DIR}/build/ThirdParty/share/boost.tar.gz")
 else()
     set(BOOST_URL "https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz")
-    set(BOOST_HASH "9a2c2819310839ea373f42d69e733c339b4e9a19deab6bfec448281554aa4dbb")
 endif()
 
 # Download the boost distribution (at configure time).
@@ -54,7 +48,6 @@ include(DownloadProject/DownloadProject.cmake)
 download_project(PROJ Boost_download
 	PREFIX ${EP_BASE}/boost
 	URL ${BOOST_URL}
-	URL_HASH SHA256=${BOOST_HASH}
 	UPDATE_DISCONNECTED 1
 	QUIET
 	)

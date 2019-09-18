@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2016, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2016, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,8 +13,6 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 #
 #######################################
@@ -29,18 +25,17 @@
 #  - create build/scripts (mkdir -d build/scripts)
 #  - cd build/scripts
 #  - cmake ../..
-#
-# externals are always built in Release mode, CMake's build type is ignored
 
 
 
 FILE(MAKE_DIRECTORY  ${REPOSITORY_DIR}/build/ThirdParty)
 execute_process(COMMAND ${CMAKE_COMMAND} 
             -G ${CMAKE_GENERATOR}
-	    -D CMAKE_INSTALL_PREFIX=. 
+			-D CMAKE_INSTALL_PREFIX=. 
             -D NEEDS_BOOST:BOOL=${NEEDS_BOOST}
             -D BINDING_BUILD:STRING=${BINDING_BUILD}
-	    -D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+			-D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+			-D REPOSITORY_DIR=${REPOSITORY_DIR}
 			 ../../external
                 WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
                 RESULT_VARIABLE result
@@ -49,15 +44,36 @@ execute_process(COMMAND ${CMAKE_COMMAND}
 if(result)
     message(FATAL_ERROR "CMake step for Third Party builds failed: ${result}")
 endif()
-
-execute_process(COMMAND ${CMAKE_COMMAND} --build .  
+if(MSVC)
+  # for MSVC builds we need to build both Release and Debug builds
+  # because this will not be ran again if we switch modes in the IDE.
+  execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Release 
                     WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
                     RESULT_VARIABLE result
-#                    OUTPUT_QUIET      ### Disable this to debug external builds
+#                    OUTPUT_QUIET      ### Disable this to debug external buiilds
+        )
+  if(result)
+    message(FATAL_ERROR "build step for MSVC Release Third Party builds failed: ${result}")
+  endif()
+  execute_process(COMMAND ${CMAKE_COMMAND} --build . --config Debug 
+                    WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
+                    RESULT_VARIABLE result
+#                    OUTPUT_QUIET      ### Disable this to debug external buiilds
+        )
+  if(result)
+    message(FATAL_ERROR "build step for MSVC Debug Third Party builds failed: ${result}")
+  endif()
+else(MSVC)
+  # for linux and OSx builds
+  execute_process(COMMAND ${CMAKE_COMMAND} --build . --config ${CMAKE_BUILD_TYPE} 
+                    WORKING_DIRECTORY ${REPOSITORY_DIR}/build/ThirdParty
+                    RESULT_VARIABLE result
+#                    OUTPUT_QUIET      ### Disable this to debug external buiilds
         )
   if(result)
     message(FATAL_ERROR "build step for Third Party builds failed: ${result}")
   endif()
+endif(MSVC)
 
 # extract the external directory paths
 #    The external third party modules are being built
@@ -79,6 +95,9 @@ set(EXTERNAL_INCLUDES
 	${Boost_INCLUDE_DIRS}
 	${eigen_INCLUDE_DIRS}
 	${mnist_INCLUDE_DIRS}
+	${cereal_INCLUDE_DIRS}
+	${digestpp_INCLUDE_DIRS}
+	${common_INCLUDE_DIRS}
 	${REPOSITORY_DIR}/external/common/include
 )
 

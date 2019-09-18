@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2016, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2016, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,17 +13,15 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
 # Fetch MNIST dataset from online archive
 #
-if(EXISTS ${REPOSITORY_DIR}/build/ThirdParty/share/mnist.zip)
-    set(URL ${REPOSITORY_DIR}/build/ThirdParty/share/mnist.zip)
+if(EXISTS "${REPOSITORY_DIR}/build/ThirdParty/share/mnist.zip")
+    set(URL "${REPOSITORY_DIR}/build/ThirdParty/share/mnist.zip")
 else()
     set(URL "https://github.com/wichtounet/mnist/archive/master.zip")
-    set(HASH "855cb8c60f84e2fc6bea08c4a9df9a3cbd6230bddc55def635a938665c512ffc")
+    #set(HASH "855cb8c60f84e2fc6bea08c4a9df9a3cbd6230bddc55def635a938665c512ffc")
 endif()
 
 message(STATUS "obtaining MNIST data")
@@ -33,10 +29,11 @@ include(DownloadProject/DownloadProject.cmake)
 download_project(PROJ mnist
 	PREFIX ${EP_BASE}/mnist_data
 	URL    ${URL}
-	URL_HASH SHA256=${HASH}
+	#URL_HASH SHA256=${HASH}
     UPDATE_DISCONNECTED 1
 #    QUIET
    )	
+# Note: no check for failure.  This package is optional.
    
 # No build. This is a data only package
 # But we do need to run its CMakeLists.txt to unpack the files.

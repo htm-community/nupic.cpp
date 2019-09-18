@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2015, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2015, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,8 +13,6 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 #  Features:
 #  - All third party modules are downloaded form the internet and build.
@@ -24,12 +20,8 @@
 #  - Isolated so does not require being downloaded more than once.
 #
 #  - It is possible to manually preload the distribution packages (for air gap computers)
-#     1) On some other machine, download the following:
-#        https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
-#        https://github.com/jbeder/yaml-cpp/archive/yaml-cpp-0.6.2.tar.gz
-#        https://github.com/pybind/pybind11/archive/v2.2.4.tar.gz
-#        https://github.com/abseil/googletest/archive/release-1.8.1.tar.gz
-#        http://bitbucket.org/eigen/eigen/get/3.3.7.tar.bz2
+#     1) On some other machine, download the distribution packages.
+#        See README.md for list of packages.
 #     2) copy these to <repository>/build/ThirdParty/share/
 #
 #  NOTE:  This is executed by the top level CMakeLists.txt via the bootstrap.cmake
@@ -46,10 +38,17 @@
 #  - cmake ../..
 # Note: on MSVC, run startupMSVC.bat after deleting the build folder.
 
-cmake_minimum_required(VERSION 3.3)
-project(nupic_core CXX)
+cmake_minimum_required(VERSION 3.7)
+project(htm_core CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF)
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+  set(BITNESS 64)
+else()
+  set(BITNESS 32)
+endif()
+
 
 include(GNUInstallDirs)
 include(ExternalProject)
@@ -62,9 +61,12 @@ endif()
 add_compile_options(${EXTERNAL_CXX_FLAGS})
 
 message(STATUS "external import")
+message(STATUS "   REPOSITORY_DIR        = ${REPOSITORY_DIR}")
+message(STATUS "   CMAKE_BINARY_DIR      = ${CMAKE_BINARY_DIR}")
 message(STATUS "   CMAKE_INSTALL_PREFIX  = ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "   CMAKE_BUILD_TYPE      = ${CMAKE_BUILD_TYPE}")
 message(STATUS "   EXTERNAL_CXX_FLAGS    = ${EXTERNAL_CXX_FLAGS}")
+message(STATUS "   BITNESS               = ${BITNESS}")
 message(STATUS "   NEEDS_BOOST           = ${NEEDS_BOOST}")
 message(STATUS "   BINDING_BUILD         = ${BINDING_BUILD}")
 
@@ -73,12 +75,13 @@ set(EXPORT_FILE_NAME "${EP_BASE}/results.txt")
 FILE(REMOVE "${EXPORT_FILE_NAME}")
 
 ################
-# Yaml-cpp
-include(YamlCppLib.cmake)
+# common
+include(common.cmake)
+
 
 ################
-# libyaml
-include(libyaml.cmake)
+# Yaml-cpp
+include(YamlCppLib.cmake)
 
 
 ################
@@ -109,3 +112,12 @@ endif()
 #################
 # mnist data
 include(mnist_data.cmake)
+
+#################
+# Cereal serialization package
+include(cereal.cmake)
+
+#################
+# digestpp hash digest repo
+include(digestpp.cmake)
+

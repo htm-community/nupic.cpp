@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2013, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -15,19 +13,18 @@
  *
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
- *
- * http://numenta.org/licenses/
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 /** @file
  * Implementation of Scalar test
  */
 
 #include <gtest/gtest.h>
-#include <nupic/ntypes/Scalar.hpp>
+#include <htm/ntypes/Scalar.hpp>
 
-using namespace nupic;
+namespace testing {
+    
+using namespace htm;
 
 TEST(ScalarTest, All) {
   Scalar a(NTA_BasicType_UInt16);
@@ -128,4 +125,6 @@ TEST(ScalarTest, All) {
   ASSERT_TRUE(a.getValue<bool>());
   a.value.boolean = false;
   ASSERT_FALSE(a.getValue<bool>());
+}
+
 }

@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2018, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2018, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -16,13 +14,8 @@
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  *
- * http://numenta.org/licenses/
- 
-
-
  * Author: David Keeney, July, 2018
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 
 #define VERBOSE  if (verbose)  std::cerr << "[          ] "
@@ -32,13 +25,13 @@
 
 #include "RegionTestUtilities.hpp"
 
-#include <nupic/engine/Output.hpp>
-#include <nupic/engine/Input.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Spec.hpp>
-#include <nupic/ntypes/Array.hpp>
+#include <htm/engine/Output.hpp>
+#include <htm/engine/Input.hpp>
+#include <htm/engine/Region.hpp>
+#include <htm/engine/Spec.hpp>
+#include <htm/ntypes/Array.hpp>
 
-using namespace nupic;
+using namespace htm;
 namespace testing {
 
 
@@ -58,7 +51,7 @@ void checkGetSetAgainstSpec(std::shared_ptr<Region> region1,
 
   // Make sure the number of parameters matches.
   size_t specCount = ns->parameters.getCount();
-  ASSERT_TRUE(specCount == expectedSpecCount)
+  ASSERT_EQ(specCount, expectedSpecCount)
       << "Unexpected number of parameters. Expected=" << expectedSpecCount
       << ", Actual=" << specCount;
 
@@ -66,8 +59,8 @@ void checkGetSetAgainstSpec(std::shared_ptr<Region> region1,
   // get/set/verify each parameter
   bool negativeCheck = true;
   for (size_t i = 0; i < specCount; i++) {
-    std::pair<string, ParameterSpec> p = ns->parameters.getByIndex(i);
-    string name = p.first;
+    std::pair<std::string, ParameterSpec> p = ns->parameters.getByIndex(i);
+    std::string name = p.first;
     if (excluded.find(name) != excluded.end())
       continue;
     try {
@@ -78,7 +71,7 @@ void checkGetSetAgainstSpec(std::shared_ptr<Region> region1,
           if (negativeCheck) {
 				    negativeCheck = false;
 				    VERBOSE << "negative check..." << std::endl;
-				    EXPECT_THROW(region1->getParameterInt32("numberOfCols"), nupic::Exception); 
+				    EXPECT_THROW(region1->getParameterInt32("bad_parameter"), htm::Exception); 
 			    }
           VERBOSE << "Parameter \"" << name << "\" type: " << BasicType::getName(p.second.dataType) << std::endl;
 
@@ -260,7 +253,7 @@ void checkGetSetAgainstSpec(std::shared_ptr<Region> region1,
           break;
         } // end switch
       }
-    } catch (nupic::Exception &ex) {
+    } catch (htm::Exception &ex) {
       FAIL()
              << "Exception while processing parameter " << name << ":  "
              << ex.getFilename() << "(" << ex.getLineNumber() << ") "
@@ -440,9 +433,9 @@ captureParameters(std::shared_ptr<Region> region,
           break;
         } // end switch
       }
-    } catch (nupic::Exception &ex) {
+    } catch (htm::Exception &ex) {
       return ::testing::AssertionFailure()
-             << "nupic::Exception while processing parameter " << name << ":  "
+             << "htm::Exception while processing parameter " << name << ":  "
              << ex.getFilename() << "(" << ex.getLineNumber() << ") "
              << ex.getMessage();
     } catch (std::exception &e) {
@@ -524,9 +517,9 @@ compareParameters(std::shared_ptr<Region> region,
           break;
         } // end switch
       }
-    } catch (nupic::Exception &ex) {
+    } catch (htm::Exception &ex) {
       return ::testing::AssertionFailure()
-             << "nupic::Exception while processing parameter " << name << ":  "
+             << "htm::Exception while processing parameter " << name << ":  "
              << ex.getFilename() << "(" << ex.getLineNumber() << ") "
              << ex.getMessage();
     } catch (std::exception &e) {

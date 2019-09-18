@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
-# Numenta Platform for Intelligent Computing (NuPIC)
-# Copyright (C) 2016, Numenta, Inc.  Unless you have purchased from
-# Numenta, Inc. a separate commercial license for this software code, the
-# following terms and conditions apply:
+# HTM Community Edition of NuPIC
+# Copyright (C) 2016, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -15,14 +13,12 @@
 #
 # You should have received a copy of the GNU Affero Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
-#
-# http://numenta.org/licenses/
 # -----------------------------------------------------------------------------
 
 # Fetch Eigen from GitHub archive
 #
-if(EXISTS ${REPOSITORY_DIR}/build/ThirdParty/share/eigen-eigen-323c052e1731.tar.bz2)
-    set(URL ${REPOSITORY_DIR}/build/ThirdParty/share/eigen-eigen-323c052e1731.tar.bz2)
+if(EXISTS "${REPOSITORY_DIR}/build/ThirdParty/share/eigen.tar.bz2")
+    set(URL "${REPOSITORY_DIR}/build/ThirdParty/share/eigen.tar.bz2")
 else()
     set(URL http://bitbucket.org/eigen/eigen/get/3.3.7.tar.bz2)
 endif()

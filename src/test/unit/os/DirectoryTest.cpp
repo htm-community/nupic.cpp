@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2013, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -15,22 +13,20 @@
  *
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
- *
- * http://numenta.org/licenses/
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 /** @file
  * Implementation for Directory test
  */
 
 #include <gtest/gtest.h>
-#include <nupic/os/Directory.hpp>
-#include <nupic/os/OS.hpp>
-#include <nupic/os/Path.hpp>
-#include <nupic/utils/Log.hpp>
 
-#define VERBOSE std::cerr << "[          ] "
+#include <htm/os/Directory.hpp>
+#include <htm/os/Path.hpp>
+#include <htm/utils/Log.hpp>
+
+static bool verbose = false;
+#define VERBOSE if (verbose) std::cerr << "[          ] "
 
 
 #if defined(NTA_OS_WINDOWS)
@@ -48,18 +44,18 @@
 
 
 using namespace std;
-using namespace nupic;
+using namespace htm;
 namespace testing {
 
 static std::string getCurrDir() {
     char buff[PATH_MAX];
 #if defined(NTA_OS_WINDOWS)
     DWORD res = ::GetCurrentDirectoryA(PATH_MAX - 1, (LPSTR)buff);
-    NTA_CHECK(res > 0) << OS::getErrorMessage();
+    NTA_CHECK(res > 0) << "Failed with " << res;
 
 #else
     char * s = ::getcwd(buff, PATH_MAX - 1);
-    NTA_CHECK(s != nullptr) << OS::getErrorMessage();
+    NTA_CHECK(s != nullptr) << "getcwd failed!";
 #endif
     return buff;
 }
@@ -152,7 +148,7 @@ TEST(DirectoryTest, CopyTree) {
   Directory::copyTree(b, a);
 
   std::string ls = Directory::list("TestOutputDir");
-  std::cerr << "directory tree \n" << ls << "\n";
+  VERBOSE << "directory tree \n" << ls << "\n";
   // the file should exist in both directories
   //   TestOutputDir
   //       A

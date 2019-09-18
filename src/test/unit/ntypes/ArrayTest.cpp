@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2013, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -15,32 +13,30 @@
  *
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
- *
- * http://numenta.org/licenses/
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 /** @file
  * Implementation of ArrayBase test
  */
 
-#define UNUSED(x) (void)(x)
-
-#include <nupic/utils/Log.hpp>
-
-#include <nupic/ntypes/ArrayBase.hpp>
-#include <nupic/types/BasicType.hpp>
-#include <nupic/ntypes/Array.hpp>
-#include <nupic/os/OS.hpp>
-
+#include <htm/utils/Log.hpp>
+#include <htm/ntypes/Dimensions.hpp>
+#include <htm/ntypes/ArrayBase.hpp>
+#include <htm/ntypes/Array.hpp>
 
 #include <map>
 #include <memory>
-#include <limits.h>
+#include <climits>
 
 #include <gtest/gtest.h>
 
-using namespace nupic;
+namespace testing {
+
+static bool verbose = false;
+#define VERBOSE if(verbose) std::cerr << "[          ]"
+#define UNUSED(x) (void)(x)
+
+using namespace htm;
 
 // First, some structures to help in testing.
 struct ArrayTestParameters {
@@ -54,7 +50,7 @@ struct ArrayTestParameters {
   bool testUsesInvalidParameters;
 
   ArrayTestParameters()
-      : dataType((NTA_BasicType)-1), dataTypeSize(0), allocationSize(0),
+      : dataType(static_cast<NTA_BasicType>(-1)), dataTypeSize(0), allocationSize(0),
         dataTypeText(""), testUsesInvalidParameters(true) {}
 
   ArrayTestParameters(NTA_BasicType dataTypeParam,
@@ -66,6 +62,57 @@ struct ArrayTestParameters {
         dataTypeText(std::move(dataTypeTextParam)),
         testUsesInvalidParameters(testUsesInvalidParametersParam) {}
 };
+
+// given a sparse array, populate a dense array of specified type.
+static void populateArray(const SDR_sparse_t& sparse, size_t cols, Array& a) {
+  a.allocateBuffer(cols);
+  a.zeroBuffer();
+  void *buf = a.getBuffer();
+  for(auto idx: sparse) {
+    	switch (a.getType()) {
+	    case NTA_BasicType_Byte:   (reinterpret_cast<Byte*>(buf))[idx]   = 1;    break;
+	    case NTA_BasicType_Int16:  (reinterpret_cast<Int16*>(buf))[idx]  = 1;    break;
+	    case NTA_BasicType_UInt16: (reinterpret_cast<UInt16*>(buf))[idx] = 1u;   break;
+	    case NTA_BasicType_Int32:  (reinterpret_cast<Int32*>(buf))[idx]  = 1;    break;
+	    case NTA_BasicType_UInt32: (reinterpret_cast<UInt32*>(buf))[idx] = 1u;   break;
+	    case NTA_BasicType_Int64:  (reinterpret_cast<Int64*>(buf))[idx]  = 1ll;    break;
+	    case NTA_BasicType_UInt64: (reinterpret_cast<UInt64*>(buf))[idx] = 1ull;   break;
+	    case NTA_BasicType_Real32: (reinterpret_cast<Real32*>(buf))[idx] = 1.0f; break;
+	    case NTA_BasicType_Real64: (reinterpret_cast<Real64*>(buf))[idx] = 1.0;  break;
+	    case NTA_BasicType_Bool:   (reinterpret_cast<bool*>(buf))[idx]   = true; break;
+      case NTA_BasicType_SDR:    (reinterpret_cast<Byte*>(buf))[idx]   = 1;    break;
+	    default:
+	      NTA_THROW << "Unexpected Element Type: " << a.getType();
+	      break;
+	    }
+  }
+}
+static void toSparse(const Array&a, SDR_sparse_t&sparse) {
+  sparse.clear();
+  if (a.getType() == NTA_BasicType_SDR) {
+        sparse = a.getSDR().getSparse();
+        return;
+  }
+
+  char *buf = (char*)a.getBuffer();
+  for (ElemSparse idx = 0; idx < static_cast<ElemSparse>(a.getCount()); idx++) {
+    	switch (a.getType()) {
+	    case NTA_BasicType_Byte:   if((reinterpret_cast<Byte*>(buf))[idx])   sparse.push_back(idx); break;
+	    case NTA_BasicType_Int16:  if((reinterpret_cast<Int16*>(buf))[idx])  sparse.push_back(idx); break;
+	    case NTA_BasicType_UInt16: if((reinterpret_cast<UInt16*>(buf))[idx]) sparse.push_back(idx); break;
+	    case NTA_BasicType_Int32:  if((reinterpret_cast<Int32*>(buf))[idx])  sparse.push_back(idx); break;
+	    case NTA_BasicType_UInt32: if((reinterpret_cast<UInt32*>(buf))[idx]) sparse.push_back(idx); break;
+	    case NTA_BasicType_Int64:  if((reinterpret_cast<Int64*>(buf))[idx])  sparse.push_back(idx); break;
+	    case NTA_BasicType_UInt64: if((reinterpret_cast<UInt64*>(buf))[idx]) sparse.push_back(idx); break;
+	    case NTA_BasicType_Real32: if((reinterpret_cast<Real32*>(buf))[idx]) sparse.push_back(idx); break;
+	    case NTA_BasicType_Real64: if((reinterpret_cast<Real64*>(buf))[idx]) sparse.push_back(idx); break;
+	    case NTA_BasicType_Bool:   if((reinterpret_cast<bool*>(buf))[idx])   sparse.push_back(idx); break;
+	    default:
+	      NTA_THROW << "Unexpected Element Type: " << a.getType();
+	      break;
+	    }
+  }
+}
 
 struct ArrayTest : public ::testing::Test {
   std::map<std::string, ArrayTestParameters> testCases_;
@@ -139,7 +186,7 @@ TEST_F(ArrayTest, testMemoryOperations) {
 
     // Verify that we can read from the buffer
     char testRead = '\0';
-    testRead = ((char *)ownedBufferLocation)[4];
+    testRead = reinterpret_cast<char *>(ownedBufferLocation)[4];
     ASSERT_TRUE(!wasAbleToReadFromFreedBuffer)
         << "Read from freed buffer should fail";
   }
@@ -147,7 +194,7 @@ TEST_F(ArrayTest, testMemoryOperations) {
   bool wasAbleToReadFromFreedBuffer = true;
   try {
     char testRead = '\0';
-    testRead = ((char *)ownedBufferLocation)[4];
+    testRead = reinterpret_cast<char *>(ownedBufferLocation)[4];
   } catch (AccessViolationError& exception) {
 	  UNUSED(exception);
     wasAbleToReadFromFreedBuffer = false;
@@ -157,7 +204,7 @@ TEST_F(ArrayTest, testMemoryOperations) {
 
   bool wasAbleToWriteToFreedBuffer = true;
   try {
-    ((char *)ownedBufferLocation)[4] = 'A';
+    reinterpret_cast<char *>(ownedBufferLocation)[4] = 'A';
   } catch (AccessViolationError& exception) {
 	  UNUSED(exception);
     wasAbleToWriteToFreedBuffer = false;
@@ -186,8 +233,8 @@ TEST_F(ArrayTest, testMemory) {
     Array a(NTA_BasicType_Byte);
 
     a.allocateBuffer(100000);
-    ownedBufferLocation = (char *)a.getBuffer();
-    EXPECT_TRUE(a.getCount() == 100000);
+    ownedBufferLocation = reinterpret_cast<char *>(a.getBuffer());
+    EXPECT_TRUE(a.getCount() == 100000u);
 
     // Verify that we can write into the buffer
     bool wasAbleToWriteToBuffer = true;
@@ -205,24 +252,24 @@ TEST_F(ArrayTest, testMemory) {
 
     // Verify that we can read from the buffer
     testValue = '\0';
-    testValue = ((char *)ownedBufferLocation)[8];
+    testValue = reinterpret_cast<char *>(ownedBufferLocation)[8];
     EXPECT_TRUE(testValue == 'i')
         << "Was not able to read the right thing from the buffer.";
     const Array f(a);
     EXPECT_TRUE(f.isInstance(a)); 
-    EXPECT_TRUE(((char *)a.getBuffer())[4] == 'e');
-    EXPECT_TRUE(((const char *)f.getBuffer())[4] == 'e');
+    EXPECT_TRUE(reinterpret_cast<char *>(a.getBuffer())[4] == 'e');
+    EXPECT_TRUE(reinterpret_cast<const char *>(f.getBuffer())[4] == 'e');
 
     // full copy
     b = a.copy();
     EXPECT_TRUE(b.getType() == NTA_BasicType_Byte)
         << "The data type should have been copied to the Array.";
-    EXPECT_TRUE(((char *)b.getBuffer())[4] == 'e')
+    EXPECT_TRUE(reinterpret_cast<char *>(b.getBuffer())[4] == 'e')
         << "Should be able to read the full copy Array instance.";
-    ((char *)b.getBuffer())[4] = 'z';
-    EXPECT_TRUE(((char *)b.getBuffer())[4] == 'z')
+    reinterpret_cast<char *>(b.getBuffer())[4] = 'z';
+    EXPECT_TRUE(reinterpret_cast<char *>(b.getBuffer())[4] == 'z')
         << "Should be able to modify the new Array instance.";
-    EXPECT_TRUE(((char *)a.getBuffer())[4] == 'e')
+    EXPECT_TRUE(reinterpret_cast<char *>(a.getBuffer())[4] == 'e')
         << "Should not be able to modify the original Array instance.";
 
     c = &b;
@@ -234,7 +281,7 @@ TEST_F(ArrayTest, testMemory) {
   {
     Array e(NTA_BasicType_Byte);
     e.allocateBuffer(10);
-    ownedBufferLocation = (char*)e.getBuffer();
+    ownedBufferLocation = reinterpret_cast<char*>(e.getBuffer());
     for (unsigned int i = 0; i < 9; i++) {
       ownedBufferLocation[i] = 'A' + i;
     }
@@ -247,17 +294,17 @@ TEST_F(ArrayTest, testMemory) {
     c = &d;
     EXPECT_TRUE(d.getType() == NTA_BasicType_Byte)  << "The data type should have been copied to the Array.";
 
-    EXPECT_TRUE(((char *)d.getBuffer())[4] == 'E')  << "Should be able to read the new Array instance.";
-    EXPECT_TRUE(((const char *)c->getBuffer())[4] == 'E')  << "Should be able to read the new const Array instance.";
-    ((char *)d.getBuffer())[4] = 'Z';
-    EXPECT_TRUE(((char *)d.getBuffer())[4] == 'Z') << "Should be able to modify the new Array instance.";
-    EXPECT_TRUE(((char *)e.getBuffer())[4] == 'Z') << "The original buffer should also change.";
+    EXPECT_TRUE(reinterpret_cast<char *>(d.getBuffer())[4] == 'E')  << "Should be able to read the new Array instance.";
+    EXPECT_TRUE(reinterpret_cast<const char *>(c->getBuffer())[4] == 'E')  << "Should be able to read the new const Array instance.";
+    reinterpret_cast<char *>(d.getBuffer())[4] = 'Z';
+    EXPECT_TRUE(reinterpret_cast<char *>(d.getBuffer())[4] == 'Z') << "Should be able to modify the new Array instance.";
+    EXPECT_TRUE(reinterpret_cast<char *>(e.getBuffer())[4] == 'Z') << "The original buffer should also change.";
     
     EXPECT_TRUE(d.isInstance(e)); 
   }
   // the Array e is now out of scope but the buffer should still be valid.
-  EXPECT_TRUE(((char *)d.getBuffer())[4] == 'Z')   << "Should still see the buffer in the new Array instance.";
-  EXPECT_TRUE(((char *)d.getBuffer())[4] == 'Z')   << "The const Array instance should also still see the buffer.";
+  EXPECT_TRUE(reinterpret_cast<char *>(d.getBuffer())[4] == 'Z')   << "Should still see the buffer in the new Array instance.";
+  EXPECT_TRUE(reinterpret_cast<char *>(d.getBuffer())[4] == 'Z')   << "The const Array instance should also still see the buffer.";
   EXPECT_TRUE(ownedBufferLocation[4] == 'Z')  << "The pointer should also still see the buffer.";
 
   g = b;
@@ -266,8 +313,8 @@ TEST_F(ArrayTest, testMemory) {
   b.releaseBuffer();
   // The b buffer is no longer valid but c still has a reference to it.
   EXPECT_TRUE(b.getBuffer() == nullptr)  << "expected a null pointer because the buffer was released.";
-  EXPECT_TRUE(b.getCount() == 0)  << "expected a 0 length because the buffer was released.";
-  EXPECT_TRUE(((char *)ownedBufferLocation)[4] == 'Z') << "The pointer should still see the e buffer.";
+  EXPECT_TRUE(b.getCount() == 0u)  << "expected a 0 length because the buffer was released.";
+  EXPECT_TRUE(reinterpret_cast<char *>(ownedBufferLocation)[4] == 'Z') << "The pointer should still see the e buffer.";
 
   // c->releaseBuffer();   //non-const functions on c should give compile errors.
 }
@@ -282,14 +329,14 @@ TEST_F(ArrayTest, testArrayCreation) {
 
   for (testCase = testCases_.begin(); testCase != testCases_.end();
        testCase++) {
-    char *buf = (char *)-1;
+    char *buf = reinterpret_cast<char *>(-1ll);
 
     if (testCase->second.testUsesInvalidParameters) {
       bool caughtException = false;
 
       try {
         arrayP = new Array(testCase->second.dataType);
-      } catch (nupic::Exception& e) {
+      } catch (htm::Exception& e) {
         UNUSED(e);
         caughtException = true;
       }
@@ -300,12 +347,12 @@ TEST_F(ArrayTest, testArrayCreation) {
                  "ArrayBase";
     } else {
       arrayP = new Array(testCase->second.dataType);
-      buf = (char *)arrayP->getBuffer();
+      buf = reinterpret_cast<char *>(arrayP->getBuffer());
       ASSERT_EQ(buf, nullptr)
           << "Test case: " + testCase->first +
                  " - When not passed a size, a newly created Array should "
                  "have a NULL buffer";
-      ASSERT_EQ((size_t)0, arrayP->getCount())
+      ASSERT_EQ(0u, arrayP->getCount())
           << "Test case: " + testCase->first +
                  " - When not passed a size, a newly created Array should "
                  "have a count equal to zero";
@@ -321,8 +368,8 @@ TEST_F(ArrayTest, testArrayCreation) {
                          testCase->second.allocationSize);
       EXPECT_TRUE(arrayP->getType() == testCase->second.dataType)  << "The data type should have been copied to the Array.";
 
-      buf = (char *)arrayP->getBuffer();
-      ASSERT_EQ((size_t)testCase->second.allocationSize, arrayP->getCount())
+      buf = reinterpret_cast<char *>(arrayP->getBuffer());
+      ASSERT_EQ(static_cast<size_t>(testCase->second.allocationSize), arrayP->getCount())
           << "Test case: " + testCase->first +
                  " - Preallocating a buffer should have a count equal to our "
                  "allocation size";
@@ -376,7 +423,7 @@ TEST_F(ArrayTest, testBufferAllocation) {
       {
         a.allocateBuffer(10);
       }
-      catch(nupic::Exception& e)
+      catch(htm::Exception& e)
       {
         UNUSED(e);
         caughtException = true;
@@ -387,7 +434,7 @@ TEST_F(ArrayTest, testBufferAllocation) {
             " - allocating a buffer when one is already allocated should "
             "not raise an exception. The allocation will release the previous buffer.";
 
-      ASSERT_EQ((size_t)10, a.getCount())
+      ASSERT_EQ(10u, a.getCount())
           << "Test case: " + testCase->first +
                  " - Size of allocated ArrayBase should match requested size";
     }
@@ -402,8 +449,7 @@ TEST_F(ArrayTest, testUnownedBuffer) {
   TestCaseIterator testCase;
 
   for (testCase = testCases_.begin(); testCase != testCases_.end();  testCase++) {
-    size_t capacity =
-        testCase->second.dataTypeSize * testCase->second.allocationSize;
+    size_t capacity = testCase->second.dataTypeSize * testCase->second.allocationSize;
     std::shared_ptr<char> buf(new char[capacity], std::default_delete<char[]>());
 
     Array a(testCase->second.dataType);
@@ -424,7 +470,7 @@ TEST_F(ArrayTest, testUnownedBuffer) {
     {
       a.setBuffer(buf2.get(), testCase->second.allocationSize);
     }
-    catch(nupic::Exception& e)
+    catch(htm::Exception& e)
     {
       UNUSED(e);
       caughtException = true;
@@ -435,7 +481,7 @@ TEST_F(ArrayTest, testUnownedBuffer) {
           testCase->first +
           " - setting a buffer when one is already set should not raise an "
           "exception";
-    ASSERT_EQ(a.getCount(), (size_t)testCase->second.allocationSize)
+    ASSERT_EQ(a.getCount(), static_cast<size_t>(testCase->second.allocationSize))
         << "Buffer size should be the requested amount.";
   }
 }
@@ -496,7 +542,7 @@ TEST_F(ArrayTest, testArrayTyping) {
 TEST_F(ArrayTest, testArrayBasefunctions) {
   setupArrayTests();
 
-  std::vector<Int32> testdata = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0};
+  SDR_sparse_t testdata = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 0, 0};
   TestCaseIterator testCase;
 
   for (testCase = testCases_.begin(); testCase != testCases_.end(); testCase++) {
@@ -506,7 +552,7 @@ TEST_F(ArrayTest, testArrayBasefunctions) {
     if (testCase->second.testUsesInvalidParameters) {
       continue;
     }
-    std::cerr << "  Iteration " << testCase->first << std::endl;
+    VERBOSE << "  Iteration " << testCase->first << std::endl;
 
     size_t nCols = testCase->second.allocationSize;
     size_t bufsize = testCase->second.dataTypeSize * testCase->second.allocationSize;
@@ -540,32 +586,22 @@ TEST_F(ArrayTest, testArrayBasefunctions) {
     //std::cerr << "ArrayTest:testArrayBasefunctions a=" << a << std::endl;
     nCols = testdata.size();
 
-    // getMaxElementsCount, getCount, setCount, copy
-    if (testCase->second.dataType != NTA_BasicType_SDR) {
-      // SDR cannot do a truncate of data keeping capacity fixed.
-      // For everyone else, remove the last element.
-      size_t buffer_cnt = a.getCount();
-      c = a.copy();
-      c.setCount(buffer_cnt - 1);
-      EXPECT_EQ(c.getMaxElementsCount(), buffer_cnt);
-      EXPECT_EQ(c.getCount(), buffer_cnt - 1);
-    }
-    
+
     c = a; // shallow copy
     EXPECT_EQ(c.getCount(), a.getCount());
     EXPECT_TRUE(c.getBuffer() == a.getBuffer());
     EXPECT_EQ(a.getCount(), nCols);
-    EXPECT_EQ(a.getMaxElementsCount(), nCols);
-    EXPECT_EQ(a.getBufferSize(), nCols * testCase->second.dataTypeSize );
 
 
     if (testCase->second.dataType == NTA_BasicType_SDR) {
       // Just to be sure an SDR can play here,
       // Only SDR has dimensions
-      std::vector<UInt> dim({10, 10});
-      SDR sdr(dim);
+      std::vector<UInt> d({ 10u, 10u });
+      Dimensions dim(d);
+      SDR sdr(dim.asVector());
       Array s(sdr); // makes a copy of sdr
-      EXPECT_TRUE(s.getSDR() != &sdr);
+      Dimensions dim_s(s.getSDR().dimensions);
+      EXPECT_EQ(dim_s, dim);
       EXPECT_EQ(s.getCount(), 100u);
 
       std::vector<UInt> dim2({10, 20});
@@ -575,11 +611,11 @@ TEST_F(ArrayTest, testArrayBasefunctions) {
       // wrapper an existing sdr
       Array m(NTA_BasicType_SDR);
       m.setBuffer(sdr);
-      EXPECT_TRUE(m.getSDR() == &sdr);
+      EXPECT_TRUE(m.getSDR() == sdr);
       EXPECT_EQ(m.getCount(), 100u);
 
       std::vector<Byte> row = a.asVector<Byte>();
-      SDR_flatSparse_t &v = a.getSDR()->getFlatSparse();
+      const SDR_sparse_t& v = a.getSDR().getSparse();
 
       EXPECT_EQ(v.size(), 10u);
 
@@ -596,6 +632,62 @@ TEST_F(ArrayTest, testArrayBasefunctions) {
       }
     }
 
+  }
+}
+
+TEST_F(ArrayTest, testArrayBaseSerialization) {
+  setupArrayTests();
+
+  SDR_sparse_t testdata = {1, 4, 5, 8, 9}; // sparse
+  TestCaseIterator testCase;
+
+  for (testCase = testCases_.begin(); testCase != testCases_.end(); testCase++) {
+    // testArrayCreation() already validates that Array objects can't be
+    // created using invalid NTA_BasicType parameters, so we skip those
+    // negetive test cases here
+    if (testCase->second.testUsesInvalidParameters) {
+      continue;
+    }
+
+    VERBOSE << "  Iteration " << testCase->first << " element size: " << testCase->second.dataTypeSize << std::endl;
+
+    // constructors;  Allocate and populate an array using the test data.
+    Array a(testCase->second.dataType);
+    populateArray(testdata, testCase->second.allocationSize, a);
+
+    VERBOSE << "starting with a = " << a << std::endl;
+
+    // binary serialization
+    std::stringstream ss;
+    {
+      cereal::BinaryOutputArchive binaryOut_ar(ss); // Create an output archive
+      a.save_ar(binaryOut_ar);
+    } //flush when archive goes out of scope
+    VERBOSE << "  binary size: " << ss.str().length() << std::endl;
+    ss.seekg(0);  // rewind
+    Array b;
+    {
+      cereal::BinaryInputArchive binaryIn_ar(ss);  // Create an input archive
+      b.load_ar(binaryIn_ar);
+    } // flush
+    SDR_sparse_t results;
+    toSparse(b, results);
+    EXPECT_EQ(testdata, results);
+
+    // JSON serialization
+    ss.seekp(0);  // rewind
+    {
+      cereal::JSONOutputArchive jsonOut_ar(ss); // Create an output archive
+      a.save_ar(jsonOut_ar);
+    } // flush
+    VERBOSE << ss.str() << std::endl;
+    ss.seekg(0);  // rewind
+    {
+      cereal::JSONInputArchive jsonIn_ar(ss);  // Create an input archive
+      b.load_ar(jsonIn_ar);
+    } // flush
+    toSparse(b, results);
+    EXPECT_EQ(testdata, results);
   }
 }
 
@@ -638,5 +730,7 @@ void ArrayTest::setupArrayTests() {
       ArrayTestParameters(NTA_BasicType_Real, 4, 10, "Real32", false);
 #endif
   testCases_["Non-existent NTA_BasicType"] =
-      ArrayTestParameters((NTA_BasicType)-1, 0, 10, "N/A", true);
+      ArrayTestParameters(NTA_BasicType_Last, 0, 10, "N/A", true);
 }
+
+} //-ns

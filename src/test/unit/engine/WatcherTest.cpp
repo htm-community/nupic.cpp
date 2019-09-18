@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2013, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -15,10 +13,7 @@
  *
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
- *
- * http://numenta.org/licenses/
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 /** @file
  * Implementation of Watcher test
@@ -29,22 +24,24 @@
 #include <sstream>
 #include <string>
 
-#include <nupic/engine/Network.hpp>
-#include <nupic/engine/NuPIC.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/ntypes/Dimensions.hpp>
-#include <nupic/os/Path.hpp>
-#include <nupic/ntypes/ArrayBase.hpp>
-#include <nupic/engine/Watcher.hpp>
+#include <htm/engine/Network.hpp>
+#include <htm/engine/NuPIC.hpp>
+#include <htm/engine/Region.hpp>
+#include <htm/ntypes/Dimensions.hpp>
+#include <htm/os/Path.hpp>
+#include <htm/ntypes/ArrayBase.hpp>
+#include <htm/engine/Watcher.hpp>
 
 #include <gtest/gtest.h>
 
+namespace testing {
+    
 static bool verbose = false;
 #define VERBOSE                                                                \
   if (verbose)                                                                 \
   std::cerr << "[          ] "
 
-using namespace nupic;
+using namespace htm;
 
 TEST(WatcherTest, SampleNetwork) {
   // NOTE:  This test generates files for the subsequent two tests.
@@ -106,7 +103,7 @@ TEST(WatcherTest, SampleNetwork) {
   // n.getRegions().getByName("level1")->getNodeAtIndex(1).setParameterUInt32("unclonedParam",(UInt32)1);
   //n.run(3);
   // see if Watcher notices change in parameter values  after 3 iterations
-  n.getRegions().getByName("level1")->setParameterUInt64("uint64Param", (UInt64)66);
+  n.getRegion("level1")->setParameterUInt64("uint64Param", (UInt64)66);
   n.run(3);
 
   // test flushFile() - this should produce output
@@ -258,4 +255,5 @@ TEST(WatcherTest, FileTest2) {
   inStream2.close();
 
   Path::remove("TestOutputDir/testfile2");
+}
 }

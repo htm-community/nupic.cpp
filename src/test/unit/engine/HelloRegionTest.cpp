@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013-2014, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2013-2014, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -15,10 +13,7 @@
  *
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
- *
- * http://numenta.org/licenses/
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 #include "gtest/gtest.h"
 
@@ -27,14 +22,14 @@
 #include <fstream>
 #include <string>
 
-#include <nupic/engine/Network.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/ntypes/Dimensions.hpp>
-#include <nupic/os/Path.hpp>
+#include <htm/engine/Network.hpp>
+#include <htm/engine/Region.hpp>
+#include <htm/ntypes/Dimensions.hpp>
+#include <htm/os/Path.hpp>
 
 namespace testing {
 
-using namespace nupic;
+using namespace htm;
 
 static bool verbose = false;
 
@@ -72,12 +67,6 @@ TEST(HelloRegionTest, demo) {
   std::shared_ptr<Region> region =
       net.addRegion("region", "VectorFileSensor", params);
 
-  // Set region dimensions
- // Dimensions dims;
- // dims.push_back(1);  // 1 means variable size, in this case set by activeOutputCount.
- // if(verbose) std::cout << "Setting region dimensions" << dims.toString() << std::endl;
- // region->setDimensions(dims);
-
 
   // Load data
   // This will read in all data into a vector of vectors.
@@ -91,10 +80,10 @@ TEST(HelloRegionTest, demo) {
   net.initialize();
 
   // Compute
-  region->compute();  // This should fetch the first row into buffer
+  net.run(1);  // This should fetch the first row into buffer
 
   // Get output
-  const Array outputArray = region->getOutputData("dataOut");
+  const Array& outputArray = region->getOutputData("dataOut");
   EXPECT_TRUE(outputArray.getType() == NTA_BasicType_Real32);
   EXPECT_EQ(outputArray.getCount(), testdata[0].size());
   const Real32 *buffer = (const Real32 *)outputArray.getBuffer();
@@ -106,24 +95,27 @@ TEST(HelloRegionTest, demo) {
   Network net2;
   {
     std::stringstream ss;
-    net.save(ss);
+    net.save(ss, SerializableFormat::JSON);
 	  if(verbose) std::cout << "Loading from stream. \n";
     if(verbose) std::cout << ss.str() << std::endl;
     ss.seekg(0);
-    net2.load(ss);
+    net2.load(ss, SerializableFormat::JSON);
   }
 
   // Note: this compares the structure (regions, links, etc) not data content or state.
   EXPECT_EQ(net, net2) << "Restored network should be the same as original.";
 
   std::shared_ptr<Region> region2 = net2.getRegion("region");
-  const Array outputArray2 = region2->getOutputData("dataOut");
+  const Array& outputArray2 = region2->getOutputData("dataOut");
 
   // fetch the data rows for both networks.
   net.run((int)data_rows-1);
   net2.run((int)data_rows-1);
 
   // The last row should be currently in the buffer
+  if (verbose) std::cout << "outputArray =" << outputArray << std::endl;
+  if (verbose) std::cout << "outputArray2=" << outputArray2 << std::endl;
+
   const Real32 *buffer2 = (const Real32 *)outputArray2.getBuffer();
   EXPECT_EQ(data_cols, outputArray.getCount());
   ASSERT_EQ(outputArray2.getCount(), outputArray.getCount());

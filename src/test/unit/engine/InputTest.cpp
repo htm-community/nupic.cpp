@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2013-2017, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2013-2017, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -15,29 +13,28 @@
  *
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
- *
- * http://numenta.org/licenses/
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 /** @file
  * Implementation of Input test
  */
 
 #include "gtest/gtest.h"
-#include <nupic/engine/Input.hpp>
-#include <nupic/engine/Network.hpp>
-#include <nupic/engine/Output.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/ntypes/Dimensions.hpp>
-#include <nupic/regions/TestNode.hpp>
+#include <htm/engine/Input.hpp>
+#include <htm/engine/Network.hpp>
+#include <htm/engine/Output.hpp>
+#include <htm/engine/Region.hpp>
+#include <htm/ntypes/Dimensions.hpp>
+#include <htm/regions/TestNode.hpp>
 
+namespace testing { 
+    
 static bool verbose = false;
 #define VERBOSE                                                                \
   if (verbose)                                                                 \
   std::cerr << "[          ]"
 
-using namespace nupic;
+using namespace htm;
 
 TEST(InputTest, BasicNetworkConstruction) {
   Network net;
@@ -45,35 +42,38 @@ TEST(InputTest, BasicNetworkConstruction) {
   std::shared_ptr<Region> r2 = net.addRegion("r2", "TestNode", "");
 
   // Test constructor
-  Input x(r1.get(), "X", NTA_BasicType_Int32);
-  Input y(r2.get(), "Y", NTA_BasicType_Byte);
-  EXPECT_THROW(Input i(r1.get(), "I", (NTA_BasicType)(NTA_BasicType_Last + 1)),
-               std::exception);
+  Input* x = r1->getInput("bottomUpIn");
+  Input* y = r2->getInput("bottomUpIn");
 
   // test getRegion()
-  ASSERT_EQ(r1.get(), x.getRegion());
-  ASSERT_EQ(r2.get(), y.getRegion());
+  ASSERT_EQ(r1.get(), x->getRegion());
+  ASSERT_EQ(r2.get(), y->getRegion());
 
   // test isInitialized()
-  ASSERT_TRUE(!x.isInitialized());
-  ASSERT_TRUE(!y.isInitialized());
+  ASSERT_TRUE(!x->isInitialized());
+  ASSERT_TRUE(!y->isInitialized());
 
   Dimensions d1;
   d1.push_back(8);
   d1.push_back(4);
   r1->setDimensions(d1);
   Dimensions d2;
-  d2.push_back(4);
   d2.push_back(2);
+  d2.push_back(16);
   r2->setDimensions(d2);
   net.link("r1", "r2");
 
-  x.initialize();
-  y.initialize();
+  net.initialize();
+
+  VERBOSE << "Dimensions: \n";
+  VERBOSE << " TestNode in       - " << r1->getInputDimensions("bottomUpIn")  <<"\n";
+  VERBOSE << " TestNode out      - " << r1->getOutputDimensions("bottomUpOut")<<"\n";
+  VERBOSE << " TestNode in       - " << r2->getInputDimensions("bottomUpIn")  <<"\n";
+  VERBOSE << " TestNode out      - " << r2->getOutputDimensions("bottomUpOut")<<"\n";
 
   // test getData() with empty buffer
-  const ArrayBase *pa = &(y.getData());
-  ASSERT_EQ(0u, pa->getCount());
+  const ArrayBase *pa = &(y->getData());
+  ASSERT_EQ(32u, pa->getCount());
 }
 
 
@@ -349,4 +349,5 @@ TEST(InputTest, LinkTwoRegionsOneInputFlatten) {
   VERBOSE << "region3 input data: " << *pa << std::endl;
   ASSERT_EQ(expectedData.size(), pa->getCount());
   ASSERT_EQ(expectedData, pa->asVector<Real64>());
+}
 }

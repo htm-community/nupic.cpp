@@ -1,38 +1,41 @@
-FROM ubuntu:14.04
+# Default arch. Pass in like "--build-arg arch=arm64".
+#   Supports Debian arches: amd64, arm64, etc.
+#   Our circleci arm64 build uses this specifically.
+#   https://docs.docker.com/engine/reference/commandline/build/
+ARG arch=amd64
 
-RUN apt-get update && \
-    apt-get install -y \
-    curl \
-    wget \
-    git-core \
-    gcc \
-    g++ \
+# Multiarch Debian 10 Buster (amd64, arm64, etc).
+#   https://hub.docker.com/r/multiarch/debian-debootstrap
+FROM multiarch/debian-debootstrap:$arch-buster
+
+RUN apt-get update
+RUN apt-get install -y \
     cmake \
-    python \
-    python2.7 \
-    python2.7-dev \
-    zlib1g-dev \
-    bzip2 \
+    g++ \
+    git-core \
     libyaml-dev \
-    libyaml-0-2
-RUN wget http://releases.numenta.org/pip/1ebd3cb7a5a3073058d0c9552ab074bd/get-pip.py -O - | python
+    python \
+    python-dev \
+    python-numpy \
+    python-pip
+
+ADD . /usr/local/src/htm.core
+WORKDIR /usr/local/src/htm.core
+
+# Install
 RUN pip install --upgrade setuptools
 RUN pip install wheel
-
-ENV CC gcc
-ENV CXX g++
-
-ADD . /usr/local/src/nupic.core
-
-WORKDIR /usr/local/src/nupic.core
-
+RUN pip install \
 # Explicitly specify --cache-dir, --build, and --no-clean so that build
 # artifacts may be extracted from the container later.  Final built python
-# packages can be found in /usr/local/src/nupic.core/bindings/py/dist
+# packages can be found in /usr/local/src/htm.core/bindings/py/dist
+#        --cache-dir /usr/local/src/htm.core/pip-cache \
+#        --build /usr/local/src/htm.core/pip-build \
+#        --no-clean \
+        -r bindings/py/packaging/requirements.txt
+RUN python setup.py install
 
-RUN pip install \
-        --cache-dir /usr/local/src/nupic.core/pip-cache \
-        --build /usr/local/src/nupic.core/pip-build \
-        --no-clean \
-        -r bindings/py/requirements.txt && \
-    python setup.py bdist bdist_dumb bdist_wheel sdist
+# Test
+RUN ./build/Release/bin/unit_tests
+RUN python setup.py test
+

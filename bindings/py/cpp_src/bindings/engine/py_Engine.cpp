@@ -1,8 +1,6 @@
 /* ---------------------------------------------------------------------
- * Numenta Platform for Intelligent Computing (NuPIC)
- * Copyright (C) 2018, Numenta, Inc.  Unless you have an agreement
- * with Numenta, Inc., for a separate license for this software code, the
- * following terms and conditions apply:
+ * HTM Community Edition of NuPIC
+ * Copyright (C) 2018, Numenta, Inc.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -16,11 +14,8 @@
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  *
- * http://numenta.org/licenses/
- *
  * Author: @chhenning, 2018
- * ---------------------------------------------------------------------
- */
+ * --------------------------------------------------------------------- */
 
 /** @file
 PyBind11 bindings for Engine classes
@@ -34,26 +29,26 @@ PyBind11 bindings for Engine classes
 #include <pybind11/numpy.h>
 #include <pybind11/stl.h>
 
+#include <htm/os/Timer.hpp>
 
-#include <nupic/os/OS.hpp>
-#include <nupic/os/Timer.hpp>
+#include <htm/ntypes/Array.hpp>
 
-#include <nupic/ntypes/Array.hpp>
-
-#include <nupic/engine/Link.hpp>
-#include <nupic/engine/Network.hpp>
-#include <nupic/engine/Region.hpp>
-#include <nupic/engine/Spec.hpp>
+#include <htm/engine/Link.hpp>
+#include <htm/engine/Network.hpp>
+#include <htm/engine/Region.hpp>
+#include <htm/engine/Input.hpp>
+#include <htm/engine/Spec.hpp>
+#include <htm/types/Sdr.hpp>
 #include <plugin/PyBindRegion.hpp>
 #include <plugin/RegisteredRegionImplPy.hpp>
 
 namespace py = pybind11;
-using namespace nupic;
+using namespace htm;
 
-namespace nupic_ext
+namespace htm_ext
 {
 
-	typedef std::shared_ptr<Region> Region_Ptr_t;
+    typedef std::shared_ptr<Region> Region_Ptr_t;
 
     void init_Engine(py::module& m)
     {
@@ -72,17 +67,12 @@ namespace nupic_ext
 
         // members
         py_Dimensions.def("getCount", &Dimensions::getCount)
-            .def("getDimensionCount", &Dimensions::getDimensionCount)
-            .def("getDimension", &Dimensions::getDimension)
+            .def("size", &Dimensions::size)
             .def("isUnspecified", &Dimensions::isUnspecified)
             .def("isDontcare", &Dimensions::isDontcare)
             .def("isSpecified", &Dimensions::isSpecified)
-            .def("isOnes", &Dimensions::isOnes)
-            .def("isValid", &Dimensions::isValid)
-            .def("getIndex", &Dimensions::getIndex)
-            .def("getCoordinate", &Dimensions::getCoordinate)
+            .def("isInvalid", &Dimensions::isInvalid)
             .def("toString", &Dimensions::toString, "", py::arg("humanReadable") = true)
-            .def("promote", &Dimensions::promote)
             ;
 
         // operator overloading
@@ -92,6 +82,112 @@ namespace nupic_ext
         // python slots
         py_Dimensions.def("__str__", &Dimensions::toString)
             .def("__repr__", &Dimensions::toString);
+
+        ///////////////////
+        // Array
+        ///////////////////
+
+        // The Array object will be presented to python as a Buffer object.
+        // To create from a numpy array, use
+        //      a = Array(numpy_array)
+        //    optional parameter copy = False to avoid copying.
+        //
+        //     can be cast to a numPy object for direct access.
+        //      np.array(this_instance)
+        //     optional parameter copy = False to avoid copying.
+
+        py::class_<Array>(m, "Array", py::buffer_protocol())
+            .def_buffer([](Array &m) -> py::buffer_info {
+                if (!m.has_buffer())
+                    throw std::runtime_error("Array object is not initalized.");
+                /* determine the Python struct-style format descriptor, see pybind11/buffer_info.h */
+                std::string fmt;
+                if      (m.getType() == NTA_BasicType_Int32)  fmt = py::format_descriptor<Int32>::format();
+                else if    (m.getType() == NTA_BasicType_UInt32) fmt = py::format_descriptor<UInt32>::format();
+                else if    (m.getType() == NTA_BasicType_Int64)  fmt = py::format_descriptor<Int64>::format();
+                else if    (m.getType() == NTA_BasicType_UInt64) fmt = py::format_descriptor<UInt64>::format();
+                else if    (m.getType() == NTA_BasicType_Real32) fmt = py::format_descriptor<Real32>::format();
+                else if    (m.getType() == NTA_BasicType_Real64) fmt = py::format_descriptor<Real64>::format();
+                else if    (m.getType() == NTA_BasicType_Bool)   fmt = py::format_descriptor<bool>::format();
+                else  fmt =  py::format_descriptor<Byte>::format();  /* for Byte and SDR data */
+                return py::buffer_info(
+                    m.getBuffer(),                            /* Pointer to buffer */
+                    BasicType::getSize(m.getType()),          /* Size of one scalar */
+                    fmt,                                      /* Python struct-style format descriptor */
+                    1,                                        /* Number of dimensions */
+                    { m.getCount() },                         /* Buffer dimensions */
+                    { BasicType::getSize(m.getType())}        /* Strides (in bytes) for each index */
+                );
+            })
+            .def("__init__", [](Array &m, py::buffer b, bool copy){
+                py::buffer_info info = b.request();  /* Request a buffer descriptor from Python */
+                if (info.ndim != 1)
+                    throw std::runtime_error("Expected a one dimensional array!");
+                size_t size = static_cast<size_t>(info.shape[0]);
+                NTA_BasicType type;
+                if      (((info.format == "i") || (info.format == "l") ) && info.itemsize == 4) type = NTA_BasicType_Int32;
+                else if (((info.format == "I") || (info.format == "L") ) && info.itemsize == 4) type = NTA_BasicType_UInt32;
+                else if ((info.format == "l") || (info.format == "q") ) type = NTA_BasicType_Int64;
+                else if ((info.format == "L") || (info.format == "Q") ) type = NTA_BasicType_UInt64;
+                else if (info.format == "f") type = NTA_BasicType_Real32;
+                else if (info.format == "d") type = NTA_BasicType_Real64;
+                else if (info.format == py::format_descriptor<bool>::format()) type = NTA_BasicType_Bool;
+                else if (info.format == py::format_descriptor<Byte>::format()) type = NTA_BasicType_Byte;
+                else NTA_THROW << "Unexpected data type in the array!  info.format=" << info.format;
+                // for info.format codes, see https://docs.python.org/3.7/library/array.html
+
+                if (copy) {
+                    new(&m) Array(type);
+                    m.allocateBuffer(size);
+                    std::memcpy(m.getBuffer(), info.ptr, size*info.itemsize);
+                }
+                else
+                    new (&m) Array(type, info.ptr, info.shape[0]);
+            }, py::arg("b"), py::arg("copy")=true)
+            .def(py::init<>(),           "Create an empty Array object.")
+            .def("zeroBuffer", &Array::zeroBuffer, "Fills array with zeros")
+            .def("getCount", &Array::getCount, "Returns the number of elements.")
+
+            // boolean functions to determine the type of value in the Array
+            .def("getType", &Array::getType, "Returns an enum representing the data type.")
+            .def("isInt32",  [](const Array &self) { return self.getType() == NTA_BasicType_Int32; })
+            .def("isUInt32", [](const Array &self) { return self.getType() == NTA_BasicType_UInt32; })
+            .def("isInt64",  [](const Array &self) { return self.getType() == NTA_BasicType_Int64; })
+            .def("isUInt64", [](const Array &self) { return self.getType() == NTA_BasicType_UInt64; })
+            .def("isReal32", [](const Array &self) { return self.getType() == NTA_BasicType_Real32; })
+            .def("isReal64", [](const Array &self) { return self.getType() == NTA_BasicType_Real64; })
+            .def("isBool",   [](const Array &self) { return self.getType() == NTA_BasicType_Bool; })
+            .def("isSDR",    [](const Array &self) { return self.getType() == NTA_BasicType_SDR; })
+            .def(py::pickle(
+                [](const Array& self) {
+                    std::stringstream ss;
+                    self.save(ss);
+                    return py::bytes(ss.str());
+                },
+                [](const py::bytes& s) {
+                    std::istringstream ss(s);
+                    Array self;
+                    self.load(ss);
+                    return self;
+            }))
+            .def("__init__", [](Array &m, SDR* sdr, bool copy){
+                NTA_CHECK(sdr != NULL) << "SDR pointer is null.";
+                if (copy) {
+                    new(&m) Array(*sdr); // makes a copy of the SDR
+                }
+                else {
+                  new (&m) Array();
+                    m.setBuffer(*sdr);   // Does not copy the SDR.
+                }
+              }, "Create an Array object from an SDR object.", 
+                 py::arg("sdr"), py::arg("copy")=true)
+            .def("getSDR", [](Array& self){ return self.getSDR(); 
+              },  "Returns an SDR object if the Array contains type SDR.");
+
+
+
+
+
 
         ///////////////////
         // Link
@@ -110,6 +206,7 @@ namespace nupic_ext
                 , py::arg("srcOutputName") = "", py::arg("destInputName") = ""
                 , py::arg("propagationDelay") = 0);
 
+                // member functions
         py_Link.def("toString", &Link::toString);
         py_Link.def("getDestRegionName", &Link::getDestRegionName);
         py_Link.def("getSrcRegionName",  &Link::getSrcRegionName);
@@ -124,6 +221,9 @@ namespace nupic_ext
         ///////////////////
         py::class_<Spec> py_Spec(m, "Spec");
 
+
+
+
         ///////////////////
         // Region
         ///////////////////
@@ -134,29 +234,85 @@ namespace nupic_ext
             .def("getType", &Region::getType)
             .def("getDimensions", &Region::getDimensions)
             .def("setDimensions", &Region::setDimensions)
-			.def("getOutputElementCount", &Region::getNodeOutputElementCount);
+            .def("getInputDimensions", &Region::getInputDimensions)
+            .def("getOutputDimensions", &Region::getOutputDimensions)
+            .def("setInputDimensions", &Region::setInputDimensions)
+            .def("setOutputDimensions", &Region::setOutputDimensions)
+            .def("getOutputElementCount", &Region::getNodeOutputElementCount)
+            .def("getInputElementCount", &Region::getNodeInputElementCount)
+            .def("askImplForOutputDimensions", &Region::askImplForOutputDimensions)
+            .def("askImplForInputDimensions", &Region::askImplForInputDimensions);
+                        
+        py_Region.def("getInputArray", &Region::getInputData)
+            .def("getOutputArray", &Region::getOutputData)
+            .def("setInputArray", [](Region& r, const std::string& name, py::buffer& b)
+            { 
+                py::buffer_info info = b.request();  /* Request a buffer descriptor from Python */
+                if (info.ndim != 1)
+                    throw std::runtime_error("Expected a one dimensional array!");
+                size_t size = static_cast<size_t>(info.shape[0]);
+                NTA_BasicType type;
+                if      (((info.format == "i") || (info.format == "l") ) && info.itemsize == 4) type = NTA_BasicType_Int32;
+                else if (((info.format == "I") || (info.format == "L") ) && info.itemsize == 4) type = NTA_BasicType_UInt32;
+                else if ((info.format == "l") || (info.format == "q") ) type = NTA_BasicType_Int64;
+                else if ((info.format == "L") || (info.format == "Q") ) type = NTA_BasicType_UInt64;
+                else if (info.format == "f") type = NTA_BasicType_Real32;
+                else if (info.format == "d") type = NTA_BasicType_Real64;
+                else if (info.format == py::format_descriptor<bool>::format()) type = NTA_BasicType_Bool;
+                else if (info.format == py::format_descriptor<Byte>::format()) type = NTA_BasicType_Byte;
+                else NTA_THROW << "setInputArray(): Unexpected data type in the array!  info.format=" << info.format;
+                // for info.format codes, see https://docs.python.org/3.7/library/array.html
+                Array s(type, info.ptr, size);
+                std::cout << "src: " << s << std::endl;
 
-		py_Region.def("getParameterInt32", &Region::getParameterInt32)
-		    .def("getParameterUInt32", &Region::getParameterUInt32)
-			.def("getParameterInt64",  &Region::getParameterInt64)
-			.def("getParameterUInt64", &Region::getParameterUInt64)
-			.def("getParameterReal32", &Region::getParameterReal32)
-			.def("getParameterReal64", &Region::getParameterReal64)
-			.def("getParameterBool",   &Region::getParameterBool)
-			.def("getParameterString", &Region::getParameterString);
+                r.setInputData(name, s);
+            });
+
+
+        py_Region.def("getParameterInt32", &Region::getParameterInt32)
+            .def("getParameterUInt32", &Region::getParameterUInt32)
+            .def("getParameterInt64",  &Region::getParameterInt64)
+            .def("getParameterUInt64", &Region::getParameterUInt64)
+            .def("getParameterReal32", &Region::getParameterReal32)
+            .def("getParameterReal64", &Region::getParameterReal64)
+            .def("getParameterBool",   &Region::getParameterBool)
+            .def("getParameterString", &Region::getParameterString)
+            .def("getParameterArray", &Region::getParameterArray);
+
+        py_Region.def("getParameterArrayCount", &Region::getParameterArrayCount);
 
         py_Region.def("setParameterInt32", &Region::setParameterInt32)
-		    .def("setParameterUInt32", &Region::setParameterUInt32)
-			.def("setParameterInt64",  &Region::setParameterInt64)
-			.def("setParameterUInt64", &Region::setParameterUInt64)
-			.def("setParameterReal32", &Region::setParameterReal32)
-			.def("setParameterReal64", &Region::setParameterReal64)
-			.def("setParameterBool",   &Region::setParameterBool)
-			.def("setParameterString", &Region::setParameterString);
-
-// TODO:		py_Region.def("getParameterArray", [](Region& r, const std::string &name, Array &array
-//			.def("setParameterArray",
-
+            .def("setParameterUInt32", &Region::setParameterUInt32)
+            .def("setParameterInt64",  &Region::setParameterInt64)
+            .def("setParameterUInt64", &Region::setParameterUInt64)
+            .def("setParameterReal32", &Region::setParameterReal32)
+            .def("setParameterReal64", &Region::setParameterReal64)
+            .def("setParameterBool",   &Region::setParameterBool)
+            .def("setParameterString", &Region::setParameterString)
+            .def("setParameterArray",  &Region::setParameterArray);
+                
+                
+        py_Region.def("executeCommand", [](Region& r, const std::string& command, py::args args)
+        {
+            // Note: The arguments to executeCommand( ) must be convertable to a string.
+            //            The Region implementation must know how to handle the command you are requesting.
+            //             So it must implement executeCommand( ) and handle the command string.
+            //             For an example, see TestNode, VectorFileSensor and VectorFileEffector regions.
+            std::vector<std::string> v_args;
+            //std::cout << "command: " << command << std::endl;
+            v_args.push_back(command);
+            for (size_t i = 0; i < args.size(); ++i)
+            {
+                auto arg = args[i];
+                std::string s = py::str(arg);
+                //std::cout << "arg: " << s << std::endl;
+                v_args.push_back(s);
+            }
+            std::string result = r.executeCommand(v_args);
+            //std::cout << "result: " << result << std::endl;
+            return result;
+        });
+            
         py_Region.def("__setattr__", [](Region& r, const std::string& Name, py::dict& d)
         {
             //r.python_attributes.insert(std::pair<std::string, py::object>(Name, d));
@@ -205,33 +361,20 @@ namespace nupic_ext
         });
 
 
-        /*
-
-        getSpec
-
-        static member
-        getSpecFromType
-        */
-
-		// TODO: do we need a function like this?
+        // TODO: do we need a function like getSelf()?
+        //    This is used to allow python apps to access the python written region implimentations
+        //    so they can call arbitrary functions on them.
+        //    This breaks the plugin API such that apps or regions implemented in C++ or any other
+        //    language will not work.  Recommend using getParameter, setParmeter and setParameterArray
+        //    or executeCommand to accomplish the same objectives...not very clean but it works cross languages.
+        //    Alternative is to add a new feature to accomplish this with more style.
         //py_Region.def("getSelf", [](const Region& self)
         //{
         //    return self.getParameterHandle("self");
         //});
 
-        py_Region.def("getInputArray", [](const Region& self, const std::string& name)
-        {
-            auto array_ref = self.getInputData(name);
 
-            return py::array_t<nupic::Byte>();
-        });
 
-        py_Region.def("getOutputArray", [](const Region& self, const std::string& name)
-        {
-            auto array_ref = self.getOutputData(name);
-
-            return py::array_t<nupic::Byte>();
-        });
 
 
         ///////////////////
@@ -245,67 +388,64 @@ namespace nupic_ext
             .def(py::init<std::string>());
 
 
-		py_Network.def("addRegion",
-			(Region_Ptr_t (nupic::Network::*)(
-					const std::string&,
-  					const std::string&,
+        py_Network.def("addRegion", (Region_Ptr_t (htm::Network::*)(
+                    const std::string&,
+                      const std::string&,
                     const std::string&))
-					&nupic::Network::addRegion,
-					"Normal add region."
-					, py::arg("name")
-					, py::arg("nodeType" )
-					, py::arg("nodeParams"));
-		py_Network.def("addRegion",
-			(Region_Ptr_t (nupic::Network::*)(
-			 		std::istream &stream,
-                    std::string))
-					&nupic::Network::addRegion,
-					"add deserialized region."
-					, py::arg("stream")
-					, py::arg("name") = "");
+                    &htm::Network::addRegion,
+                    "Normal add region."
+                    , py::arg("name")
+                    , py::arg("nodeType" )
+                    , py::arg("nodeParams"));
 
-        py_Network.def("getRegions", &nupic::Network::getRegions)
-            .def("getRegion",          &nupic::Network::getRegion)
-            .def("getLinks",           &nupic::Network::getLinks)
-            .def("getMinPhase",        &nupic::Network::getMinPhase)
-            .def("getMaxPhase",        &nupic::Network::getMaxPhase)
-            .def("setMinEnabledPhase", &nupic::Network::getMinPhase)
-            .def("setMaxEnabledPhase", &nupic::Network::getMaxPhase)
-            .def("getMinEnabledPhase", &nupic::Network::getMinPhase)
-            .def("getMaxEnabledPhase", &nupic::Network::getMaxPhase)
-			.def("run",                &nupic::Network::run);
+        py_Network.def("getRegions", &htm::Network::getRegions)
+            .def("getRegion",          &htm::Network::getRegion)
+            .def("getLinks",           &htm::Network::getLinks)
+            .def("getMinPhase",        &htm::Network::getMinPhase)
+            .def("getMaxPhase",        &htm::Network::getMaxPhase)
+            .def("setMinEnabledPhase", &htm::Network::getMinPhase)
+            .def("setMaxEnabledPhase", &htm::Network::getMaxPhase)
+            .def("getMinEnabledPhase", &htm::Network::getMinPhase)
+            .def("getMaxEnabledPhase", &htm::Network::getMaxPhase)
+            .def("setPhases",          &htm::Network::setPhases)
+            .def("run",                &htm::Network::run);
 
-        py_Network.def("initialize", &nupic::Network::initialize);
+        py_Network.def("initialize", &htm::Network::initialize);
 
-		py_Network.def("addRegionFromBundle", &nupic::Network::addRegionFromBundle
-			, "A function to load a serialized region into a Network framework."
-			, py::arg("name")
-			, py::arg("nodeType")
-			, py::arg("dimensions")
-			, py::arg("filename")
-			, py::arg("label") = "");
+        py_Network.def("save",      &htm::Network::save)
+            .def("load",            &htm::Network::load)
+            .def("saveToFile",      &htm::Network::saveToFile)
+            .def("loadFromFile",    &htm::Network::loadFromFile);
 
-        py_Network.def("link", &nupic::Network::link
+        py_Network.def("link", &htm::Network::link
             , "Defines a link between regions"
             , py::arg("srcName"), py::arg("destName")
-            , py::arg("linkType"), py::arg("linkParams")
-            , py::arg("srcOutput") = "", py::arg("destInput") = "", py::arg("propagationDelay") = 0);
+            , py::arg("linkType") = "", py::arg("linkParams") = ""
+            , py::arg("srcOutput") = "", py::arg("destInput") = ""
+            , py::arg("propagationDelay") = 0);
 
-
+        py::enum_<LogLevel>(m, "LogLevel", py::arithmetic(), "An enumeration of logging levels.")
+                     .value("None", LogLevel::LogLevel_None)        // default
+                     .value("Minimal", LogLevel::LogLevel_Minimal)
+                     .value("Normal",  LogLevel::LogLevel_Normal)
+                     .value("Verbose", LogLevel::LogLevel_Verbose)
+                     .export_values();
+        py_Network.def("setLogLevel", &htm::Network::setLogLevel);
+                
+                
         // plugin registration
         //     (note: we are re-directing these to static functions on the PyBindRegion class)
-		//     (node: the typeName is "py."+className )
+        //     (node: the typeName is "py."+className )
         py_Network.def_static("registerPyRegion",
-		                 [](const std::string& module,
-							const std::string& className) {
-				nupic::RegisteredRegionImplPy::registerPyRegion(module, className);
-			});
+                         [](const std::string& module,
+                            const std::string& className) {
+                htm::RegisteredRegionImplPy::registerPyRegion(module, className);
+            });
 
-        py_Network.def_static("unregisterPyRegion",
-			             [](const std::string& typeName) {
-				nupic::RegisteredRegionImplPy::unregisterPyRegion(typeName);
-			});
-		py_Network.def_static("cleanup", &nupic::Network::cleanup);
+        py_Network.def_static("unregisterPyRegion", [](const std::string& typeName) {
+                htm::RegisteredRegionImplPy::unregisterPyRegion(typeName);
+            });
+        py_Network.def_static("cleanup", &htm::Network::cleanup);
 
 
 
@@ -319,6 +459,7 @@ namespace nupic_ext
         py_RegionCollection.def("getByName", &Region_Collection_t::getByName);
         py_RegionCollection.def("contains", &Region_Collection_t::contains);
         py_RegionCollection.def("getCount", &Region_Collection_t::getCount);
+        py_RegionCollection.def("size", &Region_Collection_t::size);
 
         // bare bone sequence protocol
         py_RegionCollection.def("__len__", &Region_Collection_t::getCount);
@@ -333,26 +474,24 @@ namespace nupic_ext
         });
 
         // Links
-        typedef Collection<std::shared_ptr<Link>> Link_Collection_t;
-        py::class_<Link_Collection_t> py_LinkCollection(m, "Link_Collection_t");
-        py_LinkCollection.def("getByName", &Link_Collection_t::getByName);
-        py_LinkCollection.def("contains", &Link_Collection_t::contains);
-        py_LinkCollection.def("getCount", &Link_Collection_t::getCount);
+        typedef std::vector<std::shared_ptr<Link>> Links_t;
+        py::class_<Links_t> py_LinkCollection(m, "Links_t");
+        py_LinkCollection.def("getCount", &Links_t::size);
 
         // bare bone sequence protocol
-        py_LinkCollection.def("__len__", &Link_Collection_t::getCount);
-        py_LinkCollection.def("__getitem__", [](Link_Collection_t& coll, size_t i)
+        py_LinkCollection.def("__len__", &Links_t::size);
+        py_LinkCollection.def("__getitem__", [](Links_t& coll, size_t i)
         {
-            if (i >= coll.getCount())
+            if (i >= coll.size())
             {
                 throw py::index_error();
             }
 
-            return coll.getByIndex(i);
+            return coll[i];
         });
 
         // not sure we need __iter__
-        //py_LinkCollection.def("__iter__", [](Link_Collection_t& coll) { return py::make_iterator(coll.begin(), coll.end()); }, py::keep_alive<0, 1>());
+        py_LinkCollection.def("__iter__", [](Links_t& coll) { return py::make_iterator(coll.begin(), coll.end()); }, py::keep_alive<0, 1>());
     }
 
-} // namespace nupic_ext
+} // namespace htm_ext
