@@ -34,6 +34,7 @@ execute_process(COMMAND ${CMAKE_COMMAND}
 			-D CMAKE_INSTALL_PREFIX=. 
             -D NEEDS_BOOST:BOOL=${NEEDS_BOOST}
             -D BINDING_BUILD:STRING=${BINDING_BUILD}
+			-D YAML_PARSER:STRING=${YAML_PARSER}
 			-D CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
 			-D REPOSITORY_DIR=${REPOSITORY_DIR}
 			 ../../external
@@ -91,7 +92,7 @@ FOREACH(line ${lines})
   message(STATUS "  ${name} = ${${name}}")
 ENDFOREACH()
 set(EXTERNAL_INCLUDES
-	${yaml-cpp_INCLUDE_DIRS}
+	${yaml_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIRS}
 	${eigen_INCLUDE_DIRS}
 	${mnist_INCLUDE_DIRS}

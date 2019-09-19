@@ -29,7 +29,6 @@
 #include <htm/engine/Spec.hpp>
 #include <htm/regions/TestNode.hpp>
 #include <htm/ntypes/Array.hpp>
-#include <htm/ntypes/Value.hpp>
 #include <htm/utils/Log.hpp>
 #include <htm/types/Types.hpp>
 

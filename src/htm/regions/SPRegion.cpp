@@ -30,7 +30,6 @@
 #include <htm/engine/Spec.hpp>
 #include <htm/ntypes/Array.hpp>
 #include <htm/ntypes/ArrayBase.hpp>
-#include <htm/ntypes/Value.hpp>
 #include <htm/regions/SPRegion.hpp>
 #include <htm/utils/Log.hpp>
 

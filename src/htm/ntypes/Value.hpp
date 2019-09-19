@@ -1,6 +1,8 @@
 /* ---------------------------------------------------------------------
  * HTM Community Edition of NuPIC
- * Copyright (C) 2013, Numenta, Inc.
+ * Copyright (C) 2019, Numenta, Inc.
+ *
+ * David Keeney dkeeney@gmail.com
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero Public License version 3 as
@@ -14,122 +16,166 @@
  * You should have received a copy of the GNU Affero Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  * --------------------------------------------------------------------- */
-
-/** @file
- * Definitions for the Value class
- *
- * A Value object holds a Scalar or an Array
- * A ValueMap is essentially a map<string, Value>
- * It is used internally in the conversion of YAML strings to C++ objects.
- * The API and implementation are geared towards clarify rather than
- * performance, since it is expected to be used only during network construction.
- */
-
 #ifndef NTA_VALUE_HPP
 #define NTA_VALUE_HPP
 
-
-#include <map>
+#include <htm/utils/Log.hpp>
 #include <string>
-
-#include <htm/ntypes/Array.hpp>
-
-#include <htm/ntypes/Scalar.hpp>
-#include <htm/ntypes/BasicType.hpp>
+#include <vector>
+#include <map>
+#include <memory>
+#include <iostream>
+#include <iterator>
 
 namespace htm {
 
-/**
- * The Value class is used to store construction parameters
- * for regions and links. A YAML string specified by the user
- * is parsed and converted into a set of Values.
- *
- * A Value is essentially a union of Scalar/Array/string.
- * In turn, a Scalar is a union of NTA_BasicType types,
- * and an Array is an array of such types.
- *
- * A string is similar to an Array of NTA_BasicType_Byte, but
- * is handled differently, so it is separated in the API.
- *
- * The Value API uses std::shared_ptr instead of directly
- * using the underlying objects, to avoid copying, and because
- * Array may not be copied.
- */
+class Value_iterator;
+class Value_const_iterator;
+
 class Value {
 public:
-  Value(std::shared_ptr<Scalar> &s);
-  Value(std::shared_ptr<Array> &a);
-  Value(const std::string &s);
+  Value();
+  Value& parse(const std::string &yaml_string);
 
-  enum Category { scalarCategory, arrayCategory, stringCategory };
+  bool contains(const std::string &key)const;
+  size_t size() const;
 
-  bool isArray() const;
-  bool isString() const;
-  bool isScalar() const;
+  // type of value in the Value
+  enum Category { Empty = 0, Scalar, Sequence, Map };
   Category getCategory() const;
+  bool isScalar() const;
+  bool isSequence() const;
+  bool isMap() const;
+  bool isEmpty() const;
 
-  NTA_BasicType getType() const;
+  // Access
+  Value operator[](const std::string &key);
+  Value operator[](size_t index);
+  const Value operator[](const std::string &key) const;
+  const Value operator[](size_t index) const;
+  template <typename T> T as() const;
+  std::string str() const;
+  std::vector<std::string> getKeys() const;
 
-  std::shared_ptr<Scalar> getScalar() const;
 
-  std::shared_ptr<Array> getArray() const;
+  class iterator {
+    public:
+      using value_type = Value;
+      using reference = value_type &;
+      using pointer = iterator *;
+      using difference_type = std::ptrdiff_t;
+      using iterator_category = std::forward_iterator_tag;
+      iterator operator++();
+      iterator operator++(int junk);
+      reference operator*();
+      pointer operator->();
+      bool operator==(const iterator &rhs) const;
+      bool operator!=(const iterator &rhs) const;
 
-  std::string getString() const;
+      struct OpaqueIterator;
+      std::shared_ptr<OpaqueIterator> ptr_;
+      std::string first;
+      htm::Value second;
+      template <typename T> T as() { return second->as<T>(); }
+    };
 
-  template <typename T> T getScalarT() const;
+    class const_iterator {
+    public:
+      using value_type = const Value;
+      using reference = value_type &;
+      using pointer = const_iterator *;
+      using difference_type = std::ptrdiff_t;
+      using iterator_category = std::forward_iterator_tag;
+      const_iterator operator++();
+      const_iterator operator++(int junk);
+      reference operator*();
+      pointer operator->();
+      bool operator==(const const_iterator &rhs) const;
+      bool operator!=(const const_iterator &rhs) const;
 
-  const std::string getDescription() const;
+      struct OpaqueConstIterator;
+      std::shared_ptr<OpaqueConstIterator> ptr_;
+      std::string first;
+      const htm::Value second;
+      template <typename T> T as() { return second->as<T>(); }
+    };
+
+    iterator begin();
+    iterator end();
+    const_iterator cbegin();
+    const_iterator cend();
+
+  
+
+
+    template <typename T> std::vector<T> asVector() const {
+    std::vector<T> v;
+    if (!isSequence())
+      NTA_THROW << "Not a sequence node.";
+    for (auto iter = cbegin(); iter != cend(); iter++) { // iterate through the children of this node.
+      const Value& n = *iter;
+      try {
+        if (n.isScalar()) {
+          v.push_back(n.as<T>());
+        }
+      } catch (std::exception e) {
+        NTA_THROW << "Invalid vector element; " << e.what();
+      }
+    }
+    return v;
+  }
+  template <typename T> std::map<std::string, T> asMap() const {
+    std::map<std::string, T> v;
+    if (!isSequence())
+      NTA_THROW << "Not a dictionary node.";
+    for (auto iter = cbegin(); iter != cend(); iter++) { // iterate through the children of this node.
+      const Value& n = *iter;
+      try {
+        if (n.isScalar() && n.hasKey()) {
+          v[n.key()] = n.as<T>();
+        }
+      } catch (std::exception e) {
+        NTA_THROW << "Invalid map element; " << e.what;
+      }
+    }
+  }
+
+  // serializing routines
+  std::string to_yaml() const;
+  std::string to_json() const;
+
 
 private:
-  // Default constructor would not be useful
-  Value();
-  Category category_;
-  std::shared_ptr<Scalar> scalar_;
-  std::shared_ptr<Array> array_;
-  std::string string_;
+  struct OpaqueTree; 
+  std::shared_ptr<OpaqueTree> doc_; // This is an opaque pointer to a ryml Tree object.
+
 };
 
-class ValueMap {
+
+
+
+class ValueMap : public Value {
 public:
-  ValueMap();
-  ValueMap(const ValueMap &rhs);
-  ~ValueMap();
-  void add(const std::string &key, const Value &value);
-
-  // map.find(key) != map.end()
-  bool contains(const std::string &key) const;
-
-  // map.find(key) + exception if not found
-  Value &getValue(const std::string &key) const;
-
-  // Method below are for convenience, bypassing the Value
-  std::shared_ptr<Array> getArray(const std::string &key) const;
-  std::shared_ptr<Scalar> getScalar(const std::string &key) const;
-  std::string getString(const std::string &key) const;
-  std::string getString(const std::string &key,  const std::string defaultValue) const;
-
-  // More convenience methods, bypassing the Value and the contained Scalar
-
-  // use default value if not specified in map
-  template <typename T>
-  T getScalarT(const std::string &key, T defaultValue) const;
-
-  // raise exception if value is not specified in map
-  template <typename T> T getScalarT(const std::string &key) const;
-
-  void dump() const;
-
-  typedef std::map<std::string, Value *>::const_iterator const_iterator;
-  const_iterator begin() const;
-  const_iterator end() const;
-
-private:
-  // must be a Value* since Value doesn't have a default constructor
-  // We own all the items in the map and must delete them in our destructor
-  typedef std::map<std::string, Value *>::iterator iterator;
-  std::map<std::string, Value *> map_;
+  // Access for backward compatability
+  template <typename T> T getScalarT(const std::string &key) const {                   // throws
+    return (*this)[key].as<T>();
+  }
+  template <typename T> T getScalarT(const std::string &key, T defaultValue) const {   // with default
+    if (contains(key))
+      return (*this)[key].as<T>();
+    else
+      return defaultValue;
+  }
+  std::string getString(const std::string &key, const std::string& defaultValue) const {
+    if (contains(key))
+      return (*this)[key].str();
+    else
+      return defaultValue;
+  }
 };
 
 } // namespace htm
 
-#endif // NTA_VALUE_HPP
+std::ostream &operator<<(std::ostream &f, const htm::ValueMap &vm);
+
+#endif //  NTA_VALUEMAP_HPP

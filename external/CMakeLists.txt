@@ -38,7 +38,7 @@
 #  - cmake ../..
 # Note: on MSVC, run startupMSVC.bat after deleting the build folder.
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.9)
 project(htm_core CXX)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF)
@@ -78,12 +78,20 @@ FILE(REMOVE "${EXPORT_FILE_NAME}")
 # common
 include(common.cmake)
 
-
 ################
-# Yaml-cpp
-include(YamlCppLib.cmake)
+# Yaml Parser
+if (${YAML_PARSER} STREQUAL "yamlcpp")
+  # Yaml-cpp
+  include(YamlCppLib.cmake)
 
+elseif(${YAML_PARSER} STREQUAL "RapidYaml")
+  # Rapid YAML
+  include(RapidYaml.cmake)
 
+elseif(${YAML_PARSER} STREQUAL "libyaml")
+  # libyaml
+  include(libyaml.cmake)
+endif()
 ################
 # Eigen
 include(eigen.cmake)

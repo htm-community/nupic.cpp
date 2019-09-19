@@ -32,7 +32,6 @@
 #include <htm/engine/Spec.hpp>
 #include <htm/regions/VectorFileSensor.hpp>
 #include <htm/utils/Log.hpp>
-#include <htm/ntypes/Value.hpp>
 
 using namespace std;
 namespace htm {

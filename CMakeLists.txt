@@ -15,7 +15,7 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 # -----------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.9)
 project(htm_core CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}")
@@ -29,6 +29,7 @@ set($ENV{HTM_CPP} ${REPOSITORY_DIR})
 #
 option(FORCE_CPP11 "Force compiler to use C++11 standard." OFF)
 option(FORCE_BOOST "Force compiler to install and use Boost." OFF)
+set(YAML_PARSER "yamlcpp" CACHE STRING "Specify the YAML parser to use 'yamlcpp', 'RapidYaml', 'libyaml', default 'yamlcpp'." )
 set(BINDING_BUILD "none" CACHE STRING "Specify the Binding to build 'Python2','Python3' or 'none', default 'none'." )
 # Note: by setting the CXX environment variable, a non-default c++ compiler can be specified.
 
@@ -76,6 +77,8 @@ message(STATUS "INTERNAL_LINKER_FLAGS= ${INTERNAL_LINKER_FLAGS}")
 message(STATUS "INTERNAL_LINKER_FLAGS_STR= ${INTERNAL_LINKER_FLAGS_STR}")
 message(STATUS "COMMON_COMPILER_DEFINITIONS_STR=${COMMON_COMPILER_DEFINITIONS_STR}")
 message(STATUS "COMMON_OS_LIBS       = ${COMMON_OS_LIBS}")
+
+add_definitions(-DYAML_PARSER_${YAML_PARSER})
 
 # Set up builds of external dependencies and get their exports.
 # (see individual external/*.cmake modules for exported settings and functions)

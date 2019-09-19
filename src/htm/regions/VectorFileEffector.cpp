@@ -29,7 +29,6 @@
 #include <htm/engine/Input.hpp>
 #include <htm/engine/Region.hpp>
 #include <htm/engine/Spec.hpp>
-#include <htm/ntypes/Value.hpp>
 #include <htm/regions/VectorFileEffector.hpp>
 #include <htm/utils/Log.hpp>
 

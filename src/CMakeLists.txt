@@ -112,8 +112,6 @@ set(engine_files
     htm/engine/RegisteredRegionImplCpp.hpp
     htm/engine/Spec.cpp
     htm/engine/Spec.hpp
-    htm/engine/YAMLUtils.cpp
-    htm/engine/YAMLUtils.hpp
     htm/engine/Watcher.cpp
     htm/engine/Watcher.hpp
 )
@@ -127,9 +125,9 @@ set(ntypes_files
     htm/ntypes/BasicType.hpp
     htm/ntypes/Collection.hpp
     htm/ntypes/Dimensions.hpp
-    htm/ntypes/Scalar.cpp
-    htm/ntypes/Scalar.hpp
-    htm/ntypes/Value.cpp
+    htm/ntypes/Value-yamlcpp.cpp
+    htm/ntypes/Value-rapidyaml.cpp
+    htm/ntypes/Value-libyaml.cpp
     htm/ntypes/Value.hpp
 )
   
@@ -263,7 +261,7 @@ endif()
 #
 set(src_combined_htmcore_source_archives
     ${src_lib_static}
-    ${yaml-cpp_LIBRARIES}
+    ${yaml_LIBRARIES}
     ${Boost_LIBRARIES}
     ${common_LIBRARIES}
     )
@@ -283,7 +281,7 @@ else()
 	# Note that these libraries must already exist (from depenancies)
 	set(all_object_locations)
 	set(src_externLibs
-            ${yaml-cpp_LIBRARIES}
+            ${yaml_LIBRARIES}
             ${Boost_LIBRARIES}
             ${common_LIBRARIES}
             )

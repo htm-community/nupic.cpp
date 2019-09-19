@@ -32,19 +32,19 @@ namespace htm {
 
 ScalarSensor::ScalarSensor(const ValueMap &params, Region *region)
     : RegionImpl(region) {
-  params_.size = params.getScalarT<UInt32>("n");
-  params_.activeBits = params.getScalarT<UInt32>("w");
-  params_.resolution = params.getScalarT<Real64>("resolution");
-  params_.radius = params.getScalarT<Real64>("radius");
-  params_.minimum = params.getScalarT<Real64>("minValue");
-  params_.maximum = params.getScalarT<Real64>("maxValue");
-  params_.periodic = params.getScalarT<bool>("periodic");
-  params_.clipInput = params.getScalarT<bool>("clipInput");
+  params_.size = params.getScalarT<UInt32>("n", 0);
+  params_.activeBits = params.getScalarT<UInt32>("w", 0);
+  params_.resolution = params.getScalarT<Real64>("resolution", 0.0);
+  params_.radius = params.getScalarT<Real64>("radius", 0.0);
+  params_.minimum = params.getScalarT<Real64>("minValue", -1.0);
+  params_.maximum = params.getScalarT<Real64>("maxValue", +1.0);
+  params_.periodic = params.getScalarT<bool>("periodic", false);
+  params_.clipInput = params.getScalarT<bool>("clipInput", false);
 
   encoder_ = std::make_shared<ScalarEncoder>( params_ );
 
 
-  sensedValue_ = params.getScalarT<Real64>("sensedValue");
+  sensedValue_ = params.getScalarT<Real64>("sensedValue", -1.0);
 }
 
 ScalarSensor::ScalarSensor(ArWrapper &wrapper, Region *region):RegionImpl(region) {
