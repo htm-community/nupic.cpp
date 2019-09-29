@@ -67,55 +67,64 @@ namespace py = pybind11;
         } // switch
     }
 
+    // recurseive helper for prepareCreationParams
+    static py::object make_args(const Value& vm) {
+        if (vm.isScalar()) {
+            return py::str(vm.as<std::string>());
+        }
+        if (vm.isMap()) {
+            py::kwargs kw;
+            ValueMap::map_const_iterator it;
+            for (it = vm.begin(); it != vm.end(); ++it)
+            {
+                std::string key = it->first.c_str();
+                Value v = it->second;
+                kw[key.c_str()] = make_args(v);
+            }
+            return kw;
+        }
+        if (vm.isSequence()) {
+            auto a = py::list();
+            for(size_t i = 0; i < vm.size(); i++) {
+                Value v = vm[i];
+                a.append(make_args(v));
+            }
+            return a;
+        }
+        throw Exception(__FILE__, __LINE__, "Not implemented.");
+    }
+
+
+    // make kwargs from ValueMap.
     static void prepareCreationParams(const ValueMap & vm, py::kwargs& kwargs)
     {
-        ValueMap::const_iterator it;
-        for (it = vm.begin(); it != vm.end(); ++it)
-        {
-            try
-            {
-                auto key = it->first.c_str();
-
-                auto value = it->second;
-                if (value->isScalar())
-                {
-                    auto s = value->getScalar();
-                    switch (s->getType())
-                    {
-                        case NTA_BasicType_Bool: { kwargs[key] = s->getValue<bool>(); break; }
-                        case NTA_BasicType_Byte: { kwargs[key] = s->getValue<Byte>(); break; }
-                        case NTA_BasicType_Int16: { kwargs[key] = s->getValue<Int16>(); break; }
-                        case NTA_BasicType_UInt16: { kwargs[key] = s->getValue<UInt16>(); break; }
-                        case NTA_BasicType_Int32: { kwargs[key] = s->getValue<Int32>(); break; }
-                        case NTA_BasicType_UInt32: { kwargs[key] = s->getValue<UInt32>(); break; }
-                        case NTA_BasicType_Int64: { kwargs[key] = s->getValue<Int64>(); break; }
-                        case NTA_BasicType_UInt64: { kwargs[key] = s->getValue<UInt64>(); break; }
-                        case NTA_BasicType_Real32: { kwargs[key] = s->getValue<Real32>(); break; }
-                        case NTA_BasicType_Real64: { kwargs[key] = s->getValue<Real64>(); break; }
-
-                        default:
-                            NTA_THROW << "Invalid type: " << s->getType();
-                    }
+        if (vm.isMap()) {
+            ValueMap::map_const_iterator it;
+            for (it = vm.begin(); it != vm.end(); ++it) {
+                std::string key = it->first.c_str();
+                try {
+                    Value value = it->second;
+                    kwargs[key.c_str()] = make_args(value);
                 }
-                else if(value->isString())
-                {
-                    kwargs[key] = value->getString();
+                catch (Exception& e) {
+                    NTA_THROW << "Unable to create a Python object for parameter '"
+                        << key << ": " << e.what();
                 }
-                else if (value->isArray())
-                {
-                    auto a = value->getArray();
-                    kwargs[key] = create_numpy_view(*a.get());
-
-                }
-                else
-                {
-                    throw Exception(__FILE__, __LINE__, "Not implemented.");
-                }
+            }
+        }
+        else if (vm.isScalar()) {
+            kwargs["arg"] = vm.as<std::string>();
+        }
+        else if (vm.isSequence()) {
+            try {
+                kwargs["array"] = make_args(vm);
             }
             catch (Exception& e) {
-                NTA_THROW << "Unable to create a Python object for parameter '"
-                    << it->first << ": " << e.what();
+                NTA_THROW << "Unable to create a Python object for parameter 'array:' " << e.what();
             }
+        }
+        else {
+            NTA_THROW << "Unable to create a Python object for parameters.";
         }
     };
 
@@ -184,10 +193,10 @@ namespace py = pybind11;
 		    args = py::make_tuple(node_, f, 2);   // use type 2 protocol
 		    pickle.attr("dump")(*args);
 		    pickle.attr("close")();
-		
+
 				// copy the pickle into the out string
 				std::ifstream pfile(tmp_pickle.c_str(), std::ios::binary);
-				std::string content((std::istreambuf_iterator<char>(pfile)), 
+				std::string content((std::istreambuf_iterator<char>(pfile)),
 				                     std::istreambuf_iterator<char>());
 				pfile.close();
 		 		Path::remove(tmp_pickle);
@@ -206,7 +215,7 @@ namespace py = pybind11;
 
 				// copy the extra data into the extra string
 				std::ifstream efile(tmp_extra.c_str(), std::ios::binary);
-				std::string extra((std::istreambuf_iterator<char>(efile)), 
+				std::string extra((std::istreambuf_iterator<char>(efile)),
 				                   std::istreambuf_iterator<char>());
 				efile.close();
 				Path::remove(tmp_extra);
@@ -221,11 +230,11 @@ namespace py = pybind11;
 				std::ofstream des;
 				std::string tmp_pickle = "pickle.tmp";
 
-		
+
 			  std::ofstream pfile(tmp_pickle.c_str(), std::ios::binary);
 				pfile.write(p.c_str(), p.size());
 				pfile.close();
-		
+
 
 		// Tell Python to un-pickle using what is now in the pickle.tmp file.
         py::args args = py::make_tuple(tmp_pickle, "rb");
@@ -534,7 +543,7 @@ namespace py = pybind11;
                     auto count = input["count"].cast<UInt32>();
 
 										bool required = false;
-                    if (input.contains("required")) 
+                    if (input.contains("required"))
 										{
                     	required = input["required"].cast<bool>();
 										}
@@ -609,7 +618,7 @@ namespace py = pybind11;
                         regionLevel = output["regionLevel"].cast<bool>();
                     }
 										bool isDefaultOutput = false;
-										if (output.contains("isDefaultOutput")) 
+										if (output.contains("isDefaultOutput"))
 										{
                     	isDefaultOutput = output["isDefaultOutput"].cast<bool>();
 										}

@@ -22,6 +22,10 @@
 #include <gtest/gtest.h>
 #include <htm/ntypes/Value.hpp>
 
+#include <map>
+#include <vector>
+#include <sstream>
+
 namespace testing {
 
 using namespace htm;
@@ -43,8 +47,9 @@ TEST(ValueTest, toValueNumber) {
 
   vm.parse("- 1"); // "- " means a sequence element in YAML
   EXPECT_TRUE(vm.isSequence());
-  u = vm[0].as<UInt32>();
-  EXPECT_EQ(1, u);
+  UInt32 u1 = vm[0].as<UInt32>();
+  UInt32 u2 = 1u;
+  EXPECT_EQ(u1, u2);
 
   vm.parse("[123]"); // explicit sequence with one element.
   EXPECT_TRUE(vm.isSequence());
@@ -115,7 +120,7 @@ TEST(ValueTest, toValueBool) {
 TEST(ValueTest, asArray) {
   ValueMap vm;
   Value v;
-  std::vector<UInt32> s2 = {10, 20, 30, 40, 50};
+  std::vector<UInt32> s2 = {10u, 20u, 30u, 40u, 50u};
 
   std::string json = "[10,20,30,40,50]";
   vm.parse(json);
@@ -132,16 +137,39 @@ TEST(ValueTest, asArray) {
   EXPECT_EQ(vm[0].as<UInt32>(), 10u);
   EXPECT_STREQ(vm[0].str().c_str(), "10");
 
-  std::vector<UInt32> s3 = {100, 200, 300, 400, 500};
+  std::vector<UInt32> s3 = {100u, 200u, 300u, 400u, 500u};
   vm[5] = s3; // assign an array to the 6th element.
 
-  EXPECT_EQ(vm[0].as<UInt32>(), 10);
+  EXPECT_EQ(vm[0].as<UInt32>(), 10u);
   EXPECT_TRUE(vm[5].isSequence());
   EXPECT_TRUE(vm[5][4].isScalar());
-  EXPECT_EQ(vm[5][4].as<UInt32>(), 500);
+  EXPECT_EQ(vm[5][4].as<UInt32>(), 500u);
   EXPECT_ANY_THROW(vm.as<UInt32>());    // not a scaler
   EXPECT_ANY_THROW(vm[5].as<UInt32>()); // not a sequence
 }
+
+
+TEST(ValueTest, asMap) {
+  ValueMap vm;
+  std::string src = "{scalar: \"456\", array: [\"1\", \"2\", \"3\", \"4\"], string: \"true\"}";
+  vm.parse(src);
+
+  std::map<std::string,std::string> m;
+  m = vm.asMap<std::string>();
+  std::stringstream ss;
+  ss << "{";
+  bool first = true;
+  for (auto itr = m.begin(); itr != m.end(); itr++) {
+    if (!first) ss << ", ";
+    first = false;
+    ss << itr->first << ": " << itr->second;
+  }
+  ss << "}";
+  std::string result = ss.str();
+  std::cout << result << "\n";
+  EXPECT_STREQ(result.c_str(), "{scalar: \"456\", string: \"true\"}");
+}
+
 
 TEST(ValueTest, String) {
   std::string s("hello world");
@@ -166,7 +194,7 @@ TEST(ValueTest, ValueMap) {
   vm["scalar"] = 123;
   vm["scalar"] = 456; // should replace
   vm["array"] = a;
-  vm["string"] = "str";
+  vm["string"] = std::string("str");
 
   EXPECT_TRUE(vm.isMap());
   EXPECT_TRUE(vm.contains("scalar"));
@@ -209,7 +237,7 @@ TEST(ValueTest, Iterations) {
 
   std::string data = R"(
 scalar: 123.45
-array: 
+array:
   - 1
   - 2
   - 3

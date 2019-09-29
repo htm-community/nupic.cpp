@@ -126,7 +126,7 @@ set(ntypes_files
     htm/ntypes/Collection.hpp
     htm/ntypes/Dimensions.hpp
     htm/ntypes/Value-yamlcpp.cpp
-    htm/ntypes/Value-rapidyaml.cpp
+    htm/ntypes/Value-RapidYaml.cpp
     htm/ntypes/Value-libyaml.cpp
     htm/ntypes/Value.hpp
 )

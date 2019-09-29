@@ -26,6 +26,7 @@
 #include <memory>
 #include <iostream>
 #include <iterator>
+#include <algorithm>  // transform
 
 namespace htm {
 
@@ -89,7 +90,7 @@ public:
   // return false if node is empty:   if (vm) { do something }
   explicit operator bool() const { return !isEmpty(); }
 
- 
+
   // extract a Vector
   template <typename T> std::vector<T> asVector() const {
     std::vector<T> v;
@@ -101,7 +102,7 @@ public:
         if (n.isScalar()) {
           v.push_back(n.as<T>());
         }
-      } catch (std::exception e) {
+      } catch (std::exception& e) {
         NTA_THROW << "Invalid vector element; " << e.what();
       }
     }
@@ -114,15 +115,21 @@ public:
     if (!isSequence())
       NTA_THROW << "Not a Map node.";
     for (auto iter = cbegin(); iter != cend(); iter++) { // iterate through the children of this node.
-      const Value n = *iter;
+      const std::string key = iter->first;
+      const Value n = iter->second;
       try {
-        if (n.isScalar() && n.hasKey()) {
-          v[n.key()] = n.as<T>();
+        if (n.isScalar()) {
+          v[key] = n.as<T>();
         }
-      } catch (std::exception e) {
-        NTA_THROW << "Invalid map element; " << e.what;
+        else {
+          // non-scalar field.  Ignore
+        }
+      } catch (std::exception& e) {
+        // probably bad conversion of scalar to requested type.
+        NTA_THROW << "Invalid map element[" << key << "] " << e.what();
       }
     }
+    return v;
   }
 
 
@@ -193,7 +200,7 @@ public:
 
 
 private:
-  struct OpaqueTree; 
+  struct OpaqueTree;
   std::shared_ptr<OpaqueTree> doc_; // This is an opaque pointer to implementation Tree node object.
 
 };

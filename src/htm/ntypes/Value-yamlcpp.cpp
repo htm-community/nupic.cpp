@@ -123,7 +123,7 @@ void Value::operator=(float val) { doc_->node = val; }
 void Value::operator=(double val) { doc_->node = val; }
 void Value::operator=(std::vector<UInt32> val) { doc_->node = val; }
 
-// Compare two nodes recursively to see if content is same.  
+// Compare two nodes recursively to see if content is same.
 // yaml-cpp does equals by compairing pointers so we have to do our own.
 static bool equals(const YAML::Node &n1, const YAML::Node &n2) {
   if (n1.IsScalar() && n2.IsScalar() && n1.as<std::string>() == n2.as<std::string>())
@@ -162,7 +162,7 @@ template float Value::as<float>() const;
 template double Value::as<double>() const;
 template std::string Value::as<std::string>() const;
 template <> bool Value::as<bool>() const { std::string val = doc_->node.as<std::string>();
-  transform(val.begin(), val.end(), val.begin(), ::tolower); 
+  transform(val.begin(), val.end(), val.begin(), ::tolower);
   if (val == "true" || val == "on" || val == "1")
     return true;
   if (val == "false" || val == "off" || val == "0")
@@ -365,10 +365,11 @@ std::string Value::to_yaml() const {
   return ss.str();
 }
 
-std::ostream &htm::operator<<(std::ostream &f, const htm::Value &v) {
+namespace htm {
+std::ostream &operator<<(std::ostream &f, const htm::Value &v) {
   f << v.to_json();
   return f;
 }
-
+} // htm namespace
 
 #endif // YAML_PARSER_yamlcpp
