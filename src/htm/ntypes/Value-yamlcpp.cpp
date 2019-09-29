@@ -21,6 +21,7 @@
 #include <htm/utils/Log.hpp>
 
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <string>
 #include <yaml-cpp/yaml.h>
@@ -31,13 +32,15 @@ using namespace htm;
 struct htm::Value::OpaqueTree {
   YAML::Node node;
 };
-struct htm::Value::iterator::OpaqueIterator {
+struct htm::Value::map_iterator::OpaqueIterator {
   YAML::iterator it;
-  YAML::iterator end;
+  std::pair<std::string, Value> current_pair;
+  Value current_node;
 };
-struct htm::Value::const_iterator::OpaqueConstIterator {
+struct htm::Value::map_const_iterator::OpaqueConstIterator {
   YAML::const_iterator it;
-  YAML::const_iterator end;
+  std::pair<std::string, Value> current_pair;
+  Value current_node;
 };
 
 // Constructor
@@ -63,6 +66,7 @@ ValueMap::Category Value::getCategory() const {
   return ValueMap::Category::Empty;
 }
 
+
 bool Value::contains(const std::string &key) const { return (doc_->node[key]); }
 
 bool Value::isScalar() const { return doc_->node.IsScalar(); }
@@ -73,58 +77,77 @@ bool Value::isEmpty() const { return getCategory() == Value::Category::Empty; }
 size_t Value::size() const { return doc_->node.size(); }
 
 // Accessing members of a map
+// If not found, a Zombie Value object is returned.
+// An error will be displayed when you try to access the value in the Zombie Value object.
+// If you assign something to the Zombie Value, it will insert it into the tree with the saved key.
 Value Value::operator[](const std::string &key) {
-  NTA_CHECK(isMap()) << "This is not a map.";
   Value v;
-  if (doc_->node[key]) {
-    v.doc_->node = doc_->node[key];
-    return v;
-  } else {
-    NTA_THROW << "No value found for key '" + key + "'.";
-  }
+  v.doc_->node = doc_->node[key];
+  return v;
 }
 const Value Value::operator[](const std::string &key) const {
-  NTA_CHECK(isMap()) << "This is not a map.";
   Value v;
-  if (doc_->node[key]) {
-    v.doc_->node = doc_->node[key];
-    return v;
-  } else {
-    NTA_THROW << "No value found for key '" + key + "'.";
-  }
+  v.doc_->node = doc_->node[key];
+  return v;
 }
 
 
 // accessing members of a sequence
 Value Value::operator[](size_t index) {
-  NTA_CHECK(isSequence()) << "This is not a sequence.";
   Value v;
-  if (doc_->node.size() > index) {
-    v.doc_->node = doc_->node[index];
-    return v;
-  } else {
-    NTA_THROW << "Index '" + std::to_string(index) + "' out of range.";
-  }
+  v.doc_->node = doc_->node[index];
+  return v;
 }
 const Value Value::operator[](size_t index) const {
-  NTA_CHECK(isSequence()) << "This is not a sequence.";
   Value v;
-  if (doc_->node.size() > index) {
-    v.doc_->node = doc_->node[index];
-    return v;
-  } else {
-    NTA_THROW << "Index '" + std::to_string(index) + "' out of range.";
-  }
+  v.doc_->node = doc_->node[index];
+  return v;
 }
 
 std::string Value::str() const {
-  NTA_CHECK(isScalar()) << "This is not a scalar.";
   return doc_->node.as<std::string>();
 }
 
+// Assign a value converted from a specified type T.
+void Value::operator=(char *val) { doc_->node = val; }
+void Value::operator=(const std::string&val) { doc_->node = val; }
+void Value::operator=(int8_t val) { doc_->node = val; }
+void Value::operator=(int16_t val) { doc_->node = val; }
+void Value::operator=(uint16_t val) { doc_->node = val; }
+void Value::operator=(int32_t val) { doc_->node = val; }
+void Value::operator=(uint32_t val) { doc_->node = val; }
+void Value::operator=(int64_t val) { doc_->node = val; }
+void Value::operator=(uint64_t val) { doc_->node = val; }
+void Value::operator=(bool val) { doc_->node = val; }
+void Value::operator=(float val) { doc_->node = val; }
+void Value::operator=(double val) { doc_->node = val; }
+void Value::operator=(std::vector<UInt32> val) { doc_->node = val; }
+
+// Compare two nodes recursively to see if content is same.  
+// yaml-cpp does equals by compairing pointers so we have to do our own.
+static bool equals(const YAML::Node &n1, const YAML::Node &n2) {
+  if (n1.IsScalar() && n2.IsScalar() && n1.as<std::string>() == n2.as<std::string>())
+    return true;
+  if (n1.IsSequence() && n2.IsSequence() && n1.size() == n2.size()) {
+    for (size_t i = 0; i < n1.size(); i++)
+      if (!equals(n1[i], n2[i])) return false;
+    return true;
+  }
+  if (n1.IsMap() && n2.IsMap() && n1.size() == n2.size()) {
+    for (auto it : n1) {
+      if (!n2[it.first.as<std::string>()])
+        return false;
+      if (!equals(it.second, n2[it.first.as<std::string>()]))
+        return false;
+    }
+    return true;
+  }
+  return false;
+}
+bool Value::operator==(const Value &v) { return equals(v.doc_->node,doc_->node); }
+
 // Return a value converted to the specified type T.
 template <typename T> T Value::as() const {
-  NTA_CHECK(isScalar()) << "This is not a scalar.";
   return doc_->node.as<T>();
 }
 // explicit instantiation.  Can only be used with these types.
@@ -135,79 +158,120 @@ template int32_t Value::as<int32_t>() const;
 template uint32_t Value::as<uint32_t>() const;
 template int64_t Value::as<int64_t>() const;
 template uint64_t Value::as<uint64_t>() const;
-template bool Value::as<bool>() const;
 template float Value::as<float>() const;
 template double Value::as<double>() const;
 template std::string Value::as<std::string>() const;
+template <> bool Value::as<bool>() const { std::string val = doc_->node.as<std::string>();
+  transform(val.begin(), val.end(), val.begin(), ::tolower); 
+  if (val == "true" || val == "on" || val == "1")
+    return true;
+  if (val == "false" || val == "off" || val == "0")
+    return false;
+  NTA_THROW << "Invalid value for a boolean. " << val;
+}
 
-// Iterator
-Value::iterator Value::begin() {
-  Value::iterator itr;
-  itr.ptr_ = std::make_shared<Value::iterator::OpaqueIterator>();
+
+template <typename T> T Value::as(T default_value) const { return doc_->node.as<T>(default_value); }
+// explicit instantiation.  Can only be used with these types.
+template int8_t Value::as<int8_t>(int8_t d) const;
+template int16_t Value::as<int16_t>(int16_t d) const;
+template uint16_t Value::as<uint16_t>(uint16_t d) const;
+template int32_t Value::as<int32_t>(int32_t d) const;
+template uint32_t Value::as<uint32_t>(uint32_t d) const;
+template int64_t Value::as<int64_t>(int64_t d) const;
+template uint64_t Value::as<uint64_t>(uint64_t d) const;
+template float Value::as<float>(float d) const;
+template double Value::as<double>(double d) const;
+template std::string Value::as<std::string>(std::string d) const;
+template <> bool Value::as<bool>(bool d) const {
+  std::string val = doc_->node.as<std::string>(d?"true":"false");
+  transform(val.begin(), val.end(), val.begin(), ::tolower);
+  if (val == "true" || val == "on" || val == "1")
+    return true;
+  if (val == "false" || val == "off" || val == "0")
+    return false;
+  NTA_THROW << "Invalid value for a boolean. " << val;
+}
+
+// Map Iterator
+Value::map_iterator Value::begin()  {
+  NTA_CHECK(!isEmpty()) << "Not found";
+  Value::map_iterator itr;
+  itr.ptr_ = std::make_shared<Value::map_iterator::OpaqueIterator>();
   itr.ptr_->it = doc_->node.begin();
-  itr.ptr_->end = doc_->node.end();
   return itr;
 }
-Value::iterator Value::end() {
-  Value::iterator itr;
-  itr.ptr_ = std::make_shared<Value::iterator::OpaqueIterator>();
+Value::map_iterator Value::end() {
+  NTA_CHECK(!isEmpty()) << "Not found";
+  Value::map_iterator itr;
+  itr.ptr_ = std::make_shared<Value::map_iterator::OpaqueIterator>();
   itr.ptr_->it = doc_->node.end();
   return itr;
 }
-Value::iterator Value::iterator::operator++() {
+Value::map_iterator Value::map_iterator::operator++() {
   ptr_->it++;
   return *this;
 }
-Value::iterator Value::iterator::operator++(int junk) { return operator++(); }
+Value::map_iterator Value::map_iterator::operator++(int junk) { return operator++(); }
 
-Value &Value::iterator::operator*() {
-  second.doc_->node = ptr_->it->second;
-  return second;
+Value &Value::map_iterator::operator*() {
+  ptr_->current_node.doc_->node.reset(ptr_->it->second);
+  return ptr_->current_node;
 }
-Value::iterator *Value::iterator::operator->() {
-  first = ptr_->it->first.as<std::string>();
-  second.doc_->node = ptr_->it->second;
-  return this;
+std::pair<std::string, Value> *Value::map_iterator::operator->() {
+  ptr_->current_node.doc_->node.reset(ptr_->it->second);
+  std::pair<std::string, Value> p(ptr_->it->first.as<std::string>(), ptr_->current_node);
+  ptr_->current_pair = p;
+  return &ptr_->current_pair;
 }
-bool Value::iterator::operator==(const Value::iterator &rhs) const { return ptr_->it == rhs.ptr_->it; }
-bool Value::iterator::operator!=(const Value::iterator &rhs) const { return ptr_->it != rhs.ptr_->it; }
+bool Value::map_iterator::operator==(const Value::map_iterator &rhs) const { return ptr_->it == rhs.ptr_->it; }
+bool Value::map_iterator::operator!=(const Value::map_iterator &rhs) const { return ptr_->it != rhs.ptr_->it; }
 
 
 // Const Iterator
-Value::const_iterator Value::cbegin() const {
-  Value::const_iterator itr;
-  itr.ptr_ = std::make_shared<Value::const_iterator::OpaqueConstIterator>();
+Value::map_const_iterator Value::cbegin() const {
+  Value::map_const_iterator itr;
+  itr.ptr_ = std::make_shared<Value::map_const_iterator::OpaqueConstIterator>();
   itr.ptr_->it = doc_->node.begin();
-  itr.ptr_->end = doc_->node.end();
   return itr;
 }
 
-Value_const::iterator Value::cend() const {
-  Value::const_iterator itr;
-  itr.ptr_ = std::make_shared<Value::const_iterator::OpaqueConstIterator>();
+Value::map_const_iterator Value::cend() const {
+  Value::map_const_iterator itr;
+  itr.ptr_ = std::make_shared<Value::map_const_iterator::OpaqueConstIterator>();
   itr.ptr_->it = doc_->node.end();
   return itr;
 }
 
-Value::const_iterator Value::const_iterator::operator++() {
+Value::map_const_iterator Value::map_const_iterator::operator++() {
   ptr_->it++;
   return *this;
 }
-Value::const_iterator Value::const_iterator::operator++(int junk) { return operator++(); }
+Value::map_const_iterator Value::map_const_iterator::operator++(int junk) { return operator++(); }
 
-const Value &Value::const_iterator::operator*() {
-  second.doc_->node = ptr_->it->second;
-  return second;
+const Value &Value::map_const_iterator::operator*() {
+  ptr_->current_node.doc_->node.reset( ptr_->it->second );
+  return ptr_->current_node;
 }
-Value::const_iterator *Value::const_iterator::operator->() {
-  first = ptr_->it->first.as<std::string>();
-  second.doc_->node = ptr_->it->second;
-  return this;
+const std::pair<std::string, Value> *Value::map_const_iterator::operator->() {
+  ptr_->current_node.doc_->node.reset(ptr_->it->second);
+  ptr_->current_pair.first = ptr_->it->first.as<std::string>();
+  ptr_->current_pair.second = ptr_->current_node;
+  return &ptr_->current_pair;
 }
-bool Value_const::iterator::operator==(const Value::const_iterator &rhs) const { return ptr_->it == rhs.ptr_->it; }
-bool Value_const::iterator::operator!=(const Value::const_iterator &rhs) const { return ptr_->it != rhs.ptr_->it; }
+
+bool Value::map_const_iterator::operator==(const Value::map_const_iterator &rhs) const {
+  return ptr_->it == rhs.ptr_->it;
+}
+bool Value::map_const_iterator::operator!=(const Value::map_const_iterator &rhs) const {
+  return ptr_->it != rhs.ptr_->it;
+}
+
+
+
 
 std::vector<std::string> Value::getKeys() const {
+  NTA_CHECK(isEmpty()) << "Not found";
   NTA_CHECK(isMap()) << "This is not a map.";
   std::vector<std::string> v;
   for (auto it = doc_->node.begin(); it != doc_->node.end(); it++) {
@@ -269,18 +333,20 @@ static void to_json(std::ostream &f, const htm::Value &v) {
       if (!first)
         f << ", ";
       first = false;
-      to_json(f, v[i]);
+      Value n = v[i];
+      to_json(f, n);
     }
     f << "]";
     break;
   case Value::Map:
     f << "{";
-    for (auto it = v.cbegin(); it != v.cend(); ++it) {
+    for (auto it = v.cbegin(); it != v.cend(); it++) {
       if (!first)
         f << ", ";
       first = false;
       f << it->first << ": ";
-      to_json(f, *it);
+      Value n = *it;
+      to_json(f, n);
     }
     f << "}";
     break;
@@ -299,7 +365,7 @@ std::string Value::to_yaml() const {
   return ss.str();
 }
 
-std::ostream &operator<<(std::ostream &f, const htm::Value &v) {
+std::ostream &htm::operator<<(std::ostream &f, const htm::Value &v) {
   f << v.to_json();
   return f;
 }

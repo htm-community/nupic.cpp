@@ -20,6 +20,11 @@
 # -----------------------------------------------------------------------------
 # This downloads and builds the libyaml library.
 #
+# libyaml  - see https://github.com/yaml/libyaml
+#            This is a SAX parser which means that it performs callbacks
+#            for each token it parses from the yaml text.  Therefore
+#            the interface (Value-libyaml.cpp) must create the internal structure.
+#
 if(EXISTS ${REPOSITORY_DIR}/build/ThirdParty/share/libyaml.zip
     set(URL ${REPOSITORY_DIR}/build/ThirdParty/share/libyaml.zip)
 else()

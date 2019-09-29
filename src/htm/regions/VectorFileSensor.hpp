@@ -36,7 +36,6 @@
 #include <htm/ntypes/Value.hpp>
 
 namespace htm {
-class ValueMap;
 
 /**
  *  VectorFileSensor is a sensor that reads in files containing lists of

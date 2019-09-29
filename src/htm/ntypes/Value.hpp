@@ -29,24 +29,27 @@
 
 namespace htm {
 
-class Value_iterator;
-class Value_const_iterator;
+
 
 class Value {
 public:
   Value();
+
+  // Parse a Yaml or JSON string an assign it to this node in the tree.
   Value& parse(const std::string &yaml_string);
+
 
   bool contains(const std::string &key)const;
   size_t size() const;
 
-  // type of value in the Value
+  // type of value in the Value node
   enum Category { Empty = 0, Scalar, Sequence, Map };
   Category getCategory() const;
   bool isScalar() const;
   bool isSequence() const;
   bool isMap() const;
-  bool isEmpty() const;
+  bool isEmpty() const;  // false if current node has a value,sequence,or map
+                         // true if operator[] did not find a value or was not assigned to.
 
   // Access
   Value operator[](const std::string &key);
@@ -54,66 +57,46 @@ public:
   const Value operator[](const std::string &key) const;
   const Value operator[](size_t index) const;
   template <typename T> T as() const;
+  template <typename T> T as(T default_value) const;
   std::string str() const;
   std::vector<std::string> getKeys() const;
 
+  /** Assign a value to a Value node in the tree.
+   * If a previous operator[] did find a match, this does a replace.
+   * If a previous operator[] did not find a match in the tree
+   * the current Value is a Zombie and not attached to the tree.
+   * But in this case its requested key is remembered.  A subsequent
+   * operator= will assign this node to the tree with the remembered key.
+   * The parent will become a map if it is not already.
+   */
+  void operator=(char *val);
+  void operator=(const std::string& val);
+  void operator=(int8_t val);
+  void operator=(int16_t val);
+  void operator=(uint16_t val);
+  void operator=(int32_t val);
+  void operator=(uint32_t val);
+  void operator=(int64_t val);
+  void operator=(uint64_t val);
+  void operator=(bool val);
+  void operator=(float val);
+  void operator=(double val);
+  void operator=(std::vector<UInt32>);
 
-  class iterator {
-    public:
-      using value_type = Value;
-      using reference = value_type &;
-      using pointer = iterator *;
-      using difference_type = std::ptrdiff_t;
-      using iterator_category = std::forward_iterator_tag;
-      iterator operator++();
-      iterator operator++(int junk);
-      reference operator*();
-      pointer operator->();
-      bool operator==(const iterator &rhs) const;
-      bool operator!=(const iterator &rhs) const;
+  // compare two nodes in the tree.
+  bool operator==(const Value &v);
 
-      struct OpaqueIterator;
-      std::shared_ptr<OpaqueIterator> ptr_;
-      std::string first;
-      htm::Value second;
-      template <typename T> T as() { return second->as<T>(); }
-    };
+  // return false if node is empty:   if (vm) { do something }
+  explicit operator bool() const { return !isEmpty(); }
 
-    class const_iterator {
-    public:
-      using value_type = const Value;
-      using reference = value_type &;
-      using pointer = const_iterator *;
-      using difference_type = std::ptrdiff_t;
-      using iterator_category = std::forward_iterator_tag;
-      const_iterator operator++();
-      const_iterator operator++(int junk);
-      reference operator*();
-      pointer operator->();
-      bool operator==(const const_iterator &rhs) const;
-      bool operator!=(const const_iterator &rhs) const;
-
-      struct OpaqueConstIterator;
-      std::shared_ptr<OpaqueConstIterator> ptr_;
-      std::string first;
-      const htm::Value second;
-      template <typename T> T as() { return second->as<T>(); }
-    };
-
-    iterator begin();
-    iterator end();
-    const_iterator cbegin();
-    const_iterator cend();
-
-  
-
-
-    template <typename T> std::vector<T> asVector() const {
+ 
+  // extract a Vector
+  template <typename T> std::vector<T> asVector() const {
     std::vector<T> v;
     if (!isSequence())
       NTA_THROW << "Not a sequence node.";
-    for (auto iter = cbegin(); iter != cend(); iter++) { // iterate through the children of this node.
-      const Value& n = *iter;
+    for (size_t i = 0; i < size(); i++) { // iterate through the children of this node.
+      const Value n = (*this)[i];
       try {
         if (n.isScalar()) {
           v.push_back(n.as<T>());
@@ -124,12 +107,14 @@ public:
     }
     return v;
   }
+
+  // extract a map. Key is always a string.
   template <typename T> std::map<std::string, T> asMap() const {
     std::map<std::string, T> v;
     if (!isSequence())
-      NTA_THROW << "Not a dictionary node.";
+      NTA_THROW << "Not a Map node.";
     for (auto iter = cbegin(); iter != cend(); iter++) { // iterate through the children of this node.
-      const Value& n = *iter;
+      const Value n = *iter;
       try {
         if (n.isScalar() && n.hasKey()) {
           v[n.key()] = n.as<T>();
@@ -140,42 +125,84 @@ public:
     }
   }
 
+
   // serializing routines
   std::string to_yaml() const;
   std::string to_json() const;
 
 
-private:
-  struct OpaqueTree; 
-  std::shared_ptr<OpaqueTree> doc_; // This is an opaque pointer to a ryml Tree object.
-
-};
-
-
-
-
-class ValueMap : public Value {
-public:
-  // Access for backward compatability
-  template <typename T> T getScalarT(const std::string &key) const {                   // throws
+    // Access for backward compatability
+  template <typename T> T getScalarT(const std::string &key) const { // throws
     return (*this)[key].as<T>();
   }
-  template <typename T> T getScalarT(const std::string &key, T defaultValue) const {   // with default
-    if (contains(key))
-      return (*this)[key].as<T>();
-    else
-      return defaultValue;
+  template <typename T> T getScalarT(const std::string &key, T defaultValue) const { // with default
+    return (*this)[key].as<T>(defaultValue);
   }
-  std::string getString(const std::string &key, const std::string& defaultValue) const {
-    if (contains(key))
-      return (*this)[key].str();
-    else
-      return defaultValue;
+  std::string getString(const std::string &key, const std::string &defaultValue) const {
+    return (*this)[key].as<std::string>(defaultValue);
   }
+
+  friend std::ostream &operator<<(std::ostream &f, const htm::Value &vm);
+
+  //    Iterator as a map
+  class map_iterator {
+  public:
+    using value_type = Value;
+    using reference = value_type &;
+    using pointer = std::pair<std::string, Value> *;
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::forward_iterator_tag;
+
+    map_iterator operator++();
+    map_iterator operator++(int junk);
+    reference operator*();
+    pointer operator->();
+    bool operator==(const map_iterator &rhs) const;
+    bool operator!=(const map_iterator &rhs) const;
+
+    struct OpaqueIterator;
+    std::shared_ptr<OpaqueIterator> ptr_;
+  };
+
+  class map_const_iterator {
+  public:
+    using value_type = const Value;
+    using reference = value_type &;
+    using pointer = const std::pair<std::string, Value> *;
+    using difference_type = std::ptrdiff_t;
+    using iterator_category = std::forward_iterator_tag;
+
+    map_const_iterator operator++();
+    map_const_iterator operator++(int junk);
+    reference operator*();
+    pointer operator->();
+    bool operator==(const map_const_iterator &rhs) const;
+    bool operator!=(const map_const_iterator &rhs) const;
+
+    struct OpaqueConstIterator;
+    std::shared_ptr<OpaqueConstIterator> ptr_;
+  };
+
+
+  map_iterator begin();
+  map_iterator end();
+  map_const_iterator begin() const { return cbegin(); }
+  map_const_iterator end() const { return cend(); }
+  map_const_iterator cbegin() const;
+  map_const_iterator cend() const;
+
+
+private:
+  struct OpaqueTree; 
+  std::shared_ptr<OpaqueTree> doc_; // This is an opaque pointer to implementation Tree node object.
+
 };
+
+using ValueMap = Value;
 
 } // namespace htm
 
-std::ostream &operator<<(std::ostream &f, const htm::ValueMap &vm);
 
-#endif //  NTA_VALUEMAP_HPP
+
+
+#endif //  NTA_VALUE_HPP

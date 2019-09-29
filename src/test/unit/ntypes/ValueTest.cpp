@@ -22,107 +22,227 @@
 #include <gtest/gtest.h>
 #include <htm/ntypes/Value.hpp>
 
-namespace testing { 
-    
+namespace testing {
+
 using namespace htm;
 
-TEST(ValueTest, Scalar) {
-  std::shared_ptr<Scalar> s(new Scalar(NTA_BasicType_Int32));
-  s->value.int32 = 10;
-  Value v(s);
-  ASSERT_TRUE(v.isScalar());
-  ASSERT_TRUE(!v.isString());
-  ASSERT_TRUE(!v.isArray());
-  ASSERT_EQ(Value::scalarCategory, v.getCategory());
-  ASSERT_EQ(NTA_BasicType_Int32, v.getType());
+TEST(ValueTest, toValueNumber) {
+  ValueMap vm;
 
-  std::shared_ptr<Scalar> s1 = v.getScalar();
-  ASSERT_TRUE(s1 == s);
+  const char *s1 = "10";
+  vm.parse(s1);
+  EXPECT_TRUE(vm.isScalar());
+  UInt32 u = vm.as<UInt32>();
+  EXPECT_EQ(10u, u);
 
-  ASSERT_ANY_THROW(v.getArray());
-  ASSERT_ANY_THROW(v.getString());
+  vm.parse("-1");
+  Int32 i = vm.as<Int32>();
+  EXPECT_EQ(-1, i);
+  UInt32 x = vm.as<UInt32>();
+  EXPECT_EQ(4294967295u, x);
 
-  EXPECT_STREQ("Scalar of type Int32", v.getDescription().c_str());
+  vm.parse("- 1"); // "- " means a sequence element in YAML
+  EXPECT_TRUE(vm.isSequence());
+  u = vm[0].as<UInt32>();
+  EXPECT_EQ(1, u);
 
-  Int32 x = v.getScalarT<Int32>();
-  ASSERT_EQ(10, x);
+  vm.parse("[123]"); // explicit sequence with one element.
+  EXPECT_TRUE(vm.isSequence());
+  i = vm[0].as<Int32>();
+  EXPECT_EQ(123, i);
 
-  ASSERT_ANY_THROW(v.getScalarT<UInt32>());
+  EXPECT_ANY_THROW(Int32 i = vm.parse("999999999999999999999999999").as<Int32>());
+  EXPECT_ANY_THROW(Int32 i = vm.parse("abc").as<Int32>());
+  EXPECT_ANY_THROW(Int32 i = vm.parse("").as<Int32>());
+
+  vm.parse("A: 1");
+  EXPECT_EQ(1, vm["A"].as<Int32>(123));   // with a default value but found
+  EXPECT_EQ(123, vm["B"].as<Int32>(123)); // with a default value and not found
 }
 
-TEST(ValueTest, Array) {
-  std::shared_ptr<Array> s(new Array(NTA_BasicType_Int32));
-  s->allocateBuffer(10);
-  Value v(s);
-  ASSERT_TRUE(v.isArray());
-  ASSERT_TRUE(!v.isString());
-  ASSERT_TRUE(!v.isScalar());
-  ASSERT_EQ(Value::arrayCategory, v.getCategory());
-  ASSERT_EQ(NTA_BasicType_Int32, v.getType());
+TEST(ValueTest, toValueTestReal32) {
+  ValueMap vm;
+  vm.parse("10.1");
+  Real32 x = vm.as<Real32>();
+  EXPECT_NEAR(10.1f, x, 0.000001);
+}
 
-  std::shared_ptr<Array> s1 = v.getArray();
-  ASSERT_TRUE(s1 == s);
+TEST(ValueTest, toValueString) {
+  ValueMap vm;
+  std::string s1 = "A: \"this is a string\"";
+  std::string s;
 
-  ASSERT_ANY_THROW(v.getScalar());
-  ASSERT_ANY_THROW(v.getString());
-  ASSERT_ANY_THROW(v.getScalarT<Int32>());
+  // Positive tests
+  vm.parse(s1);
+  s = vm.getScalarT<std::string>("A", "x");
+  EXPECT_TRUE(s == "this is a string");
+  s = vm.getScalarT<std::string>("A");
+  EXPECT_TRUE(s == "this is a string");
+  s = vm.getString("A", "x");
+  EXPECT_TRUE(s == "this is a string");
+  s = vm["A"].as<std::string>();
+  EXPECT_TRUE(s == "this is a string");
+  s = vm["A"].str();
+  EXPECT_TRUE(s == "this is a string");
 
-  EXPECT_STREQ("Array of type Int32", v.getDescription().c_str());
+  // Negative tests
+  s = vm.getScalarT<std::string>("B", "x");
+  EXPECT_TRUE(s == "x");
+  EXPECT_ANY_THROW(s = vm.getScalarT<std::string>("B"));
+  s = vm.getString("B", "y");
+  EXPECT_TRUE(s == "y");
+  EXPECT_ANY_THROW(s = vm["B"].as<std::string>());
+  EXPECT_ANY_THROW(s = vm["B"].str());
+}
+
+TEST(ValueTest, toValueBool) {
+  ValueMap vm;
+
+  EXPECT_TRUE(vm.parse("B: true").getScalarT<bool>("B", false));
+  EXPECT_TRUE(vm.parse("B: True").getScalarT<bool>("B", false));
+  EXPECT_TRUE(vm.parse("B: 1").getScalarT<bool>("B", false));
+  EXPECT_TRUE(vm.parse("B: ON").getScalarT<bool>("B", false));
+  EXPECT_FALSE(vm.parse("B: false").getScalarT<bool>("B", true));
+  EXPECT_FALSE(vm.parse("B: FALSE").getScalarT<bool>("B", true));
+  EXPECT_FALSE(vm.parse("B: 0").getScalarT<bool>("B", true));
+  EXPECT_FALSE(vm.parse("B: off").getScalarT<bool>("B", true));
+  vm.parse("B: false");
+  EXPECT_FALSE(vm.getScalarT<bool>("B", true));
+  EXPECT_FALSE(vm.parse("B: 0").getScalarT<bool>("B", true));
+  EXPECT_ANY_THROW(bool result = vm.parse("B: 1234").getScalarT<bool>("B", false));
+}
+
+TEST(ValueTest, asArray) {
+  ValueMap vm;
+  Value v;
+  std::vector<UInt32> s2 = {10, 20, 30, 40, 50};
+
+  std::string json = "[10,20,30,40,50]";
+  vm.parse(json);
+
+  EXPECT_EQ(ValueMap::Sequence, vm.getCategory());
+  EXPECT_TRUE(vm.isSequence());
+  EXPECT_TRUE(!vm.isMap());
+  EXPECT_TRUE(!vm.isScalar());
+  EXPECT_TRUE(!vm.isEmpty());
+
+  std::vector<UInt32> s1 = vm.asVector<UInt32>();
+  EXPECT_TRUE(s1 == s2);
+
+  EXPECT_EQ(vm[0].as<UInt32>(), 10u);
+  EXPECT_STREQ(vm[0].str().c_str(), "10");
+
+  std::vector<UInt32> s3 = {100, 200, 300, 400, 500};
+  vm[5] = s3; // assign an array to the 6th element.
+
+  EXPECT_EQ(vm[0].as<UInt32>(), 10);
+  EXPECT_TRUE(vm[5].isSequence());
+  EXPECT_TRUE(vm[5][4].isScalar());
+  EXPECT_EQ(vm[5][4].as<UInt32>(), 500);
+  EXPECT_ANY_THROW(vm.as<UInt32>());    // not a scaler
+  EXPECT_ANY_THROW(vm[5].as<UInt32>()); // not a sequence
 }
 
 TEST(ValueTest, String) {
   std::string s("hello world");
-  Value v(s);
-  ASSERT_TRUE(!v.isArray());
-  ASSERT_TRUE(v.isString());
-  ASSERT_TRUE(!v.isScalar());
-  ASSERT_EQ(Value::stringCategory, v.getCategory());
-  ASSERT_EQ(NTA_BasicType_Byte, v.getType());
+  Value v;
+  v.parse(s);
+  EXPECT_TRUE(!v.isSequence());
+  EXPECT_TRUE(!v.isMap());
+  EXPECT_TRUE(v.isScalar());
 
-  std::string s1 = v.getString();
+  std::string s1 = v.str();
   EXPECT_STREQ("hello world", s1.c_str());
 
-  ASSERT_ANY_THROW(v.getScalar());
-  ASSERT_ANY_THROW(v.getArray());
-  ASSERT_ANY_THROW(v.getScalarT<Int32>());
+  EXPECT_ANY_THROW(v.asVector<UInt32>());
+  EXPECT_ANY_THROW(v.as<UInt32>());
 
-  EXPECT_STREQ("string (hello world)", v.getDescription().c_str());
+  EXPECT_STREQ("\"hello world\"", v.to_json().c_str());
 }
 
 TEST(ValueTest, ValueMap) {
-  std::shared_ptr<Scalar> s(new Scalar(NTA_BasicType_Int32));
-  s->value.int32 = 10;
-  std::shared_ptr<Array> a(new Array(NTA_BasicType_Real32));
-  std::string str("hello world");
-
+  std::vector<UInt32> a = {1, 2, 3, 4};
   ValueMap vm;
-  vm.add("scalar", s);
-  vm.add("array", a);
-  vm.add("string", str);
-  ASSERT_ANY_THROW(vm.add("scalar", s));
+  vm["scalar"] = 123;
+  vm["scalar"] = 456; // should replace
+  vm["array"] = a;
+  vm["string"] = "str";
 
-  ASSERT_TRUE(vm.contains("scalar"));
-  ASSERT_TRUE(vm.contains("array"));
-  ASSERT_TRUE(vm.contains("string"));
-  ASSERT_TRUE(!vm.contains("foo"));
-  ASSERT_TRUE(!vm.contains("scalar2"));
-  ASSERT_TRUE(!vm.contains("xscalar"));
+  EXPECT_TRUE(vm.isMap());
+  EXPECT_TRUE(vm.contains("scalar"));
+  EXPECT_TRUE(vm.contains("array"));
+  EXPECT_TRUE(vm.contains("string"));
+  EXPECT_TRUE(!vm.contains("foo"));
+  EXPECT_TRUE(!vm.contains("scalar2"));
+  EXPECT_TRUE(!vm.contains("xscalar"));
 
-  std::shared_ptr<Scalar> s1 = vm.getScalar("scalar");
-  ASSERT_TRUE(s1 == s);
+  int s = vm["scalar"].as<int>();
+  EXPECT_TRUE(456 == s);
 
-  std::shared_ptr<Array> a1 = vm.getArray("array");
-  ASSERT_TRUE(a1 == a);
+  std::vector<UInt32> a1 = vm["array"].asVector<UInt32>();
+  EXPECT_TRUE(a1 == a);
 
-  std::shared_ptr<Scalar> def(new Scalar(NTA_BasicType_Int32));
-  Int32 x = vm.getScalarT("scalar", (Int32)20);
-  ASSERT_EQ((Int32)10, x);
+  Int32 x = vm.getScalarT("scalar2", (Int32)20);
+  EXPECT_EQ((Int32)20, x);
 
-  x = vm.getScalarT("scalar2", (Int32)20);
-  ASSERT_EQ((Int32)20, x);
+  std::string expected = "{scalar: \"456\", array: [\"1\", \"2\", \"3\", \"4\"], string: \"true\"}";
+  std::string result;
+  std::stringstream ss;
+  ss << vm;
+  result = ss.str();
+  EXPECT_STREQ(result.c_str(), expected.c_str());
 
-  Value v = vm.getValue("array");
-  ASSERT_EQ(Value::arrayCategory, v.getCategory());
-  ASSERT_TRUE(v.getArray() == a);
+  result = vm.to_json();
+  EXPECT_STREQ(result.c_str(), expected.c_str());
+
+  ValueMap vm2;
+  vm2.parse(result);
+  std::cout << "vm=" << vm << "\n";
+  std::cout << "vm2" << vm2 << "\n";
+  EXPECT_TRUE(vm == vm2);
 }
+
+TEST(ValueTest, Iterations) {
+  ValueMap vm;
+  std::vector<std::string> results;
+  int cnt = 0;
+
+  std::string data = R"(
+scalar: 123.45
+array: 
+  - 1
+  - 2
+  - 3
+  - 4
+string: "this is a string"
+)";
+
+  vm.parse(data);
+  std::cout << vm << "\n";
+  for (auto itr = vm.begin(); itr != vm.end(); itr++) {
+    std::string key = itr->first;
+    if (key == "scalar")
+      EXPECT_NEAR(itr->second.as<Real32>(), 123.45f, 0.000001);
+    else if (key == "string")
+      EXPECT_STREQ(itr->second.str().c_str(), "this is a string");
+    else if (key == "array") {
+      for (size_t i = 0; i < 4; i++) {
+        EXPECT_EQ(i + 1, itr->second[i].as<size_t>());
+      }
+    } else
+      NTA_THROW << "unexpected key";
+  }
+
+  // iterate with for range
+  cnt = 0;
+  for (Value& itm : vm) {
+    if (itm.isScalar())
+      cnt++;
+    if (itm.isSequence())
+      cnt++;
+  }
+  EXPECT_EQ(cnt, 3);
+
 }
+
+} // namespace testing

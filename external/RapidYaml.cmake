@@ -15,6 +15,12 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 # -----------------------------------------------------------------------------
 
+# Rapid YAML.   See https://github.com/biojppm/rapidyaml
+#
+# NOTE:  Don't use this parser for now.  It does not provide Exceptions correctly.
+#        On any error the program stops.
+#        David Keeney, 09/2019
+#
 # Rapid YAML must be downloaded in four parts.
 #   - ryml from repository at https://github.com/biojppm/rapidyaml     - the main library
 #  - c4core from repository at https://github.com/biojppm/c4core/    - the C library of utilities
