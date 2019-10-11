@@ -214,7 +214,7 @@ TEST(TMRegionTest, testLinking) {
   std::shared_ptr<Region> region1 = net.addRegion("region1", "VectorFileSensor",parameters);
   std::shared_ptr<Region> region2 = net.addRegion("region2", "SPRegion", "{dim: [2,10]}");
   std::shared_ptr<Region> region3 = net.addRegion("region3", "TMRegion",
-                                        "{activationThreshold: 9, cellsPerColumn: 5}");
+                                        "{activationThreshold: 12, cellsPerColumn: 5}");
   std::shared_ptr<Region> region4 = net.addRegion("region4", "VectorFileEffector",
                                         "{outputFile: '" + test_output_file + "'}");
 
@@ -271,7 +271,7 @@ TEST(TMRegionTest, testLinking) {
   VERBOSE << "   " << r3InputArray << "\n";
   std::vector<Byte> expected3in = VectorHelpers::sparseToBinary<Byte>(
     {
-      7
+      19
     }, (UInt32)r3InputArray.getCount());
   EXPECT_EQ(r3InputArray, expected3in) << r3InputArray;
 
@@ -288,9 +288,7 @@ TEST(TMRegionTest, testLinking) {
   EXPECT_TRUE(r3OutputArray.getType() == NTA_BasicType_SDR);
   VERBOSE << "   " << r3OutputArray << "\n";
   std::vector<Byte> expected3out = VectorHelpers::sparseToBinary<Byte>( //TODO replace with SDR 
-            {
-	      35, 36, 37, 38, 39
-	    }, (UInt32)r3OutputArray.getCount());
+            {95, 96, 97, 98, 99 }, (UInt32)r3OutputArray.getCount());
   EXPECT_EQ(r3OutputArray, expected3out) << r3OutputArray;
   EXPECT_EQ(r3OutputArray.getSDR().getSparse().size(), 5u);
 
@@ -307,9 +305,7 @@ TEST(TMRegionTest, testLinking) {
       << numberOfCols << " * " << cellsPerColumn;
   VERBOSE << "   " << r3OutputArray << ")\n";
   std::vector<Byte> expected3outa = VectorHelpers::sparseToBinary<Byte>(
-            {
-	      95, 96, 97, 98, 99
-	    }, (UInt32)r3OutputArray.getCount());
+            {60, 61, 62, 63, 64 }, (UInt32)r3OutputArray.getCount());
   EXPECT_EQ(r3OutputArray, expected3outa) << r3OutputArray;
 
 

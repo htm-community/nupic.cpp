@@ -36,7 +36,7 @@
 
 namespace testing {
     
-static bool verbose = false;
+static bool verbose = true;
 #define VERBOSE                                                                \
   if (verbose)                                                                 \
   std::cerr << "[          ] "
@@ -125,8 +125,7 @@ TEST(WatcherTest, FileTest1) {
   std::string tempString;
   if (inStream.is_open()) {
     getline(inStream, tempString);
-    ASSERT_EQ("Info: watchID, regionName, nodeType, nodeIndex, varName",
-              tempString);
+    ASSERT_EQ("Info: watchID, regionName, nodeType, nodeIndex, varName", tempString);
     getline(inStream, tempString);
     ASSERT_EQ("1, level1, TestNode, -1, uint32Param", tempString);
     getline(inStream, tempString);

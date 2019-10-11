@@ -29,7 +29,6 @@
 namespace testing {
 
 using namespace htm;
-
 TEST(ValueTest, toValueNumber) {
   ValueMap vm;
 
@@ -56,9 +55,9 @@ TEST(ValueTest, toValueNumber) {
   i = vm[0].as<Int32>();
   EXPECT_EQ(123, i);
 
-  EXPECT_ANY_THROW(Int32 i = vm.parse("999999999999999999999999999").as<Int32>());
-  EXPECT_ANY_THROW(Int32 i = vm.parse("abc").as<Int32>());
-  EXPECT_ANY_THROW(Int32 i = vm.parse("").as<Int32>());
+  EXPECT_ANY_THROW(vm.parse("999999999999999999999999999").as<Int32>());
+  EXPECT_ANY_THROW(vm.parse("abc").as<Int32>());
+  EXPECT_ANY_THROW(vm.parse("").as<Int32>());
 
   vm.parse("A: 1");
   EXPECT_EQ(1, vm["A"].as<Int32>(123));   // with a default value but found
@@ -114,12 +113,11 @@ TEST(ValueTest, toValueBool) {
   vm.parse("B: false");
   EXPECT_FALSE(vm.getScalarT<bool>("B", true));
   EXPECT_FALSE(vm.parse("B: 0").getScalarT<bool>("B", true));
-  EXPECT_ANY_THROW(bool result = vm.parse("B: 1234").getScalarT<bool>("B", false));
+  EXPECT_ANY_THROW(vm.parse("B: 1234").getScalarT<bool>("B", false));
 }
 
 TEST(ValueTest, asArray) {
   ValueMap vm;
-  Value v;
   std::vector<UInt32> s2 = {10u, 20u, 30u, 40u, 50u};
 
   std::string json = "[10,20,30,40,50]";
@@ -140,6 +138,9 @@ TEST(ValueTest, asArray) {
   std::vector<UInt32> s3 = {100u, 200u, 300u, 400u, 500u};
   vm[5] = s3; // assign an array to the 6th element.
 
+  std::string t = vm.to_json();
+  EXPECT_STREQ(t.c_str(), "[10, 20, 30, 40, 50, [100, 200, 300, 400, 500]]");
+
   EXPECT_EQ(vm[0].as<UInt32>(), 10u);
   EXPECT_TRUE(vm[5].isSequence());
   EXPECT_TRUE(vm[5][4].isScalar());
@@ -151,8 +152,10 @@ TEST(ValueTest, asArray) {
 
 TEST(ValueTest, asMap) {
   ValueMap vm;
-  std::string src = "{scalar: \"456\", array: [\"1\", \"2\", \"3\", \"4\"], string: \"true\"}";
+  std::string src = "{scalar: 456, array: [1, 2, 3, 4], string: \"true\"}";
   vm.parse(src);
+
+  //std::cout << vm << "\n";
 
   std::map<std::string,std::string> m;
   m = vm.asMap<std::string>();
@@ -167,7 +170,7 @@ TEST(ValueTest, asMap) {
   ss << "}";
   std::string result = ss.str();
   std::cout << result << "\n";
-  EXPECT_STREQ(result.c_str(), "{scalar: \"456\", string: \"true\"}");
+  EXPECT_STREQ(result.c_str(), "{scalar: 456, string: true}");
 }
 
 
@@ -188,7 +191,26 @@ TEST(ValueTest, String) {
   EXPECT_STREQ("\"hello world\"", v.to_json().c_str());
 }
 
-TEST(ValueTest, ValueMap) {
+
+
+TEST(ValueTest, inserts) {
+  ValueMap vm;
+  vm[0][0][0] = 1;
+  //std::cout << "inserts1: " << vm << "\n";
+  EXPECT_STREQ("[[[1]]]", vm.to_json().c_str());
+
+  Value v = vm[1]; // Create a zombie node
+  for (int i = 0; i < 3; i++) {
+    v[i] = i*100+100; // assign to an array on a zombie which should add it to the tree.
+  }
+  //std::cout << "inserts2: " << vm << "\n";
+  EXPECT_STREQ("[[[1]], [100, 200, 300]]", vm.to_json().c_str());
+
+  EXPECT_ANY_THROW(vm[3]["hello"] = "world");
+}
+
+
+TEST(ValueTest, ValueMapTest) {
   std::vector<UInt32> a = {1, 2, 3, 4};
   ValueMap vm;
   vm["scalar"] = 123;
@@ -213,7 +235,7 @@ TEST(ValueTest, ValueMap) {
   Int32 x = vm.getScalarT("scalar2", (Int32)20);
   EXPECT_EQ((Int32)20, x);
 
-  std::string expected = "{scalar: \"456\", array: [\"1\", \"2\", \"3\", \"4\"], string: \"true\"}";
+  std::string expected = "{scalar: 456, array: [1, 2, 3, 4], string: \"str\"}";
   std::string result;
   std::stringstream ss;
   ss << vm;
@@ -225,8 +247,8 @@ TEST(ValueTest, ValueMap) {
 
   ValueMap vm2;
   vm2.parse(result);
-  std::cout << "vm=" << vm << "\n";
-  std::cout << "vm2" << vm2 << "\n";
+  //std::cout << "vm=" << vm << "\n";
+  //std::cout << "vm2" << vm2 << "\n";
   EXPECT_TRUE(vm == vm2);
 }
 
@@ -235,18 +257,17 @@ TEST(ValueTest, Iterations) {
   std::vector<std::string> results;
   int cnt = 0;
 
-  std::string data = R"(
-scalar: 123.45
-array:
+  std::string data = R"(scalar: 123.45
+array: 
   - 1
   - 2
   - 3
   - 4
-string: "this is a string"
+string: this is a string
 )";
 
   vm.parse(data);
-  std::cout << vm << "\n";
+  //std::cout << vm << "\n";
   for (auto itr = vm.begin(); itr != vm.end(); itr++) {
     std::string key = itr->first;
     if (key == "scalar")
@@ -263,14 +284,77 @@ string: "this is a string"
 
   // iterate with for range
   cnt = 0;
-  for (Value& itm : vm) {
-    if (itm.isScalar())
+  for (auto itm : vm) {
+    if (itm.second.isScalar())
       cnt++;
-    if (itm.isSequence())
+    if (itm.second.isSequence())
       cnt++;
   }
   EXPECT_EQ(cnt, 3);
 
+  std::string result = vm.to_yaml();
+  //std::cout << result << "\n";
+  EXPECT_STREQ(result.c_str(), data.c_str());
+
+}
+
+TEST(ValueTest, deletes) {
+  ValueMap vm;
+  std::string src = "{scalar: 456, array: [1, 2, 3, 4], string: \"true\"}";
+  vm.parse(src);
+
+  EXPECT_EQ(vm.size(), 3);
+  EXPECT_EQ(vm["array"].size(), 4);
+
+  vm["scalar"].remove();
+  EXPECT_EQ(vm.size(), 2);
+  EXPECT_ANY_THROW(vm["scalar"].str());
+  EXPECT_TRUE(vm[0].isSequence());
+  EXPECT_TRUE(vm[0][0].isScalar());
+  EXPECT_EQ(vm[0][0].as<int>(), 1);
+  EXPECT_EQ(vm[0][3].as<int>(), 4);
+  EXPECT_EQ(vm[0].size(), 4);
+
+  vm[0][0].remove();
+  EXPECT_EQ(vm[0].size(), 3);
+  EXPECT_TRUE(vm[0][0].isScalar());
+  EXPECT_EQ(vm[0][0].as<int>(), 2);
+  EXPECT_EQ(vm[0][2].as<int>(), 4);
+  EXPECT_ANY_THROW(vm[0][3].as<int>());
+
+  vm[0][2].remove();
+  EXPECT_EQ(vm[0].size(), 2);
+  EXPECT_TRUE(vm[0][1].isScalar());
+  EXPECT_EQ(vm[0][0].as<int>(), 2);
+  EXPECT_EQ(vm[0][1].as<int>(), 3);
+  EXPECT_ANY_THROW(vm[0][2].as<int>());
+
+  vm[0][2] = 6;
+  EXPECT_EQ(vm[0].size(), 3);
+  EXPECT_TRUE(vm[0][1].isScalar());
+  EXPECT_EQ(vm[0][0].as<int>(), 2);
+  EXPECT_EQ(vm[0][1].as<int>(), 3);
+  EXPECT_ANY_THROW(vm[0][3].as<int>());
+  std::vector<int> v = vm[0].asVector<int>();
+
+  std::vector<int> expected({2, 3, 6});
+  for (size_t i = 0; i < 3; i++) {
+    EXPECT_EQ(expected[i], v[i]);
+  }
+
+  vm[0][2].remove();
+  EXPECT_EQ(vm[0].size(), 2);
+  for (size_t i = 0; i < 2; i++) {
+    EXPECT_EQ(expected[i], v[i]);
+  }
+
+  vm[0].remove();
+  EXPECT_EQ(vm.size(), 1);
+  EXPECT_TRUE(vm[0].isScalar());
+  EXPECT_TRUE(vm.contains("string"));
+
+  vm.remove();
+  EXPECT_TRUE(vm.isEmpty());
 }
 
 } // namespace testing

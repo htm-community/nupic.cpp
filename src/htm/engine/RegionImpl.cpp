@@ -252,5 +252,36 @@ Dimensions RegionImpl::getOutputDimensions(const std::string &name) const {
   return region_->getOutputDimensions(name);
 }
 
+/**
+ * Checks the parameters in the ValueMap and gives an error if it
+ * is not consistant with the Spec.  If a field in the Spec is not given
+ * in the ValueMap, insert it with its default value.
+ */
+void RegionImpl::ValidateParameters(ValueMap &vm) {
+  std::shared_ptr<Spec> ns = region_->getSpec();
+
+  // Look for parameters that don't belong
+  for (auto p: vm) {
+    std::string key = p.first;
+    Value v = p.second;
+    if (key == "dim")
+      continue;
+    if (!ns->parameters.contains(key))
+      NTA_THROW << "Parameter '" << key << "' is not expected for this Region.";
+  }
+
+  // Look for missing parameters and apply their default value.
+  for (auto p : ns->parameters) {
+    std::string key = p.first;
+    ParameterSpec &ps = p.second;
+    if (vm.getString(key, "").length() == 0) {
+      // a missing or empty parameter.
+      vm[key] = ps.defaultValue;
+    }
+  }
+
+}
+
+
 
 } // namespace htm

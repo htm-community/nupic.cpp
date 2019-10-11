@@ -338,7 +338,7 @@ Spec *TMRegion::createSpec() {
           NTA_BasicType_UInt32,          // type
           1,                             // elementCount
           "",                            // constraints
-          "8",                           // defaultValue
+          "10",                           // defaultValue
           ParameterSpec::CreateAccess)); // access
 
   ns->parameters.add(

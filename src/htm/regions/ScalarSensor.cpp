@@ -203,9 +203,25 @@ ScalarSensor::~ScalarSensor() {}
 Real64 ScalarSensor::getParameterReal64(const std::string &name, Int64 index) {
   if (name == "sensedValue") {
     return sensedValue_;
-  }
+  } else if (name == "resolution") return encoder_->parameters.resolution;
+  else if (name == "radius")
+    return encoder_->parameters.radius;
+  else if (name == "minValue")
+    return encoder_->parameters.minimum;
+  else if (name == "maxValue")
+    return encoder_->parameters.maximum;
   else {
     return RegionImpl::getParameterReal64(name, index);
+  }
+}
+
+bool ScalarSensor::getParameterBool(const std::string& name, Int64 index) {
+  if (name == "periodic") 
+    return encoder_->parameters.periodic;
+  if (name == "clipInput")
+    return encoder_->parameters.clipInput;
+  else {
+    return RegionImpl::getParameterBool(name, index);
   }
 }
 
@@ -213,10 +229,13 @@ UInt32 ScalarSensor::getParameterUInt32(const std::string &name, Int64 index) {
   if (name == "n") {
     return (UInt32)encoder_->size;
   }
-  else {
+  else if (name == "w") {
+    return encoder_->parameters.activeBits;
+  } else {
     return RegionImpl::getParameterUInt32(name, index);
   }
 }
+
 
 void ScalarSensor::setParameterReal64(const std::string &name, Int64 index, Real64 value) {
   if (name == "sensedValue") {

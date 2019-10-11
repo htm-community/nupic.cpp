@@ -118,6 +118,9 @@ TEST(CppRegionTest, testCppLinkingSDR) {
 
   net.initialize();
 
+  EXPECT_EQ(region1->getParameterUInt32("n"), 6u);
+  EXPECT_EQ(region1->getParameterUInt32("w"), 2u);
+
   region1->setParameterReal64("sensedValue", 0.8);  //Note: default range setting is -1.0 to +1.0
   const Dimensions r1dims = region1->getOutput("encoded")->getDimensions();
   EXPECT_EQ(r1dims.size(), 2u) << " actual dims: " << r1dims.toString();
@@ -153,22 +156,17 @@ TEST(CppRegionTest, testCppLinkingSDR) {
       << "Expected dimensions on the output to match dimensions on the buffer.";
   VERBOSE << r2OutputArray << "\n";
   SDR exp({20u, 3u});
-  exp.setSparse(SDR_sparse_t{
-    4, 21, 32, 46
-  });
-  EXPECT_EQ(r2OutputArray, exp.getDense()) << "got " << r2OutputArray;
+  exp.setSparse(SDR_sparse_t{10, 38, 57});
+  EXPECT_EQ(r2OutputArray, exp.getDense()) << "expected " << exp << "   got " << r2OutputArray;
 }
 
 
 
 TEST(CppRegionTest, testYAML) {
   const char *params = "{count: 42, int32Param: 1234, real64Param: 23.1}";
-  //  badparams contains a non-existent parameter
-  const char *badparams = "{int32Param: 1234, real64Param: 23.1, badParam: 4}";
 
   Network net;
   std::shared_ptr<Region> level1;
-  EXPECT_THROW(net.addRegion("level1", "TestNode", badparams), exception);
 
   EXPECT_NO_THROW({level1 = net.addRegion("level1", "TestNode", params);});
 
