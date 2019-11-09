@@ -44,11 +44,6 @@ Real64 BenchmarkHotgym::run(UInt EPOCHS, bool useSPlocal, bool useSPglobal, bool
 EPOCHS = 2; // make test faster in Debug
 #endif
 
-#if defined __aarch64__ || defined __arm__
-#undef _ARCH_DETERMINISTIC
-#else
-#define _ARCH_DETERMINISTIC
-#endif
 
   if(useTM ) {
 	  NTA_CHECK(useSPlocal or useSPglobal) << "using TM requires a SP too";
@@ -200,7 +195,11 @@ EPOCHS = 2; // make test faster in Debug
 
       SDR goldSP({COLS});
       const SDR_sparse_t deterministicSP{
+#ifdef NTA_LIBC_MUSL
+        62, 72, 73, 82, 85, 102, 263, 277, 287, 303, 306, 308, 309, 322, 337, 339, 340, 352, 370, 493, 1094, 1095, 1114, 1115, 1120, 1463, 1512, 1518, 1647, 1651, 1691, 1694, 1729, 1745, 1746, 1760, 1770, 1774, 1775, 1781, 1797, 1798, 1803, 1804, 1805, 1812, 1827, 1828, 1831, 1832, 1858, 1859, 1860, 1861, 1862, 1875, 1878, 1880, 1881, 1898, 1918, 1923, 1929, 1931, 1936, 1950, 1953, 1956, 1958, 1961, 1964, 1965, 1967, 1971, 1973, 1975, 1976, 1979, 1980, 1981, 1982, 1984, 1985, 1986, 1988, 1991, 1994, 1996, 1997, 1998, 1999, 2002, 2006, 2008, 2011, 2012, 2013, 2017, 2019, 2022, 2027, 2030
+#else
         62, 72, 73, 82, 85, 102, 263, 277, 287, 303, 306, 308, 309, 322, 337, 339, 340, 352, 370, 493, 1094, 1095, 1114, 1115, 1120, 1463, 1512, 1518, 1647, 1651, 1691, 1694, 1729, 1745, 1746, 1760, 1770, 1774, 1775, 1781, 1797, 1798, 1803, 1804, 1805, 1812, 1827, 1828, 1831, 1832, 1858, 1859, 1860, 1861, 1862, 1875, 1878, 1880, 1881, 1898, 1918, 1923, 1929, 1931,1936, 1950, 1953, 1956, 1958, 1961, 1964, 1965, 1967, 1971, 1973, 1975, 1976, 1979, 1980, 1981, 1982, 1984, 1985, 1986, 1988, 1991, 1994, 1996, 1997, 1998, 1999, 2002, 2006, 2008, 2011, 2012, 2013, 2017, 2019, 2022, 2027, 2030
+#endif
       };
       goldSP.setSparse(deterministicSP);
 
@@ -212,14 +211,17 @@ EPOCHS = 2; // make test faster in Debug
 
       SDR goldTM({COLS});
       const SDR_sparse_t deterministicTM{
+#ifdef NTA_LIBC_MUSL
         62, 77, 85, 322, 340, 432, 952, 1120, 1488, 1502, 1512, 1518, 1547, 1627, 1633, 1668, 1727, 1729, 1797, 1803, 1805, 1812, 1858, 1859, 1896, 1918, 1923, 1925, 1929, 1931, 1939, 1941, 1942, 1944, 1950, 1953, 1955, 1956, 1965, 1966, 1967, 1968, 1974, 1980, 1987, 1996, 2006, 2008, 2011, 2027, 2030, 2042, 2046
+#else
+        62, 77, 85, 322, 340, 432, 952, 1120, 1488, 1502, 1512, 1518, 1547, 1627, 1633, 1668, 1727, 1729, 1797, 1803, 1805, 1812, 1858, 1859, 1896, 1918, 1923, 1925, 1929, 1931, 1939, 1941, 1942, 1944, 1950, 1953, 1955, 1956, 1965, 1966, 1967, 1968, 1974, 1980, 1987, 1996, 2006, 2008, 2011, 2027, 2030, 2042, 2046
+#endif
       };
       goldTM.setSparse(deterministicTM);
 
       const float goldAn    = 0.627451f;
       const float goldAnAvg = 0.407265f;
 
-#ifdef _ARCH_DETERMINISTIC
       if(EPOCHS == 5000) {
         //these hand-written values are only valid for EPOCHS = 5000 (default), but not for debug and custom runs.
         NTA_CHECK(input == goldEnc) << "Deterministic output of Encoder failed!\n" << input << "should be:\n" << goldEnc;
@@ -231,7 +233,6 @@ EPOCHS = 2; // make test faster in Debug
         NTA_CHECK(static_cast<UInt>(avgAnom10.getCurrentAvg() * 10000.0f) == static_cast<UInt>(goldAnAvg * 10000.0f))
                   << "Deterministic average anom score failed:" << avgAnom10.getCurrentAvg() << " should be: " << goldAnAvg;
       }
-#endif
 
       // check runtime speed
       const size_t timeTotal = (size_t)floor(tAll.getElapsed());

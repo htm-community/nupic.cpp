@@ -2057,22 +2057,17 @@ TEST(SpatialPoolerTest, testConstructorVsInitialize) {
 TEST(SpatialPoolerTest, ExactOutput) { 
   // Silver is an SDR that is loaded by direct initalization from a vector.
   SDR silver_sdr({ 200 });
+#ifdef NTA_LIBC_MUSL
+  SDR_sparse_t data = {
+    4, 6, 17, 85, 113, 125, 133, 153, 172, 173
+  };
+#else
   SDR_sparse_t data = {
     4, 64, 74, 78, 85, 113, 125, 126, 127, 153
   };
+#endif
   silver_sdr.setSparse(data);
 
-
-  // Gold tests initalizing an SDR from a manually created string in JSON format.
-	// hint: you can generate this string using
-	//       silver_sdr.save(std::cout, JSON);
-  string gold = "{\"dimensions\": [200],\"sparse\": [4, 64, 74, 78, 85, 113, 125, 126, 127, 153]}";
-  std::stringstream gold_stream( gold );
-  SDR gold_sdr;
-  gold_sdr.load( gold_stream, JSON );
-	
-	// both SCR's should be the same
-  EXPECT_EQ(silver_sdr, gold_sdr);
 
   SDR inputs({ 1000 });
   SDR columns({ 200 });
@@ -2098,15 +2093,7 @@ TEST(SpatialPoolerTest, ExactOutput) {
     sp.compute(inputs, true, columns);
   }
 
-#if defined __aarch64__ || defined __arm__
-#undef _ARCH_DETERMINISTIC
-#else
-#define _ARCH_DETERMINISTIC
-#endif
-
-#ifdef _ARCH_DETERMINISTIC
-  ASSERT_EQ( columns, gold_sdr );
-#endif
+  ASSERT_EQ( columns, silver_sdr );
 }
 
 

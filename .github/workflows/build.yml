@@ -109,7 +109,7 @@ jobs:
   publish-pypi:
     name: Publish package to PYPI
     if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') # only on tag/release
-    needs: [build, build-debug, build-arm64-docker]
+    needs: [build, build-debug, build-arm64-docker, build-amd64-docker-pipy]
     runs-on: ubuntu-18.04
     steps:
 
@@ -117,7 +117,9 @@ jobs:
 
     - uses: actions/download-artifact@master
       with:
-        name: dist-ubuntu-18.04
+        # dist-ubuntu-18.04 is binary on Ubuntu+glibc (standard), dist-musl64 is on Alpine+musl (works with static library)
+        #name: dist-ubuntu-18.04
+        name: dist-musl64
         path: dist/
 
     - uses: actions/download-artifact@master
@@ -157,12 +159,17 @@ jobs:
   build-debug:
     name: Build and test in Debug mode
     #currently cannot run on Linux & Debug due to a bug in YAML parser: issue #218
-    runs-on: macOS-latest
+    runs-on: ubuntu-18.04
     steps:
     - uses: actions/checkout@v1
 
     - name: Install dependencies (Debug)
+      env:
+        CC: gcc-8
+        CXX: g++-8
       run: |
+        sudo apt-get update
+        sudo apt-get -y install gcc-8 g++-8
         echo "built type: ${CMAKE_BUILD_TYPE}"
         mkdir -p build/scripts
         cd build/scripts
@@ -200,7 +207,7 @@ jobs:
 
     - name: Tests
       run: |
-        sudo docker run -it htm-arm64-docker
+        sudo docker run -it htm-arm64-docker /bin/sh
         uname -a && echo "\nHello from ARM64 htm.core build!\n"
         python setup.py test
         exit
@@ -228,5 +235,53 @@ jobs:
       if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
       with:
         name: "dist-arm64"
+        path: ./dist
+    
+
+  build-amd64-docker-pipy:
+    name: Build for PiPY on Docker/amd64 + MUSL libc
+    #this build uses Alpine linux with MUSL stdlibc++ to allow working static lib (transferable everywhere)
+    runs-on: ubuntu-18.04
+    steps:
+    - name: Install docker
+      run: |
+        # bug in ubuntu, conflicts with docker.io
+        sudo apt-get update
+        sudo apt-get remove --purge -y moby-engine moby-cli
+        sudo apt-get install -y qemu-user-static docker.io
+
+    - uses: actions/checkout@v1
+
+    - name: x86/64 build
+      run: |
+        sudo docker build -t htm-amd64-docker --build-arg arch=amd64 .
+
+    - name: Tests
+      run: |
+        sudo docker run htm-amd64-docker python3 setup.py test
+
+    - name: Copy files from docker
+      run: |
+        sudo docker cp `sudo docker ps -alq`:/usr/local/src/htm.core/dist dist #TODO the `command` is not 100% reliable, replace with some name/id
+        ls dist
+
+    - name: Release (deploy)
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags') #only on tag/release, not schedule
+      # from https://github.com/marketplace/actions/gh-release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/htm_core-v*gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Pre-upload artifact
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+      run: rm dist/*.gz
+
+    - uses: actions/upload-artifact@v1.0.0
+      if: github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags')
+      with:
+        name: "dist-musl64"
         path: ./dist
     

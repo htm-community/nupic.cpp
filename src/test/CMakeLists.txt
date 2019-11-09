@@ -150,7 +150,11 @@ target_include_directories(${unit_tests_executable} PRIVATE
 	${gtest_INCLUDE_DIRS}
 	${CORE_LIB_INCLUDES}
 	${EXTERNAL_INCLUDES})
-target_compile_definitions(${unit_tests_executable} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+if(${NTA_LIBC_MUSL})
+  target_compile_definitions(${unit_tests_executable} PRIVATE ${COMMON_COMPILER_DEFINITIONS} -DNTA_LIBC_MUSL=${NTA_LIBC_MUSL})
+else()
+  target_compile_definitions(${unit_tests_executable} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+endif()
 target_compile_options(${unit_tests_executable} PUBLIC ${INTERNAL_CXX_FLAGS})
 add_dependencies(${unit_tests_executable} ${core_library}) 
 #add_dependencies(${unit_tests_executable} ${src_lib_shared})

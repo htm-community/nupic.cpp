@@ -64,7 +64,8 @@
 ##############################################################
 
 include(CheckCXXCompilerFlag)
-
+#set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_CXX_VISIBILITY_INLINES_HIDDEN ON)
 
 # Identify platform name.
 if(NOT PLATFORM)
@@ -227,6 +228,7 @@ else()
 		-DHAVE_CONFIG_H
 		-DBOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS
 		-DBOOST_NO_WREGEX
+		-DNTA_LIBC_MUSL=${NTA_LIBC_MUSL}
 		)
 
 	if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
@@ -254,39 +256,15 @@ else()
 
 
 	#
-	# Determine stdlib settings
-	#
-	set(stdlib_cxx)
-	set(stdlib_common)
-
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-	  set(stdlib_cxx ${stdlib_cxx} -stdlib=libc++)
-	endif()
-
-# TODO: investigate if we should use static or shared stdlib and gcc lib.
-	if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-		set(stdlib_common ${stdlib_common} -static-libgcc)
-		set(stdlib_cxx ${stdlib_cxx} -static-libstdc++)
-	endif()
-
-
-
-	#
 	# compiler specific settings and warnings here
 	#
 	set(internal_compiler_warning_flags)
 	set(cxx_flags_unoptimized)
 	set(linker_flags_unoptimized)
 
-	# Hide all symbols in DLLs except the ones with explicit visibility;
-        # see https://gcc.gnu.org/wiki/Visibility
-        set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -fvisibility-inlines-hidden )
-
 
 	# LLVM Clang / Gnu GCC
-	set(cxx_flags_unoptimized ${cxx_flags_unoptimized} ${stdlib_cxx})
-
-	set(cxx_flags_unoptimized ${cxx_flags_unoptimized} ${stdlib_common} -fdiagnostics-show-option)
+	set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -fdiagnostics-show-option)
 	set (internal_compiler_warning_flags ${internal_compiler_warning_flags} -Werror -Wextra -Wreturn-type -Wunused -Wno-unused-variable -Wno-unused-parameter -Wno-missing-field-initializers)
 
 	CHECK_CXX_COMPILER_FLAG(-m${BITNESS} compiler_supports_machine_option)
@@ -307,8 +285,6 @@ else()
 		  set(cxx_flags_unoptimized ${cxx_flags_unoptimized} -Wno-deprecated-register)
 		endif()
 	endif()
-
-	set(shared_linker_flags_unoptimized ${shared_linker_flags_unoptimized} ${stdlib_common} ${stdlib_cxx})
 
 	# Don't allow undefined symbols when linking executables
 	if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")

@@ -30,6 +30,8 @@ set($ENV{HTM_CPP} ${REPOSITORY_DIR})
 option(FORCE_CPP11 "Force compiler to use C++11 standard." OFF)
 option(FORCE_BOOST "Force compiler to install and use Boost." OFF)
 set(BINDING_BUILD "none" CACHE STRING "Specify the Binding to build 'Python2','Python3' or 'none', default 'none'." )
+option(NTA_LIBC_MUSL "Are we using MUSL stdlibc++? otherwise GLIBC" OFF)
+
 # Note: by setting the CXX environment variable, a non-default c++ compiler can be specified.
 
 if(MSVC AND BINDING_BUILD STREQUAL "Python2")

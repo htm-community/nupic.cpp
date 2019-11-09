@@ -160,6 +160,10 @@ specifically.
 docker build --build-arg arch=arm64 .
 ```
 
+> Note: When building on platforms that use MUSL stdlibc++ instead of GLIBC, such as Alpine linux in our Docker container, 
+you need to pass `-DNTA_LIBC_MUSL=1` to the `cmake` command. In the `Dockerfile` this is done automatically. 
+
+
 ### Automated Builds, CI
 
 We use Github `Actions` to build and run multiplatform (OSX, Windows, Linux, ARM64) tests and releases. 

@@ -19,6 +19,7 @@ cmake_minimum_required(VERSION 3.7)
 project(htm_core CXX)
 
 message(STATUS "Configuring htm_core src")
+message(STATUS "Using MUSL LIBC= ${NTA_LIBC_MUSL}")
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_VERBOSE_MAKEFILE ON) # toggle for cmake debug
 include(src/NupicLibraryUtils) # for combining static libs
@@ -243,6 +244,9 @@ set(src_lib_static htm_core_solo)
 add_library(${src_lib_static} STATIC $<TARGET_OBJECTS:${src_objlib}>)
 if(MSVC)
   set_property(TARGET ${src_lib_static} PROPERTY LINK_LIBRARIES ${INTERNAL_LINKER_FLAGS})
+elseif(${NTA_LIBC_MUSL})
+  message("Doing static build with MUSL libc")
+  target_link_libraries(${src_lib_static} -static)
 endif()
 #
 # Create the libhtm_core.a as a "combined" static library by merging htm_core_static
@@ -319,12 +323,17 @@ target_link_libraries(${src_executable_hotgym}
     ${core_library}
     ${COMMON_OS_LIBS}
 )
+
     
 # for future reference; to link to shared library, (Not on MSVC)
 #          link with ${src_lib_shared} rather than ${core_library}
                   
 target_compile_options( ${src_executable_hotgym} PUBLIC ${INTERNAL_CXX_FLAGS})
-target_compile_definitions(${src_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+if(${NTA_LIBC_MUSL})
+  target_compile_definitions(${src_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS} -DNTA_LIBC_MUSL=${NTA_LIBC_MUSL})
+else()
+  target_compile_definitions(${src_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+endif()
 target_include_directories(${src_executable_hotgym} PRIVATE 
 		${CORE_LIB_INCLUDES} 
 		${EXTERNAL_INCLUDES}
@@ -348,7 +357,11 @@ else()
     ${COMMON_OS_LIBS}
   )
   target_compile_options( ${src_dyn_executable_hotgym} PUBLIC ${INTERNAL_CXX_FLAGS})
-  target_compile_definitions(${src_dyn_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+  if(${NTA_LIBC_MUSL})
+    target_compile_definitions(${src_dyn_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS} -DNTA_LIBC_MUSL=${NTA_LIBC_MUSL})
+  else()
+    target_compile_definitions(${src_dyn_executable_hotgym} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
+  endif()
   target_include_directories(${src_dyn_executable_hotgym} PRIVATE 
 		${CORE_LIB_INCLUDES} 
 		${EXTERNAL_INCLUDES}
