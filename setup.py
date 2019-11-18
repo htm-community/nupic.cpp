@@ -405,9 +405,9 @@ if __name__ == "__main__":
     extras_require={'scikit-image>0.15.0':'examples',
                     'sklearn':'examples',
                     'matplotlib':'examples',
-                    'PIL':'examples',
-                    'scipy':'examples'
-                   },
+                    'scipy':'examples',
+                    'opencv-contrib-python': 'examples', #for cv2.bioinspired for RetinaEncoder
+    },
     zip_safe=False,
     cmdclass={
       "clean": CleanCommand,

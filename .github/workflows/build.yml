@@ -63,8 +63,17 @@ jobs:
     - name: build htmcore with setup.py
       run: python setup.py install --user --force
 
-    - name: C++ & Python Tests
-      run: python setup.py test
+    - name: C++ Tests
+      shell: bash
+      run: ./build/Release/bin/unit_tests
+
+    - name: Python Bindings Tests
+      shell: bash
+      run: pytest bindings/py/tests
+
+    - name: Python (pure) Tests
+      shell: bash
+      run: pytest py/tests
 
     - name: Memory leaks check (valgrind)
       if: matrix.os == 'ubuntu-18.04'

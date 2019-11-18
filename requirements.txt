@@ -12,3 +12,4 @@ prettytable>=0.7.2 # for monitor-mixin in htm.advanced (+its tests)
 ## optional dependencies, such as for visualizations, running examples
 # should be placed in setup.py section extras_require. Install those by
 # pip install htm.core[examples] 
+opencv-contrib-python #for cv2.bioinspired for RetinaEncoder

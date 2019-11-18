@@ -18,12 +18,14 @@
 import random
 import numpy as np
 import sys
+import cv2
 
 # fetch datasets from www.openML.org/ 
 from sklearn.datasets import fetch_openml
 
 from htm.bindings.algorithms import SpatialPooler, Classifier
 from htm.bindings.sdr import SDR, Metrics
+from htm.encoders.eye import Eye
 
 
 def load_ds(name, num_test, shape=None):
@@ -84,15 +86,21 @@ def main(parameters=default_parameters, argv=None, verbose=True):
     # Load data.
     train_labels, train_images, test_labels, test_images = load_ds('mnist_784', 10000, shape=[28,28]) # HTM: ~95.6%
     #train_labels, train_images, test_labels, test_images = load_ds('Fashion-MNIST', 10000, shape=[28,28]) # HTM baseline: ~83%
+    cv2.imshow('orig', train_images[1])
 
     training_data = list(zip(train_images, train_labels))
     test_data     = list(zip(test_images, test_labels))
     random.shuffle(training_data)
 
-    # Setup the AI.
+    # Setup the AI
     enc = SDR(train_images[0].shape)
+    encoder = Eye(output_diameter=train_images[0].shape[0]-8, #28-3
+                  sparsityParvo = 0.2,
+                  sparsityMagno = 0.0, #disabled 
+                  color = False)
+
     sp = SpatialPooler(
-        inputDimensions            = enc.dimensions,
+        inputDimensions            = encoder.dimensions,
         columnDimensions           = parameters['columnDimensions'],
         potentialRadius            = parameters['potentialRadius'],
         potentialPct               = parameters['potentialPct'],
@@ -115,7 +123,10 @@ def main(parameters=default_parameters, argv=None, verbose=True):
     # Training Loop
     for i in range(len(train_images)):
         img, lbl = random.choice(training_data)
-        encode(img, enc)
+        encoder.new_image(img)
+        (enc, _) = encoder.compute()
+        if i == 1:
+          encoder.plot()
         sp.compute( enc, True, columns )
         sdrc.learn( columns, lbl ) #TODO SDRClassifier could accept string as a label, currently must be int
 
@@ -125,7 +136,8 @@ def main(parameters=default_parameters, argv=None, verbose=True):
     # Testing Loop
     score = 0
     for img, lbl in test_data:
-        encode(img, enc)
+        encoder.new_image(img)
+        (enc, _) = encoder.compute()
         sp.compute( enc, False, columns )
         if lbl == np.argmax( sdrc.infer( columns ) ):
             score += 1
