@@ -78,10 +78,12 @@ namespace htm {
     },
     inputs: {
       bucket:  { description: "The quantized value of the current sample, one from each encoder if more than one, for the learn step",
-                           type: Real64,  count: 0},  
-      pattern: { description:  "An SDR output bit pattern for a sample.  Usually the output of the SP or TM. For example: activeCells from TM",  
-                           type: SDR, count: 0} 
-    }, 
+                           type: Real64,  count: 0},
+      pattern: { description:  "An SDR output bit pattern for a sample.  Usually the output of the SP or TM. For example: activeCells from TM",
+                           type: SDR, count: 0},
+      learnPattern: { description:  "An SDR output bit pattern for a sample.  Usually the output of the SP or TM. For example: activeCells from TM",
+                           type: SDR, count: 0}
+    },
     outputs: {
       pdf:       { description: "probability distribution function (pdf) for each category or bucket. Sorted by title.  Warning, buffer length will grow.",
                            type: Real64, count: 0},
@@ -143,12 +145,13 @@ void ClassifierRegion::compute() {
   //       and SDRClassifier::infer() will throw an exception.
 
   if (learn_) {
+    SDR &learnPattern = getInput("learnPattern")->getData().getSDR();
     Array &b = getInput("bucket")->getData();
     // 'bucket' is a list of quantized samples being processed for this iteration.
     // There are one of these for each encoder (or value being encoded).
     // The values might not be consecutive, or in different ranges, or different things entirely.
     // We build a map and a corresponding vector containing the quantized samples actually used.
-    // This vector becomes the titles. The index into this list will be a consecutive list that 
+    // This vector becomes the titles. The index into this list will be a consecutive list that
     // we can presented to the Classifier which produces the pdf.  Note that the indexes used
     // by the classifier are not sorted by title but rather by the order in which an index is first seen.
     std::vector<UInt> categoryIdxList;
@@ -166,7 +169,7 @@ void ClassifierRegion::compute() {
       }
       categoryIdxList.push_back(c);
     }
-    classifier_->learn(pattern, categoryIdxList);
+    classifier_->learn(learnPattern, categoryIdxList);
   }
   PDF pdf = classifier_->infer(pattern);
 

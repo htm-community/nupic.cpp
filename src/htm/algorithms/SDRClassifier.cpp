@@ -58,7 +58,11 @@ PDF Classifier::infer(const SDR & pattern) const {
   PDF probabilities( numCategories_, 0.0f );
   for( const auto bit : pattern.getSparse() ) {
     for( size_t i = 0; i < numCategories_; i++ ) {
-      probabilities[i] += weights_[bit][i];
+      if (weights_.size() > bit) {
+        if (weights_[bit].size() > i) {
+          probabilities[i] += weights_[bit][i];
+        }
+      }
     }
   }
 
