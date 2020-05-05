@@ -79,7 +79,7 @@ namespace htm {
     inputs: {
       bucket:  { description: "The quantized value of the current sample, one from each encoder if more than one, for the learn step",
                            type: Real64,  count: 0},
-      pattern: { description:  "An SDR output bit pattern for a sample.  Usually the output of the SP or TM. For example: activeCells from TM",
+      inferPattern: { description:  "An SDR output bit pattern for a sample.  Usually the output of the SP or TM. For example: predictiveCells from TM",
                            type: SDR, count: 0},
       learnPattern: { description:  "An SDR output bit pattern for a sample.  Usually the output of the SP or TM. For example: activeCells from TM",
                            type: SDR, count: 0}
@@ -89,7 +89,7 @@ namespace htm {
                            type: Real64, count: 0},
       titles:    { description: "Quantized values of used samples which are the Titles corresponding to the pdf indexes. Sorted by title. Warning, buffer length will grow.",
                            type: Real64, count: 0},
-      predicted: { description: "An index (into pdf and titles) with the highest probability of being the match with the current pattern.",
+      predicted: { description: "An index (into pdf and titles) with the highest probability of being the match with the current inferPattern.",
                            type: UInt32, count: 1}
     }
    }
@@ -140,10 +140,6 @@ Dimensions ClassifierRegion::askImplForOutputDimensions(const std::string &name)
 
 
 void ClassifierRegion::compute() {
-  SDR &pattern = getInput("pattern")->getData().getSDR();
-  // Note: if there is no link to 'pattern' input, the 'pattern' SDR length is 0
-  //       and SDRClassifier::infer() will throw an exception.
-
   if (learn_) {
     SDR &learnPattern = getInput("learnPattern")->getData().getSDR();
     Array &b = getInput("bucket")->getData();
@@ -171,7 +167,12 @@ void ClassifierRegion::compute() {
     }
     classifier_->learn(learnPattern, categoryIdxList);
   }
-  PDF pdf = classifier_->infer(pattern);
+
+  SDR &inferPattern = getInput("inferPattern")->getData().getSDR();
+  // Note: if there is no link to 'inferPattern' input, the 'inferPattern' SDR length is 0
+  //       and SDRClassifier::infer() will throw an exception.
+
+  PDF pdf = classifier_->infer(inferPattern);
 
   // Adjust the buffer size to match the pdf.
   if (getOutput("pdf")->getData().getCount() < pdf.size()) {
@@ -192,7 +193,7 @@ void ClassifierRegion::compute() {
     size_t i = itm.second;
     if (pdf[i] > m) {
       m = pdf[i];
-      predicted[0] = static_cast<UInt32>(j);  // index of the quantized sample with the highest probability of matching the pattern
+      predicted[0] = static_cast<UInt32>(j);  // index of the quantized sample with the highest probability of matching the inferPattern
     }
     out[j] = pdf[i];
     titles[j] = bucketList[i];
