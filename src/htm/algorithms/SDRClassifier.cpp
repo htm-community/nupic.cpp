@@ -52,17 +52,13 @@ PDF Classifier::infer(const SDR & pattern) const {
     NTA_WARN << "Classifier: must call `learn` before `infer`.";
     return PDF(numCategories_, std::nan("")); //empty array []
   }
-  NTA_ASSERT(pattern.size == dimensions_) << "Input SDR does not match previously seen size!";
+  NTA_CHECK(pattern.size == dimensions_) << "Input SDR does not match previously seen size!";
 
   // Accumulate feed forward input.
   PDF probabilities( numCategories_, 0.0f );
   for( const auto bit : pattern.getSparse() ) {
     for( size_t i = 0; i < numCategories_; i++ ) {
-      if (weights_.size() > bit) {
-        if (weights_[bit].size() > i) {
-          probabilities[i] += weights_[bit][i];
-        }
-      }
+      probabilities[i] += weights_[bit][i];
     }
   }
 
