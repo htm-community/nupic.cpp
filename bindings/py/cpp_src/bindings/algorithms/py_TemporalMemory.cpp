@@ -151,8 +151,22 @@ Argument anomalyMode (optional, default ANMode::RAW) selects mode for `TM.anomal
                 , py::arg("maxSynapsesPerSegment") = 255
                 , py::arg("checkInputs") = true
                 , py::arg("externalPredictiveInputs") = 0u
-		, py::arg("anomalyMode") = TemporalMemory::ANMode::RAW 
+		, py::arg("anomalyMode") = TemporalMemory::ANMode::RAW
 		);
+
+    py_HTM.def("getColumnDimensions", &TemporalMemory::getColumnDimensions);
+    py_HTM.def("getCellsPerColumn", &TemporalMemory::getCellsPerColumn);
+    py_HTM.def("getActivationThreshold", &TemporalMemory::getActivationThreshold);
+    py_HTM.def("getInitialPermanence", &TemporalMemory::getInitialPermanence);
+    py_HTM.def("getConnectedPermanence", &TemporalMemory::getConnectedPermanence);
+    py_HTM.def("getMinThreshold", &TemporalMemory::getMinThreshold);
+    py_HTM.def("getMaxNewSynapseCount", &TemporalMemory::getMaxNewSynapseCount);
+    py_HTM.def("getPermanenceIncrement", &TemporalMemory::getPermanenceIncrement);
+    py_HTM.def("getPermanenceDecrement", &TemporalMemory::getPermanenceDecrement);
+    py_HTM.def("getPredictedSegmentDecrement", &TemporalMemory::getPredictedSegmentDecrement);
+    py_HTM.def("getMaxSegmentsPerCell", &TemporalMemory::getMaxSegmentsPerCell);
+    py_HTM.def("getMaxSynapsesPerSegment", &TemporalMemory::getMaxSynapsesPerSegment);
+    py_HTM.def("getCheckInputs", &TemporalMemory::getCheckInputs);
 
         py_HTM.def("printParameters",
             [](const HTM_t& self)
@@ -161,11 +175,11 @@ Argument anomalyMode (optional, default ANMode::RAW) selects mode for `TM.anomal
                            py::scoped_estream_redirect>());
 
 				// saving and loading from file
-        py_HTM.def("saveToFile", 
-				    [](TemporalMemory &self, const std::string& filename) {self.saveToFile(filename,SerializableFormat::BINARY); });  
-				
+        py_HTM.def("saveToFile",
+				    [](TemporalMemory &self, const std::string& filename) {self.saveToFile(filename,SerializableFormat::BINARY); });
+
         py_HTM.def("loadFromFile",
-				    [](TemporalMemory &self, const std::string& filename) { return self.loadFromFile(filename,SerializableFormat::BINARY); }); 
+				    [](TemporalMemory &self, const std::string& filename) { return self.loadFromFile(filename,SerializableFormat::BINARY); });
 
         // writeToString, save TM to a JSON encoded string usable by loadFromString()
         py_HTM.def("writeToString", [](const TemporalMemory& self)
@@ -245,12 +259,12 @@ Argument learn
     Whether or not learning is enabled.
 
 Argument externalPredictiveInputsActive
-    (optional) SDR of active external predictive inputs.  
+    (optional) SDR of active external predictive inputs.
     TM must be set up with the 'externalPredictiveInputs' constructor parameter for this use.
 
 Argument externalPredictiveInputsWinners
     (optional) SDR of winning external predictive inputs.  When learning, only these
-    inputs are considered active.  
+    inputs are considered active.
     externalPredictiveInputsWinners must be a subset of externalPredictiveInputsActive.
 )",
                 py::arg("activeColumns"),
