@@ -29,6 +29,7 @@ import unittest
 
 from htm.bindings.sdr import SDR
 from htm.bindings.engine_internal import Network,Region
+from htm.advanced.support.register_regions import registerAllAdvancedRegions
 
 EPOCHS = 3
 
@@ -199,8 +200,27 @@ class NetworkAPI_SineWave_Test(unittest.TestCase):
   "size": 1000,
   "sparsity": 0.200000,
 }"""
-    net = Network();
-    encoder = net.addRegion("encoder", "RDSEEncoderRegion", "{size: 1000, sparsity: 0.2, radius: 0.03, seed: 2019, noise: 0.01}")
+    registerAllAdvancedRegions()
+    net = Network()
+    encoder = net.addRegion("py.ColumnPoolerRegion", "py.ColumnPoolerRegion",
+                            """{ 
+	"activationThresholdDistal": 20,
+	"cellCount": 4096,
+	"connectedPermanenceDistal": 0.5,
+	"connectedPermanenceProximal": 0.5,
+	"initialDistalPermanence": 0.51,
+	"initialProximalPermanence": 0.6,
+	"minThresholdProximal": 5,
+	"sampleSizeDistal": 30,
+	"sampleSizeProximal": 10,
+	"sdrSize": 40,
+	"synPermDistalDec": 0.001,
+	"synPermDistalInc": 0.1,
+	"synPermProximalDec": 0.001,
+	"synPermProximalInc": 0.1
+}""")
+
+    #encoder = net.addRegion("encoder", "RDSEEncoderRegion", "{size: 1000, sparsity: 0.2, radius: 0.03, seed: 2019, noise: 0.01}")
     json = encoder.getParameters();
     self.assertEqual(json, expected)
     json = encoder.getParameterJSON("activeBits", False)
