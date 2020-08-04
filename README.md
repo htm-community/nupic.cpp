@@ -127,7 +127,7 @@ git clone https://github.com/htm-community/htm.core
 
 #### Python development mode
 
-When you run `python setup.py install --user --force` it will copy python scripts into build/Release/distr/src and deploy as package into user site-packages (on linux in /home/.local/).
+When you run `python setup.py install --user --force` it will copy python scripts into `build/Release/distr/src` and deploy as package into user site-packages (on linux in `/home/.local/`).
 To avoid deploying there use "development mode":
 `python setup.py develop --user --force`
 This will create link file in site-packages pointing to the distr folder. You can modify distr scripts and your changes will be reflected immediately.
@@ -136,6 +136,11 @@ To remove the link file call:
 
 `python setup.py develop --user --uninstall`
 
+Note: you can always check from where you are importing sources, by typing into python console e.g.:
+```
+import htm.bindings.sdr
+print(htm.bindings.sdr.__file__)
+```
 
 #### Simple C++ build 
 
