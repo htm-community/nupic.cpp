@@ -110,6 +110,7 @@ git clone https://github.com/htm-community/htm.core
    folder `Repository/build` and try again.  This is only an issue when
    developing C++ code.
 
+
 3) After that completes you are ready to import the library:
     ```python
     python.exe
@@ -123,6 +124,17 @@ git clone https://github.com/htm-community/htm.core
     ```python
     python setup.py test
     ```
+
+#### Python development mode
+
+When you run `python setup.py install --user --force` it will copy python scripts into build/Release/distr/src and deploy as package into user site-packages (on linux in /home/.local/).
+To avoid deploying there use "development mode":
+`python setup.py develop --user --force`
+This will create link file in site-packages pointing to the distr folder. You can modify distr scripts and your changes will be reflected immediately.
+Note: Unfortunately calling this command again will not overwrite distr scripts, so you need to delete distr folder first
+To remove the link file call:
+
+`python setup.py develop --user --uninstall`
 
 
 #### Simple C++ build 
