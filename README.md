@@ -125,23 +125,6 @@ git clone https://github.com/htm-community/htm.core
     python setup.py test
     ```
 
-#### Python development mode
-
-When you run `python setup.py install --user --force` it will copy python scripts into `build/Release/distr/src` and deploy as package into user site-packages (on linux in `/home/.local/`).
-To avoid deploying there use "development mode":
-`python setup.py develop --user --force`
-This will create link file in site-packages pointing to the distr folder. You can modify distr scripts and your changes will be reflected immediately.
-Note: Unfortunately calling this command again will not overwrite distr scripts, so you need to delete distr folder first
-To remove the link file call:
-
-`python setup.py develop --user --uninstall`
-
-Note: you can always check from where you are importing sources, by typing into python console e.g.:
-```
-import htm.bindings.sdr
-print(htm.bindings.sdr.__file__)
-```
-
 #### Simple C++ build 
 
 After cloning/downloading the repository, do the following:
@@ -341,6 +324,23 @@ Be aware that the CMake maintains a cache of build-time arguments and it will ig
 to CMake if is already in the cache.  So, between runs you need to clear the cache or even better,
 entirely remove the `build/` folder (ie. `git clean -xdf`).
 
+### Python development mode
+
+When you run `python setup.py install --user --force` it will copy python scripts into `build/Release/distr/src` and deploy as package into user site-packages (on linux in `/home/.local/`).
+To avoid deploying there use "development mode":
+`python setup.py develop --user --force`
+This will create link file in site-packages pointing to the distr folder. You can modify distr scripts and your changes will be reflected immediately.
+Note: Unfortunately calling this command again will not overwrite distr scripts, so you need to delete distr folder first.
+
+To remove the link file call:
+
+`python setup.py develop --user --uninstall`
+
+Note: you can always check from where you are importing sources, by typing into python console e.g.:
+```
+import htm.bindings.sdr
+print(htm.bindings.sdr.__file__)
+```
 
 ### Dependency management
 
