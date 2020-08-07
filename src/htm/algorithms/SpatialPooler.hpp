@@ -29,7 +29,7 @@
 #include <htm/types/Types.hpp>
 #include <htm/types/Serializable.hpp>
 #include <htm/types/Sdr.hpp>
-
+#include <htm/os/Timer.hpp>
 
 namespace htm {
 
@@ -1212,6 +1212,7 @@ protected:
   Random rng_;
 
 public:
+  mutable Timer tSort, tNth, tWhile;
   const Connections& connections = connections_; //for inspection of details in connections. Const, so users cannot break the SP internals.
   const Connections& getConnections() const { return connections_; } // as above, but for use in pybind11
 };

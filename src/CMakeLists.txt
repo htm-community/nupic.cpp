@@ -171,6 +171,7 @@ set(regions_files
 
 set(types_files
     htm/types/Exception.hpp
+    htm/types/Parallelizable.hpp
     htm/types/Types.hpp
     htm/types/Serializable.hpp
     htm/types/Sdr.hpp

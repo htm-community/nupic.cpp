@@ -27,6 +27,7 @@
 #include <htm/algorithms/SpatialPooler.hpp>
 #include <htm/utils/Topology.hpp>
 #include <htm/utils/VectorHelpers.hpp>
+#include <htm/types/Parallelizable.hpp>
 
 using namespace std;
 using namespace htm;
@@ -863,19 +864,25 @@ void SpatialPooler::inhibitColumnsGlobal_(const vector<Real> &overlaps,
   // faster than a regular sort because it stops after it partitions the
   // elements about the Nth element, with all elements on their correct side of
   // the Nth element.
-  std::nth_element(
+  tNth.start();
+  std::nth_element(htm::parallel::mode,
     activeColumns.begin(),
     activeColumns.begin() + numDesired,
     activeColumns.end(),
     compare);
   // Remove the columns which lost the competition.
   activeColumns.resize(numDesired);
+  tNth.stop();
   // Finish sorting the winner columns by their overlap.
+  tSort.start();
   std::sort(activeColumns.begin(), activeColumns.end(), compare);
+  tSort.stop();
   // Remove sub-threshold winners
+  tWhile.start();
   while( !activeColumns.empty() &&
          overlaps[activeColumns.back()] < stimulusThreshold_)
       activeColumns.pop_back();
+  tWhile.stop();
 }
 
 
