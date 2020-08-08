@@ -341,6 +341,7 @@ Note: you can always check from where you are importing sources, by typing into 
 import htm.bindings.sdr
 print(htm.bindings.sdr.__file__)
 ```
+Note2: It is obvious, but anyway - do not use `--user` option while using python environment managers(Anaconda..)
 
 ### Dependency management
 
