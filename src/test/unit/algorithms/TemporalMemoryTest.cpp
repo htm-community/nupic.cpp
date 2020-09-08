@@ -794,8 +794,8 @@ TEST(TemporalMemoryTest, RecycleWeakestSynapseToMakeRoomForNewSynapse) {
       /*connectedPermanence*/ 0.50f,
       /*minThreshold*/ 1,
       /*maxNewSynapseCount*/ 3,
-      /*permanenceIncrement*/ 0.02f,
-      /*permanenceDecrement*/ 0.02f,
+      /*permanenceIncrement*/ 0.06f,
+      /*permanenceDecrement*/ 0.05f,
       /*predictedSegmentDecrement*/ 0.0f,
       /*seed*/ 42,
       /*maxSegmentsPerCell*/ 255,
@@ -810,33 +810,36 @@ TEST(TemporalMemoryTest, RecycleWeakestSynapseToMakeRoomForNewSynapse) {
 
   Segment matchingSegment = tm.createSegment(4);
 
-  // Create a weak synapse. Make sure it's not so weak that
-  // permanenceDecrement destroys it.
+  // A: Create a weak synapse. This synapse should be destroyed in the experiment. 
+  // Make sure it's not so weak that permanenceDecrement destroys it on a single 
+  // step. (0.11 < 3x0.05 => in 3 steps it should be gone)
   tm.createSynapse(matchingSegment, 0, 0.11f);
 
-  // Create a synapse that will match.
+  // B: Create a synapse that will match. ('1' is in the active columns, 0 above is not)
   tm.createSynapse(matchingSegment, 1, 0.20f);
 
-  // Create a synapse with a high permanence.
+  // C: Create a synapse with a high permanence. (31 is also not in the active cols, 
+  // but here permanence is so high that it would not be removed)
   tm.createSynapse(matchingSegment, 31, 0.6f);
 
-  // Activate a synapse on the segment, making it "matching".
+  for(int i=0; i< 3; i++) {
+  // Activate a synapse on the segment, making it "matching". (B matches, as it's presyn cell '1'
+  // is in active cols).
   tm.compute(previousActiveColumns);
-
   ASSERT_EQ(prevWinnerCells, tm.getWinnerCells());
-
   // Now mark the segment as "correct" by activating its cell.
   tm.compute(activeColumns);
+  }
 
-  // There should now be 3 synapses, and none of them should be to cell 0.
+  // There should now be 3 synapses, and none of them should be to cell '0' (A).
   const vector<Synapse> &synapses =
       tm.connections.synapsesForSegment(matchingSegment);
-  ASSERT_EQ(4ul, synapses.size());
 
   std::set<CellIdx> presynapticCells;
   for (Synapse synapse : synapses) {
-    presynapticCells.insert(
-        tm.connections.dataForSynapse(synapse).presynapticCell);
+    const auto presyn = tm.connections.dataForSynapse(synapse).presynapticCell;
+    EXPECT_TRUE(presyn != 0) << "Permanence to cell '0' in case A should have been deleted.";
+    presynapticCells.insert(presyn);
   }
 
   std::set<CellIdx> expected = {1, 2, 3, 31};

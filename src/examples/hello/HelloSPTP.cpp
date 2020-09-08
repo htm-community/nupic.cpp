@@ -214,12 +214,12 @@ EPOCHS = 2; // make test faster in Debug
 
       SDR goldTM({COLS});
       const SDR_sparse_t deterministicTM{
-        72, 85, 102, 114, 122, 126, 287, 308, 337, 339, 542, 920, 939, 952, 1268, 1507, 1508, 1518, 1546, 1547, 1626, 1627, 1633, 1668, 1727, 1804, 1805, 1827, 1832, 1844, 1859, 1862, 1918, 1920, 1924, 1931, 1933, 1945, 1961, 1965, 1966, 1968, 1970, 1973, 1975, 1976, 1977, 1979, 1986, 1987, 1991, 1992, 1996, 1998, 2002, 2006, 2008, 2012, 2042, 2045
+        36, 85, 118, 263, 287, 303, 308, 322, 336, 337, 339, 370, 432, 1115, 1147, 1214, 1508, 1512, 1518, 1523, 1626, 1668, 1691, 1694, 1729, 1781, 1797, 1798, 1803, 1827, 1832, 1844, 1858, 1859, 1860, 1861, 1862, 1917, 1929, 1936, 1939, 1941, 1943, 1947, 1950, 1953, 1956, 1958, 1964, 1965, 1967, 1971, 1973, 1976, 1984, 1985, 1987, 1994, 1996, 1997, 1998, 1999, 2002,2006, 2012, 2027, 2040, 2042
       };
       goldTM.setSparse(deterministicTM);
 
-      const float goldAn    = 0.637255f; //Note: this value is for a (randomly picked) datapoint, it does not have to improve (decrease) with better algorithms
-      const float goldAnAvg = 0.40804f; // ...the averaged value, on the other hand, should improve/decrease. 
+      const float goldAn    = 0.745098f; //Note: this value is for a (randomly picked) datapoint, it does not have to improve (decrease) with better algorithms
+      const float goldAnAvg = 0.408207f; // ...the averaged value, on the other hand, should improve/decrease. 
 
 #ifdef _ARCH_DETERMINISTIC
       if(e+1 == 5000) {

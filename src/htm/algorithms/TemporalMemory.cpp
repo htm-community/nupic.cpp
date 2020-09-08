@@ -141,19 +141,16 @@ void TemporalMemory::initialize(
   reset();
 }
 
-CellIdx TemporalMemory::getLeastUsedCell_(const CellIdx column) {
+CellIdx TemporalMemory::getLeastUsedCell_(const CellIdx column) const {
   if(cellsPerColumn_ == 1) return column;
 
   vector<CellIdx> cells = cellsForColumn(column);
-
-  //TODO: decide if we need to choose randomly from the "least used" cells, or if 1st is fine. 
-  //In that case the line below is not needed, and this method can become const, deterministic results in tests need to be updated
-  //un/comment line below: 
-  rng_.shuffle(cells.begin(), cells.end()); //as min_element selects 1st minimal element, and we want to randomly choose 1 from the minimals.
+  //Note: from the found "least used cells" (if there are more), choose just 1st, not randomly  
+  // or un/comment line below: 
+  //rng_.shuffle(cells.begin(), cells.end()); //as min_element selects 1st minimal element, and we want to randomly choose 1 from the minimals.
 
   const auto compareByNumSegments = [&](const CellIdx a, const CellIdx b) {
-    if(connections.numSegments(a) == connections.numSegments(b)) 
-      return a < b; //TODO rm? 
+    if(connections.numSegments(a) == connections.numSegments(b)) return a < b; //TODO rm? 
     else return connections.numSegments(a) < connections.numSegments(b);
   };
   return *std::min_element(cells.begin(), cells.end(), compareByNumSegments);
@@ -168,24 +165,16 @@ void TemporalMemory::growSynapses_(
   vector<CellIdx> candidates(prevWinnerCells.begin(), prevWinnerCells.end());
   NTA_ASSERT(std::is_sorted(candidates.begin(), candidates.end()));
 
-  //figure the number of new synapses to grow
-  const size_t nActual = std::min(static_cast<size_t>(nDesiredNewSynapses), candidates.size());
-  // ..Check if we're going to surpass the maximum number of synapses.
-  Int overrun = static_cast<Int>(connections.numSynapses(segment) + nActual - maxSynapsesPerSegment_);
-  if (overrun > 0) {
-    connections_.destroyMinPermanenceSynapses(segment, static_cast<size_t>(overrun), prevWinnerCells);
-  }
-  // ..Recalculate in case we weren't able to destroy as many synapses as needed.
-  const size_t nActualWithMax = std::min(nActual, static_cast<size_t>(maxSynapsesPerSegment_) - connections.numSynapses(segment));
+  const size_t nActual = std::min(static_cast<size_t>(nDesiredNewSynapses) + (size_t)connections.numSynapses(segment), (size_t)maxSynapsesPerSegment_); //even with the new additions, synapses fit to segment's limit
 
   // Pick nActual cells randomly.
-  rng_.shuffle(candidates.begin(), candidates.end());
-  const size_t nDesired = connections.numSynapses(segment) + nActualWithMax; //num synapses on seg after this function (+-), see #COND
+  rng_.shuffle(candidates.begin(), candidates.end()); 
   for (const auto syn : candidates) {
     // #COND: this loop finishes two folds: a) we ran out of candidates (above), b) we grew the desired number of new synapses (below)
-    if(connections.numSynapses(segment) == nDesired) break;
+    if(connections.numSynapses(segment) == nActual) break; //this break is also used because conn.createSynapse() can "exit early" if a syn already exists, this IF handles that case too.
     connections_.createSynapse(segment, syn, initialPermanence_); //TODO createSynapse consider creating a vector of new synapses at once?
   }
+  NTA_ASSERT(connections.numSynapses(segment) == nActual);
 }
 
 

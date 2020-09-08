@@ -654,40 +654,6 @@ void Connections::bumpSegment(const Segment segment, const Permanence delta) {
 }
 
 
-void Connections::destroyMinPermanenceSynapses(
-                              const Segment segment, 
-			      const size_t nDestroy,
-                              const vector<CellIdx> &excludeCells)
-{
-  // Don't destroy any cells that are in excludeCells.
-  vector<Synapse> destroyCandidates;
-  for( Synapse synapse : synapsesForSegment(segment)) {
-    const CellIdx presynapticCell = dataForSynapse(synapse).presynapticCell;
-
-    if( not std::binary_search(excludeCells.cbegin(), excludeCells.cend(), presynapticCell)) {
-      destroyCandidates.push_back(synapse);
-    }
-  }
-
-  const auto comparePermanences = [&](const Synapse A, const Synapse B) {
-    const Permanence A_perm = dataForSynapse(A).permanence;
-    const Permanence B_perm = dataForSynapse(B).permanence;
-    if( A_perm == B_perm ) {
-      return A < B;
-    }
-    else {
-      return A_perm < B_perm;
-    }
-  };
-  std::sort(destroyCandidates.begin(), destroyCandidates.end(), comparePermanences);
-
-  const size_t destroy = std::min( nDestroy, destroyCandidates.size() );
-  for(size_t i = 0; i < destroy; i++) {
-    destroySynapse( destroyCandidates[i] );
-  }
-}
-
-
 namespace htm {
 /**
  * print statistics in human readable form
