@@ -447,7 +447,7 @@ void SpatialPooler::initialize(
 
   inhibitionRadius_ = 0;
 
-  connections_.initialize(numColumns_, synPermConnected_);
+  connections_.initialize(numColumns_, synPermConnected_, /*timeseries=*/false); //TODO try TS on
   for (Size i = 0; i < numColumns_; ++i) {
     connections_.createSegment( static_cast<CellIdx>(i) , 1 /* max segments per cell is fixed for SP to 1 */);
 

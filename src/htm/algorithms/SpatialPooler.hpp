@@ -71,7 +71,7 @@ public:
     UInt stimulusThreshold = 0u, 
     Real synPermInactiveDec = 0.008f,
     Real synPermActiveInc = 0.05f, 
-    Real synPermConnected = 0.1f,
+    Real synPermConnected = 0.2f,
     Real minPctOverlapDutyCycles = 0.001f,
     UInt dutyCyclePeriod = 1000u, 
     Real boostStrength = 0.0f,
@@ -221,7 +221,7 @@ public:
 	     UInt numActiveColumnsPerInhArea = 0,
              UInt stimulusThreshold = 0u,
              Real synPermInactiveDec = 0.01f, Real synPermActiveInc = 0.1f,
-             Real synPermConnected = 0.1f, Real minPctOverlapDutyCycles = 0.001f,
+             Real synPermConnected = 0.2f, Real minPctOverlapDutyCycles = 0.001f,
              UInt dutyCyclePeriod = 1000u, Real boostStrength = 0.0f,
              Int seed = 1, UInt spVerbosity = 0u, bool wrapAround = true);
 

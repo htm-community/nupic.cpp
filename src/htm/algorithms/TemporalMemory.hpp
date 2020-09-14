@@ -138,7 +138,7 @@ public:
       CellIdx         cellsPerColumn              = 32,
       SynapseIdx      activationThreshold         = 13,
       Permanence      initialPermanence           = 0.21,
-      Permanence      connectedPermanence         = 0.50,
+      Permanence      connectedPermanence         = 0.20,
       SynapseIdx      minThreshold                = 10,
       SynapseIdx      maxNewSynapseCount          = 20,
       Permanence      permanenceIncrement         = 0.10,
@@ -147,7 +147,7 @@ public:
       Int             seed                        = 42,
       SegmentIdx      maxSegmentsPerCell          = 255,
       SynapseIdx      maxSynapsesPerSegment       = 255,
-      bool            checkInputs                 = true,
+      bool            checkInputs                 = false,
       UInt            externalPredictiveInputs    = 0,
       ANMode	      anomalyMode 		  = ANMode::RAW
       );
@@ -158,7 +158,7 @@ public:
     CellIdx          cellsPerColumn           = 32,
     SynapseIdx       activationThreshold      = 13,
     Permanence    initialPermanence           = 0.21,
-    Permanence    connectedPermanence         = 0.50,
+    Permanence    connectedPermanence         = 0.20,
     SynapseIdx    minThreshold                = 10,
     SynapseIdx    maxNewSynapseCount          = 20,
     Permanence    permanenceIncrement         = 0.10,
@@ -167,7 +167,7 @@ public:
     Int           seed                        = 42,
     SegmentIdx    maxSegmentsPerCell          = 255,
     SynapseIdx    maxSynapsesPerSegment       = 255,
-    bool          checkInputs                 = true,
+    bool          checkInputs                 = false,
     UInt          externalPredictiveInputs    = 0,
     ANMode        anomalyMode                 = ANMode::RAW
     );
