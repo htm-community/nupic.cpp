@@ -174,7 +174,7 @@ private:
       Real minPctOverlapDutyCycles;
       UInt dutyCyclePeriod;
       Real boostStrength;
-      Int  seed;
+      UInt seed;
       UInt spVerbosity;
       bool wrapAround;
       bool learningMode;

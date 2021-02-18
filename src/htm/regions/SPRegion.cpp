@@ -55,7 +55,7 @@ SPRegion::SPRegion(const ValueMap &values, Region *region)
   args_.minPctOverlapDutyCycles = values.getScalarT<Real32>("minPctOverlapDutyCycles", 0.001f);
   args_.dutyCyclePeriod = values.getScalarT<UInt32>("dutyCyclePeriod", 1000);
   args_.boostStrength = values.getScalarT<Real32>("boostStrength", 0.0f);
-  args_.seed = values.getScalarT<Int32>("seed", 1);
+  args_.seed = values.getScalarT<Int32>("seed", 0u);
   args_.spVerbosity = values.getScalarT<UInt32>("spVerbosity", 0);
   args_.wrapAround = values.getScalarT<bool>("wrapAround", true);
   spatialImp_ = values.getString("spatialImp", "");
@@ -471,11 +471,11 @@ Spec *SPRegion::createSpec() {
       "seed",
       ParameterSpec(
           "(int)\n"
-          "Seed for our own pseudo - random number generator. Default ``-1``.",
+          "Seed for our own pseudo - random number generator. Default ``0``(=random), >0 means fixed.",
           NTA_BasicType_Int32,           // type
           1,                             // elementCount
           "",                            // constraints
-          "1",                          // defaultValue
+          "0",                           // defaultValue
           ParameterSpec::CreateAccess)); // access
 
   ns->parameters.add(

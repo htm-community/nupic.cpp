@@ -33,6 +33,8 @@ using std::vector;
 using std::set;
 using namespace htm;
 
+const Permanence MARK_SYNAPSE_AS_REMOVED = -1.0;
+
 Connections::Connections(const CellIdx numCells, 
 		         const Permanence connectedThreshold, 
 			 const bool timeseries) {
@@ -210,14 +212,14 @@ bool Connections::synapseExists_(const Synapse synapse, bool fast) const {
   const bool found = (std::find(synapsesOnSegment.begin(), synapsesOnSegment.end(), synapse) != synapsesOnSegment.end());
   //validate the fast & slow methods for same result:
 #ifdef NTA_ASSERTIONS_ON
-  const bool removed = synapses_[synapse].permanence == -1;
-  NTA_ASSERT( (removed and not found) or (not removed and found) );
+  const bool removed = fabs(synapses_[synapse].permanence - MARK_SYNAPSE_AS_REMOVED) < 0.001f;
+  NTA_CHECK( (removed and not found) or (not removed and found) );
 #endif
   return found;
 
   } else {
   //quick method. Relies on hack in destroySynapse() where we set synapseData.permanence == -1
-  return synapses_[synapse].permanence != -1;
+  return fabs(synapses_[synapse].permanence - MARK_SYNAPSE_AS_REMOVED) < 0.001f;
   }
 }
 
@@ -261,8 +263,8 @@ void Connections::destroySegment(const Segment segment) {
   CellData &cellData = cells_[segmentData.cell];
 
   const auto segmentOnCell = std::find(cellData.segments.cbegin(), cellData.segments.cend(), segment);
-  NTA_ASSERT(segmentOnCell != cellData.segments.cend()) << "Segment to be destroyed not found on the cell!";
-  NTA_ASSERT(*segmentOnCell == segment);
+  NTA_CHECK(segmentOnCell != cellData.segments.cend()) << "Segment to be destroyed not found on the cell!";
+  NTA_CHECK(*segmentOnCell == segment);
 
   cellData.segments.erase(segmentOnCell);
   destroyedSegments_++;
@@ -313,15 +315,18 @@ void Connections::destroySynapse(const Synapse synapse) {
 					  [&](const Synapse a, const Synapse b) -> bool { return dataForSynapse(a).id < dataForSynapse(b).id;}
 					  ); 
 
-  NTA_ASSERT(synapseOnSegment != segmentData.synapses.cend());
-  NTA_ASSERT(*synapseOnSegment == synapse);
+  NTA_CHECK(synapseOnSegment != segmentData.synapses.cend());
+  NTA_CHECK(*synapseOnSegment == synapse);
 
   segmentData.synapses.erase(synapseOnSegment);
   //Note: dataForSynapse(synapse) are not deleted, unfortunately. And are still accessible. 
   //To mark them as "removed", we set SynapseData.permanence = -1, this can be used for a quick check later
-  synapseData.permanence = -1; //marking as "removed"
+  synapseData.permanence = MARK_SYNAPSE_AS_REMOVED; //marking as "removed"
+  //actually erase from synapses_ :
+  //const auto it = synapses_.begin() + synapse;
+  //synapses_.erase(it); //slow
   destroyedSynapses_++;
-  NTA_ASSERT(not synapseExists_(synapse));
+  NTA_ASSERT(not synapseExists_(synapse, false));
 }
 
 
@@ -817,6 +822,7 @@ bool Connections::operator==(const Connections &o) const {
   NTA_CHECK (cells_.size() == o.cells_.size()) << "Connections equals: cells_" << cells_.size() << " vs. " << o.cells_.size();
   NTA_CHECK (cells_ == o.cells_) << "Connections equals: cells_" << cells_.size() << " vs. " << o.cells_.size();
 
+  NTA_CHECK (segments_.size() == o.segments_.size()) << "Connections equals: segments_ size: " << segments_.size() << " vs. " << o.segments_.size();
   NTA_CHECK (segments_ == o.segments_ ) << "Connections equals: segments_";
   NTA_CHECK (destroyedSegments_ == o.destroyedSegments_ ) << "Connections equals: destroyedSegments_";
 
@@ -826,6 +832,7 @@ bool Connections::operator==(const Connections &o) const {
 
   //also check underlying datastructures (segments, and subsequently synapses). Can be time consuming.
   //1.cells:
+  /*
   for(const auto cellD : cells_) {
     //2.segments:
     const auto& segments = cellD.segments;
@@ -838,6 +845,7 @@ bool Connections::operator==(const Connections &o) const {
       }
     }
   }
+  */
 
 
   NTA_CHECK (connectedThreshold_ == o.connectedThreshold_ ) << "Connections equals: connectedThreshold_";
@@ -859,7 +867,10 @@ bool Connections::operator==(const Connections &o) const {
   NTA_CHECK (prunedSegs_ == o.prunedSegs_ ) << "Connections equals: prunedSegs_";
 
   } catch(const htm::Exception& ex) {
-	  std::cout << "Connection equals: differ! " << ex.what();
+    UNUSED(ex); //avoid warning if the debug below is not used.
+    //uncomment below to start debugging Connections op==. It's perfectly 
+    //..normal for unequality here. 
+    NTA_WARN << "Connection equals: differ! " << ex.what();
     return false;
   }
   return true;

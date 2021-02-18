@@ -95,7 +95,7 @@ struct SynapseData: public Serializable {
     NTA_CHECK(id == o.id ) << "SynapseData equals: id";
     } catch(const htm::Exception& ex) {
       UNUSED(ex);    // this avoids the warning if ex is not used.
-      //NTA_WARN << "SynapseData equals: " << ex.what(); //Note: uncomment for debug, tells you 
+      NTA_WARN << "SynapseData equals: " << ex.what(); //Note: uncomment for debug, tells you 
       //where the diff is. It's perfectly OK for the "exception" to occur, as it just denotes
       //that the data is NOT equal.
       return false;
@@ -155,7 +155,7 @@ struct SegmentData: public Serializable {
 
     } catch(const htm::Exception& ex) {
       UNUSED(ex);    // this avoids the warning if ex is not used.
-      //NTA_WARN << "SegmentData equals: " << ex.what();
+      NTA_WARN << "SegmentData equals: " << ex.what();
       return false;
     }
     return true;
@@ -195,7 +195,7 @@ struct CellData : public Serializable {
       NTA_CHECK( segments == o.segments ) << "CellData equals: segments";
     } catch(const htm::Exception& ex) {
       UNUSED(ex);    // this avoids the warning if ex is not used.
-      //NTA_WARN << "CellData equals: " << ex.what();
+      NTA_WARN << "CellData equals: " << ex.what();
       return false;
     }
     return true;
@@ -498,7 +498,7 @@ public:
    * @retval Synapse data.
    */
   inline const SynapseData& dataForSynapse(const Synapse synapse) const {
-    NTA_CHECK(synapseExists_(synapse, true));
+    NTA_CHECK(synapseExists_(synapse, false));
     return synapses_[synapse];
   }
 

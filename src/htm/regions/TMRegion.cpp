@@ -52,7 +52,7 @@ TMRegion::TMRegion(const ValueMap &params, Region *region)
   args_.permanenceIncrement = params.getScalarT<Real32>("permanenceIncrement", 0.10f);
   args_.permanenceDecrement = params.getScalarT<Real32>("permanenceDecrement", 0.10f);
   args_.predictedSegmentDecrement = params.getScalarT<Real32>("predictedSegmentDecrement", 0.0f);
-  args_.seed = params.getScalarT<Int32>("seed", 42);
+  args_.seed = params.getScalarT<Int32>("seed", 0);
   args_.maxSegmentsPerCell = params.getScalarT<UInt32>("maxSegmentsPerCell", 255u);
   args_.maxSynapsesPerSegment = params.getScalarT<UInt32>("maxSynapsesPerSegment", 255u);
   args_.checkInputs = params.getScalarT<bool>("checkInputs", true);
@@ -447,11 +447,11 @@ Spec *TMRegion::createSpec() {
       "seed",
       ParameterSpec("(int)  Random number generator seed. The seed affects the random "
                     "aspects of initialization like the initial permanence values. A "
-                    "fixed value ensures a reproducible result.",
+                    "fixed value > 0 ensures a reproducible result.",
                     NTA_BasicType_Int32,              // type
                     1,                                // elementCount
                     "",                               // constraints
-                    "42",                             // defaultValue
+                    "0",                             // defaultValue
                     ParameterSpec::CreateAccess)); // access
 
   ///////// Parameters not part of the calling arguments //////////

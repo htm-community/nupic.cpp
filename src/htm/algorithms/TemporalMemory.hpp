@@ -104,7 +104,8 @@ public:
    * something like 4% * 0.01 = 0.0004).
    *
    * @param seed
-   * Seed for the random number generator.
+   * Seed for the random number generator. 0 (default) means truly random, 
+   * use > 0 for fixed pseudo-random. 
    *
    * @param maxSegmentsPerCell
    * The maximum number of segments per cell.
@@ -144,7 +145,7 @@ public:
       Permanence      permanenceIncrement         = 0.10,
       Permanence      permanenceDecrement         = 0.10,
       Permanence      predictedSegmentDecrement   = 0.0,
-      Int             seed                        = 42,
+      UInt            seed                        = 0, //random
       SegmentIdx      maxSegmentsPerCell          = 255,
       SynapseIdx      maxSynapsesPerSegment       = 255,
       bool            checkInputs                 = true,
@@ -164,7 +165,7 @@ public:
     Permanence    permanenceIncrement         = 0.10,
     Permanence    permanenceDecrement         = 0.10,
     Permanence    predictedSegmentDecrement   = 0.0,
-    Int           seed                        = 42,
+    UInt          seed                        = 0,
     SegmentIdx    maxSegmentsPerCell          = 255,
     SynapseIdx    maxSynapsesPerSegment       = 255,
     bool          checkInputs                 = true,
@@ -595,6 +596,10 @@ public:
   virtual bool operator==(const TemporalMemory &other) const;
   inline bool operator!=(const TemporalMemory &other) const { return not this->operator==(other); }
 
+  void setSeed(UInt seed) {
+    rng_ = Random(seed);
+  }
+
   //----------------------------------------------------------------------
   // Debugging helpers
   //----------------------------------------------------------------------
@@ -638,6 +643,9 @@ public:
    *
    */
   SDR cellsToColumns(const SDR& cells) const;
+
+
+
 private:
   void punishPredictedColumn_(vector<Segment>::const_iterator columnMatchingSegmentsBegin, 
 		              vector<Segment>::const_iterator columnMatchingSegmentsEnd, 

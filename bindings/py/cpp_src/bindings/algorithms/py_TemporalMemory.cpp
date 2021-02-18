@@ -112,7 +112,8 @@ Argument predictedSegmentDecrement
     0.01 = 0.0004
 
 Argument seed
-    Seed for the random number generator.
+    Seed for the random number generator. Default (0) means truly random, 
+    > 0 is a fixed pseudorandom-sequence. See Random.hpp. 
 
 Argument maxSegmentsPerCell
     The maximum number of segments per cell.
@@ -146,7 +147,7 @@ Argument anomalyMode (optional, default ANMode::RAW) selects mode for `TM.anomal
                 , py::arg("permanenceIncrement") = 0.1
                 , py::arg("permanenceDecrement") = 0.1
                 , py::arg("predictedSegmentDecrement") = 0.0
-                , py::arg("seed") = 42
+                , py::arg("seed") = 0
                 , py::arg("maxSegmentsPerCell") = 255
                 , py::arg("maxSynapsesPerSegment") = 255
                 , py::arg("checkInputs") = true

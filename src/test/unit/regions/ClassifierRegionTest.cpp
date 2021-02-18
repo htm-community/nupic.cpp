@@ -101,7 +101,7 @@ TEST(ClassifierRegionTest, asCategoryDecoder) {
   Network net;
 
   std::shared_ptr<Region> encoder = net.addRegion("encoder", "RDSEEncoderRegion", "{size: 400, seed: 42, category: true, activeBits: 40}");
-  std::shared_ptr<Region> sp = net.addRegion("sp", "SPRegion", "{columnCount: 1000, globalInhibition: true}");
+  std::shared_ptr<Region> sp = net.addRegion("sp", "SPRegion", "{columnCount: 1000, globalInhibition: true, seed: 1}");
   std::shared_ptr<Region> classifier = net.addRegion("classifier", "ClassifierRegion", "{learn: true}");
 
   net.link("encoder", "sp", "", "", "encoded", "bottomUpIn");
@@ -144,7 +144,7 @@ TEST(ClassifierRegionTest, asRealDecoder) {
   Network net;
 
   std::shared_ptr<Region> encoder = net.addRegion("encoder", "RDSEEncoderRegion", "{size: 400, radius: 0.1, seed: 42, activeBits: 40}");
-  std::shared_ptr<Region> sp = net.addRegion("sp", "SPRegion", "{columnCount: 1000, globalInhibition: true}");
+  std::shared_ptr<Region> sp = net.addRegion("sp", "SPRegion", "{columnCount: 1000, globalInhibition: true, seed: 1}");
   std::shared_ptr<Region> classifier = net.addRegion("classifier", "ClassifierRegion", "{learn: true}");
 
   net.link("encoder", "sp", "", "", "encoded", "bottomUpIn");

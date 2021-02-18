@@ -173,9 +173,9 @@ Argument boostStrength A number greater or equal than 0, used to
         too much boosting may also lead to instability of SP outputs.
 
 
-Argument seed Seed for our random number generator. If seed is < 0
+Argument seed Seed for our random number generator. If seed is 0
         a randomly generated seed is used. The behavior of the spatial
-        pooler is deterministic once the seed is set.
+        pooler is deterministic once the seed is set > 0.
 
 Argument spVerbosity spVerbosity level: 0, 1, 2, or 3
 
@@ -197,7 +197,7 @@ Argument wrapAround boolean value that determines whether or not inputs
             , py::arg("minPctOverlapDutyCycle") = 0.001
             , py::arg("dutyCyclePeriod") = 1000
             , py::arg("boostStrength") = 0.0
-            , py::arg("seed") = 1
+            , py::arg("seed") = 0
             , py::arg("spVerbosity") = 0
             , py::arg("wrapAround") = true
         );

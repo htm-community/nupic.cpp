@@ -72,17 +72,24 @@ SpatialPooler::SpatialPooler() {
 }
 
 SpatialPooler::SpatialPooler(
-    const vector<UInt> inputDimensions, const vector<UInt> columnDimensions,
-    UInt potentialRadius, Real potentialPct, bool globalInhibition,
-    Real localAreaDensity, UInt numActiveColumnsPerInhArea,
-    UInt stimulusThreshold, Real synPermInactiveDec, Real synPermActiveInc,
-    Real synPermConnected, Real minPctOverlapDutyCycles, UInt dutyCyclePeriod,
-    Real boostStrength, Int seed, UInt spVerbosity, bool wrapAround)
-    : SpatialPooler::SpatialPooler()
+    const vector<UInt> inputDimensions, 
+    const vector<UInt> columnDimensions,
+    UInt potentialRadius, 
+    Real potentialPct, 
+    bool globalInhibition,
+    Real localAreaDensity, 
+    UInt numActiveColumnsPerInhArea,
+    UInt stimulusThreshold, 
+    Real synPermInactiveDec, 
+    Real synPermActiveInc,
+    Real synPermConnected, 
+    Real minPctOverlapDutyCycles, 
+    UInt dutyCyclePeriod,
+    Real boostStrength, 
+    UInt seed, 
+    UInt spVerbosity, 
+    bool wrapAround) : SpatialPooler::SpatialPooler()
 {
-  // The current version number for serialzation.
-  version_ = 2;
-
   initialize(inputDimensions,
              columnDimensions,
              potentialRadius,
@@ -117,14 +124,14 @@ UInt SpatialPooler::getNumInputs() const { return numInputs_; }
 UInt SpatialPooler::getPotentialRadius() const { return potentialRadius_; }
 
 void SpatialPooler::setPotentialRadius(UInt potentialRadius) {
-  NTA_CHECK(potentialRadius < numInputs_);
+  NTA_CHECK(potentialRadius < numInputs_) << "SP setPotentialRadius: " << potentialRadius << " must be < " << numInputs_;
   potentialRadius_ = potentialRadius;
 }
 
 Real SpatialPooler::getPotentialPct() const { return potentialPct_; }
 
 void SpatialPooler::setPotentialPct(Real potentialPct) {
-  NTA_CHECK(potentialPct > 0.0f && potentialPct <= 1.0f);
+  NTA_CHECK(potentialPct > 0.0f && potentialPct <= 1.0f) << "SP setPotentialPct(): out of bounds (0, 1]";
   potentialPct_ = potentialPct;
 }
 
@@ -386,7 +393,7 @@ void SpatialPooler::initialize(
     Real minPctOverlapDutyCycles, 
     UInt dutyCyclePeriod,
     Real boostStrength, 
-    Int seed, 
+    UInt seed, 
     UInt spVerbosity, 
     bool wrapAround) {
 
@@ -420,9 +427,9 @@ void SpatialPooler::initialize(
 
   rng_ = Random(seed);
 
-  potentialRadius_ = potentialRadius > numInputs_ ? numInputs_ : potentialRadius;
-  NTA_CHECK(potentialPct > 0 && potentialPct <= 1);
-  potentialPct_ = potentialPct;
+  potentialRadius_ = min(numInputs_ , potentialRadius);
+  //!setPotentialRadius(potentialRadius);
+  setPotentialPct(potentialPct);;
   globalInhibition_ = globalInhibition;
   stimulusThreshold_ = stimulusThreshold;
   synPermInactiveDec_ = synPermInactiveDec;
@@ -1001,45 +1008,91 @@ void SpatialPooler::printState(const vector<Real> &state, std::ostream& out) con
 }
 
 
-/** equals implementation based on text serialization */
 bool SpatialPooler::operator==(const SpatialPooler& o) const{
-  // Store the simple variables first.
-  if (numInputs_ != o.numInputs_) return false;
-  if (numColumns_ != o.numColumns_) return false;
-  if (potentialRadius_ != o.potentialRadius_) return false;
-  if (potentialPct_ != o.potentialPct_) return false;
-  if (initConnectedPct_ != o.initConnectedPct_) return false;
-  if (globalInhibition_ != o.globalInhibition_) return false;
-  if (numActiveColumnsPerInhArea_ != o.numActiveColumnsPerInhArea_) return false;
-  if (localAreaDensity_ != o.localAreaDensity_) return false;
-  if (stimulusThreshold_ != o.stimulusThreshold_) return false;
-  if (inhibitionRadius_ != o.inhibitionRadius_) return false;
-  if (dutyCyclePeriod_ != o.dutyCyclePeriod_) return false;
-  if (boostStrength_ != o.boostStrength_) return false;
-  if (iterationNum_ != o.iterationNum_) return false;
-  if (iterationLearnNum_ != o.iterationLearnNum_) return false;
-  if (spVerbosity_ != o.spVerbosity_) return false;
-  if (updatePeriod_ != o.updatePeriod_) return false;
-  if (synPermInactiveDec_ != o.synPermInactiveDec_) return false;
-  if (synPermActiveInc_ != o.synPermActiveInc_) return false;
-  if (synPermBelowStimulusInc_ != o.synPermBelowStimulusInc_) return false;
-  if (synPermConnected_ != o.synPermConnected_) return false;
-  if (minPctOverlapDutyCycles_ != o.minPctOverlapDutyCycles_) return false;
-  if (wrapAround_ != o.wrapAround_) return false;
+  //Note on implementation: NTA_CHECKs are used, so we know 
+  //what condition failed. 
+  try {
 
-  // compare vectors.
-  if (inputDimensions_      != o.inputDimensions_) return false;
-  if (columnDimensions_     != o.columnDimensions_) return false;
-  if (boostFactors_         != o.boostFactors_) return false;
-  if (overlapDutyCycles_    != o.overlapDutyCycles_) return false;
-  if (activeDutyCycles_     != o.activeDutyCycles_) return false;
-  if (minOverlapDutyCycles_ != o.minOverlapDutyCycles_) return false;
-
-  // compare connections
-  if (connections_ != o.connections_) return false;
+  // Check SP's derect member variables first:.
+  NTA_CHECK (numInputs_ == o.numInputs_) << "SP equals: numInputs:" << numInputs_ << " vs. " << o.numInputs_ ;
+  NTA_CHECK (numColumns_ == o.numColumns_) << "SP equals: numColumns: " << numColumns_ << " vs. " << o.numColumns_;
+  NTA_CHECK (potentialRadius_ == o.potentialRadius_) << "SP equals: potentialRadius: " << potentialRadius_ << " vs. " << o.potentialRadius_;
+  NTA_CHECK (potentialPct_ == o.potentialPct_) << "SP equals: potentialPct: " << potentialPct_ << " vs. " << o.potentialPct_;
+  NTA_CHECK (initConnectedPct_ == o.initConnectedPct_) << "SP equals: initConnectedPct: " << initConnectedPct_ << " vs. " << o.initConnectedPct_;
+  NTA_CHECK (globalInhibition_ == o.globalInhibition_) << "SP equals: globalInhibition: " << globalInhibition_ << " vs. " << o.globalInhibition_;
+  NTA_CHECK (numActiveColumnsPerInhArea_ == o.numActiveColumnsPerInhArea_) << "SP equals: numActiveColumnsPerInhArea: " 
+	  << numActiveColumnsPerInhArea_ << " vs. " << o.numActiveColumnsPerInhArea_;
+  NTA_CHECK (localAreaDensity_ == o.localAreaDensity_) << "SP equals: localAreaDensity: " << localAreaDensity_ << " vs. " << o.localAreaDensity_;
+  NTA_CHECK (stimulusThreshold_ == o.stimulusThreshold_) << "SP equals: stimulusThreshold: " << stimulusThreshold_ << " vs. " << o.stimulusThreshold_;
+  NTA_CHECK (inhibitionRadius_ == o.inhibitionRadius_) << "SP equals: inhibitionRadius: " << inhibitionRadius_ << " vs. " << o.inhibitionRadius_;
+  NTA_CHECK (dutyCyclePeriod_ == o.dutyCyclePeriod_) << "SP equals: dutyCyclePeriod: " << dutyCyclePeriod_ << " vs. " << o.dutyCyclePeriod_;
+  NTA_CHECK (boostStrength_ == o.boostStrength_) << "SP equals: boostStrength: " << boostStrength_ << " vs. " << o.boostStrength_;
+  NTA_CHECK (iterationNum_ == o.iterationNum_) << "SP equals: iterationNum: " << iterationNum_ << " vs. " << o.iterationNum_;
+  NTA_CHECK (iterationLearnNum_ == o.iterationLearnNum_) << "SP equals: iterationLearnNum: " << iterationLearnNum_ << " vs. " << o.iterationLearnNum_;
+  NTA_CHECK (spVerbosity_ == o.spVerbosity_) << "SP equals: spVerbosity: " << spVerbosity_ << " vs. " << o.spVerbosity_;
+  NTA_CHECK (updatePeriod_ == o.updatePeriod_) << "SP equals: updatePeriod: " << updatePeriod_ << " vs. " << o.updatePeriod_;
+  NTA_CHECK (synPermInactiveDec_ == o.synPermInactiveDec_) << "SP equals: synPermInactiveDec: " << synPermInactiveDec_ << " vs. " << o.synPermInactiveDec_;
+  NTA_CHECK (synPermActiveInc_ == o.synPermActiveInc_) << "SP equals: synPermActiveInc: " << synPermActiveInc_ << " vs. " << o.synPermActiveInc_;
+  NTA_CHECK (synPermBelowStimulusInc_ == o.synPermBelowStimulusInc_) << "SP equals: synPermBelowStimulusInc: " << synPermBelowStimulusInc_ << " vs. " << o.synPermBelowStimulusInc_;
+  NTA_CHECK (synPermConnected_ == o.synPermConnected_) << "SP equals: synPermConnected: " << synPermConnected_ << " vs. " << o.synPermConnected_;
+  NTA_CHECK (minPctOverlapDutyCycles_ == o.minPctOverlapDutyCycles_) 
+	  << "SP equals: minPctOverlapDutyCycles: " << minPctOverlapDutyCycles_ << " vs. " << minPctOverlapDutyCycles_;
+  NTA_CHECK (wrapAround_ == o.wrapAround_) << "SP equals: wrapAround: " << wrapAround_ << " vs. " << o.wrapAround_;
 
   //Random
-  if (rng_ != o.rng_) return false;
+  NTA_CHECK (rng_ == o.rng_) << "SP equals: rng differs";
+
+  // compare connections
+  NTA_CHECK (connections_ == o.connections_) << "SP equals: connections: " << connections_ << " vs. " << o.connections_;
+
+
+  // compare vectors.
+  NTA_CHECK (inputDimensions_      == o.inputDimensions_) << "SP equals: inputDimensions differ";
+  NTA_CHECK (columnDimensions_     == o.columnDimensions_) << "SP equals: columnDimensions differ";
+  NTA_CHECK (boostFactors_         == o.boostFactors_) << "SP equals: boostFactors";
+  NTA_CHECK (overlapDutyCycles_    == o.overlapDutyCycles_) << "SP equals: overlapDutyCycles"; //FIXME seems bug is here?!
+  NTA_CHECK (activeDutyCycles_     == o.activeDutyCycles_) << "SP equals: activeDutyCucles"; //FIXME here?
+  NTA_CHECK (minOverlapDutyCycles_ == o.minOverlapDutyCycles_) << "SP equals: minOverlapDutyCycles";
+
+  //detailed compare potentials
+  for (UInt i = 0; i < numColumns_; i++) {
+    std::vector<UInt> potential1(numInputs_, 0);
+    std::vector<UInt> potential2(numInputs_, 0);
+    this->getPotential(i, potential1.data()); //TODO make the method return vect?
+    o.getPotential(i, potential2.data());
+    NTA_CHECK(potential1 == potential2) << "SP equals: potentials"; //FIXME
+  }
+
+  // check get permanences
+  for (UInt i = 0; i < numColumns_; i++) {
+    const auto& perm1 = this->getPermanence(i);
+    const auto& perm2 = o.getPermanence(i);
+    NTA_CHECK(perm1 == perm2) << "SP equals: permanences";
+  }
+
+  // check get connected synapses
+  for (UInt i = 0; i < numColumns_; i++) {
+    const auto& con1 = this->getPermanence(i, this->connections.getConnectedThreshold());
+    const auto& con2 = o.getPermanence(i, o.connections.getConnectedThreshold());
+    NTA_CHECK(con1 == con2) << "SP equals: connected synapses";
+  }
+
+  {
+  std::vector<UInt> conCounts1(numColumns_, 0);
+  std::vector<UInt> conCounts2(numColumns_, 0);
+  this->getConnectedCounts(conCounts1.data());
+  o.getConnectedCounts(conCounts2.data());
+  NTA_CHECK(conCounts1 == conCounts2) << "SP equals: connected column counts";
+  }
+
+  // compare connections
+  NTA_CHECK (connections_ == o.connections_) << "SP equals: connections: " << connections_ << " vs. " << o.connections_;
+
+  } catch(const htm::Exception& ex) {
+    //some check failed -> not equal
+    NTA_WARN << "SP unequal output: " << ex.what();
+    return false;
+  }
   return true;
 
 }

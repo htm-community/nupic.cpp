@@ -792,15 +792,18 @@ TEST(ConnectionsTest, testSaveLoad) {
   c1.destroySegment(segment);
 
   computeSampleActivity(c1);
+  ASSERT_NE(c1, c2) << "shouldn't be eq";
 
   {
     stringstream ss;
     c1.save(ss);
     c2.load(ss);
   }
+  if(c1 == c2) NTA_WARN << "nice";
 
-  ASSERT_EQ(c1, c2);
+  ASSERT_EQ(c1, c2) << "Deserialized must be equal";
 }
+
 
 TEST(ConnectionsTest, testCreateSegmentOverflow) {
     const auto LIMIT = std::numeric_limits<Segment>::max();
@@ -819,6 +822,7 @@ TEST(ConnectionsTest, testCreateSegmentOverflow) {
   }
 }
 
+
 TEST(ConnectionsTest, testCreateSynapseOverflow) {
   const auto LIMIT = std::numeric_limits<Synapse>::max();
   if(LIMIT <= 256) { //connections::Synapse is too large (likely uint32), so this test would run, but memory
@@ -836,6 +840,7 @@ TEST(ConnectionsTest, testCreateSynapseOverflow) {
       << " total num syns: " << (size_t)c.numSynapses() << "data-type limit " << LIMIT;
   }
 }
+
 
 TEST(ConnectionsTest, testTimeseries) {
   Connections C( 1, .5, true );
@@ -870,4 +875,17 @@ TEST(ConnectionsTest, testTimeseries) {
     const auto &synData = C.dataForSynapse( syn );
     ASSERT_TRUE( (synData.permanence == 0.0f) or (synData.permanence == 1.0f) );
   }
+}
+
+
+TEST(ConnectionsTest, testEquals) {
+  Connections c1(100, 0.5, false), c2(100, 0.5, false);
+  ASSERT_EQ(c1, c2) << "Conn Eq: 1"; 
+
+  setupSampleConnections(c1); //..creates some synapses.
+  ASSERT_NE(c1, c2) << "Conn Eq: 2";
+
+  setupSampleConnections(c2);
+  ASSERT_EQ(c1, c2) << "Conn Eq: 3";
+
 }

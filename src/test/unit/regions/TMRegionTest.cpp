@@ -211,9 +211,9 @@ TEST(TMRegionTest, testLinking) {
   // you can use JSON format as well)
   std::string parameters = "{activeOutputCount: " + std::to_string(dataWidth) + "}";
   std::shared_ptr<Region> region1 = net.addRegion("region1", "FileInputRegion",parameters);
-  std::shared_ptr<Region> region2 = net.addRegion("region2", "SPRegion", "{dim: [2,10]}");
+  std::shared_ptr<Region> region2 = net.addRegion("region2", "SPRegion", "{dim: [2,10], seed: 1}");
   std::shared_ptr<Region> region3 = net.addRegion("region3", "TMRegion",
-                                        "{activationThreshold: 11, cellsPerColumn: 5}");
+                                        "{activationThreshold: 11, cellsPerColumn: 5, seed: 42}");
   std::shared_ptr<Region> region4 = net.addRegion("region4", "FileOutputRegion",
                                         "{outputFile: '" + test_output_file + "'}");
 
@@ -446,7 +446,7 @@ TEST(TMRegionTest, testGetParameters) {
   "predictedSegmentDecrement": 0.000000,
   "maxSegmentsPerCell": 255,
   "maxSynapsesPerSegment": 255,
-  "seed": 42,
+  "seed": 0,
   "inputWidth": 0,
   "learningMode": true,
   "activeOutputCount": 0,
@@ -472,7 +472,7 @@ TEST(TMRegionTest, testGetParameters) {
   "predictedSegmentDecrement": 0.000000,
   "maxSegmentsPerCell": 255,
   "maxSynapsesPerSegment": 255,
-  "seed": 42,
+  "seed": 0,
   "inputWidth": 100,
   "learningMode": true,
   "activeOutputCount": 0,

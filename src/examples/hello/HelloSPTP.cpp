@@ -95,6 +95,12 @@ EPOCHS = 2; // make test faster in Debug
   Metrics statsSPglobal(outSPglobal, 1000);
   Metrics statsTM(outTM, 1000);
 
+  //uses fixed seed for deterministic output checks:
+  Random rnd(42);
+  spGlobal.setSeed(1);
+  spLocal.setSeed(1);
+  tm.setSeed(42);
+
   /*
    * For example: fn = sin(x) -> periodic >= 2Pi ~ 6.3 && x+=0.01 -> 630 steps to 1st period -> window >= 630
    */
@@ -112,6 +118,7 @@ EPOCHS = 2; // make test faster in Debug
   for (UInt e = 0; e < EPOCHS; e++) { //FIXME EPOCHS is actually steps, there's just 1 pass through data/epoch.
 
     //Encode
+    {
     tEnc.start();
     x+=0.01f; //step size for fn(x)
     enc.encode(sin(x), input); //model sin(x) function //TODO replace with CSV data
@@ -121,32 +128,38 @@ EPOCHS = 2; // make test faster in Debug
     tRng.start();
     input.addNoise(0.01f, rnd); //change 1% of the SDR for each iteration, this makes a random sequence, but seemingly stable
     tRng.stop();
+    }
 
     //SP (global and local)
     if(useSPlocal) {
-    tSPloc.start();
-    spLocal.compute(input, true, outSPlocal);
-    tSPloc.stop();
+      tSPloc.start();
+      spLocal.compute(input, true, outSPlocal);
+      tSPloc.stop();
+
+      outSP = outSPlocal;
     }
 
     if(useSPglobal) {
-    tSPglob.start();
-    spGlobal.compute(input, true, outSPglobal);
-    tSPglob.stop();
+      tSPglob.start();
+      spGlobal.compute(input, true, outSPglobal);
+      tSPglob.stop();
+    
+      outSP = outSPglobal;
     }
-    outSP = outSPglobal; //toggle if local/global SP is used further down the chain (TM, Anomaly)
 
     // TM
     if(useTM) {
-    tTM.start();
+      tTM.start();
       tm.compute(outSP, true /*learn*/); //to uses output of SPglobal
       tm.activateDendrites(); //required to enable tm.getPredictiveCells()
-      outTM = tm.cellsToColumns( tm.getPredictiveCells() );
       tTM.stop();
+
+      outTM = tm.cellsToColumns( tm.getPredictiveCells() );
     }
 
 
     //Anomaly (pure x likelihood)
+    {
     an = tm.anomaly;
     avgAnom10.compute(an); //moving average
     if(e % 1000 == 0) {
@@ -157,6 +170,7 @@ EPOCHS = 2; // make test faster in Debug
     tAnLikelihood.start();
     anLikely = anLikelihood.anomalyProbability(an); 
     tAnLikelihood.stop();
+    }
 
 
     // print
@@ -202,27 +216,36 @@ EPOCHS = 2; // make test faster in Debug
 
       SDR goldSP({COLS});
       const SDR_sparse_t deterministicSP{
-        62, 72, 73, 82, 85, 102, 263, 277, 287, 303, 306, 308, 309, 322, 337, 339, 340, 352, 370, 493, 1094, 1095, 1114, 1115, 1120, 1463, 1512, 1518, 1647, 1651, 1691, 1694, 1729, 1745, 1746, 1760, 1770, 1774, 1775, 1781, 1797, 1798, 1803, 1804, 1805, 1812, 1827, 1828, 1831, 1832, 1858, 1859, 1860, 1861, 1862, 1875, 1878, 1880, 1881, 1898, 1918, 1923, 1929, 1931,1936, 1950, 1953, 1956, 1958, 1961, 1964, 1965, 1967, 1971, 1973, 1975, 1976, 1979, 1980, 1981, 1982, 1984, 1985, 1986, 1988, 1991, 1994, 1996, 1997, 1998, 1999, 2002, 2006, 2008, 2011, 2012, 2013, 2017, 2019, 2022, 2027, 2030
+        68, 79, 86, 98, 105, 257, 263, 286, 302, 306, 307, 309, 310, 313, 315, 317, 318, 320, 323, 325, 326, 329, 334, 350, 356, 363, 539, 935, 1089, 1093, 1098, 1111, 1112, 1118, 1120, 1124, 1133, 1508, 1513, 1521, 1624, 1746, 1765, 1774, 1775, 1776, 1780, 1784, 1787, 1802, 1804, 1811, 1813, 1815, 1819, 1844, 1845, 1865, 1876, 1884, 1891, 1900, 1903, 1904, 1908, 1909, 1925, 1926, 1928, 1932, 1933, 1943, 1947, 1952, 1955, 1959, 1961, 1962, 1964, 1966, 1967, 1969, 1970, 1971, 1973, 1975, 1977, 1980, 1981, 1982, 1983, 1985, 1987, 1991, 1994, 2002, 2004, 2011, 2027, 2030, 2031, 2045
       };
       goldSP.setSparse(deterministicSP);
 
       SDR goldSPlocal({COLS});
       const SDR_sparse_t deterministicSPlocal{
-        12, 13, 71, 72, 75, 78, 82, 85, 131, 171, 182, 186, 189, 194, 201, 263, 277, 287, 308, 319, 323, 337, 339, 365, 407, 429, 432, 434, 443, 445, 493, 494, 502, 508, 523, 542, 554, 559, 585, 586, 610, 611, 612, 644, 645, 647, 691, 698, 699, 701, 702, 707, 777, 809, 810, 811, 833, 839, 841, 920, 923, 928, 929, 935, 955, 1003, 1005, 1073, 1076, 1094, 1095, 1114, 1115, 1133, 1134, 1184, 1203, 1232, 1233, 1244, 1253, 1268, 1278, 1291, 1294, 1306, 1309, 1331, 1402, 1410, 1427, 1434, 1442, 1463, 1508, 1512, 1514, 1515, 1518, 1561, 1564, 1623, 1626, 1630, 1640, 1647, 1691, 1694, 1729, 1745, 1746, 1760, 1797, 1804, 1805, 1812, 1827, 1831, 1858, 1861, 1862, 1918, 1956, 1961, 1965, 1971, 1975, 1994, 2012
+        17, 71, 75, 79, 81, 86, 89, 164, 189, 198, 203, 262, 297, 314, 324, 326, 329, 337, 360, 379, 432, 443, 448, 452, 509, 520, 525, 526, 529, 536, 612, 619, 624, 630, 649, 652, 693, 717, 719, 720, 754, 810, 813, 815, 835, 839, 849, 884, 890, 914, 925, 931, 937, 945, 971, 1016, 1088, 1089, 1095, 1105, 1109, 1133, 1159, 1209, 1214, 1228, 1235, 1241, 1244, 1273, 1295, 1314, 1329, 1336, 1342, 1427, 1435, 1436, 1448, 1461, 1486, 1496, 1500, 1523, 1561, 1572, 1576, 1603, 1610, 1624, 1635, 1649, 1664, 1685, 1725, 1732, 1741, 1758, 1800, 1804, 1811, 1824, 1862, 1870, 1882, 1883, 1887, 1903, 1956, 1963, 1971, 1977, 1984, 2015
       };
       goldSPlocal.setSparse(deterministicSPlocal);
 
       SDR goldTM({COLS});
       const SDR_sparse_t deterministicTM{
-        72, 85, 102, 114, 122, 126, 287, 308, 337, 339, 542, 920, 939, 952, 1268, 1507, 1508, 1518, 1546, 1547, 1626, 1627, 1633, 1668, 1727, 1804, 1805, 1827, 1832, 1844, 1859, 1862, 1918, 1920, 1924, 1931, 1933, 1945, 1961, 1965, 1966, 1968, 1970, 1973, 1975, 1976, 1977, 1979, 1986, 1987, 1991, 1992, 1996, 1998, 2002, 2006, 2008, 2012, 2042, 2045
+        79, 92, 98, 128, 136, 286, 307, 309, 310, 313, 315, 325, 356, 454, 539, 1093, 1111, 1112, 1120, 1237, 1278, 1467, 1497, 1508, 1513, 1521, 1614, 1624, 1635, 1668, 1669, 1673,1699, 1774, 1775, 1776, 1780, 1784, 1808, 1813, 1815, 1816, 1821, 1827, 1845, 1865, 1900, 1911, 1913, 1925, 1929, 1931, 1932, 1933, 1940, 1941, 1947, 1949, 1955, 1956, 1959, 1961, 1962, 1964, 1966, 1967, 1968, 1969, 1970, 1972, 1975, 1977, 1978, 1979, 1981, 1982, 1985, 1987, 1988, 1991, 1994, 2027, 2030, 2044, 2045
       };
       goldTM.setSparse(deterministicTM);
 
-      const float goldAn    = 0.637255f; //Note: this value is for a (randomly picked) datapoint, it does not have to improve (decrease) with better algorithms
-      const float goldAnAvg = 0.40804f; // ...the averaged value, on the other hand, should improve/decrease. 
+      const float goldAn    = 0.470588f; //Note: this value is for a (randomly picked) datapoint, it does not have to improve (decrease) with better algorithms
+      const float goldAnAvg = 0.40961f; // ...the averaged value, on the other hand, should improve/decrease. 
 
 #ifdef _ARCH_DETERMINISTIC
       if(e+1 == 5000) {
+	// For debugging serialization: save SP's state in 1 step, comment out, recompile, load SP and compare in another 
+	// step 1:
+	spGlobal.saveToFile("/tmp/spG.save");
+	// step 2:
+	SpatialPooler resumedSP;
+	resumedSP.loadFromFile("/tmp/spG.save");
+	NTA_CHECK(spGlobal == resumedSP) << "SPs differ!";
+	// --end of debugging
+
         //these hand-written values are only valid for EPOCHS = 5000 (default), but not for debug and custom runs.
         NTA_CHECK(input == goldEnc) << "Deterministic output of Encoder failed!\n" << input << "should be:\n" << goldEnc;
         if(useSPglobal) { NTA_CHECK(outSPglobal == goldSP) << "Deterministic output of SP (g) failed!\n" << outSP << "should be:\n" << goldSP; }

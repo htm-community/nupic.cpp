@@ -167,7 +167,7 @@ private:
     Real32 permanenceIncrement;
     Real32 permanenceDecrement;
     Real32 predictedSegmentDecrement;
-    Int32 seed;
+    UInt32 seed;
     Int32 maxSegmentsPerCell;
     Int32 maxSynapsesPerSegment;
     UInt32 externalPredictiveInputs;
