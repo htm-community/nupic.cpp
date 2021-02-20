@@ -139,14 +139,14 @@ class SPRegion  : public RegionImpl, Serializable
     size_t getNodeOutputElementCount(const std::string& outputName) const override;
 
 		/* -----------  Optional RegionImpl Interface methods ------- */
-    UInt32 getParameterUInt32(const std::string& name, Int64 index) override;
-    Int32 getParameterInt32(const std::string& name, Int64 index) override;
-    UInt64 getParameterUInt64(const std::string &name, Int64 index) override;
-    Real32 getParameterReal32(const std::string& name, Int64 index) override;
-    bool   getParameterBool(const std::string& name, Int64 index) override;
-    std::string getParameterString(const std::string& name, Int64 index) override;
-    void getParameterArray(const std::string& name, Int64 index, Array & array) override;
-    size_t getParameterArrayCount(const std::string &name, Int64 index) override;
+    UInt32 getParameterUInt32(const std::string& name, Int64 index) const override;
+    Int32 getParameterInt32(const std::string& name, Int64 index) const override;
+    UInt64 getParameterUInt64(const std::string &name, Int64 index) const override;
+    Real32 getParameterReal32(const std::string& name, Int64 index) const override;
+    bool   getParameterBool(const std::string& name, Int64 index) const override;
+    std::string getParameterString(const std::string& name, Int64 index) const override;
+    void getParameterArray(const std::string& name, Int64 index, Array & array) const override;
+    size_t getParameterArrayCount(const std::string &name, Int64 index) const override;
 
 
     void setParameterUInt32(const std::string& name, Int64 index, UInt32 value) override;

@@ -30,6 +30,8 @@ from htm.advanced.frameworks.location.path_integration_union_narrowing import co
 from htm.advanced.frameworks.location.path_integration_union_narrowing import computeRatModuleParametersFromCellCount
 from htm.advanced.support.logging_decorator import LoggingDecorator
 
+np.set_printoptions(formatter={'float': '{: 0.3f}'.format})
+
 def createL4L6aLocationColumn(network, L4Params, L6aParams, inverseReadoutResolution=None, baselineCellsPerAxis=6, suffix=""):
     """
     Create a single column network containing L4 and L6a layers. L4 layer

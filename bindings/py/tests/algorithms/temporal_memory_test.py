@@ -59,6 +59,29 @@ class TemporalMemoryBindingsTest(unittest.TestCase):
     active = tm.getActiveCells()
     self.assertTrue( active.getSum() > 0 )
 
+
+  def testPerformanceLarge(self):
+    LARGE = 9000
+    ITERS = 100 # This is lowered for unittest. Try 1000, 5000,...
+    from htm.bindings.engine_internal import Timer
+    t = Timer()
+
+    inputs = SDR( LARGE ).randomize( .10 )
+    tm = TM( inputs.dimensions)
+
+    for i in range(ITERS):
+        inputs = inputs.randomize( .10 )
+        t.start()
+        tm.compute( inputs, True )
+        active = tm.getActiveCells()
+        t.stop()
+        self.assertTrue( active.getSum() > 0 )
+
+    t_total = t.elapsed()
+    speed = t_total * 1000 / ITERS #time ms/iter
+    self.assertTrue(speed < 40.0)
+
+
   @pytest.mark.skipif(sys.version_info < (3, 6), reason="Fails for python2 with segmentation fault")
   def testNupicTemporalMemoryPickling(self):
     """Test pickling / unpickling of NuPIC TemporalMemory."""

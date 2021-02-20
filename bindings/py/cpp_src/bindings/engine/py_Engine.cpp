@@ -221,8 +221,9 @@ namespace htm_ext
         ///////////////////
         // Spec
         ///////////////////
-        py::class_<Spec> py_Spec(m, "Spec");
+        py::class_<Spec, std::shared_ptr<Spec>> py_Spec(m, "Spec");
 
+        py_Spec.def("toString", &Spec::toString);
 
 
 
@@ -245,30 +246,9 @@ namespace htm_ext
             .def("askImplForOutputDimensions", &Region::askImplForOutputDimensions)
             .def("askImplForInputDimensions", &Region::askImplForInputDimensions);
                         
+        // These return the buffer's Array object
         py_Region.def("getInputArray", &Region::getInputData)
-            .def("getOutputArray", &Region::getOutputData)
-            .def("setInputArray", [](Region& r, const std::string& name, py::buffer& b)
-            { 
-                py::buffer_info info = b.request();  /* Request a buffer descriptor from Python */
-                if (info.ndim != 1)
-                    throw std::runtime_error("Expected a one dimensional array!");
-                size_t size = static_cast<size_t>(info.shape[0]);
-                NTA_BasicType type;
-                if      (((info.format == "i") || (info.format == "l") ) && info.itemsize == 4) type = NTA_BasicType_Int32;
-                else if (((info.format == "I") || (info.format == "L") ) && info.itemsize == 4) type = NTA_BasicType_UInt32;
-                else if ((info.format == "l") || (info.format == "q") ) type = NTA_BasicType_Int64;
-                else if ((info.format == "L") || (info.format == "Q") ) type = NTA_BasicType_UInt64;
-                else if (info.format == "f") type = NTA_BasicType_Real32;
-                else if (info.format == "d") type = NTA_BasicType_Real64;
-                else if (info.format == py::format_descriptor<bool>::format()) type = NTA_BasicType_Bool;
-                else if (info.format == py::format_descriptor<Byte>::format()) type = NTA_BasicType_Byte;
-                else NTA_THROW << "setInputArray(): Unexpected data type in the array!  info.format=" << info.format;
-                // for info.format codes, see https://docs.python.org/3.7/library/array.html
-                Array s(type, info.ptr, size);
-                std::cout << "src: " << s << std::endl;
-
-                r.setInputData(name, s);
-            });
+            .def("getOutputArray", &Region::getOutputData);
             
         py_Region.def(py::pickle(
             [](const Region& self) {
@@ -285,8 +265,12 @@ namespace htm_ext
                 return self;
         }));
 
+        py_Region.def("getSpec", &htm::Region::getSpec);
+        
+        py_Region.def("getParameters", &htm::Region::getParameters);
 
-        py_Region.def("getParameterInt32", &Region::getParameterInt32)
+        py_Region.def("getParameterByte", &Region::getParameterByte)
+            .def("getParameterInt32",  &Region::getParameterInt32)
             .def("getParameterUInt32", &Region::getParameterUInt32)
             .def("getParameterInt64",  &Region::getParameterInt64)
             .def("getParameterUInt64", &Region::getParameterUInt64)
@@ -294,11 +278,13 @@ namespace htm_ext
             .def("getParameterReal64", &Region::getParameterReal64)
             .def("getParameterBool",   &Region::getParameterBool)
             .def("getParameterString", &Region::getParameterString)
-            .def("getParameterArray", &Region::getParameterArray);
+            .def("getParameterArray",  &Region::getParameterArray)
+            .def("getParameterJSON",   &Region::getParameterJSON);
 
         py_Region.def("getParameterArrayCount", &Region::getParameterArrayCount);
 
-        py_Region.def("setParameterInt32", &Region::setParameterInt32)
+        py_Region.def("setParameterByte", &Region::setParameterByte)
+            .def("setParameterInt32",  &Region::setParameterInt32)
             .def("setParameterUInt32", &Region::setParameterUInt32)
             .def("setParameterInt64",  &Region::setParameterInt64)
             .def("setParameterUInt64", &Region::setParameterUInt64)
@@ -306,7 +292,8 @@ namespace htm_ext
             .def("setParameterReal64", &Region::setParameterReal64)
             .def("setParameterBool",   &Region::setParameterBool)
             .def("setParameterString", &Region::setParameterString)
-            .def("setParameterArray",  &Region::setParameterArray);
+            .def("setParameterArray",  &Region::setParameterArray)
+            .def("setParameterJSON",   &Region::setParameterJSON);
                 
                 
         py_Region.def("executeCommand", [](Region& r, const std::string& command, py::args args)
@@ -414,7 +401,6 @@ namespace htm_ext
         py_Network.def(py::init<>())
             .def(py::init<std::string>());
 
-
         py_Network.def("addRegion", (Region_Ptr_t (htm::Network::*)(
                     const std::string&,
                       const std::string&,
@@ -429,6 +415,9 @@ namespace htm_ext
                     &htm::Network::addRegion,
                     "add region for deserialization."
                     , py::arg("region"));
+                    
+        py_Network.def("configure", &htm::Network::configure);
+        py_Network.def("getSpecJSON", &htm::Network::getSpecJSON);
 
         py_Network.def("getRegions", &htm::Network::getRegions)
             .def("getRegion",          &htm::Network::getRegion)
@@ -469,6 +458,31 @@ namespace htm_ext
             , py::arg("linkType") = "", py::arg("linkParams") = ""
             , py::arg("srcOutput") = "", py::arg("destInput") = ""
             , py::arg("propagationDelay") = 0);
+            
+        py_Network.def("setInputData", [](Network& net, const std::string& name, py::buffer& b)
+            { 
+                // Set data into source of "INPUT" link at runtime.  Link must be previously declared.
+                py::buffer_info info = b.request();  /* Request a buffer descriptor from Python */
+                if (info.ndim != 1)
+                    throw std::runtime_error("Expected a one dimensional array!");
+                size_t size = static_cast<size_t>(info.shape[0]);
+                NTA_BasicType type;
+                if      (((info.format == "i") || (info.format == "l") ) && info.itemsize == 4) type = NTA_BasicType_Int32;
+                else if (((info.format == "I") || (info.format == "L") ) && info.itemsize == 4) type = NTA_BasicType_UInt32;
+                else if ((info.format == "l") || (info.format == "q") ) type = NTA_BasicType_Int64;
+                else if ((info.format == "L") || (info.format == "Q") ) type = NTA_BasicType_UInt64;
+                else if (info.format == "f") type = NTA_BasicType_Real32;
+                else if (info.format == "d") type = NTA_BasicType_Real64;
+                else if (info.format == py::format_descriptor<bool>::format()) type = NTA_BasicType_Bool;
+                else if (info.format == py::format_descriptor<Byte>::format()) type = NTA_BasicType_Byte;
+                else NTA_THROW << "setInputData(): Unexpected data type in the array!  info.format=" << info.format;
+                // for info.format codes, see https://docs.python.org/3.7/library/array.html
+                Array s(type, info.ptr, size);
+                std::cout << "src: " << s << std::endl;
+
+                net.setInputData(name, s);
+            });
+            
 
         py::enum_<htm::LogLevel>(m, "LogLevel", "An enumeration of logging levels.")
                      .value("None",    htm::LogLevel::LogLevel_None)        // default
@@ -491,6 +505,10 @@ namespace htm_ext
         py_Network.def_static("unregisterPyRegion", [](const std::string& typeName) {
                 htm::RegisteredRegionImplPy::unregisterPyRegion(typeName);
             });
+        py_Network.def_static("getRegistrations",
+                [](){ return htm::Network::getRegistrations();
+            });
+                
         py_Network.def_static("cleanup", &htm::Network::cleanup);
 
 

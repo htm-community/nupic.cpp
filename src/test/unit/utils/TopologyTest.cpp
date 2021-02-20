@@ -223,7 +223,7 @@ void expectWrappingNeighborhoodIndices(const vector<UInt> &centerCoords,
   const UInt centerIndex = indexFromCoordinates(centerCoords, dimensions);
 
   unsigned int i = 0u;
-  for (UInt index : WrappingNeighborhood(centerIndex, radius, dimensions)) {
+  for (UInt index : Neighborhood(centerIndex, radius, dimensions, /*wrap*/true)) {
     EXPECT_EQ(expected[i], index);
     i++;
   }
@@ -238,7 +238,7 @@ void expectWrappingNeighborhoodCoords(const vector<UInt> &centerCoords,
   const UInt centerIndex = indexFromCoordinates(centerCoords, dimensions);
 
   unsigned int i = 0u;
-  for (UInt index : WrappingNeighborhood(centerIndex, radius, dimensions)) {
+  for (UInt index : Neighborhood(centerIndex, radius, dimensions, true)) {
     EXPECT_EQ(indexFromCoordinates(expected[i], dimensions), index);
     i++;
   }
@@ -370,4 +370,47 @@ TEST(TopologyTest, WrappingNeighborhoodDimensionOne) {
       /*radius*/ 1,
       /*expected*/ {{4, 0, 0}, {5, 0, 0}, {6, 0, 0}});
 }
+
+TEST(TopologyTest, NeighborhoodSkipCenter) {
+const UInt center = 2;
+const UInt radius = 3;
+const vector<UInt> dims = {10, 15};
+
+
+for(const auto i: Neighborhood(center, radius, dims, /*wrap*/ false, /*skip center=*/ true )) {
+  ASSERT_NE(center, i) << "Center should be skipped!";
+}
+
+
+{
+bool centerFound_ = false;
+for(const auto i: Neighborhood(center, radius, dims, /*wrap*/ false, /*skip center=*/ false )) {
+  if(i == center) {
+    centerFound_ = true;
+    break;
+  }
+}
+ASSERT_TRUE(centerFound_) << "Center was not included in hood!";
+}
+
+
+for(const auto i: Neighborhood(center, radius, dims, /*wrap*/ true, /*skip center=*/ true )) {
+  ASSERT_NE(center, i) << "Center should be skipped!";
+}
+
+{
+bool skipCenter = false;
+bool centerFound_ = false;
+for(const auto i: Neighborhood(center, radius, dims, /*wrap*/ false, /*skip center=*/ skipCenter )) {
+  if(i == center) {
+    centerFound_ = true;
+    break;
+  }
+}
+ASSERT_TRUE(centerFound_) << "Center was not included in hood!";
+}
+
+
+}
+
 } // namespace

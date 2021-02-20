@@ -19,10 +19,10 @@
  * Implementation of the ArrayBase class
  */
 
+#include <cstdlib>  // for size_t
+#include <cstring>  // for memcpy, memcmp
 #include <iostream> // for ostream
 #include <sstream>  // for stringstream
-#include <cstring>  // for memcpy, memcmp
-#include <cstdlib> // for size_t
 #include <vector>
 
 #include <htm/ntypes/ArrayBase.hpp>
@@ -36,7 +36,7 @@ namespace htm {
 /**
  * This makes a deep copy of the buffer so this class will own the buffer.
  */
-ArrayBase::ArrayBase(NTA_BasicType type, void *buffer, size_t count) {
+ArrayBase::ArrayBase(NTA_BasicType type, const void *buffer, size_t count) {
   if (!BasicType::isValid(type)) {
     NTA_THROW << "Invalid NTA_BasicType " << type << " used in array constructor";
   }
@@ -45,13 +45,16 @@ ArrayBase::ArrayBase(NTA_BasicType type, void *buffer, size_t count) {
   if (has_buffer()) {
     if (type == NTA_BasicType_Str) {
       std::string *ptr1 = reinterpret_cast<std::string *>(getBuffer());
-      std::string *ptr2 = reinterpret_cast<std::string *>(buffer);
+      const std::string *ptr2 = reinterpret_cast<const std::string *>(buffer);
       for (size_t i = 0; i < count; i++) {
         ptr1[i] = ptr2[i];
       }
-    } else
-      std::memcpy(reinterpret_cast<char *>(getBuffer()), reinterpret_cast<char *>(buffer),
-                count * BasicType::getSize(type));
+    } else {
+      // Warning: for NTA_BasicType_Bool, if the buffer came from the internal buffer of a vector
+      //          the element size is not known for sure. It might be optimized to store them as bits.
+      std::memcpy(reinterpret_cast<char *>(getBuffer()), reinterpret_cast<const char *>(buffer),
+                  count * BasicType::getSize(type));
+    }
   }
 }
 
@@ -550,7 +553,6 @@ static std::vector<UInt> parseDim(const std::string &type) {
 // Serialization and Deserialization using YAML parser
 // For JSON, expecting something like {type: "Int32", data: [1, 0, 1]}
 void ArrayBase::fromYAML(const std::string &data) { // handles both YAML and JSON
-  size_t num;
   Value vm, vm1, vm2;
   vm.parse(data);
   NTA_CHECK(vm.contains("type") && vm.contains("data"))
@@ -559,6 +561,7 @@ void ArrayBase::fromYAML(const std::string &data) { // handles both YAML and JSO
   vm1 = vm["type"];
   NTA_CHECK(vm1 && vm1.isScalar())
       << "Unexpected YAML or JSON format. Expecting something like {type: \"Int32\", data: [1,0,1]}";
+
   vm2 = vm["data"];
   NTA_CHECK(vm2 && vm.isSequence())
       << "Unexpected YAML or JSON format. Expecting something like {type: \"SDR(1000)\", data: [1,2,3]}";
@@ -573,74 +576,121 @@ void ArrayBase::fromYAML(const std::string &data) { // handles both YAML and JSO
     allocateBuffer(num);
   }
 
-  num = vm2.size();
+  fromValue(vm);
+}
+
+void ArrayBase::fromValue(const Value &vm_) {
+  Value vm = vm_["data"];
+  size_t num = vm.size();
+
+  if (getCount() == 0) {
+    if (type_ == NTA_BasicType_SDR) {
+      std::vector<UInt> dim;
+      if (vm_.contains("dim")) {
+        Value vm1 = vm_["dim"];
+        for (size_t i = 0; i < vm1.size(); i++) {
+          dim.push_back(vm1[i].as<UInt>());
+        }
+      } else {
+        dim.push_back(static_cast<UInt>(num));
+      }
+      allocateBuffer(dim);
+    } else {
+      allocateBuffer(num);
+    }
+  }
+
   void *inbuf = getBuffer();
 
   switch (type_) {
   case NTA_BasicType_Byte:
     for (size_t i = 0; i < num; i++) {
-      ((Byte *)inbuf)[i] = vm2[i].as<Byte>();
+      ((Byte *)inbuf)[i] = vm[i].as<Byte>();
     }
     break;
   case NTA_BasicType_Int16:
     for (size_t i = 0; i < num; i++) {
-      ((Int16 *)inbuf)[i] = vm2[i].as<Int16>();
+      ((Int16 *)inbuf)[i] = vm[i].as<Int16>();
     }
     break;
   case NTA_BasicType_UInt16:
     for (size_t i = 0; i < num; i++) {
-      ((UInt16 *)inbuf)[i] = vm2[i].as<UInt16>();
+      ((UInt16 *)inbuf)[i] = vm[i].as<UInt16>();
     }
     break;
   case NTA_BasicType_Int32:
     for (size_t i = 0; i < num; i++) {
-      ((Int32 *)inbuf)[i] = vm2[i].as<Int32>();
+      ((Int32 *)inbuf)[i] = vm[i].as<Int32>();
     }
     break;
   case NTA_BasicType_UInt32:
     for (size_t i = 0; i < num; i++) {
-      ((UInt32 *)inbuf)[i] = vm2[i].as<UInt32>();
+      ((UInt32 *)inbuf)[i] = vm[i].as<UInt32>();
     }
     break;
   case NTA_BasicType_Int64:
     for (size_t i = 0; i < num; i++) {
-      ((Int64 *)inbuf)[i] = vm2[i].as<Int64>();
+      ((Int64 *)inbuf)[i] = vm[i].as<Int64>();
     }
     break;
   case NTA_BasicType_UInt64:
     for (size_t i = 0; i < num; i++) {
-      ((UInt64 *)inbuf)[i] = vm2[i].as<UInt64>();
+      ((UInt64 *)inbuf)[i] = vm[i].as<UInt64>();
     }
     break;
   case NTA_BasicType_Real32:
     for (size_t i = 0; i < num; i++) {
-      ((Real32 *)inbuf)[i] = vm2[i].as<Real32>();
+      ((Real32 *)inbuf)[i] = vm[i].as<Real32>();
     }
     break;
   case NTA_BasicType_Real64:
     for (size_t i = 0; i < num; i++) {
-      ((Real64 *)inbuf)[i] = vm2[i].as<Real64>();
+      ((Real64 *)inbuf)[i] = vm[i].as<Real64>();
     }
     break;
   case NTA_BasicType_Bool:
     for (size_t i = 0; i < num; i++) {
-      ((bool *)inbuf)[i] = vm2[i].as<bool>();
+      ((bool *)inbuf)[i] = vm[i].as<bool>();
     }
     break;
   case NTA_BasicType_SDR: //  Expecting sparse data
   {
     SDR &sdr = getSDR();
-    SDR_sparse_t sparse;
-    for (size_t i = 0; i < num; i++) {
-      UInt x = vm2[i].as<UInt>();
-      sparse.push_back(x);
+    bool isDense = false;
+    if (num == getCount()) {
+      if (num == 1) {
+        isDense = true;
+      } else if (num == 2) { // maybe problem here
+        isDense = true;
+      } else {
+        UInt x = vm[2].as<UInt>();
+        if (x <= 1) {
+          isDense = true;
+        }
+      }
     }
-    sdr.setSparse(sparse);
+
+    if (isDense) {
+      SDR_dense_t dense;
+      for (size_t i = 0; i < vm.size(); i++) {
+        bool b = vm[i].as<bool>();
+        Byte x = (b) ? 1u : 0u;
+        dense.push_back(x);
+      }
+      sdr.setDense(dense);
+    } else {
+      SDR_sparse_t sparse;
+      for (size_t i = 0; i < vm.size(); i++) {
+        UInt x = vm[i].as<UInt>();
+        sparse.push_back(x);
+      }
+      sdr.setSparse(sparse);
+    }
     break;
   }
-  case NTA_BasicType_Str: 
+  case NTA_BasicType_Str:
     for (size_t i = 0; i < num; i++) {
-      ((std::string *)inbuf)[i] = vm2[i].as<std::string>();
+      ((std::string *)inbuf)[i] = vm[i].as<std::string>();
     }
     break;
   default:
@@ -653,25 +703,19 @@ std::string ArrayBase::toJSON() const {
   std::stringstream json;
   if (type_ == NTA_BasicType_SDR) {
     const SDR &sdr = getSDR();
-    json << "{type: \"SDR(" << sdr.dimensions[0];
-    for (size_t i = 1; i < sdr.dimensions.size(); i++) {
-      json << "," << sdr.dimensions[i];
-    }
-    json << ")\",data: [";
-    bool first = true;
-    SDR_sparse_t sparse = sdr.getSparse();
+    json << "[";
+    auto sparse = sdr.getSparse();
     for (size_t i = 0; i < sparse.size(); i++) {
-      if (first) {
-        json << sparse[i];
-        first = false;
-      }
-      else
-        json << "," << sparse[i];
+      int v = sparse[i];
+      if (i == 0) {
+        json << v;
+      } else
+        json << ", " << v;
     }
-    json << "]}";
+    json << "]";
   } else {
 
-    json << "{type: \"" << BasicType::getName(type_) << "\",data: [";
+    json << "[";
     size_t num = getCount();
     const void *inbuf = getBuffer();
     bool first = true;
@@ -679,10 +723,10 @@ std::string ArrayBase::toJSON() const {
       if (first)
         first = false;
       else
-        json << ",";
+        json << ", ";
       switch (type_) {
       case NTA_BasicType_Byte:
-        json << ((Byte *)inbuf)[i];
+        json << (int)((Byte *)inbuf)[i];
         break;
       case NTA_BasicType_Int16:
         json << ((Int16 *)inbuf)[i];
@@ -708,18 +752,18 @@ std::string ArrayBase::toJSON() const {
       case NTA_BasicType_Real64:
         json << ((Real64 *)inbuf)[i];
         break;
-      case NTA_BasicType_Bool:
-        json << ((((bool *)inbuf)[i]) ? "true" : "false");
+      case NTA_BasicType_Bool: 
+          json << ((((bool *)inbuf)[i]) ? "true" : "false");
         break;
       case NTA_BasicType_Str:
-        json << "\"" << ((std::string *)inbuf)[i] << "\"";
+        json << Value::json_string(((std::string *)inbuf)[i]);
         break;
       default:
         NTA_THROW << "Unexpected Element Type: " << type_;
         break;
       }
-      json << "]}";
     }
+    json << "]";
   }
 
   return json.str();

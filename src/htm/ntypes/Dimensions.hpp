@@ -106,10 +106,9 @@ public:
   bool isInvalid()     const { return(!isDontcare() && getCount() == 0); }
   bool isSpecified()   const { return(getCount() != 0); }
 
-  // TODO:Cereal- when Cereal is fully implmented humanReadable arg can be removed here and in DimensionsTest.
   std::string toString(bool humanReadable = true) const {
-    if (isUnspecified()) return "[unspecified]";
-    if (isDontcare())    return "[dontcare]";
+    if (humanReadable && isUnspecified()) return "[unspecified]";
+    if (humanReadable && isDontcare())    return "[dontcare]";
     std::stringstream ss;
     ss << "[";
     for (size_t i = 0; i < vec_.size(); i++) {
@@ -117,7 +116,7 @@ public:
       else   ss << vec_[i];
     }
     ss << "] ";
-		if (humanReadable && isInvalid()) ss << "(Invalid) ";
+		//if (humanReadable && isInvalid()) ss << "(Invalid) ";
     return ss.str();
   }
 
@@ -146,7 +145,7 @@ private:
   
 
   inline std::ostream &operator<<(std::ostream &f, const Dimensions& d) {
-    f << d.toString(false) << " ";
+    f << d.toString(true) << " ";
     return f;
   }
   inline std::istream &operator>>(std::istream &f, Dimensions& d) { 

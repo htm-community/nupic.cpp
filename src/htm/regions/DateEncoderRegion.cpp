@@ -118,7 +118,7 @@ DateEncoderRegion::DateEncoderRegion(const ValueMap &par, Region *region) : Regi
 
   //parse custom_days
   std::string days = params.getString("custom_days", "");
-  args.custom_days = split(days, ',');
+  args.custom_days = Path::split(days, ',');
 
   encoder_ = std::make_shared<DateEncoder>(args);
 }
@@ -180,12 +180,12 @@ void DateEncoderRegion::setParameterBool(const std::string &name, Int64 index, b
     RegionImpl::setParameterBool(name, index, value);
 }
 
-Int64 DateEncoderRegion::getParameterInt64(const std::string &name, Int64 index) {
+Int64 DateEncoderRegion::getParameterInt64(const std::string &name, Int64 index) const {
   if (name == "sensedTime") { return static_cast<Int64>(sensedTime_);}
   else return RegionImpl::getParameterInt64(name, index);
 }
 
-Real32 DateEncoderRegion::getParameterReal32(const std::string &name, Int64 index) {
+Real32 DateEncoderRegion::getParameterReal32(const std::string &name, Int64 index) const {
   if (name == "season_radius")
     return encoder_->parameters.season_radius;
   else if (name == "dayOfWeek_radius")
@@ -198,7 +198,7 @@ Real32 DateEncoderRegion::getParameterReal32(const std::string &name, Int64 inde
     return RegionImpl::getParameterReal32(name, index);
 }
 
-UInt32 DateEncoderRegion::getParameterUInt32(const std::string &name, Int64 index) {
+UInt32 DateEncoderRegion::getParameterUInt32(const std::string &name, Int64 index) const {
   if (name == "season_width")
     return encoder_->parameters.season_width;
   else if (name == "dayOfWeek_width")
@@ -217,12 +217,12 @@ UInt32 DateEncoderRegion::getParameterUInt32(const std::string &name, Int64 inde
     return RegionImpl::getParameterUInt32(name, index);
 }
 
-bool DateEncoderRegion::getParameterBool(const std::string &name, Int64 index) {
+bool DateEncoderRegion::getParameterBool(const std::string &name, Int64 index) const {
   if (name == "verbose") return encoder_->parameters.verbose;
   else  return RegionImpl::getParameterBool(name, index);
 }
 
-std::string DateEncoderRegion::getParameterString(const std::string& name, Int64 index) {
+std::string DateEncoderRegion::getParameterString(const std::string& name, Int64 index) const {
   if (name == "custom_days") {
     std::string buffer;
     for (size_t i = 0; i < encoder_->parameters.custom_days.size(); i++) {

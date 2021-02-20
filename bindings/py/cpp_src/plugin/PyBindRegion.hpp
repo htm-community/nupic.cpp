@@ -97,19 +97,19 @@ namespace htm
         void compute() override;
         std::string executeCommand(const std::vector<std::string>& args, Int64 index) override;
 
-        size_t getParameterArrayCount(const std::string& name, Int64 index) override;
+        size_t getParameterArrayCount(const std::string& name, Int64 index) const override;
 
-        virtual Byte getParameterByte(const std::string& name, Int64 index);
-        virtual Int32 getParameterInt32(const std::string& name, Int64 index) override;
-        virtual UInt32 getParameterUInt32(const std::string& name, Int64 index) override;
-        virtual Int64 getParameterInt64(const std::string& name, Int64 index) override;
-        virtual UInt64 getParameterUInt64(const std::string& name, Int64 index) override;
-        virtual Real32 getParameterReal32(const std::string& name, Int64 index) override;
-        virtual Real64 getParameterReal64(const std::string& name, Int64 index) override;
-        virtual bool getParameterBool(const std::string& name, Int64 index) override;
-        virtual std::string getParameterString(const std::string& name, Int64 index) override;
+        virtual Byte getParameterByte(const std::string& name, Int64 index) const override;
+        virtual Int32 getParameterInt32(const std::string& name, Int64 index) const override;
+        virtual UInt32 getParameterUInt32(const std::string& name, Int64 index) const override;
+        virtual Int64 getParameterInt64(const std::string& name, Int64 index) const override;
+        virtual UInt64 getParameterUInt64(const std::string& name, Int64 index) const override;
+        virtual Real32 getParameterReal32(const std::string& name, Int64 index) const override;
+        virtual Real64 getParameterReal64(const std::string& name, Int64 index) const override;
+        virtual bool getParameterBool(const std::string& name, Int64 index) const override;
+        virtual std::string getParameterString(const std::string& name, Int64 index) const override;
 
-        virtual void setParameterByte(const std::string& name, Int64 index, Byte value);
+        virtual void setParameterByte(const std::string& name, Int64 index, Byte value) override;
         virtual void setParameterInt32(const std::string& name, Int64 index, Int32 value) override;
         virtual void setParameterUInt32(const std::string& name, Int64 index, UInt32 value) override;
         virtual void setParameterInt64(const std::string& name, Int64 index, Int64 value) override;
@@ -119,12 +119,12 @@ namespace htm
         virtual void setParameterBool(const std::string& name, Int64 index, bool value) override;
         virtual void setParameterString(const std::string& name, Int64 index, const std::string& value) override;
 
-        virtual void getParameterArray(const std::string& name, Int64 index, Array & array) override;
+        virtual void getParameterArray(const std::string& name, Int64 index, Array & array) const override;
         virtual void setParameterArray(const std::string& name, Int64 index, const Array & array) override;
 
         // Helper methods
         template <typename T>
-        T getParameterT(const std::string & name, Int64 index);
+        T getParameterT(const std::string & name, Int64 index) const;
 
         template <typename T>
         void setParameterT(const std::string & name, Int64 index, T value);

@@ -24,7 +24,7 @@
 if(EXISTS "${REPOSITORY_DIR}/build/ThirdParty/share/cpp-httplib.zip")
     set(URL "${REPOSITORY_DIR}/build/ThirdParty/share/cpp-httplib.zip")
 else()
-    set(URL https://github.com/yhirose/cpp-httplib/archive/v0.5.6.zip)
+    set(URL https://github.com/yhirose/cpp-httplib/archive/v0.8.4.zip)
 endif()
 
 message(STATUS "obtaining cpp-httplib")

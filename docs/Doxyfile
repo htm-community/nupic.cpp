@@ -755,42 +755,48 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = . \
-                         ../src/nupic/encoders/ScalarEncoder.hpp \
-                         ../src/nupic/encoders/ScalarSensor.hpp \
-                         ../src/nupic/algorithms/SpatialPooler.hpp \
-                         ../src/nupic/algorithms/TemporalMemory.hpp \
-                         ../src/nupic/algorithms/Connections.hpp \
-                         ../src/nupic/algorithms/SDRClassifier.hpp \
-                         ../src/nupic/algorithms/ClassifierResult.hpp \
-                         ../src/nupic/engine/NuPIC.hpp \
-                         ../src/nupic/engine/Network.hpp \
-                         ../src/nupic/engine/Region.hpp \
-                         ../src/nupic/engine/RegionImpl.hpp \
-                         ../src/nupic/engine/RegisteredRegionImpl.hpp \
-                         ../src/nupic/engine/RegionImplFactory.hpp \
-                         ../src/nupic/engine/Input.hpp \
-                         ../src/nupic/engine/Output.hpp \
-                         ../src/nupic/engine/Link.hpp \
-                         ../src/nupic/engine/LinkPolicy.hpp \
-                         ../src/nupic/engine/LinkPolicyFactory.hpp \
-                         ../src/nupic/engine/UniformLinkPolicy.hpp \
-                         ../src/nupic/ntypes/Dimensions.hpp \
-                         ../src/nupic/types/BasicType.hpp \
-                         ../src/nupic/types/Fraction.hpp \
-                         ../src/nupic/types/Serializable.hpp \
-                         ../src/nupic/math/Domain.hpp \
-                         ../src/nupic/math/Index.hpp \
-                         ../src/nupic/math/NearestNeighbor.hpp \
-                         ../src/nupic/math/SegmentMatrixAdapter.hpp \
-                         ../src/nupic/math/Set.hpp \
-                         ../src/nupic/math/SparseMatrixAlgorithms.hpp \
-                         ../src/nupic/math/SparseMatrixConnections.hpp \
-                         ../src/nupic/math/SparseRLEMatrix.hpp \
-                         ../src/nupic/math/SparseTensor.hpp \
-                         ../src/nupic/math/Topology.hpp \
-                         ../src/nupic/engine/Link.hpp \
-                         ../src/nupic/engine/Output.hpp \
-                         ../src/nupic/engine/Input.hpp
+                         ../src/htm/encoders \
+                         ../src/htm/algorithms \
+                         ../src/htm/engine \
+                         ../src/htm/ntypes/Dimensions.hpp \
+                         ../src/htm/ntypes \
+                         ../src/htm/types \
+                         ../src/htm/os \
+                         ../src/htm/regions \
+                         ../src/htm/utils \
+                         ../src/examples/hello \
+                         ../src/examples/mnist \
+                         ../src/examples/napi_hello \
+                         ../src/examples/rest \
+                         ../bindings/py/cpp_src/bindings/algorithms \
+                         ../bindings/py/cpp_src/bindings/encoders \
+                         ../bindings/py/cpp_src/bindings/engine \
+                         ../bindings/py/cpp_src/bindings/math \
+                         ../bindings/py/cpp_src/bindings/sdr \
+                         ../bindings/py/cpp_src/plugin \
+                         ../bindings/py/packaging/src/htm/bindings \
+                         ../bindings/py/packaging/src/htm/bindings/regions \
+                         ../bindings/py/packaging/src/htm/bindings/tools \
+                         ../external/common/include \
+                         ../external/common/murmurhash3 \
+                         ../setup.py \
+                         ../py/htm/advanced/algorithms \
+                         ../py/htm/advanced/algorithms/monitor_mixin \
+                         ../py/htm/advanced/data/generators \
+                         ../py/htm/advanced/examples/thalamus \
+                         ../py/htm/advanced/examples/thing_classification \
+                         ../py/htm/advanced/examples/union_path_integration \
+                         ../py/htm/advanced/frameworks/location \
+                         ../py/htm/advanced/regions \
+                         ../py/htm/advanced/support \
+                         ../py/htm/algorithms \
+                         ../py/htm/encoders \
+                         ../py/htm/examples \
+                         ../py/htm/examples/encoders \
+                         ../py/htm/examples/rest \
+                         ../py/htm/examples/sp \
+                         ../py/htm/examples/tm \
+                         ../py/htm/optimization
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

@@ -193,7 +193,7 @@ namespace testing
 	  VERBOSE << "Checking data after first iteration..." << std::endl;
     Array r1OutputArray = region1->getOutputData("dataOut");
     VERBOSE << "  FileInputRegion Output" << r1OutputArray << std::endl;
-    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32)
+    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real64)
             << "actual type is " << BasicType::getName(r1OutputArray.getType());
     VERBOSE << "  " << std::endl;
 
@@ -213,7 +213,7 @@ namespace testing
 
     VERBOSE << "  FileOutputRegion input" << std::endl;
     Array r4InputArray = region4->getInputData("dataIn");
-    ASSERT_TRUE(r4InputArray.getType() == NTA_BasicType_Real32)
+    ASSERT_TRUE(r4InputArray.getType() == NTA_BasicType_Real64)
       << "actual type is " << BasicType::getName(r4InputArray.getType());
 
     // cleanup
@@ -261,9 +261,9 @@ namespace testing
     EXPECT_TRUE(compareParameters(n2region1, parameterMap)) 
       << "Conflict when comparing ScalarSensor parameters after restore with before save.";
       
-    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spatialPoolerOutput", NTA_BasicType_SDR))
+    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spatialPoolerOutput", NTA_BasicType_UInt32))
         << " comparing Output arrays after restore with before save.";
-    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spOutputNonZeros", NTA_BasicType_SDR))
+    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spOutputNonZeros", NTA_BasicType_UInt32))
         << " comparing NZ out arrays after restore with before save.";
 
 
@@ -274,6 +274,142 @@ namespace testing
     // cleanup
     Directory::removeTree("TestOutputDir", true);
 	}
+  
+  
+  TEST(ScalarEncoderRegionTest, getSpecJSON) {
+     std::string expected = R"({"spec": "ScalarEncoderRegion",
+  "parameters": {
+    "sensedValue": {
+      "description": "Scalar input",
+      "type": "Real64",
+      "count": 1,
+      "access": "ReadWrite",
+      "defaultValue": "-1"
+    },
+    "size": {
+      "description": "The length of the encoding. Size of buffer",
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "n": {
+      "description": "Old name for the 'size' parameter.",
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "activeBits": {
+      "description": "The number of active bits in the encoding. i.e. how sparse",
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "w": {
+      "description": "Old name for the 'activeBits' parameter",
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "resolution": {
+      "description": "The resolution for the encoder",
+      "type": "Real64",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "radius": {
+      "description": "The radius for the encoder",
+      "type": "Real64",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "minValue": {
+      "description": "The minimum value for the input",
+      "type": "Real64",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "-1.0"
+    },
+    "maxValue": {
+      "description": "The maximum value for the input",
+      "type": "Real64",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "+1.0"
+    },
+    "periodic": {
+      "description": "Whether the encoder is periodic",
+      "type": "Bool",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "false"
+    },
+    "clipInput": {
+      "description": "Whether to clip inputs if they're outside [minValue, maxValue]",
+      "type": "Bool",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "false"
+    }
+  },
+  "inputs": {
+    "values": {
+      "description": "The input values to be encoded.",
+      "type": "Real64",
+      "count": 1,
+      "required": 0,
+      "regionLevel": 0,
+      "isDefaultInput": 1
+    }
+  },
+  "outputs": {
+    "encoded": {
+      "description": "Encoded value",
+      "type": "SDR",
+      "count": 0,
+      "regionLevel": 1,
+      "isDefaultOutput": 1
+    },
+    "bucket": {
+      "description": "Quantized sensedValue for this iteration.  Becomes the title in ClassifierRegion.",
+      "type": "Real64",
+      "count": 1,
+      "regionLevel": 0,
+      "isDefaultOutput": 0
+    }
+  }
+})";
+
+    Spec *spec = ScalarEncoderRegion::createSpec();
+    std::string json = spec->toString();
+    EXPECT_STREQ(json.c_str(), expected.c_str());
+  }
+
+  TEST(ScalarEncoderRegionTest, getParameters) {
+    std::string expected = R"({
+  "sensedValue": -1.000000,
+  "size": 100,
+  "n": 100,
+  "activeBits": 4,
+  "w": 4,
+  "resolution": 0.020833,
+  "radius": 0.083333,
+  "minValue": -1.000000,
+  "maxValue": 1.000000,
+  "periodic": false,
+  "clipInput": false
+})";
+
+    Network net1;
+    std::shared_ptr<Region> region1 = net1.addRegion("region1", "ScalarEncoderRegion", "{n: 100, w: 4}");
+    std::string json = region1->getParameters();
+    EXPECT_STREQ(json.c_str(), expected.c_str());
+  }
 
 
 } // namespace

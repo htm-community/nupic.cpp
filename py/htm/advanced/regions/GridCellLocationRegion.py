@@ -40,7 +40,7 @@ class GridCellLocationRegion(PyRegion):
     gaussian activity bumps that move as the population receives motor input. When
     two bumps are near each other, the intermediate cells have higher firing rates
     than they would with a single bump. The cells with firing rates above a
-    certain threshold are considered "active". When the network receives a motor
+    certain threshold are considered 'active'. When the network receives a motor
     command, it shifts its bumps.
 
     The cells are distributed uniformly through the rhombus, packed in the optimal
@@ -244,18 +244,18 @@ class GridCellLocationRegion(PyRegion):
                 maxSynapsesPerSegment=dict(
                     description="The maximum number of synapses per segment",
                     accessMode="Create",
-                    dataType="UInt32",
+                    dataType="Int32",
                     count=1,
                     defaultValue="-1"
                 ),
                 bumpOverlapMethod=dict(
                     description="Specifies the firing rate of a cell when it's part of "
                                 "two bumps. ('probabilistic' or 'sum')",
-                    dataType="Byte",
+                    dataType="String",
                     accessMode="Create",
                     constraints=("enum: probabilistic, sum"),
                     defaultValue="probabilistic",
-                    count=0,
+                    count=1,
                 ),
                 learningMode=dict(
                     description="A boolean flag that indicates whether or not we should "

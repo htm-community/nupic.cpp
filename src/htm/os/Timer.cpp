@@ -19,7 +19,6 @@
  * Generic OS Implementations for the OS class
  */
 
-#include <htm/os/Timer.hpp>
 
 #include <htm/utils/Random.hpp>
 #include <htm/utils/Log.hpp>
@@ -27,6 +26,12 @@
 #include <cmath> //for sins
 #include <sstream>
 #include <vector>
+
+namespace htm {
+static Real64 SPEED = -1; //for getSpeed()
+}
+#include <htm/os/Timer.hpp>
+
 
 namespace htm {
 

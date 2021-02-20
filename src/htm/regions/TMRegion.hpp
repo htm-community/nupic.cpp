@@ -136,17 +136,19 @@ public:
 
 
   /* -----------  Optional RegionImpl Interface methods ------- */
-  UInt32 getParameterUInt32(const std::string &name, Int64 index) override;
-  Int32 getParameterInt32(const std::string &name, Int64 index) override;
-  Real32 getParameterReal32(const std::string &name, Int64 index) override;
-  bool getParameterBool(const std::string &name, Int64 index) override;
-  std::string getParameterString(const std::string &name, Int64 index) override;
+  UInt32 getParameterUInt32(const std::string &name, Int64 index) const override;
+  Int32 getParameterInt32(const std::string &name, Int64 index) const override;
+  Real32 getParameterReal32(const std::string &name, Int64 index) const override;
+  bool getParameterBool(const std::string &name, Int64 index) const override;
+  std::string getParameterString(const std::string &name, Int64 index) const override;
 
   void setParameterUInt32(const std::string &name, Int64 index,UInt32 value) override;
   void setParameterInt32(const std::string &name, Int64 index,Int32 value) override;
   void setParameterReal32(const std::string &name, Int64 index,Real32 value) override;
   void setParameterBool(const std::string &name, Int64 index,bool value) override;
   void setParameterString(const std::string &name, Int64 index, const std::string &s) override;
+
+  std::string executeCommand(const std::vector<std::string> &args, Int64 index) override;
 
 private:
   Dimensions columnDimensions_;

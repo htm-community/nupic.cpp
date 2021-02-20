@@ -13,7 +13,7 @@ The data is a single image `cajal.jpg`
 Running
 =======
 
-Use the following command to run all **L2-L4-L6a** experiments:
+Use the following command to run **thalamus** experiments:
 
     python run_thalamus_experiment.py
 

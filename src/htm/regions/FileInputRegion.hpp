@@ -268,11 +268,11 @@ public:
   static Spec *createSpec();
   size_t getNodeOutputElementCount(const std::string &outputName) const override;
 
-  virtual UInt32 getParameterUInt32(const std::string &name, Int64 index = -1) override;
-  virtual Int32 getParameterInt32(const std::string &name, Int64 index = -1) override;
-  virtual std::string getParameterString(const std::string &name, Int64 index = -1) override;
-  virtual void getParameterArray(const std::string &name, Int64 index, Array &array) override;
-  virtual size_t getParameterArrayCount(const std::string &name, Int64 index) override;
+  virtual UInt32 getParameterUInt32(const std::string &name, Int64 index = -1) const override;
+  virtual Int32 getParameterInt32(const std::string &name, Int64 index = -1) const override;
+  virtual std::string getParameterString(const std::string &name, Int64 index = -1) const override;
+  virtual void getParameterArray(const std::string &name, Int64 index, Array &array) const override;
+  virtual size_t getParameterArrayCount(const std::string &name, Int64 index) const override;
 
   virtual void setParameterUInt32(const std::string &name, Int64 index, UInt32 value) override;
   virtual void setParameterInt32(const std::string &name, Int64 index, Int32 value) override;

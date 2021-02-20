@@ -349,6 +349,8 @@ public:
   std::string to_yaml() const;
   std::string to_json() const;
 
+  static std::string json_string(const std::string &s);
+  
   // Access for backward compatability
   template <typename T> T getScalarT(const std::string &key) const { // throws
     try {

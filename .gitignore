@@ -13,7 +13,10 @@ __pycache__
 .coverage
 htmlcov/
 
-# IDE project files
+# IDE Visual Studio files
+.vs
+
+# IDE VSCode project files
 /nbproject/
 .vscode
 .ycm_extra_conf.py

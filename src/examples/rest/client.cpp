@@ -37,9 +37,16 @@
 //
 
 
-#include <httplib.h>
 #include <iostream>
 #include <cstring>
+
+// save diagnostic state
+#pragma GCC diagnostic push
+// turn off the specific warning. Can also use "-Wall"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#include <httplib.h>
+// turn back on the compiler warnings
+#pragma GCC diagnostic pop
 
 //#define CA_CERT_FILE "./ca-bundle.crt"
 #define DEFAULT_PORT 8050
@@ -78,7 +85,7 @@ int main(int argc, char **argv) {
 
   VERBOSE << "Connecting to server: " + serverHost + " port: " << port << std::endl;
   httplib::Client client(serverHost.c_str(), port);
-  client.set_timeout_sec(30);  // The time it waits for a network connection.
+  //client.set_timeout_sec(30);  // The time it waits for a network connection.
 
   // request "Hello World" to see if we are able to connect to the server.
   VERBOSE << "GET /hi" << std::endl;

@@ -20,7 +20,7 @@
 if(EXISTS "${REPOSITORY_DIR}/build/ThirdParty/share/eigen.tar.bz2")
     set(URL "${REPOSITORY_DIR}/build/ThirdParty/share/eigen.tar.bz2")
 else()
-    set(URL http://bitbucket.org/eigen/eigen/get/3.3.7.tar.bz2)
+	set(URL "https://gitlab.com/libeigen/eigen/-/archive/3.3.9/eigen-3.3.9.tar.bz2")
 endif()
 
 message(STATUS "obtaining Eigen")

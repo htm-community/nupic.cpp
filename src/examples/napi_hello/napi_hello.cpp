@@ -16,10 +16,6 @@
  * --------------------------------------------------------------------- */
 
 #include <htm/engine/Network.hpp>
-#include <htm/utils/Random.hpp>
-#include <htm/utils/Log.hpp>
-#include <htm/ntypes/Value.hpp>
-#include <htm/utils/MovingAverage.hpp>
 #include <htm/algorithms/AnomalyLikelihood.hpp>
 #include <fstream>
 
@@ -47,6 +43,14 @@ int main(int argc, char* argv[]) {
   std::string sp_global_params = "{columnCount: " + std::to_string(COLS) + ", globalInhibition: true}";
   std::string tm_params        = "{cellsPerColumn: " + std::to_string(CELLS) + ", orColumnOutputs: true}";
 
+
+  std::string output_file = "NapiOutputDir/Output.csv";
+
+
+  // make a place to put output data.
+  if (!Directory::exists("NapiOutputDir")) Directory::create("NapiOutputDir", false, true);
+  if (Path::exists(output_file)) Path::remove(output_file);
+
   //  Runtime arguments:  napi_sine [epochs [filename]]
   if(argc >= 2) {
     EPOCHS = std::stoi(argv[1]);         // number of iterations (default 5000)
@@ -65,10 +69,12 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<Region> encoder   = net.addRegion("encoder",   "RDSEEncoderRegion", encoder_params);
     std::shared_ptr<Region> sp_global = net.addRegion("sp_global", "SPRegion",   sp_global_params);
     std::shared_ptr<Region> tm        = net.addRegion("tm",        "TMRegion",   tm_params);
+    std::shared_ptr<Region> output 	  = net.addRegion("output",    "FileOutputRegion", "{outputFile: '"+ output_file + "'}");
 
     // Setup data flows between regions
     net.link("encoder",   "sp_global", "", "", "encoded", "bottomUpIn");
     net.link("sp_global", "tm",        "", "", "bottomUpOut", "bottomUpIn");
+    net.link("tm", "output", "UniformLink", "", "bottomUpOut", "dataIn");
 
     net.initialize();
 
@@ -89,7 +95,7 @@ int main(int argc, char* argv[]) {
     //                                 |
     //                         .-----------------.
     //                         |      tm         |
-    //                         |   (TMRegion)    |
+    //                         |   (TMRegion)    |---->CSV file
     //                         |                 |
     //                         `-----------------'
     //
@@ -147,6 +153,8 @@ int main(int argc, char* argv[]) {
     if (ofs.is_open())
       ofs.close();
 
+    // close output file
+    output->executeCommand({ "closeFile" });
 
     std::cout << "finished\n";
 
@@ -158,6 +166,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   
+
+
   return 0;
 }
 

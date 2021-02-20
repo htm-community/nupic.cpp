@@ -61,6 +61,14 @@ R"(Compatibility Warning: This classes API is unstable and may change without wa
         py::arg("presynaticCell"),
         py::arg("permanence"));
 
+    py_Connections.def("growSynapses", &Connections::growSynapses,
+        py::arg("segment"),
+	py::arg("growthCandidates"),
+	py::arg("initialPermanence"),
+	py::arg("rng"),
+	py::arg("maxNew") = 0,
+	py::arg("maxSynapsesPerSegment") = 0);
+
     py_Connections.def("destroySynapse", &Connections::destroySynapse);
 
     py_Connections.def("updateSynapsePermanence", &Connections::updateSynapsePermanence,
@@ -74,6 +82,9 @@ R"(Compatibility Warning: This classes API is unstable and may change without wa
     py_Connections.def("cellForSegment", &Connections::cellForSegment);
 
     py_Connections.def("idxOnCellForSegment", &Connections::idxOnCellForSegment);
+
+    py_Connections.def("presynapticCellsForSegment", &Connections::presynapticCellsForSegment,
+      py::arg("segment"));
 
     py_Connections.def("segmentForSynapse", &Connections::segmentForSynapse);
 
@@ -129,7 +140,14 @@ R"(Returns pair of:
     numActiveConnectedSynapsesForSegment
     numActivePotentialSynapsesForSegment)");
 
-    py_Connections.def("adaptSegment", &Connections::adaptSegment);
+    py_Connections.def("adaptSegment", &Connections::adaptSegment,
+      py::arg("segment"),
+      py::arg("inputs"),
+      py::arg("increment"),
+      py::arg("decrement"),
+      py::arg("pruneZeroSynapses") = false,
+      py::arg("segmentThreshold") = 0
+		    );
 
     py_Connections.def("raisePermanencesToThreshold", &Connections::raisePermanencesToThreshold);
 

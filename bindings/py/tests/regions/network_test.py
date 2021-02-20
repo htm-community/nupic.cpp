@@ -258,10 +258,11 @@ class NetworkTest(unittest.TestCase):
     r_from = network.addRegion("from", "py.LinkRegion", "")
     r_to = network.addRegion("to", "py.LinkRegion", "")
     network.link("from", "to", "", "", "UInt32", "UInt32")
+    network.link("INPUT", "from", "", "{dim: [5]}", "UInt32_source", "UInt32")
     network.initialize()
     
     # Populate the input data
-    r_from.setInputArray("UInt32", np.array(TEST_DATA))
+    network.setInputData("UInt32_source", np.array(TEST_DATA))
         
     network.run(1)
     
@@ -278,11 +279,10 @@ class NetworkTest(unittest.TestCase):
     r_from = network.addRegion("from", "py.LinkRegion", "")
     r_to = network.addRegion("to", "py.LinkRegion", "")
     network.link("from", "to", "", "", "UInt32", "UInt32")
+    network.link("INPUT", "from", "", "{dim: [5]}", "UInt32_source", "UInt32")
     network.initialize()
-    r_from.setInputArray("UInt32", np.array(TEST_DATA))
-        
+    network.setInputData("UInt32_source", np.array(TEST_DATA))
     network.run(1)
-    
     output = r_to.getOutputArray("UInt32")
     self.assertTrue(np.array_equal(output, TEST_DATA))
 

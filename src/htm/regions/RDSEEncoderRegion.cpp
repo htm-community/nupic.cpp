@@ -140,12 +140,12 @@ void RDSEEncoderRegion::setParameterReal32(const std::string &name, Int64 index,
   else RegionImpl::setParameterReal32(name, index, value);
 }
 
-Real64 RDSEEncoderRegion::getParameterReal64(const std::string &name, Int64 index) {
+Real64 RDSEEncoderRegion::getParameterReal64(const std::string &name, Int64 index) const {
   if (name == "sensedValue") { return sensedValue_;}
   else return RegionImpl::getParameterReal64(name, index);
 }
 
-Real32 RDSEEncoderRegion::getParameterReal32(const std::string &name, Int64 index) {
+Real32 RDSEEncoderRegion::getParameterReal32(const std::string &name, Int64 index) const {
   if (name == "resolution")    return encoder_->parameters.resolution;
   else if (name == "noise")    return noise_;
   else if (name == "radius")   return encoder_->parameters.radius;
@@ -153,14 +153,14 @@ Real32 RDSEEncoderRegion::getParameterReal32(const std::string &name, Int64 inde
   else return RegionImpl::getParameterReal32(name, index);
 }
 
-UInt32 RDSEEncoderRegion::getParameterUInt32(const std::string &name, Int64 index) {
+UInt32 RDSEEncoderRegion::getParameterUInt32(const std::string &name, Int64 index) const {
   if (name == "size")            return encoder_->parameters.size;
   else if (name == "activeBits") return encoder_->parameters.activeBits;
   else if (name == "seed")       return encoder_->parameters.seed;
   else return RegionImpl::getParameterUInt32(name, index);
 }
 
-bool RDSEEncoderRegion::getParameterBool(const std::string &name, Int64 index) {
+bool RDSEEncoderRegion::getParameterBool(const std::string &name, Int64 index) const {
   if (name == "category") return encoder_->parameters.category;
   else  return RegionImpl::getParameterBool(name, index);
 }

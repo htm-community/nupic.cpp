@@ -68,8 +68,8 @@ void VectorFile::appendFile(const string &fileName,
                             Size expectedElementCount, UInt32 fileFormat) {
   bool handled = false;
   switch (fileFormat) {
-  case 4: // Little-endian.  //TODO supporting just 1 format, remove this swithch and fileFormat
-    appendFloat32File(fileName, expectedElementCount);
+  case 4: // Little-endian.  //TODO supporting just 1 format, remove this switch and fileFormat
+    appendFloat64File(fileName, expectedElementCount);
     handled = true;
     break;
   }
@@ -164,7 +164,7 @@ void VectorFile::loadVectors(std::istream& inFile,
       inFile >> vectorLabel;
     }
 
-    auto b = new Real[elementCount];
+    auto b = new Real64[elementCount];
     for (Size i = 0; i < elementCount; ++i) {
       inFile >> b[i];
     }
@@ -215,7 +215,7 @@ void VectorFile::saveVectors(ostream &out, Size nColumns, UInt32 fileFormat,
     end = begin;
 
   // Setup iterators for the rows.
-  vector<Real *>::const_iterator i = (fileVectors_.begin() + size_t(begin));
+  vector<Real64 *>::const_iterator i = (fileVectors_.begin() + size_t(begin));
   auto iend = i + size_t(end - begin);
 
   switch (fileFormat) {
@@ -294,9 +294,9 @@ void VectorFile::saveVectors(ostream &out, Size nColumns, UInt32 fileFormat,
         if (nColumns)
           out << sep;
       }
-      const Real *p = *i;
+      const Real64 *p = *i;
       if (nColumns) {
-        const Real *pEnd = p + nColumns;
+        const Real64 *pEnd = p + nColumns;
         out << *(p++);
         for (; p < pEnd;)
           out << sep << *(p++);
@@ -310,11 +310,12 @@ void VectorFile::saveVectors(ostream &out, Size nColumns, UInt32 fileFormat,
   case 5: {
     if (end <= begin)
       return;
-    const Size rowBytes = nColumns * sizeof(Real32);
-    const bool needConversion = (sizeof(Real32) == sizeof(Real));
+    const Size rowBytes = nColumns * sizeof(Real64);
+    //const bool needConversion = (sizeof(Real64) == sizeof(Real));//always false
 
-    if (needConversion) {
-      auto buffer = new Real32[nColumns];
+    if (false) {//was needConversion - now it uses Real64 everywhere, so no need to convert
+    	;
+      /*auto buffer = new Real32[nColumns];
       try {
         for (; i != iend; ++i) {
           if (needConversion) {
@@ -328,7 +329,7 @@ void VectorFile::saveVectors(ostream &out, Size nColumns, UInt32 fileFormat,
         delete[] buffer;
         throw;
       }
-      delete[] buffer;
+      delete[] buffer;*/
     } else {
       for (; i != iend; ++i)
         out.write((char *)(*i), streamsize(rowBytes));
@@ -359,7 +360,7 @@ public:
   }
 };
 
-void VectorFile::appendFloat32File(const string &filename,
+void VectorFile::appendFloat64File(const string &filename,
                                    Size expectedElements) {
   AutoReleaseFile file(filename);
 
@@ -367,21 +368,21 @@ void VectorFile::appendFloat32File(const string &filename,
   if (totalBytes == 0)
     return; // Early exit when there are no new vectors.
 
-  Size nRows = totalBytes / (expectedElements * sizeof(Real32));
+  Size nRows = totalBytes / (expectedElements * sizeof(Real64));
   Size totalElements = nRows * expectedElements;
-  NTA_CHECK ((totalElements * sizeof(Real32)) == totalBytes) 
+  NTA_CHECK ((totalElements * sizeof(Real64)) == totalBytes)
         << "Binary file size (" << totalBytes
         << "b) is not a multiple of expected elements ("
         << expectedElements
         << ") and 32-bit float size.";
-  const bool needConversion = (sizeof(Real32) == sizeof(Real));
+
 
   Size offset = fileVectors_.size();
   NTA_CHECK (offset == own_.size()) << "Invalid ownership flags.";
   Size nRowLabels = vectorLabels_.size();
   NTA_CHECK (nRowLabels && (nRowLabels == offset)) << "Invalid number of row labels.";
 
-  Real *block = nullptr; //TODO use Real[] block; instead of pointers! will require more changes in the file
+  Real64 *block = nullptr; //TODO use Real[] block; instead of pointers! will require more changes in the file
 
   try {
     // Set up the ownership.
@@ -391,25 +392,18 @@ void VectorFile::appendFloat32File(const string &filename,
     if (nRowLabels)
       vectorLabels_.resize(offset + nRows);
 
-    block = new Real[nRows * expectedElements];
+    block = new Real64[nRows * expectedElements];
 
     // Set all the row pointers.
     fileVectors_.resize(offset + nRows);
     auto cur = fileVectors_.begin() + offset;
-    Real *pEnd = block + (nRows * expectedElements);
-    for (Real *pBlock = block; pBlock != pEnd; pBlock += expectedElements) {
+    Real64 *pEnd = block + (nRows * expectedElements);
+    for (Real64 *pBlock = block; pBlock != pEnd; pBlock += expectedElements) {
       *(cur++) = pBlock;
     }
 
     file.read(&block, sizeof block[0] ,int(totalBytes));
 
-    if (needConversion) {
-      Real32 *pRead = reinterpret_cast<Real32 *>(block) + (totalElements - 1);
-      Real *pWrite = block + (totalElements - 1);
-      for (; pWrite >= block;) {
-        *(pWrite--) = *(pRead--);
-      }
-    }
   } catch (...) {
     delete[] block;
     fileVectors_.resize(offset);
@@ -441,7 +435,7 @@ void VectorFile::appendCSVFile(istream &inFile, Size expectedElements) {
     bool dosLines = dosEndings(inFile);
     while (!inFile.eof()) {
       Size elementsFound = 0;
-      auto b = new Real[expectedElements];
+      auto b = new Real64[expectedElements];
       // Read and parse a single line
       string sLine;           // We'll use string for robust line parsing
       stringstream converted; // We'll use stringstream for robust ascii text to
@@ -554,8 +548,8 @@ void VectorFile::appendIDXFile(const string &filename, int expectedElements) {
   int readRow = vectorSize * elSize;
   auto readBuffer = new char[readRow];
 
-  auto block = new Real[nRows * expectedElements];
-  Real *pBlock = block;
+  auto block = new Real64[nRows * expectedElements];
+  Real64 *pBlock = block;
 
   int copy = (expectedElements < vectorSize) ? expectedElements : vectorSize;
   int fill = expectedElements - copy;
@@ -639,8 +633,8 @@ void VectorFile::appendIDXFile(const string &filename, int expectedElements) {
     // Set all the row pointers.
     fileVectors_.resize(offset + nRows);
     auto cur = fileVectors_.begin() + offset;
-    Real *pEnd = block + (nRows * expectedElements);
-    for (Real *pCur = block; pCur != pEnd; pCur += expectedElements)
+    Real64 *pEnd = block + (nRows * expectedElements);
+    for (Real64 *pCur = block; pCur != pEnd; pCur += expectedElements)
       *(cur++) = pCur;
   } catch (...) {
     delete[] block;
@@ -674,7 +668,7 @@ size_t VectorFile::getElementCount() const { return scaleVector_.size(); }
 
 /// Retrieve the i'th vector and copy into output without scaling
 /// output must have size at least elementCount
-void VectorFile::getRawVector(const UInt v, Real *out, UInt offset,
+void VectorFile::getRawVector(const UInt v, Real64 *out, UInt offset,
                               Size count) {
   if (v >= vectorCount())
     NTA_THROW << "Requested non-existent vector: " << v;
@@ -687,14 +681,14 @@ void VectorFile::getRawVector(const UInt v, Real *out, UInt offset,
               << " = " << offset + count
               << ", must be smaller than element count: " << getElementCount();
   // Get the pointers and copy over the vector
-  Real *vec = fileVectors_[v];
+  Real64 *vec = fileVectors_[v];
   for (Size i = 0; i < count; i++)
     out[i] = vec[offset + i];
 }
 
 /// Retrieve i'th vector, apply scaling and copy result into output
 /// output must have size at least 'count' elements
-void VectorFile::getScaledVector(const UInt v, Real *out, UInt offset,
+void VectorFile::getScaledVector(const UInt v, Real64 *out, UInt offset,
                                  Size count) {
   // Check if we have scaling. If not, use getRawVector().
   if (scaleVector_.size() == 0)
@@ -706,14 +700,14 @@ void VectorFile::getScaledVector(const UInt v, Real *out, UInt offset,
   NTA_CHECK(getElementCount() <= offset + count);
 
   // Get the pointers and copy over the vector
-  Real *vec = fileVectors_[v];
+  Real64 *vec = fileVectors_[v];
   for (Size i = 0; i < count; i++) {
     out[i] = scaleVector_[i] * (vec[i + offset] + offsetVector_[i]);
   }
 }
 
 /// Get the scaling and offset values for element e
-void VectorFile::getScaling(const UInt e, Real &scale, Real &offset) {
+void VectorFile::getScaling(const UInt e, Real64 &scale, Real64 &offset) const {
   if (e >= getElementCount())
     NTA_THROW << "Requested non-existent element: " << e;
   scale = scaleVector_[e];
@@ -721,14 +715,14 @@ void VectorFile::getScaling(const UInt e, Real &scale, Real &offset) {
 }
 
 /// Set the scale value for element e
-void VectorFile::setScale(const UInt e, const Real scale) {
+void VectorFile::setScale(const UInt e, const Real64 scale) {
   if (e >= getElementCount())
     NTA_THROW << "Requested non-existent element: " << e;
   scaleVector_[e] = scale;
 }
 
 /// Set the offset value for element e
-void VectorFile::setOffset(const UInt e, const Real offset) {
+void VectorFile::setOffset(const UInt e, const Real64 offset) {
   if (e >= getElementCount())
     NTA_THROW << "Requested non-existent element: " << e;
   offsetVector_[e] = offset;
@@ -750,7 +744,7 @@ void VectorFile::setStandardScaling() {
     for (Size i = 0; i < nv; i++)
       sum += fileVectors_[i][e];
     double mean = sum / nv;
-    offsetVector_[e] = (Real)(-mean);
+    offsetVector_[e] = (Real64)(-mean);
 
     // Now compute the squared term for stdev
     for (Size i = 0; i < nv; i++) {
@@ -763,7 +757,7 @@ void VectorFile::setStandardScaling() {
     if (fabs(stdev) < 0.00000001)
       NTA_THROW << "Error setting standard form, stdeviation is almost zero "
                    "for some component.";
-    scaleVector_[e] = (Real)(1.0 / stdev);
+    scaleVector_[e] = (Real64)(1.0 / stdev);
   }
 }
 

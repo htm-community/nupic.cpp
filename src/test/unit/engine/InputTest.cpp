@@ -350,4 +350,100 @@ TEST(InputTest, LinkTwoRegionsOneInputFlatten) {
   ASSERT_EQ(expectedData.size(), pa->getCount());
   ASSERT_EQ(expectedData, pa->asVector<Real64>());
 }
+
+
+
+TEST(InputTest, LinkFromAppSimple) {
+  Network net;
+  VERBOSE << "With Input from an App\n";
+  std::shared_ptr<Region> region1 = net.addRegion("region1", "SPRegion", "{dim: [1000]}");
+  std::shared_ptr<Region> region2 = net.addRegion("region2", "TMRegion", "");
+
+  net.link("region1", "region2");
+  net.link("INPUT", "region1", "", "{dim: 10}", "app_source1", "bottomUpIn");  // accepts input from app
+
+  net.initialize();
+
+  // Check dimensions
+  Dimensions expected_dim = {10};
+  Dimensions d1 = region1->getInputDimensions("bottomUpIn");
+  VERBOSE << "region1 input dims: " << d1 << "\n";
+  EXPECT_EQ(d1, expected_dim) << "Expected region1 input dimensions " << expected_dim;
+
+  // Check initial buffer
+  SDR expectedData({10});   // starts out zero filled.
+  ASSERT_EQ(expectedData.size, (UInt)region1->getInputData("bottomUpIn").getCount());
+  ASSERT_TRUE(expectedData == region1->getInputData("bottomUpIn").getSDR());
+
+  Array a(NTA_BasicType_Real32);   // send data as Real32 to confirm that conversion works.
+  a.allocateBuffer(expected_dim.getCount());
+  Real32 *ptr = (Real32*)a.getBuffer();
+
+  for (size_t i = 0; i < 10; i++) {
+    a.zeroBuffer();
+    ptr[i] = 1.0;  // modifies the Array a to set the bit indexed by i;
+
+    // send it to the link that references "INPUT" and "app_source1" as source.
+    net.setInputData("app_source1", a);  
+
+    net.run(1);  // processes it
+
+    // check that the input data arrived, with type conversion.
+
+    SDR_sparse_t s;     // We expect to find the same bit set
+    s.push_back((UInt)i);
+    expectedData.setSparse(s);
+    VERBOSE << "Iteration " << i << " Input buffer=" << region1->getInputData("bottomUpIn").getSDR() 
+            << " expecting=" << expectedData << "\n";
+    EXPECT_TRUE(expectedData == region1->getInputData("bottomUpIn").getSDR());
+  }
 }
+
+
+TEST(InputTest, LinkFromAppSDRFanIn) {
+  Network net;
+  VERBOSE << "With two SDR Inputs from an App Fan-In to one input.\n";
+  // This is something like you might have if the App was implementing an encoder with two independent variables.
+  // The two input streams will be appended and fed into the SP which turns it into a true SDR with width of 1000.
+  const std::vector<std::vector<UInt>> testdata1 = {{0, 1, 2, 3}, {4, 5, 6, 7}, {8, 9, 10, 11}};          // sparse data
+  const std::vector<std::vector<UInt>> testdata2 = {{10, 25, 26, 75}, {11, 26, 27, 31}, {5, 10, 15, 80}}; // sparse data
+  std::shared_ptr<Region> region1 = net.addRegion("region1", "SPRegion", "{dim: [1000]}");
+  std::shared_ptr<Region> region2 = net.addRegion("region2", "TMRegion", "");
+
+  net.link("region1", "region2");
+  net.link("INPUT", "region1", "", "{dim: 20}",  "app_source1", "bottomUpIn"); // accepts input from app 'app_source1'
+  net.link("INPUT", "region1", "", "{dim: 100}", "app_source2", "bottomUpIn"); // accepts input from app 'app_source2'
+
+  net.initialize();
+
+  // Check dimensions
+  Dimensions expected_dim(120);  // 20 + 100
+  Dimensions d1 = region1->getInputDimensions("bottomUpIn");
+  VERBOSE << "region1 input dims: " << d1 << "\n";
+  EXPECT_EQ(d1, expected_dim) << "Expected region1 input dimensions " << expected_dim;
+
+  for (size_t i = 0; i < 3; i++) {
+    // variable 1
+    SDR data1({20});  // the first link, identified as 'app_source1' is expecing data with dim of [20].
+    data1.setSparse(testdata1[i]);
+    net.setInputData("app_source1", Array(data1));
+
+    // variable 2
+    SDR data2({100}); // the second link, identified as 'app_source2' is expecing data with dim of [100].
+    data2.setSparse(testdata2[i]);
+    net.setInputData("app_source2", Array(data2));
+
+    net.run(1); // processes it
+
+    // check that the input data arrived as the concatination of the two inputs.
+    SDR expectedData(expected_dim.asVector());
+    expectedData.concatenate(data1, data2);
+
+    VERBOSE << "Iteration " << i << " Input buffer=" << region1->getInputData("bottomUpIn").getSDR()
+            << " expectedData=" << expectedData;
+    EXPECT_TRUE(expectedData == region1->getInputData("bottomUpIn").getSDR());
+  }
+}
+
+
+} // namespace

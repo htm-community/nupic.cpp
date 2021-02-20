@@ -36,7 +36,7 @@
 namespace htm {
 
 FileOutputRegion::FileOutputRegion(const ValueMap &params, Region* region)
-    : RegionImpl(region), dataIn_(NTA_BasicType_Real32), filename_(""),
+    : RegionImpl(region), dataIn_(NTA_BasicType_Real64), filename_(""),
       outFile_(nullptr) {
   if (params.contains("outputFile")) {
     std::string s = params.getString("outputFile", "");
@@ -47,7 +47,7 @@ FileOutputRegion::FileOutputRegion(const ValueMap &params, Region* region)
 }
 
 FileOutputRegion::FileOutputRegion(ArWrapper& wrapper, Region* region)
-    : RegionImpl(region), dataIn_(NTA_BasicType_Real32), filename_(""),
+    : RegionImpl(region), dataIn_(NTA_BasicType_Real64), filename_(""),
       outFile_(nullptr) {
   cereal_adapter_load(wrapper);
 }
@@ -90,7 +90,7 @@ void FileOutputRegion::compute() {
   }
 
 
-  Real *inputVec = (Real *)(dataIn_.getBuffer());
+  Real64 *inputVec = (Real64 *)(dataIn_.getBuffer());
   NTA_CHECK(inputVec != nullptr);
   std::ofstream &outFile = *outFile_;
   for (Size offset = 0; offset < dataIn_.getCount(); ++offset) {
@@ -144,7 +144,7 @@ void FileOutputRegion::setParameterString(const std::string &paramName,
 }
 
 std::string FileOutputRegion::getParameterString(const std::string &paramName,
-                                                   Int64 index) {
+                                                   Int64 index) const {
   if (paramName == "outputFile") {
     return filename_;
   } else {
@@ -185,6 +185,7 @@ FileOutputRegion::executeCommand(const std::vector<std::string> &args,
 Spec *FileOutputRegion::createSpec() {
 
   auto ns = new Spec;
+  ns->name = "FileOutputRegion";
   ns->description =
       "FileOutputRegion is a node that simply writes its "
       "input vectors to a text file. The target filename is specified "
@@ -194,7 +195,7 @@ Spec *FileOutputRegion::createSpec() {
 
   ns->inputs.add("dataIn",
               InputSpec("Data to be written to file",
-                        NTA_BasicType_Real32,
+                        NTA_BasicType_Real64,
                         0,     // count
                         false, // required?
                         true, // isRegionLevel

@@ -132,11 +132,11 @@ target_link_libraries(${algorithms_shared_lib} PRIVATE
 target_compile_options(${algorithms_shared_lib} PUBLIC ${INTERNAL_CXX_FLAGS})
 target_compile_definitions(${algorithms_shared_lib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${algorithms_shared_lib} PRIVATE 
-        ${PYTHON_INCLUDE_DIRS}
-        ${pybind11_INCLUDE_DIRS}
-        ${CORE_LIB_INCLUDES} 
-        ${EXTERNAL_INCLUDES}
+        ${CORE_LIB_INCLUDES}
         ${PROJECT_SOURCE_DIR}
+	SYSTEM ${PYTHON_INCLUDE_DIRS}
+	SYSTEM ${pybind11_INCLUDE_DIRS}
+	SYSTEM ${EXTERNAL_INCLUDES}
         )
 
 
@@ -149,12 +149,12 @@ target_link_libraries(${sdr_shared_lib} PRIVATE
 target_compile_options(${sdr_shared_lib} PUBLIC ${INTERNAL_CXX_FLAGS})
 target_compile_definitions(${sdr_shared_lib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${sdr_shared_lib} PRIVATE
-        ${PYTHON_INCLUDE_DIRS}
-        ${pybind11_INCLUDE_DIRS}
         ${CORE_LIB_INCLUDES}
-        ${EXTERNAL_INCLUDES}
         ${PROJECT_SOURCE_DIR}
-        )
+        SYSTEM ${PYTHON_INCLUDE_DIRS}
+        SYSTEM ${pybind11_INCLUDE_DIRS}
+        SYSTEM ${EXTERNAL_INCLUDES}
+	)
 
 
 set(encoders_shared_lib encoders)
@@ -166,12 +166,12 @@ target_link_libraries(${encoders_shared_lib} PRIVATE
 target_compile_options(${encoders_shared_lib} PUBLIC ${INTERNAL_CXX_FLAGS})
 target_compile_definitions(${encoders_shared_lib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${encoders_shared_lib} PRIVATE 
-        ${PYTHON_INCLUDE_DIRS}
-        ${pybind11_INCLUDE_DIRS}
-        ${CORE_LIB_INCLUDES} 
-        ${EXTERNAL_INCLUDES}
+        ${CORE_LIB_INCLUDES}
         ${PROJECT_SOURCE_DIR}
-        )
+        SYSTEM ${PYTHON_INCLUDE_DIRS}
+        SYSTEM ${pybind11_INCLUDE_DIRS}
+        SYSTEM ${EXTERNAL_INCLUDES}
+	)
 
 
 set(engine_shared_lib engine_internal)
@@ -183,12 +183,12 @@ target_link_libraries(${engine_shared_lib} PRIVATE
 target_compile_options(${engine_shared_lib} PUBLIC ${INTERNAL_CXX_FLAGS})
 target_compile_definitions(${engine_shared_lib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${engine_shared_lib} PRIVATE 
-		${PYTHON_INCLUDE_DIRS}
-		${pybind11_INCLUDE_DIRS}
-		${CORE_LIB_INCLUDES} 
-		${EXTERNAL_INCLUDES}
-		${PROJECT_SOURCE_DIR}
-		)
+	${CORE_LIB_INCLUDES}
+        ${PROJECT_SOURCE_DIR}
+        SYSTEM ${PYTHON_INCLUDE_DIRS}
+        SYSTEM ${pybind11_INCLUDE_DIRS}
+        SYSTEM ${EXTERNAL_INCLUDES}	
+	)
 
 
 set(math_shared_lib math)
@@ -200,12 +200,12 @@ target_link_libraries(${math_shared_lib} PRIVATE
 target_compile_options(${math_shared_lib} PUBLIC ${INTERNAL_CXX_FLAGS})
 target_compile_definitions(${math_shared_lib} PRIVATE ${COMMON_COMPILER_DEFINITIONS})
 target_include_directories(${math_shared_lib} PRIVATE 
-		${PYTHON_INCLUDE_DIRS}
-		${pybind11_INCLUDE_DIRS}
-		${CORE_LIB_INCLUDES} 
-		${EXTERNAL_INCLUDES}
-		${PROJECT_SOURCE_DIR}
-		)
+	${CORE_LIB_INCLUDES}
+        ${PROJECT_SOURCE_DIR}
+        SYSTEM ${PYTHON_INCLUDE_DIRS}
+        SYSTEM ${pybind11_INCLUDE_DIRS}
+        SYSTEM ${EXTERNAL_INCLUDES}	
+	)
 
 install(TARGETS
         sdr

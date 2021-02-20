@@ -27,7 +27,7 @@ from htm.bindings.encoders import RDSE, RDSE_Parameters
 class RDSE_Test(unittest.TestCase):
     def testConstructor(self):
         params1 = RDSE_Parameters()
-        params1.size     = 100
+        params1.size     = 1000
         params1.sparsity = .10
         params1.radius   = 10
         R1 = RDSE( params1 )
@@ -45,11 +45,11 @@ class RDSE_Test(unittest.TestCase):
 
     def testErrorChecks(self):
         params1 = RDSE_Parameters()
-        params1.size     = 100
+        params1.size     = 1000
         params1.sparsity = .10
         params1.radius   = 10
         R1 = RDSE( params1 )
-        A = SDR([10, 10])
+        A = SDR([100, 10])
         R1.encode( 33, A )
 
         # Test wrong input dimensions
@@ -61,7 +61,7 @@ class RDSE_Test(unittest.TestCase):
         params1.size = 0
         with self.assertRaises(RuntimeError):
             RDSE( params1 )
-        params1.size = 100
+        params1.size = 1000
 
         # Test invalid parameters, activeBits == 0
         params1.activeBits = 0
@@ -71,20 +71,20 @@ class RDSE_Test(unittest.TestCase):
 
         # Test missing activeBits
         params2 = RDSE_Parameters()
-        params2.size     = 100
+        params2.size     = 1000
         params2.radius   = 10
         with self.assertRaises(RuntimeError):
             RDSE( params2 )
         # Test missing resolution/radius
         params3 = RDSE_Parameters()
-        params3.size       = 100
+        params3.size       = 1000
         params3.activeBits = 10
         with self.assertRaises(RuntimeError):
             RDSE( params3 )
 
         # Test too many parameters: activeBits & sparsity
         params4 = RDSE_Parameters()
-        params4.size       = 100
+        params4.size       = 1000
         params4.sparsity   = .6
         params4.activeBits = 10
         params4.radius     = 4
@@ -92,33 +92,41 @@ class RDSE_Test(unittest.TestCase):
             RDSE( params4 )
         # Test too many parameters: resolution & radius
         params5 = RDSE_Parameters()
-        params5.size       = 100
+        params5.size       = 1000
         params5.activeBits = 10
         params5.radius     = 4
         params5.resolution = 4
         with self.assertRaises(RuntimeError):
             RDSE( params5 )
 
+        # Test for hash collision error.
+        params6 = RDSE_Parameters()
+        params6.size       = 100
+        params6.activeBits = 10
+        params6.radius     = 1
+        with self.assertRaises(RuntimeError):
+            RDSE( params6 )
+
     def testSparsityActiveBits(self):
         """ Check that these arguments are equivalent. """
         # Round sparsity up
         P = RDSE_Parameters()
-        P.size     = 100
-        P.sparsity = .0251
+        P.size     = 1000
+        P.sparsity = .02551
         P.radius   = 10
         R = RDSE( P )
-        assert( R.parameters.activeBits == 3 )
+        assert( R.parameters.activeBits == 26 )
         # Round sparsity down
         P = RDSE_Parameters()
-        P.size     = 100
-        P.sparsity = .0349
-        P.radius   = 10
+        P.size     = 1000
+        P.sparsity = .03049
+        P.radius   = 100
         R = RDSE( P )
-        assert( R.parameters.activeBits == 3 )
+        assert( R.parameters.activeBits == 30 )
         # Check activeBits
         P = RDSE_Parameters()
-        P.size       = 100
-        P.activeBits = 50 # No floating point issues here.
+        P.size       = 1000
+        P.activeBits = 500 # No floating point issues here.
         P.radius     = 10
         R = RDSE( P )
         assert( R.parameters.sparsity == .5 )
@@ -265,7 +273,7 @@ class RDSE_Test(unittest.TestCase):
         """        
         rdse_params = RDSE_Parameters()
         rdse_params.sparsity = 0.1
-        rdse_params.size = 100
+        rdse_params.size = 1000
         rdse_params.resolution = 0.1
         rdse_params.seed = 1997
 

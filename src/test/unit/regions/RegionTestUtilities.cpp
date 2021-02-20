@@ -293,8 +293,20 @@ void checkInputOutputsAgainstSpec(std::shared_ptr<Region> region1, bool verbose)
   Byte *buf8;
   Array array1(type);
   Array array2(type);
-  region1->getParameterArray(parameter, array1);
-  region2->getParameterArray(parameter, array2);
+  if (region1->isInitialized() && region2->isInitialized()) {
+    region1->getParameterArray(parameter, array1);
+    region2->getParameterArray(parameter, array2);
+  } else if (!region1->isInitialized()) {
+    return ::testing::AssertionFailure()
+           << "Failure: Original region was not intialized but Restored region was initialized.";
+  } else if (!region2->isInitialized()) {
+    return ::testing::AssertionFailure()
+           << "Failure: Original region was intialized but Restored region was not initialized.";
+  }
+    else {
+    // both are not initialized, so ok
+    return ::testing::AssertionSuccess();
+  }
 
   if (type != array1.getType())
     return ::testing::AssertionFailure() << "Failure: Original Array1 for parameter '" << parameter

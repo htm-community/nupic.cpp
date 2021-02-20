@@ -190,7 +190,7 @@ TEST(DateEncoderRegionTest, testSpecAndParameters)
 	  VERBOSE << "Checking data after first iteration..." << std::endl;
     Array r1OutputArray = reader->getOutputData("dataOut");
     VERBOSE << "  FileInputRegion Output" << r1OutputArray << std::endl;
-    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32)
+    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real64)
             << "actual type is " << BasicType::getName(r1OutputArray.getType());
     VERBOSE << "  " << std::endl;
 
@@ -273,6 +273,163 @@ TEST(DateEncoderRegionTest, testSpecAndParameters)
     // cleanup
     Directory::removeTree("TestOutputDir", true);
 	}
+
+  TEST(DateEncoderRegionTest, getSpecJSON) {
+          std::string expected = R"({"spec": "DateEncoderRegion",
+  "parameters": {
+    "custom_days": {
+      "description": "A list of day names to be included in the set, i.e. 'mon,tue,fri'",
+      "type": "String",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": ""
+    },
+    "custom_width": {
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "dayOfWeek_radius": {
+      "type": "Real32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "1.0"
+    },
+    "dayOfWeek_width": {
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "holiday_dates": {
+      "description": "A list of holiday dates in format of 'month,day' or 'year,month,day', ie [[12,25],[2020,05,04]]",
+      "type": "String",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "[[12,25]]"
+    },
+    "holiday_width": {
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "noise": {
+      "description": "amount of noise to add to the output SDR. 0.01 is 1%",
+      "type": "Real32",
+      "count": 1,
+      "access": "ReadWrite",
+      "defaultValue": "0.0"
+    },
+    "season_radius": {
+      "type": "Real32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "91.5"
+    },
+    "season_width": {
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "sensedTime": {
+      "description": "The value to encode. Unix EPOCH time. Overriden by input 'values'. A value of 0 means current time.",
+      "type": "Int64",
+      "count": 1,
+      "access": "ReadWrite",
+      "defaultValue": "0"
+    },
+    "size": {
+      "description": "Total width of encoded output.",
+      "type": "UInt32",
+      "count": 1,
+      "access": "ReadOnly",
+      "defaultValue": ""
+    },
+    "timeOfDay_radius": {
+      "type": "Real32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "4.0"
+    },
+    "timeOfDay_width": {
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    },
+    "verbose": {
+      "description": "if true, display debug info for each member encoded.",
+      "type": "Bool",
+      "count": 1,
+      "access": "ReadWrite",
+      "defaultValue": "false"
+    },
+    "weekend_width": {
+      "type": "UInt32",
+      "count": 1,
+      "access": "Create",
+      "defaultValue": "0"
+    }
+  },
+  "inputs": {
+    "values": {
+      "description": "Values to encode. Overrides sensedTime.",
+      "type": "Int64",
+      "count": 1,
+      "required": 0,
+      "regionLevel": 1,
+      "isDefaultInput": 1
+    }
+  },
+  "outputs": {
+    "bucket": {
+      "description": "Quantized samples based on the radius. One sample for each attribute used. Becomes the title for this sample in Classifier.",
+      "type": "Real64",
+      "count": 0,
+      "regionLevel": 0,
+      "isDefaultOutput": 0
+    },
+    "encoded": {
+      "description": "Encoded bits. Not a true Sparse Data Representation.",
+      "type": "SDR",
+      "count": 0,
+      "regionLevel": 1,
+      "isDefaultOutput": 1
+    }
+  }
+})";
+    Spec *spec = DateEncoderRegion::createSpec();
+    std::string json = spec->toString();
+    EXPECT_STREQ(json.c_str(), expected.c_str());
+  }
+
+  TEST(DateEncoderRegionTest, getParameters) {
+    std::string expected = R"({
+  "custom_days": null,
+  "custom_width": 0,
+  "dayOfWeek_radius": 1.000000,
+  "dayOfWeek_width": 5,
+  "holiday_dates": "[[12,25]]",
+  "holiday_width": 0,
+  "noise": 0.000000,
+  "season_radius": 91.500000,
+  "season_width": 0,
+  "sensedTime": 0,
+  "size": 45,
+  "timeOfDay_radius": 4.000000,
+  "timeOfDay_width": 0,
+  "verbose": false,
+  "weekend_width": 5
+})";
+    Network net1;
+    std::string params = "{\"dayOfWeek_width\": 5, \"weekend_width\": 5, \"verbose\": " + std::string((verbose) ? "true" : "false") + "}";
+    std::shared_ptr<Region> region1 = net1.addRegion("encoder", "DateEncoderRegion", params);
+    std::string json = region1->getParameters();
+    EXPECT_STREQ(json.c_str(), expected.c_str());
+  }
 
 
 } // namespace

@@ -78,15 +78,17 @@ class ConnectionsTest(unittest.TestCase):
     
     connections = Connections(NUM_CELLS, 0.51) 
     for i in range(NUM_CELLS):
-      seg = connections.createSegment(i, 1)
+      seg = connections.createSegment(i, 2)
+      seg = connections.createSegment(i, 2) #create 2 segments on each cell
     
     for cell in active_cells:
         segments = connections.segmentsForCell(cell)
-        self.assertEqual(len(segments), 1, "Segments were prematurely destroyed.")
+        self.assertEqual(len(segments), 2, "Segments were prematurely destroyed.")
         segment = segments[0]
-        connections.adaptSegment(segment, inputSDR, 0.1, 0.001, True)
+        numSynapsesOnSegment = len(segments)
+        connections.adaptSegment(segment, inputSDR, 0.1, 0.001, pruneZeroSynapses=True, segmentThreshold=1) #set to =1 so that segments get always deleted in this test
         segments = connections.segmentsForCell(cell)
-        self.assertEqual(len(segments), 0, "Segments were not destroyed.")
+        self.assertEqual(len(segments), 1, "Segments were not destroyed.")
 
   def testAdaptShouldIncrementSynapses(self):
     """
@@ -161,6 +163,66 @@ class ConnectionsTest(unittest.TestCase):
 
         presynamptic_cells = self._getPresynapticCells(connections, segment, 0.1)
         self.assertEqual(presynamptic_cells, presynaptic_input_set, "Missing synapses")
+
+
+
+  def testCreateSynapse(self):
+    # empty connections, create segment and a synapse
+    co = Connections(NUM_CELLS, 0.51)
+    self.assertEqual(co.numSynapses(), 0)
+    self.assertEqual(co.numSegments(), 0)
+
+    # 1st, create a segment
+    seg = co.createSegment(NUM_CELLS-1, 1)
+    self.assertEqual(co.numSegments(), 1)
+
+    #1. create a synapse on that segment
+    syn1 = co.createSynapse(seg, NUM_CELLS-1, 0.52)
+    self.assertEqual(pytest.approx(co.permanenceForSynapse(syn1)), 0.52)
+    self.assertEqual(co.numSynapses(), 1)
+
+    #2. creating a duplicit synapse should not crash!
+    syn2 = co.createSynapse(seg, NUM_CELLS-1, 0.52)
+    self.assertEqual( syn1,  syn2, "creating duplicate synapses should return the same")
+    self.assertEqual(co.numSynapses(), 1, "Duplicate synapse, number should not increase")
+
+    #3. create a different synapse
+    syn3 = co.createSynapse(seg, 1, 0.52)
+    self.assertNotEqual( syn1,  syn3, "creating a different synapse must create a new one")
+    self.assertEqual(co.numSynapses(), 2, "New synapse should increase the number")
+
+    #4. create existing synapse with a new value -> should update permanence
+    #4.a lower permanence -> keep max()
+    syn4 = co.createSynapse(seg, NUM_CELLS-1, 0.11) #all the same just permanence is a lower val
+    self.assertEqual( syn1,  syn4, "just updating existing syn")
+    self.assertEqual(co.numSynapses(), 2, "Duplicate synapse, number should not increase")
+    self.assertEqual(pytest.approx(co.permanenceForSynapse(syn1)), 0.52, "update keeps the larger value")
+
+    #4.b higher permanence -> update
+    syn5 = co.createSynapse(seg, NUM_CELLS-1, 0.99) #all the same just permanence is a higher val
+    self.assertEqual( syn1,  syn5, "just updating existing syn")
+    self.assertEqual(co.numSynapses(), 2, "Duplicate synapse, number should not increase")
+    self.assertEqual(pytest.approx(co.permanenceForSynapse(syn1)), 0.99, "updated to the larger permanence value")
+
+
+
+  def testDestroySynapse(self):
+    # empty connections, create segment seg and a synapse syn
+    co = Connections(NUM_CELLS, 0.51)
+    seg = co.createSegment(NUM_CELLS-1, 1)
+    syn1 = co.createSynapse(seg, NUM_CELLS-1, 0.52)
+
+    # destroy the synapse
+    co.destroySynapse(syn1)
+    self.assertEqual(co.numSynapses(), 0)
+
+    with pytest.raises(RuntimeError): # NTA_CHECK, data for removed synapse must not be accessible!
+      permRemoved = co.permanenceForSynapse(syn1)
+      assert permRemoved == perm1
+
+    # double remove should be just ignored
+    co.destroySynapse(syn1)
+    
 
 
   def testNumSynapses(self):
@@ -345,6 +407,49 @@ class ConnectionsTest(unittest.TestCase):
   def testConnectedThreshold(self):
     conn = Connections(1024, 0.123, False)
     self.assertAlmostEqual(conn.connectedThreshold,  0.123, places=4)
+
+  def testCreateSegment(self):
+    co = Connections(NUM_CELLS, 0.51)
+    self.assertEqual(co.numSegments(), 0, "there are zero segments yet")
+
+    # create segment
+    co.createSegment(NUM_CELLS-1, 20)
+    self.assertEqual(co.numSegments(), 1, "created 1 new segment")
+
+    # wrong param
+    with pytest.raises(RuntimeError):
+      co.createSegment(1, 0) #wrong param maxSegmentsPerCell "0"
+
+    # wrong param - OOB cell
+    with pytest.raises(RuntimeError):
+      co.createSegment(NUM_CELLS+22, 1)
+
+    # another segment
+    co.createSegment(NUM_CELLS-1, 20)
+    self.assertEqual(co.numSegments(), 2)
+
+    # segment pruning -> reduce to 1 seg per cell
+    co.createSegment(NUM_CELLS-1, 1)
+    self.assertEqual(co.numSegments(), 1)
+
+
+  def testDestroySegment(self):
+    co = Connections(NUM_CELLS, 0.51)
+    self.assertEqual(co.numSegments(), 0, "there are zero segments yet")
+
+    # removing while no segments exist
+    co.destroySegment(1)
+
+    # successfully remove
+    seg = co.createSegment(1, 20)
+    self.assertEqual(co.numSegments(), 1)
+    n = co.numConnectedSynapses(seg) #uses dataForSegment()
+    co.destroySegment(seg)
+    self.assertEqual(co.numSegments(), 0, "segment should have been removed")
+    with pytest.raises(RuntimeError):
+      n2 = co.numConnectedSynapses(seg)
+    
+
 
 
 if __name__ == "__main__":

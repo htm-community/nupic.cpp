@@ -215,6 +215,22 @@ void Watcher::watcherCallback(Network *net, UInt64 iteration, void *dataIn) {
           }
           break;
         }
+        case NTA_BasicType_Str: {
+          Array a(NTA_BasicType_Str);
+          watch.region->getParameterArray(watch.varName, a);
+          std::string *buf = (std::string *)a.getBuffer();
+          out << a.getCount();
+          if (watch.sparseOutput) {
+            for (UInt j = 0; j < a.getCount(); j++) {
+              out << " " << buf[j];
+            }
+          } else {
+            for (UInt j = 0; j < a.getCount(); j++) {
+              out << " " << buf[j];
+            }
+          }
+          break;
+        }
         default:
           NTA_THROW << "Internal error.";
         } // switch
@@ -251,6 +267,11 @@ void Watcher::watcherCallback(Network *net, UInt64 iteration, void *dataIn) {
           break;
         }
         case NTA_BasicType_Byte: {
+          std::string p = watch.region->getParameterString(watch.varName);
+          out << p;
+          break;
+        }
+        case NTA_BasicType_Str: {
           std::string p = watch.region->getParameterString(watch.varName);
           out << p;
           break;
@@ -406,10 +427,12 @@ void Watcher::attachToNetwork(Network& net)
           watch.varType != NTA_BasicType_UInt32 &&
           watch.varType != NTA_BasicType_Int64 &&
           watch.varType != NTA_BasicType_UInt64 &&
-          watch.varType != NTA_BasicType_Real32 &&
+          watch.varType != NTA_BasicType_Real32 && 
           watch.varType != NTA_BasicType_Real64 &&
+          watch.varType != NTA_BasicType_SDR && 
+          watch.varType != NTA_BasicType_Str &&
           watch.varType != NTA_BasicType_Byte) {
-        NTA_THROW << BasicType::getName(watch.varType) << " is not an "
+            NTA_THROW << BasicType::getName(watch.varType) << " is not an "
                   << "array parameter type supported by Watcher.";
       }
 

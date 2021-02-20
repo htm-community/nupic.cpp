@@ -4,7 +4,7 @@
 
 [![CI Build Status](https://github.com/htm-community/htm.core/workflows/build/badge.svg)](https://github.com/htm-community/htm.core/actions)
 
-This is a Community Fork of the [nupic.core](https://github.com/numenta/nupic.core) C++ repository, with Python bindings. This implements the theory as described in [Numnta's BAMI](https://numenta.com/resources/biological-and-machine-intelligence/).
+This is a Community Fork of the [nupic.core](https://github.com/numenta/nupic.core) C++ repository, with Python bindings. This implements the theory as described in [Numenta's BAMI](https://numenta.com/resources/biological-and-machine-intelligence/).
 
 ## Project Goals
 
@@ -35,6 +35,7 @@ in C++ library.
    This is a priority for the `NetworkAPI`.
    The algorithms APIs on the other hand have deviated from their original API (but their logic is the same as Numenta's).
    If you are porting your code to this codebase, please follow the [API Differences](API_DIFFERENCES.md) and consult the [API Changelog](API_CHANGELOG.md).
+ * The 'NetworkAPI' as originally defined by the NuPIC library includes a set of build-in Regions. These   are described in [NetworkAPI docs](docs/NetworkAPI.md) 
  * REST interface for `NetworkAPI` with a REST server.
 
 ## Installation
@@ -59,12 +60,12 @@ For running C++ apps/examples/tests from binary release: none.
 If you want to use python, then obviously:
 
 - [Python](https://python.org/downloads/)
-    - Standard Python 3.4+ (Recommended)
+    - Standard Python 3.7+ (Recommended)
     - Standard Python 2.7
       + We recommend the latest version of 2.7 where possible, but the system version should be fine.
       + Python 2 is Not Supported on Windows, use Python 3 instead.
       + Python 2 is not tested by our CI anomore. It may still work but we don't test it. We expect to drop support for Python2 around 2020.
-    - Anaconda Python 3.7+
+    - [Anaconda Python](https://www.anaconda.com/products/individual#Downloads) 3.7+
       + On windows you must run from within 'Anaconda Prompt' not 'Command Prompt'.
       + The pre-built binary releases only work with Standard Python so you must build from sources.
       + Anaconda Python is not tested in our CI.
@@ -78,34 +79,39 @@ If you want to use python, then obviously:
 
 ### Building from Source
 
-Fork or download the HTM-Community htm.core repository from https://github.com/htm-community/htm.core
+An advantage of `HTM.core` is its well tested self-sustained dependency install, so you can install
+HTM on almost any platform/system if installing from source. 
+
+Fork or [download](https://github.com/htm-community/htm.core/archive/master.zip) the HTM-Community htm.core repository from [https://github.com/htm-community/htm.core](https://github.com/htm-community/htm.core). 
+
+To fork the repo with `git`:
+```
+git clone https://github.com/htm-community/htm.core
+```
 
 #### Prerequisites
 
 - same as for Binary releases, plus:
-- [CMake](http://www.cmake.org/)  Version 3.7  (3.14 for MSVC 2019)
-    - You should use `cmake` provided by your distribution,
-    - if not available, you can install it from Python: `python -m pip install cmake>=3.10`
-- **C++ compiler**: c++11/17 compatible (ie. g++, clang++)
+- **C++ compiler**: c++11/17 compatible (ie. g++, clang++).
+- boost library (if not a C++17 compiler that supports filesystem.)
 
-Be sure you are running the right version of python. Check it with the following command:
-```
-python --version
-```
+Note: Windows MSVC 2019 runs as C++17 by default.  On linux use -std=c++17 compile option to 
+      avoid needing boost.
+
 
 #### Simple Python build (any platform)
 
-1) At a command prompt, cd to the root directory of this repository.
+1) At a command prompt, `cd` to the root directory of this repository.
 
 2) Run: `python setup.py install --user --force`
 
-   This will build and install everything.  The `--user` option prevents the system installed site-packages folder from being changed and avoids the need for admin privileges.  The `--force` option forces the package to be replaced if it already exists from a previous build. Alternatively you can type `pip uninstall htm.core` to remove a previous package before performing a build.
+   This will build and install a release version of htm.core.  The `--user` option prevents the system installed site-packages folder from being changed and avoids the need for admin privileges.  The `--force` option forces the package to be replaced if it already exists from a previous build. Alternatively you can type `pip uninstall htm.core` to remove a previous package before performing a build.
    
    * If you are using `virtualenv` you do not need the --user or --force options.
    * If you are using Anaconda Python you must run within the `Anaconda Prompt` on Windows. Do not use --user or --force options.
 
    * If you run into problems due to caching of arguments in CMake, delete the
-   folder `Repository/build` and try again.  This is only an issue when
+   folder `<path-to-repo>/build` and try again.  This may be only an issue when
    developing C++ code.
 
 3) After that completes you are ready to import the library:
@@ -125,13 +131,13 @@ python --version
 
 #### Simple C++ build 
 
-After downloading the repository, do the following:
+After cloning/downloading the repository, do the following:
 ```
 cd path-to-repository
 mkdir -p build/scripts
 cd build/scripts
 cmake ../..
-make -j install
+make -j8 install
 ```
 
 | Build Artifact | File Location |
@@ -146,19 +152,67 @@ make -j install
 | REST Client Example    | `build/Release/bin/rest_client`      |
 
  * A debug library can be created by adding `-DCMAKE_BUILD_TYPE=Debug` to the cmake command above.
-   + The debug library will be put in `build/Debug`.
+   + The debug library will be put in `build/Debug` rather than `build/Release`.
      Use the cmake option `-DCMAKE_INSTALL_PREFIX=../Release` to change this.
 
  * The -j option can be used with the `make install` command to compile with multiple threads.
 
  * This will not build the Python interface. Use the Python build described above to build and install the python interface.
 
+Here is an example of a **Release build** of your own C++ app that links to htm.core as a shared library.
+```
+#! /bin/sh
+# Using GCC on linux ...
+# First build htm.core from sources.
+#      cd <path-to-repo>
+#      mkdir -p build/scripts
+#      cd build/scripts
+#      cmake ../..
+#      make -j4 install
+#
+# Now build myapp
+# We use -std=c++17 to get <filesystem> so we can avoid using the boost library.
+# The -I gives the path to the includes needed to use with the htm.core library.
+# The -L gives the path to the shared htm.core library location at build time.
+# The LD_LIBRARY_PATH envirment variable points to the htm.core library location at runtime.
+g++ -o myapp -std=c++17 -I <path-to-repo>/build/Release/include myapp.cpp -L <path-to-repo>/build/Release/lib -lhtm_core -lpthread -ldl
+
+# Run myapp 
+export LD_LIBRARY_PATH=<path-to-repo>/build/Release/lib:$LD_LIBRARY_PATH
+./myapp
+```
+
+Here is an example of a **Debug build** of your own C++ app that links to htm.core as a shared library.
+```
+#! /bin/sh
+# Using GCC on linux ...
+# First build htm.core as debug from sources.
+#      cd <path-to-repo>
+#      mkdir -p build/scripts
+#      cd build/scripts
+#      cmake ../.. -DCMAKE_BUILD_TYPE=Debug
+#      make -j4 install
+#
+# Now build myapp
+# The -g -Og tells the compiler to build debug mode with no optimize.
+# We use -std=c++17 to get <filesystem> so we can avoid using the boost library.
+# The -D_GLIBCXX_DEBUG setting tell compiler to compile std:: with debug
+# The -I gives the path to the includes needed to use with the htm.core library.
+# The -L gives the path to the shared htm.core library location at build time.
+# The LD_LIBRARY_PATH envirment variable points to the htm.core library location at runtime.
+g++ -g -Og -o myapp -std=c++17 -D_GLIBCXX_DEBUG -I <path-to-repo>/build/Debug/include myapp.cpp -L <path-to-repo>/build/Debug/lib -lhtm_core -lpthread -ldl
+
+# Run myapp in the debugger
+export LD_LIBRARY_PATH=<path-to-repo>/build/Debug/lib:$LD_LIBRARY_PATH
+gdb ./myapp
+```
 
 ### Docker Builds
 
 #### Build for Docker amd64 (x86_64)
 
-Our [Dockerfile](./Dockerfile) allows easy (cross) compilation from/to many HW platforms. 
+Our [Dockerfile](./Dockerfile) allows easy (cross) compilation from/to many HW platforms. This docker file does the full build, test & package build. 
+It takes quite a while to complete. 
 
 If you are on `amd64` (`x86_64`) and would like to build a Docker image:
 
@@ -175,40 +229,70 @@ specifically.
 ```sh
 docker build --build-arg arch=arm64 .
 ```
+Note: 
+* If you're directly on ARM64/aarch64 (running on real HW) you don't need the docker image, and can use the standard binary/source installation procedure. 
+
+#### Docker build for ARM64/aarch64 on AMD64/x86_64 HW
+
+A bit tricky part is providing cross-compilation builds if you need to build for a different platform (aarch64) then your system is running (x86_64). 
+A typical case is CI where all the standard(free) solutions offer only x86_64 systems, but we want to build for ARM. 
+
+See our [ARM release workflow](./.github/workflows/release.yml). 
+
+When running locally run:
+```sh
+docker run --privileged --rm multiarch/qemu-user-static:register
+docker build -t htm-arm64-docker --build-arg arch=arm64 -f Dockerfile-pypi .
+docker run htm-arm64-docker uname -a
+docker run htm-arm64-docker python setup.py test
+```
+Note: 
+* the 1st line allows you to emulate another platform on your HW.
+* 2nd line builds the docker image. The [Dockerfile](./Dockerfile) is a lightweight Alpine_arm64 image, which does full build,test&package build. It can take quite a long time. 
+  The [Dockerfile-pypi](./Dockerfile-pypi) "just" switches you to ARM64/aarch64 env, and then you can build & test yourself.
+
 
 ### Automated Builds, CI
 
 We use Github `Actions` to build and run multiplatform (OSX, Windows, Linux, ARM64) tests and releases. 
+* the [pr.yml](/.github/workflows/pr.yml) runs on each pull-request (PR), builds for Linux(Ubuntu 20.04), Windows(2019), OSX(10.15) and checkes that all tests pass OK. This is mandatory for a new PR
+to be accepted. 
+* [release.yml](/.github/workflows/release.yml) is created manually by the maintainers in the [release process](./RELEASE.md) and creates 
+  - binary GitHub releases
+  - PyPI wheels for `htm.core`
+  - uploads artifacts
+* [arm.yml](/.github/workflows/arm.yml) is an ARM64 build (that takes a long time) and thus is ran only daily.
 
-[![CI Build Status](https://github.com/htm-community/htm.core/workflows/build/badge.svg)](https://github.com/htm-community/htm.core/actions)
 
-### Linux auto build @ Github Actions
 
- * [![CI Build Status](https://github.com/htm-community/htm.core/workflows/build/badge.svg)](https://github.com/htm-community/htm.core/actions?workflow=build)
- * [Config](./.github/workflows/build.yml)
+[![CI Build Status](https://github.com/htm-community/htm.core/workflows/pr/badge.svg)](https://github.com/htm-community/htm.core/actions)
 
-### Mac OS/X auto build @ Github Actions
+#### Linux/OSX/Windows auto build on PR @ Github Actions
 
- * [![CI Build Status](https://github.com/htm-community/htm.core/workflows/build/badge.svg)](https://github.com/htm-community/htm.core/actions?workflow=build)
- * [Config](./.github/workflows/build.yml)
- * Local Test Build: `circleci local execute --job build-and-test`
+ * [![CI Build Status](https://github.com/htm-community/htm.core/workflows/pr/badge.svg)](https://github.com/htm-community/htm.core/actions?workflow=pr)
+ * [Config](./.github/workflows/pr.yml)
 
-### Windows auto build @ Github Actions
 
- * [![CI Build Status](https://github.com/htm-community/htm.core/workflows/build/badge.svg)](https://github.com/htm-community/htm.core/actions?workflow=build)
- * [Config](./.github/workflows/build.yml)
-
-### ARM64 auto build @ Github Actions
+#### ARM64 auto build @ Github Actions
 
 This uses Docker and QEMU to achieve an ARM64 build on Actions' x86_64/amd64 hardware.
 
- * [![CI Build Status](https://github.com/htm-community/htm.core/workflows/arm64-build/badge.svg)](https://github.com/htm-community/htm.core/actions?workflow=arm64-build)
- * [Config](./.github/workflows/arm64-build.yml)
+ * [![CI Build Status](https://github.com/htm-community/htm.core/workflows/arm64/badge.svg)](https://github.com/htm-community/htm.core/actions?workflow=arm64)
+ * [Config](./.github/workflows/arm.yml)
 
 
-## Workflow: Using IDE
 
-### Generate the IDE solution  (Netbeans, XCode, Eclipse, KDevelop, etc)
+### Documentation
+For Doxygen see [docs README](docs/README.md).
+For NetworkAPI see [NetworkAPI docs](docs/NetworkAPI.md).
+
+
+
+## Workflow
+
+### Using IDE  (Netbeans, XCode, Eclipse, KDevelop, etc)
+
+Generate IDE solution & build.
 
  * Choose the IDE that interest you (remember that IDE choice is limited to your OS).
  * Open CMake executable in the IDE.
@@ -228,7 +312,7 @@ After downloading the repository, do the following:
  * In the solution explorer window, right Click on 'unit_tests' and select `Set as StartUp Project` so debugger will run unit tests.
  * If you also want the Python extension library; then delete the `build` folder and then in a command prompt, cd to root of repository and run `python setup.py install --user --force`.
 
-#### For Visual Studio Code as the IDE
+#### For Visual Studio Code (VSCode) as the IDE
 [Visual Studio Code](https://code.visualstudio.com/) can be used on any of our three platforms (Windows, Linux, OSx). 
 You will need the C/C++ Tools extension by Microsoft and CMake Tools by vector-of-bool.
 
@@ -260,15 +344,16 @@ For Ubuntu and OSx:
 #### For Eclipse as the IDE
  * File - new C/C++Project - Empty or Existing CMake Project
  * Location: (`$HTM_CORE`) - Finish
- * Project properties - C/C++ Build - build command set "make -C build/scripts VERBOSE=1 install -j 6"
+ * Project properties - C/C++ Build - build command set "make -C build/scripts VERBOSE=1 install -j [number of your's CPU cores]"
  * There can be issue with indexer and boost library, which can cause OS memory to overflow -> add exclude filter to
    your project properties - Resource Filters - Exclude all folders that matches boost, recursively
- * (Eclipse IDE for C/C++ Developers, 2019-03)
+ * (Eclipse IDE for C/C++ Developers, 2019-03 on Ubuntu 18.04)
 
 For all new work, tab settings are at 2 characters, replace tabs with spaces.
 The clang-format is LLVM style.
 
-### Workflow: Debugging 
+
+### Debugging 
 
 Creating a debug build of the `htm.core` library and unit tests is the same as building any C++ 
 application in Debug mode in any IDE as long as you do not include the python bindings. i.e. do 
@@ -290,7 +375,26 @@ Be aware that the CMake maintains a cache of build-time arguments and it will ig
 to CMake if is already in the cache.  So, between runs you need to clear the cache or even better,
 entirely remove the `build/` folder (ie. `git clean -xdf`).
 
-### Workflow: Dependency management
+### Python development mode
+
+When you run `python setup.py install --user --force` it will copy python scripts into `build/Release/distr/src` and deploy as package into user site-packages (on linux in `/home/.local/`).
+To avoid deploying there use "development mode":
+`python setup.py develop --user --force`
+This will create link file in site-packages pointing to the distr folder. You can modify distr scripts and your changes will be reflected immediately.
+Note: Unfortunately calling this command again will not overwrite distr scripts, so you need to delete distr folder first.
+
+To remove the link file call:
+
+`python setup.py develop --user --uninstall`
+
+Note: you can always check from where you are importing sources, by typing into python console e.g.:
+```
+import htm.bindings.sdr
+print(htm.bindings.sdr.__file__)
+```
+Note2: It is obvious, but anyway - do not use `--user` option while using python environment managers(Anaconda..)
+
+### Dependency management
 
 The installation scripts will automatically download and build the dependencies it needs.
 
@@ -301,6 +405,7 @@ The installation scripts will automatically download and build the dependencies 
  * [gtest](https://github.com/google/googletest)
  * [cereal](https://uscilab.github.io/cereal/)
  * [mnist test data](https://github.com/wichtounet/mnist)
+ * [sqlite3](https://www.sqlite.org/2020/sqlite-autoconf-3320300.tar.gz)
  * [digestpp](https://github.com/kerukuro/digestpp) (for SimHash encoders)
  * and [python requirements.txt](./requirements.txt)
 
@@ -317,26 +422,34 @@ distribution packages as listed and rename them as indicated. Copy these to
 | :--------------------- | :----------------- |
 | libyaml.zip   (*node1) | https://github.com/yaml/libyaml/archive/master.zip |
 | boost.tar.gz  (*note3) | https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.gz | 
-| eigen.tar.bz2          | http://bitbucket.org/eigen/eigen/get/3.3.7.tar.bz2 |
+| eigen.tar.bz2          | https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.tar.bz2 |
 | googletest.tar.gz      | https://github.com/abseil/googletest/archive/release-1.8.1.tar.gz |
 | mnist.zip     (*note4) | https://github.com/wichtounet/mnist/archive/master.zip |
 | pybind11.tar.gz        | https://github.com/pybind/pybind11/archive/v2.4.2.tar.gz |
 | cereal.tar.gz          | https://github.com/USCiLab/cereal/archive/v1.2.2.tar.gz |
+| sqlite3.tar.gz         | https://www.sqlite.org/2020/sqlite-autoconf-3320300.tar.gz |
 | digestpp.zip           | https://github.com/kerukuro/digestpp/archive/36fa6ca2b85808bd171b13b65a345130dbe1d774.zip |
-| cpp-httplib.zip(*node4)| https://github.com/yhirose/cpp-httplib/archive/v0.5.5.zip |
+| cpp-httplib.zip(*node4)| https://github.com/yhirose/cpp-httplib/archive/v0.7.6.zip |
 
  * note1: Version 0.2.2 of libyaml is broken so use the master for the repository.
  * note3: Boost is not required for any compiler that supports C++17 with `std::filesystem` (MSVC2017, gcc-8, clang-9).
  * note4: Used for examples. Not required to run but the build expects it.
 
+
 ## Testing
 
-### There are two sets of Unit Tests:
+We support test-driven development with reproducible builds. 
+You should run tests locally, and tests are also run as a part of the CI. 
+
+### C++ & Python Unit Tests:
+
+There are two sets (somewhat duplicit) tests for c++ and python.
 
  * C++ Unit tests -- to run: `./build/Release/bin/unit_tests`
  * Python Unit tests -- to run: `python setup.py test` (runs also the C++ tests above)
    - `py/tests/`
    - `bindings/py/tests/`
+
 
 ## Examples
 
@@ -353,8 +466,8 @@ Look in:
 
 ### Hot Gym
 
-This is a simple example application that calls the SpatialPooler and
-TemporalMemory algorithms directly.  This attempts to predict the electrical
+This is a simple example application that calls the `SpatialPooler` and
+`TemporalMemory` algorithms directly.  This attempts to predict the electrical
 power consumption for a gymnasium over the course of several months.
 
 To run python version:
@@ -362,16 +475,16 @@ To run python version:
 python -m htm.examples.hotgym
 ```
 
-To run C++ version: (assuming current directory is top of repository)
-```
+To run C++ version: (assuming current directory is root of the repository)
+```sh
 ./build/Release/bin/benchmark_hotgym
 ```
 
 There is also a dynamically linked version of Hot Gym (not available on MSVC). 
-You will need specify the location of the shared library with LD_LIBRARY_PATH.
+You will need specify the location of the shared library with `LD_LIBRARY_PATH`.
 
-To run: (assuming current directory is top of repository)
-```
+To run: (assuming current directory is root of the repository)
+```sh
 LD_LIBRARY_PATH=build/Release/lib ./build/Release/bin/dynamic_hotgym
 ```
 
@@ -408,9 +521,10 @@ To run:  first start the server.
 ```
 The default host is 127.0.0.1 (the local host) and the port is 8050.
 
+
 ## License
 
-The htm.core library is distributed under GNU Affero Public License version 3.  The full text of the license can be found at http://www.gnu.org/licenses.
+The htm.core library is distributed under GNU Affero Public License version 3 (AGPLv3).  The full text of the license can be found at http://www.gnu.org/licenses.
 
 Libraries that are incorporated into htm.core have the following licenses:
 
@@ -423,7 +537,6 @@ Libraries that are incorporated into htm.core have the following licenses:
 | cereal | https://uscilab.github.io/cereal/ | https://opensource.org/licenses/BSD-3-Clause |
 | digestpp | https://github.com/kerukuro/digestpp | released into public domain |
 | cpp-httplib | https://github.com/yhirose/cpp-httplib | https://github.com/yhirose/cpp-httplib/blob/master/LICENSE |
-
 
  * note3: Boost is not used if built with any compiler that supports C++17 with `std::filesystem` (MSVC2017, gcc-8, clang-9).
  
@@ -472,6 +585,9 @@ Community projects for working with HTM.
 ### Visualization
 #### HTMPandaVis
 This project aspires to create tool that helps **visualize HTM systems in 3D** by using opensource framework for 3D rendering https://www.panda3d.org/
+
+NetworkAPI has region called "DatabaseRegion". This region can be used for generating SQLite file and later on read by PandaVis - DashVis feature,
+to show interactive plots in web browser on localhost. See [napi_hello_database](https://github.com/htm-community/htm.core/tree/master/src/examples/napi_hello) for basic usage.
 
 For more info, visit [repository of the project](https://github.com/htm-community/HTMpandaVis)
 ![pandaVis1](docs/images/pandaVis1.png)

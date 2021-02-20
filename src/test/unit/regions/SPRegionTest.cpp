@@ -69,7 +69,7 @@
 static bool verbose = false;  // turn this on to print extra stuff for debugging the test.
 
 // The following string should contain a valid expected Spec length - manually verified. 
-const UInt EXPECTED_SPEC_COUNT =  22u;  // The number of parameters expected in the SPRegion Spec
+const UInt EXPECTED_SPEC_COUNT =  20u;  // The number of parameters expected in the SPRegion Spec
 
 using namespace htm;
 namespace testing 
@@ -225,10 +225,10 @@ namespace testing
     VERBOSE << "  FileInputRegion Output" << std::endl;
     Array r1OutputArray = region1->getOutputData("dataOut");
     EXPECT_EQ(r1OutputArray.getCount(), dataWidth);
-    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32)
+    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real64)
             << "actual type is " << BasicType::getName(r1OutputArray.getType());
 
-    Real32 *buffer1 = (Real32*) r1OutputArray.getBuffer();
+    Real64 *buffer1 = (Real64*) r1OutputArray.getBuffer();
 	  //for (size_t i = 0; i < r1OutputArray.getCount(); i++)
 	  //{
 		//VERBOSE << "  [" << i << "]=    " << buffer1[i] << "" << std::endl;
@@ -276,10 +276,10 @@ namespace testing
 
     VERBOSE << "  FileOutputRegion input" << std::endl;
     Array r3InputArray = region3->getInputData("dataIn");
-    ASSERT_TRUE(r3InputArray.getType() == NTA_BasicType_Real32)
+    ASSERT_TRUE(r3InputArray.getType() == NTA_BasicType_Real64)
       << "actual type is " << BasicType::getName(r3InputArray.getType());
     ASSERT_TRUE(r3InputArray.getCount() == columnCount);
-    const Real32 *buffer4 = (const Real32*)r3InputArray.getBuffer();
+    const Real64 *buffer4 = (const Real64*)r3InputArray.getBuffer();
     for (size_t i = 0; i < r3InputArray.getCount(); i++)
     {
       //VERBOSE << "  [" << i << "]=    " << buffer4[i] << "" << std::endl;
@@ -338,9 +338,9 @@ TEST(SPRegionTest, testSerialization)
     EXPECT_TRUE(compareParameters(n2region2, parameterMap)) 
       << "Conflict when comparing SPRegion parameters after restore with before save.";
       
-    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spatialPoolerOutput", NTA_BasicType_SDR))
+    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spatialPoolerOutput", NTA_BasicType_UInt32))
         << " comparing Output arrays after restore with before save.";
-    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spOutputNonZeros", NTA_BasicType_SDR))
+    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spOutputNonZeros", NTA_BasicType_UInt32))
         << " comparing NZ out arrays after restore with before save.";
 
 
@@ -376,8 +376,73 @@ TEST(SPRegionTest, testSerialization)
 
     // cleanup
     Directory::removeTree("TestOutputDir", true);
-	}
+}
 
+TEST(SPRegionTest, testGetParameters)
+{
+  Network net;
+  // create an SP region with default parameters
+  std::shared_ptr<Region> region1 = net.addRegion("region1", "SPRegion", "{dim: 100}"); // only declare the output size
+
+  // before initialization
+  std::string expected1 = R"({
+  "columnCount": 0,
+  "inputWidth": 0,
+  "potentialRadius": 16,
+  "potentialPct": 0.500000,
+  "globalInhibition": true,
+  "localAreaDensity": 0.050000,
+  "numActiveColumnsPerInhArea": 0,
+  "stimulusThreshold": 0,
+  "synPermInactiveDec": 0.008000,
+  "synPermActiveInc": 0.050000,
+  "synPermConnected": 0.100000,
+  "minPctOverlapDutyCycles": 0.001000,
+  "dutyCyclePeriod": 1000,
+  "boostStrength": 0.000000,
+  "seed": 1,
+  "spVerbosity": 0,
+  "wrapAround": true,
+  "learningMode": 1,
+  "activeOutputCount": 0,
+  "spatialImp": null
+})";
+
+  std::string jsonstr = region1->getParameters();
+  //VERBOSE << jsonstr << "\n";
+  EXPECT_STREQ(jsonstr.c_str(), expected1.c_str());
+
+
+  // after initialization
+  std::string expected2 = R"({
+  "columnCount": 100,
+  "inputWidth": 10,
+  "potentialRadius": 10,
+  "potentialPct": 0.500000,
+  "globalInhibition": true,
+  "localAreaDensity": 0.050000,
+  "numActiveColumnsPerInhArea": 0,
+  "stimulusThreshold": 0,
+  "synPermInactiveDec": 0.008000,
+  "synPermActiveInc": 0.050000,
+  "synPermConnected": 0.100000,
+  "minPctOverlapDutyCycles": 0.001000,
+  "dutyCyclePeriod": 1000,
+  "boostStrength": 0.000000,
+  "seed": 1,
+  "spVerbosity": 0,
+  "wrapAround": true,
+  "learningMode": 1,
+  "activeOutputCount": 100,
+  "spatialImp": null
+})";
+
+  net.link("INPUT", "region1", "", "{dim: 10}", "src", "bottomUpIn");                    // declare the input size
+  net.initialize();
+  jsonstr = region1->getParameters();
+  //VERBOSE << jsonstr << "\n";
+  EXPECT_STREQ(jsonstr.c_str(), expected2.c_str());
+}
 
 } // namespace
 

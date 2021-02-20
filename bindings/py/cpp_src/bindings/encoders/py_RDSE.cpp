@@ -59,8 +59,8 @@ overlap in at least some of their bits. You can think of this as the radius of
 the input.)");
 
         py_RDSE_args.def_readwrite("resolution", &RDSE_Parameters::resolution,
-R"(Two inputs separated by greater than, or equal to the resolution are
-guaranteed to have different representations.)");
+R"(Two inputs separated by greater than, or equal to the resolution will
+in general have different representations.)");
 
         py_RDSE_args.def_readwrite("category", &RDSE_Parameters::category,
 R"(Member "category" means that the inputs are enumerated categories.
@@ -115,7 +115,6 @@ fields are filled in automatically.)");
             self.encode(value, *sdr);
             return sdr;
         });
-
 
 	// Serialization
 	// loadFromString

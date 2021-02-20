@@ -163,7 +163,7 @@ class Thalamus(object):
         cellIndices = [self.trnCellIndex(x) for x in cellsToLearnOn]
         for cell in cellIndices:
             newSegment = self.trnConnections.createSegment(cell, self.maxSegmentsPerTrnCell)
-            self.trnConnections.growSynapses(newSegment, l6Pattern.sparse, self.connectedPermanence)
+            self.trnConnections.growSynapses(newSegment, l6Pattern.sparse, self.connectedPermanence, self.rng, maxNew=0)
 
         # print("Learning L6 SDR:", l6Pattern,
         #             "new segments: ", newSegments,
@@ -308,7 +308,7 @@ class Thalamus(object):
                 trnCells = self._preSynapticTRNCells(x, y)
                 for trnCell in trnCells:
                     newSegment = self.relayConnections.createSegment(relayCellIndex, self.maxSegmentsPerRelayCell)
-                    self.relayConnections.growSynapses(newSegment, np.array([self.trnCellIndex(trnCell)]), self.connectedPermanence)
+                    self.relayConnections.growSynapses(newSegment, np.array([self.trnCellIndex(trnCell)]), self.connectedPermanence, self.rng, maxNew=0)
 
 
     def _initializeRelayCellDendrites(self):

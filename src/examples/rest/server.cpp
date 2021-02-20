@@ -74,7 +74,7 @@ int main(int argc, char** argv) {
   }
   else if(argc == 3) {
     port = std::stoi(argv[1]);
-    net_interface = std::stoi(argv[2]);
+    net_interface = argv[2];
   }
 
   RESTserver  server;

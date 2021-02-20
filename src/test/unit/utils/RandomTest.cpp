@@ -37,8 +37,10 @@ using namespace std;
 TEST(RandomTest, Seeding) {
   {
   Random r;
+  ASSERT_TRUE(r.getSeed() != 0) << "Should initialize with randomized seed";
+
   auto x = r.getUInt32();
-  ASSERT_TRUE(x != 0);
+  ASSERT_NE(x,  0u);
   }
 
   // test getSeed
@@ -62,6 +64,10 @@ TEST(RandomTest, Seeding) {
   { //MAX_INT seed
   Random r(-1);
   ASSERT_EQ(r(), 419326371u);
+  }
+
+  for(int i=0; i< 10; i++) {
+    ASSERT_NE(Random(0).getSeed(), Random(0).getSeed()) << "Randomly seeded generators should not be identical!";
   }
 
 }
@@ -104,87 +110,15 @@ TEST(RandomTest, OperatorEquals) {
 }
 
 
-TEST(RandomTest, SerializationDeserialization) {
-  // test serialization/deserialization
-  Random r1(862973);
-  for (int i = 0; i < 100; i++)
-    r1.getUInt32();
+TEST(RandomTest, testSerialization) { // test serialization/deserialization using Cereal
+  const UInt SEED = 862973u;
+  Random r1(SEED);
+  ASSERT_EQ(r1.getSeed(), SEED) << "RNG seed not set properly";
 
+  //burn-in
+  for (int i = 0; i < 100; i++) r1.getUInt32();
   EXPECT_EQ(r1.getUInt32(), 2276275187u) << "Before serialization must be same";
-  // serialize
-  std::stringstream ostream;
-  ostream << r1;
 
-  // print out serialization for debugging
-  std::string x(ostream.str());
-//  NTA_INFO << "random serialize string: '" << x << "'";
-  // Serialization should be deterministic and platform independent
-  const std::string expectedString = "random-v2 862973 101 endrandom-v2 ";
-  EXPECT_EQ(expectedString, x) << "De/serialization";
-
-  // deserialize into r2
-  std::string s(ostream.str());
-  std::stringstream ss(s);
-  Random r2;
-  ss >> r2;
-
-  // r1 and r2 should be identical
-  EXPECT_EQ(r1, r2) << "load from serialization";
-  EXPECT_EQ(r2.getUInt32(), 3537119063u) << "Deserialized is not deterministic";
-  r1.getUInt32(); //move the same number of steps
-
-  UInt32 v1, v2;
-  for (int i = 0; i < 100; i++) {
-    v1 = r1.getUInt32();
-    v2 = r2.getUInt32();
-    EXPECT_EQ(v1, v2) << "serialization";
-  }
-}
-
-
-TEST(RandomTest, testSerialization2) {
-  const UInt n=1000;
-  Random r1(7);
-  Random r2;
-
-  htm::Timer testTimer;
-  testTimer.start();
-  for (UInt i = 0; i < n; ++i) {
-    r1.getUInt32();
-
-    // Serialize
-    ofstream os("random3.stream", ofstream::binary);
-    os << r1;
-    os.flush();
-    os.close();
-
-    // Deserialize
-    ifstream is("random3.stream", ifstream::binary);
-    is >> r2;
-    is.close();
-
-    // Test
-    ASSERT_EQ(r1.getUInt32(), r2.getUInt32());
-    ASSERT_EQ(r1.getUInt32(), r2.getUInt32());
-    ASSERT_EQ(r1.getUInt32(), r2.getUInt32());
-    ASSERT_EQ(r1.getUInt32(), r2.getUInt32());
-    ASSERT_EQ(r1.getUInt32(), r2.getUInt32());
-  }
-  testTimer.stop();
-
-  remove("random3.stream");
-
-  cout << "Random serialization: " << testTimer.getElapsed() << endl;
-}
-
-
-TEST(RandomTest, testSerialization_ar) {
-  // test serialization/deserialization
-  Random r1(862973);
-  for (int i = 0; i < 100; i++)
-    r1.getUInt32();
-
-  EXPECT_EQ(r1.getUInt32(), 2276275187u) << "Before serialization must be same";
   // serialize
   std::stringstream ss;
   r1.save(ss);
@@ -196,14 +130,14 @@ TEST(RandomTest, testSerialization_ar) {
   // r1 and r2 should be identical
   EXPECT_EQ(r1, r2) << "load from serialization";
   EXPECT_EQ(r2.getUInt32(), 3537119063u) << "Deserialized is not deterministic";
-  r1.getUInt32(); //move the same number of steps
+  EXPECT_EQ(r1.getUInt32(), 3537119063u); //move the same number of steps
+  EXPECT_EQ(r1.getSeed(), r2.getSeed());
+  EXPECT_EQ(r2.getSeed(), SEED) << "Rng deserialized seed is not the same!";
 
-  UInt32 v1, v2;
   for (int i = 0; i < 100; i++) {
-    v1 = r1.getUInt32();
-    v2 = r2.getUInt32();
-    EXPECT_EQ(v1, v2) << "serialization";
+    EXPECT_EQ(r1.getUInt32(), r2.getUInt32()) << "serialization";
   }
+
 }
 
 
@@ -223,28 +157,6 @@ TEST(RandomTest, ReturnInCorrectRange) {
   }
 }
 
-/*
-TEST(RandomTest, getUInt64) {
-  // tests for getUInt64
-  Random r1(1);
-  ASSERT_EQ(2469588189546311528u, r1.getUInt64())
-      << "check getUInt64, seed 1, first call";
-  ASSERT_EQ(2516265689700432462u, r1.getUInt64())
-      << "check getUInt64, seed 1, second call";
-
-  Random r2(2);
-  ASSERT_EQ(16668552215174154828u, r2.getUInt64())
-      << "check getUInt64, seed 2, first call";
-  EXPECT_EQ(15684088468973760345u, r2.getUInt64())
-      << "check getUInt64, seed 2, second call";
-
-  Random r3(7464235991977222558);
-  EXPECT_EQ(8035066300482877360u, r3.getUInt64())
-      << "check getUInt64, big seed, first call";
-  EXPECT_EQ(623784303608610892u, r3.getUInt64())
-      << "check getUInt64, big seed, second call";
-}
-*/
 
 TEST(RandomTest, getUInt32) {
   // tests for getUInt32

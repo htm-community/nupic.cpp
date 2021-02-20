@@ -69,7 +69,7 @@ namespace testing
     Spec* ns = RDSEEncoderRegion::createSpec();
     VERBOSE << *ns << std::endl;
 
-    std::shared_ptr<Region> region1 = net.addRegion("region1", "RDSERegion", "{size: 100, activeBits: 10, resolution: 10}");  // use default configuration
+    std::shared_ptr<Region> region1 = net.addRegion("region1", "RDSERegion", "{size: 2000, activeBits: 40, resolution: 10}");  // use default configuration
     std::set<std::string> excluded = {"size", "seed", "activeBits", "resolution", "radius", "sparsity"};
     checkGetSetAgainstSpec(region1, EXPECTED_SPEC_COUNT, excluded, verbose);
     checkInputOutputsAgainstSpec(region1, verbose);
@@ -84,7 +84,7 @@ namespace testing
 	  size_t regionCntBefore = net.getRegions().size();
 
 	  VERBOSE << "Adding a built-in RDSEEncoderRegionTest..." << std::endl;
-	  std::shared_ptr<Region> region1 = net.addRegion("region1", "RDSEEncoderRegion", "{size: 100, activeBits: 10, resolution: 10}");
+	  std::shared_ptr<Region> region1 = net.addRegion("region1", "RDSEEncoderRegion", "{size: 2000, activeBits: 40, resolution: 10}");
 	  size_t regionCntAfter = net.getRegions().size();
 	  ASSERT_TRUE(regionCntBefore + 1 == regionCntAfter) << " Expected number of regions to increase by one.  ";
 	  ASSERT_TRUE(region1->getType() == "RDSEEncoderRegion") << " Expected type for region1 to be \"RDSEEncoderRegion\" but type is: " << region1->getType();
@@ -167,7 +167,7 @@ namespace testing
     // you can use JSON format as well)
 
     std::shared_ptr<Region> region1 = net.addRegion("region1", "FileInputRegion", "{activeOutputCount: 1}");
-    std::shared_ptr<Region> region2 = net.addRegion("region2", "RDSEEncoderRegion", "{size: 100, radius: 16, sparsity: 0.1}");
+    std::shared_ptr<Region> region2 = net.addRegion("region2", "RDSEEncoderRegion", "{size: 1000, radius: 16, sparsity: 0.1}");
     std::shared_ptr<Region> region3 = net.addRegion("region3", "SPRegion", "{columnCount: 200}");
     std::shared_ptr<Region> region4 = net.addRegion("region4", "FileOutputRegion", "{outputFile: '" + test_output_file + "'}");
 
@@ -186,7 +186,7 @@ namespace testing
 
 
 	  // check actual dimensions
-    ASSERT_EQ(region2->getParameterUInt32("size"), 100u);
+    ASSERT_EQ(region2->getParameterUInt32("size"), 1000u);
 
     VERBOSE << "Execute once." << std::endl;
     net.run(1);
@@ -194,7 +194,7 @@ namespace testing
 	  VERBOSE << "Checking data after first iteration..." << std::endl;
     Array r1OutputArray = region1->getOutputData("dataOut");
     VERBOSE << "  FileInputRegion Output" << r1OutputArray << std::endl;
-    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32)
+    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real64)
             << "actual type is " << BasicType::getName(r1OutputArray.getType());
     VERBOSE << "  " << std::endl;
 
@@ -214,7 +214,7 @@ namespace testing
 
     VERBOSE << "  FileOutputRegion input" << std::endl;
     Array r4InputArray = region4->getInputData("dataIn");
-    ASSERT_TRUE(r4InputArray.getType() == NTA_BasicType_Real32)
+    ASSERT_TRUE(r4InputArray.getType() == NTA_BasicType_Real64)
       << "actual type is " << BasicType::getName(r4InputArray.getType());
 
     // cleanup
@@ -233,7 +233,7 @@ namespace testing
 	  Network net3;
 
 	  VERBOSE << "Setup first network and save it" << std::endl;
-    std::shared_ptr<Region> n1region1 = net1.addRegion("region1", "RDSEEncoderRegion", "{size: 100, activeBits: 10, radius: 16}");
+    std::shared_ptr<Region> n1region1 = net1.addRegion("region1", "RDSEEncoderRegion", "{size: 2000, activeBits: 40, radius: 16}");
     std::shared_ptr<Region> n1region2 = net1.addRegion("region2", "SPRegion", "{columnCount: 200}");
     net1.link("region1", "region2", "", "", "encoded", "bottomUpIn");
     net1.initialize();
@@ -262,9 +262,9 @@ namespace testing
     EXPECT_TRUE(compareParameters(n2region1, parameterMap)) 
       << "Conflict when comparing RDSEEncoderRegion parameters after restore with before save.";
       
-    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spatialPoolerOutput", NTA_BasicType_SDR))
+    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spatialPoolerOutput", NTA_BasicType_UInt32))
         << " comparing Output arrays after restore with before save.";
-    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spOutputNonZeros", NTA_BasicType_SDR))
+    EXPECT_TRUE(compareParameterArrays(n1region2, n2region2, "spOutputNonZeros", NTA_BasicType_UInt32))
         << " comparing NZ out arrays after restore with before save.";
 
 

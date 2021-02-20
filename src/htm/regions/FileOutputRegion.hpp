@@ -61,7 +61,7 @@ public:
   size_t getNodeOutputElementCount(const std::string &outputName) const override;
   void setParameterString(const std::string &name, Int64 index,
                           const std::string &s) override;
-  std::string getParameterString(const std::string &name, Int64 index) override;
+  std::string getParameterString(const std::string &name, Int64 index) const override;
 
   void initialize() override;
 

@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # HTM Community Edition of NuPIC
-# Copyright (C) 2015, Numenta, Inc.
+# Copyright (C) 2021, Numenta, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero Public License version 3 as
@@ -34,7 +34,7 @@
 if(EXISTS "${REPOSITORY_DIR}/build/ThirdParty/share/googletest.tar.gz")
     set(URL "${REPOSITORY_DIR}/build/ThirdParty/share/googletest.tar.gz")
 else()
-    set(URL https://github.com/abseil/googletest/archive/release-1.8.1.tar.gz)
+    set(URL https://github.com/abseil/googletest/archive/release-1.10.0.tar.gz)
 endif()
 
 #
@@ -54,12 +54,12 @@ set(BUILD_GMOCK   OFF CACHE BOOL "prevents building gmock"   FORCE)
 add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
 
 if(MSVC)
-  set(gtest_LIBRARIES ${googletest_BINARY_DIR}/googletest/$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>/${CMAKE_STATIC_LIBRARY_PREFIX}gtest$<$<CONFIG:Debug>:d>${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(gtest_LIBRARIES ${REPOSITORY_DIR}/build/ThirdParty/lib/$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>/${CMAKE_STATIC_LIBRARY_PREFIX}gtest$<$<CONFIG:Debug>:d>${CMAKE_STATIC_LIBRARY_SUFFIX})
 else()
   if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(DEBUG_POSTFIX d)
   endif()
-  set(gtest_LIBRARIES ${googletest_BINARY_DIR}/googletest/${CMAKE_STATIC_LIBRARY_PREFIX}gtest$<$<CONFIG:Debug>:d>${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(gtest_LIBRARIES ${REPOSITORY_DIR}/build/ThirdParty/lib/${CMAKE_STATIC_LIBRARY_PREFIX}gtest$<$<CONFIG:Debug>:d>${CMAKE_STATIC_LIBRARY_SUFFIX})
 endif()
 FILE(APPEND "${EXPORT_FILE_NAME}" "gtest_INCLUDE_DIRS@@@${googletest_SOURCE_DIR}/googletest/include\n")
 FILE(APPEND "${EXPORT_FILE_NAME}" "gtest_LIBRARIES@@@${gtest_LIBRARIES}\n")

@@ -21,6 +21,13 @@
  * This consists of a simple black & white image encoder, a spatial pool, and an
  * SDR classifier.  The task is to recognise images of hand written numbers 0-9.
  * This should score at least 95%.
+ *
+ * Run as:
+ * cd Release/
+ * ./bin/mnist_sp [num_images]
+ *
+ * Note: If you omit the num_images param, it'll run at full MNIST train dataset (default). 
+ * You can use the 1st arg to make the training shorter. 
  */
 
 #include <cstdint> //uint8_t
@@ -33,9 +40,17 @@
 #include <htm/utils/SdrMetrics.hpp>
 #include <htm/os/Timer.hpp>
 
+#ifdef MSVC
+#pragma warning(push)
+#pragma warning(disable : 4244) // warning C4244: '=': conversion from 'double' to 'unsigned char', possible loss of data
+#endif
+
 #include <mnist/mnist_reader.hpp> // MNIST data itself + read methods, namespace mnist::
 #include <mnist/mnist_utils.hpp>  // mnist::binarize_dataset
 
+#ifdef MSVC
+#pragma warning(pop)
+#endif
 
 using namespace std;
 using namespace htm;
@@ -113,7 +128,7 @@ void setup() {
  *  @param skipSP bool (default false) if set, output directly the input to the classifier.
  *  This is used for a baseline benchmark (Classifier directly learns on input images)
  */
-void train(const bool skipSP=false) {
+void train(const bool skipSP=false, const UInt maxSamples=0 /* 0=unlimited, or limit <= num train dataset images*/) {
   // Train
 
   if(verbosity)
@@ -126,6 +141,7 @@ void train(const bool skipSP=false) {
 
   Timer tTrain(true);
 
+  UInt sample = 0;
   for(auto epoch = 0u; epoch < train_dataset_iterations; epoch++) {
     NTA_INFO << "epoch " << epoch;
     // Shuffle the training data.
@@ -146,6 +162,11 @@ void train(const bool skipSP=false) {
         sp.compute(input, true, columns);
       clsr.learn( skipSP ? input : columns, {label} );
       if( verbosity && (++i % 1000 == 0) ) cout << "." << flush;
+      sample++;
+      if(maxSamples > 0 and sample >= maxSamples) {
+        cout << "Reached maxSample limit during training, finishing. " << sample << endl;
+        break;
+      }
     }
     if( verbosity ) cout << endl;
   
@@ -197,12 +218,16 @@ void test(const bool skipSP=false) {
 int main(int argc, char **argv) {
   MNIST m;
   m.setup();
+  UInt maxSamples=0;
+  if(argc > 1) {
+    maxSamples=static_cast<UInt>(stoi(argv[1]));
+  }
   cout << "===========BASELINE: no SP====================" << endl;
-  m.train(true); //skip SP learning
+  m.train(true, maxSamples); //skip SP learning
   m.test(true);
   cout << "===========Spatial Pooler=====================" << endl;
   m.setup();
-  m.train();
+  m.train(false, maxSamples);
   m.test();
 
   return 0;

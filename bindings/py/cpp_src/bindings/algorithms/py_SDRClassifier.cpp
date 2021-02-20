@@ -109,6 +109,35 @@ This may also be a list for when the input has multiple categories.)",
 
         // TODO: Pickle support
 
+        // pickle
+        // https://github.com/pybind/pybind11/issues/1061
+        py_Classifier.def(py::pickle(
+            [](const Classifier& self)
+        {
+            // __getstate__
+            std::ostringstream os;
+
+            self.save(os);
+
+            return py::bytes(os.str());
+        },
+            [](const py::bytes &str)
+        {
+            // __setstate__
+            if (py::len(str) == 0)
+            {
+                throw std::runtime_error("Empty state");
+            }
+
+            std::stringstream is( str.cast<std::string>() );
+
+            std::unique_ptr<Classifier> clsr(new Classifier());
+            clsr->load(is);
+
+            return clsr;
+        }
+        ));
+
 
         py::class_<Predictor> py_Predictor(m, "Predictor",
 R"(The Predictor class does N-Step ahead predictions.
@@ -189,5 +218,34 @@ This may also be a list for when the input has multiple categories.)",
                 py::arg("classification"));
 
         // TODO: Pickle support
+
+        // pickle
+        // https://github.com/pybind/pybind11/issues/1061
+        py_Predictor.def(py::pickle(
+            [](const Predictor& self)
+        {
+            // __getstate__
+            std::ostringstream os;
+
+            self.save(os);
+
+            return py::bytes(os.str());
+        },
+            [](const py::bytes &str)
+        {
+            // __setstate__
+            if (py::len(str) == 0)
+            {
+                throw std::runtime_error("Empty state");
+            }
+
+            std::stringstream is( str.cast<std::string>() );
+
+            std::unique_ptr<Predictor> pred(new Predictor());
+            pred->load(is);
+
+            return pred;
+        }
+        ));
     }
 } // namespace htm_ext

@@ -119,9 +119,9 @@ void DateEncoder::initialize(const DateEncoderParameters &parameters) {
       std::string daysToParse = args_.custom_days[i];
       std::transform(daysToParse.begin(), daysToParse.end(), daysToParse.begin(),
                      [](unsigned char c) { return std::tolower(c); });
-      std::vector<std::string> cust = split(daysToParse, ',');
+      std::vector<std::string> cust = Path::split(daysToParse, ',');
       for (std::string day : cust) {
-        day = trim(day);
+        day = Path::trim(day);
         NTA_CHECK(day.length() >= 3) << "DateEncoder: custom; parse error near " << day;
         auto it = daymap.find(day.substr(0, 3));
         NTA_CHECK(it != daymap.end()) << "DayEncoder: custom; parse error near " << day;

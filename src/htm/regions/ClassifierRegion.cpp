@@ -222,7 +222,7 @@ void ClassifierRegion::setParameterBool(const std::string &name, Int64 index, bo
     RegionImpl::setParameterBool(name, index, val);
 }
 
-bool ClassifierRegion::getParameterBool(const std::string &name, Int64 index) {
+bool ClassifierRegion::getParameterBool(const std::string &name, Int64 index) const {
   if (name == "learn")
     return learn_;
   else  return RegionImpl::getParameterBool(name, index);

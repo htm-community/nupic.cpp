@@ -64,7 +64,7 @@ namespace htm
   template <class T>
   class RegisteredRegionImplCpp: public RegisteredRegionImpl {
     public:
-      RegisteredRegionImplCpp(const std::string& classname="", const std::string& module="")
+      RegisteredRegionImplCpp(const std::string& classname=typeid(T).name(), const std::string& module="")
 	  		: RegisteredRegionImpl(classname, module) {
 	  }
 

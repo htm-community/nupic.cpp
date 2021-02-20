@@ -1,8 +1,8 @@
 
 # NetworkAPI Predefined Region Types
-There are a number of predefined C++ region implementations that are included in the htm.core library. These do not need to be registered.  There are Python implemented regions and user written C++ regions that can act as plugins. These will need to be registered so they can be loaded at run-time.
+There are a number of predefined C++ region implementations that are included in the htm.core library. These do not need to be registered.  There are also Python implemented regions and user written C++ regions that can act as plugins. These will need to be registered so they can be loaded at run-time.
 
-The C++ region implementations that are included in the htm.core library are:
+The built-in C++ region implementations that are included in the htm.core library are:
 - ScalarEncoderRegion  - encodes numeric and category data
 - RDSEEncoderRegion   - encodes numeric and category data using a hash
 - DateEncoderRegion   - encodes date and/or time data
@@ -11,6 +11,7 @@ The C++ region implementations that are included in the htm.core library are:
 - FileOutputRegion  - Writes data to a file
 - FileInputRegion   - Reads data from a file
 - ClassifierRegion  - An SDR classifier
+
 
 
 ## ScalarEncoderRegion

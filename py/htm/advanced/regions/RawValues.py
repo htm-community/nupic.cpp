@@ -26,9 +26,9 @@ from .import extractList, asBool
 
 class RawValues(PyRegion):
     """
-    RawDate is a simple region used to send raw scalar values into networks.
+    RawValues is a simple region used to send raw scalar values into networks.
 
-    It accepts data using the command "addDataToQueue" or through the function
+    It accepts data using the command 'addDataToQueue' or through the function
     addDataToQueue() which can be called directly from Python. Data is queued up
     in a FIFO and each call to compute pops the top element.
 

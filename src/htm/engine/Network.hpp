@@ -117,6 +117,19 @@ public:
    *  On errors it throws an exception.
    */
   void configure(const std::string &yaml);
+  
+  /**
+   * Return the Spec for the region type as a JSON string.
+   * Note that the region does NOT have to have been previously added with addRegion( ).
+   *
+   * @param region_type  The name of the region implementation.
+   *                     This is the name of one of the built-in Regions (usually class name) 
+   *                     or the region type given to a custom region that has been registered.  
+   *                     Python implemented regions are registered as the class name with
+   *                     'py.' prepended.
+   * @returns  A JSON string containing the Spec.
+   */
+  std::string getSpecJSON(const std::string &region_type);
 
 
   /**
@@ -267,6 +280,13 @@ public:
   void removeLink(const std::string &srcName, const std::string &destName,
                   const std::string &srcOutputName = "",
                   const std::string &destInputName = "");
+
+
+  /**
+   * Set the source data for a Link identified with the source as "INPUT" and <sourceName>.
+   */
+  virtual void setInputData(const std::string &sourceName, const Array &data);
+  virtual void setInputData(const std::string &sourceName, const Value &vm);
 
   /**
    * @}
@@ -456,6 +476,12 @@ public:
    * Removes a region implementation from the RegionImplFactory's list of packages
    */
   static void unregisterRegion(const std::string name);
+  
+  /*
+   * Returns a JSON string containing a list of registered region types.
+   *
+   */
+  static std::string getRegistrations();
 
   /*
    * Removes all region registrations in RegionImplFactory.

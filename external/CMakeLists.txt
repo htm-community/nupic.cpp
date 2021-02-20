@@ -39,7 +39,7 @@
 # Note: on MSVC, run startupMSVC.bat after deleting the build folder.
 
 cmake_minimum_required(VERSION 3.7)
-project(htm_core CXX)
+project(htm_core CXX C)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF)
 
@@ -79,11 +79,6 @@ FILE(REMOVE "${EXPORT_FILE_NAME}")
 include(common.cmake)
 
 
-################
-# Yaml Parser
-# you can select either Yaml-cpp or libYaml but not both.
-# Yaml-cpp
-###include(YamlCppLib.cmake)
 
 # LibYaml
 include(libYaml.cmake)
@@ -129,4 +124,9 @@ include(digestpp.cmake)
 #################
 # cpp-httplib webserver and client
 include(cpp-httplib.cmake)
+
+#################
+#  Sqlite3  SQL Database
+include(sqlite3.cmake)
+
 

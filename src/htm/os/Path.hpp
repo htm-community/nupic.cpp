@@ -226,6 +226,9 @@ public:
   static void write_all(const std::string& filename, const std::string& value);
   static std::string read_all(const std::string& filename);
 
+  static std::string trim(const std::string &s);
+  static std::vector<std::string> split(const std::string &str, char delim = ',');
+
 
   ////////////////////////////////////////////////////////////////////////////////
 
@@ -274,8 +277,6 @@ Path operator+(const Path & p1, const Path & p2);
 Path operator+(const std::string & p1, const Path & p2);
 Path operator+(const Path & p1, const std::string & p2);
 
-std::string trim(const std::string &s);
-std::vector<std::string> split(const std::string &str, char delim = ',');
 
 } // namespace htm
 

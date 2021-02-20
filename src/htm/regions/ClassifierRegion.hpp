@@ -54,7 +54,7 @@ public:
 
   static Spec *createSpec();
 
-  virtual bool getParameterBool(const std::string &name,   Int64 index = -1) override;
+  virtual bool getParameterBool(const std::string &name,   Int64 index = -1) const override;
   virtual void setParameterBool(const std::string &name, Int64 index, bool value) override;
 
   virtual void initialize() override;

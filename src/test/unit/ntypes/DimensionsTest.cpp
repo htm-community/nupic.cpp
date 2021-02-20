@@ -40,7 +40,7 @@ TEST_F(DimensionsTest, EmptyDimensions) {
   ASSERT_FALSE(d.isDontcare());
   ASSERT_FALSE(d.isSpecified());
   EXPECT_EQ(d.getCount(), 0u);
-  EXPECT_STREQ("[unspecified]", d.toString(false).c_str());
+  EXPECT_STREQ("[unspecified]", d.toString(true).c_str());
   ASSERT_EQ(0u, d.size());
 }
 
@@ -52,7 +52,7 @@ TEST_F(DimensionsTest, DontCareDimensions) {
   ASSERT_TRUE(d.isDontcare());
   ASSERT_FALSE(d.isInvalid());
   ASSERT_FALSE(d.isSpecified());
-  EXPECT_STREQ("[dontcare]", d.toString(false).c_str());
+  EXPECT_STREQ("[dontcare]", d.toString(true).c_str());
   ASSERT_EQ(d.getCount(), 0u);
   ASSERT_EQ(1u, d.size());
 }

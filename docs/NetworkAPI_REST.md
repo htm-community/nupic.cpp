@@ -30,15 +30,15 @@ Network                   (key is id)
           Parameters      (key is parameter name)
           Inputs          (key is input name)
           Outputs         (key is output name)
-     Links                (key is link name)
+     Links                (key is "from_region.from_output", "to_region.to_input")
 ```
 
 So a full key structure would look like:
 ```
 /network/<id>/region/<region name>/param/<param name>
-/network/<id>/region/<region name>/Input/<param name>
+/network/<id>/region/<region name>/input/<param name>
 /network/<id>/region/<region name>/output/<param name>
-/network/<id>/link/<link name>
+/network/<id>/link/<from>/<to>
 ```
 
 ## REST Operators
@@ -76,15 +76,34 @@ Protocol for the NetworkAPI REST feature for all operations currently implemente
 
   GET  /network/<id>/region/<region name>/output/<output name>
        Get the value of a region's output. Returns a JSON encoded Array object.
+       
+  DELETE  /network/<id>/region/<region name>
+       Delete the specified region.  Returns OK.
+       
+  DELETE  /network/<id>/link/<source name>/<dest_name>
+       Delete the specified link.  Returns OK.
+       
+  DELETE  /network/<id>/ALL
+       Delete the entire Network object. Returns OK.
 
   GET  /network/<id>/run?iterations=<iterations>
        Execute all regions in phase order. Repeat <iterations> times. Returns OK.
 
   GET  /hi
-       Respond with "Hello World\n" as a way to check client to server connection.
+       Respond with "Hello World" as a way to check client to server connection.
 
   GET  /stop
-       Stop the server.  All resources are released.
+       Stop the server.  All resources are released. Returns OK.
+```
+
+All responses are in JSON syntax. A successful response will be in the 'result' field where result_value may be a scalar value, an array of values, or a map of values.
+```
+   {"result": result_value}
+```
+
+An error response will be in the 'err' field where 'error_msg' will be the text of the error message.
+```
+   {"err": error_msg}
 ```
 
 

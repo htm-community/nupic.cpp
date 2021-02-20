@@ -42,14 +42,12 @@ namespace htm_ext {
         py::class_<Random_t> Random(m, "Random");
 
         Random.def(py::init<htm::UInt64>(), py::arg("seed") = 0)
-            .def("getUInt32", &Random_t::getUInt32, py::arg("max") = (htm::UInt32)-1l)
-            .def("getReal64", &Random_t::getReal64)
-			.def("getSeed", &Random_t::getSeed)
-            .def("max", &Random_t::max)
-            .def("min", &Random_t::min)
-        	.def("__eq__", [](Random_t const & self, Random_t const & other) {//wrapping operator==
-            	return self == other;
-        	}, py::is_operator());
+              .def("getUInt32", &Random_t::getUInt32, py::arg("max") = (htm::UInt32)-1l)
+              .def("getReal64", &Random_t::getReal64)
+	      .def("getSeed", &Random_t::getSeed)
+              .def("max", &Random_t::max)
+              .def("min", &Random_t::min)
+              .def("__eq__", [](Random_t const & self, Random_t const & other) { return self == other; }, py::is_operator()); //operator==
 
         Random.def_property_readonly_static("MAX32", [](py::object) {
 				return Random_t::MAX32;
@@ -60,8 +58,7 @@ namespace htm_ext {
         /////////////////
 
 
-        Random.def("sample",
-            [](Random_t& r, py::array& population, const htm::UInt32 nSelect)
+        Random.def("sample", [](Random_t& r, py::array& population, const htm::UInt32 nSelect)
         {
             if (population.ndim() != 1 )
             {
@@ -98,8 +95,8 @@ namespace htm_ext {
         {
             auto array_data = get_it<htm::UInt32>(a);
 
-            for (htm::UInt32 i = 0; i != a.size(); ++i)
-                array_data[i] = self.getUInt32() % max_value;
+            for (auto i = a.size()-1; i >= 0; --i)
+                array_data[i] = self.getUInt32(max_value);
 
         });
 
@@ -110,7 +107,7 @@ namespace htm_ext {
         {
             auto array_data = get_it<htm::Real64>(a);
 
-            for (htm::UInt32 i = 0; i != a.size(); ++i)
+            for (auto i = a.size()-1; i >=0; --i)
                 array_data[i] = self.getReal64();
 
         });
@@ -122,8 +119,8 @@ namespace htm_ext {
 				Random.def("saveToFile", [](Random_t& self, const std::string& name, int fmt) { 
 				  htm::SerializableFormat fmt1;
 				  switch(fmt) {                                             
-			    case 0: fmt1 = htm::SerializableFormat::BINARY; break;
-			    case 1: fmt1 = htm::SerializableFormat::PORTABLE; break;
+			                case 0: fmt1 = htm::SerializableFormat::BINARY; break;
+			                case 1: fmt1 = htm::SerializableFormat::PORTABLE; break;
 					case 2: fmt1 = htm::SerializableFormat::JSON; break;
 					case 3: fmt1 = htm::SerializableFormat::XML; break;
 					default: NTA_THROW << "unknown serialization format.";
@@ -145,25 +142,37 @@ namespace htm_ext {
 				}, "load from a File, using BINARY, PORTABLE, JSON, or XML format.",
 				py::arg("name"), py::arg("fmt") = 0);
 
+
         Random.def(py::pickle(
-            [](const Random_t& r)
+            [](const Random_t& r) //__getstate__
         {
             std::stringstream ss;
-            ss << r;
-            return ss.str();
+            r.save(ss); //save r's state to archive (stream) with cereal
+
+	    /* The values in stringstream are binary so pickle will get confused
+             * trying to treat it as utf8 if you just return ss.str().
+             * So we must treat it as py::bytes.  Some characters could be null values.
+             */
+            return py::bytes( ss.str() );
         },
-            [](const std::string& str)
-        {
-            if (str.empty())
-            {
-                throw std::runtime_error("Empty state");
-            }
 
-            std::stringstream ss(str);
-            Random_t r;
-            ss >> r;
+	   [](py::bytes &s)   // __setstate__
+       {
+           /* pybind11 will pass in the bytes array without conversion.
+            * so we should be able to just create a string to initalize the stringstream.
+            */
+           std::stringstream ss( s.cast<std::string>() );
+           std::unique_ptr<htm::Random> r(new htm::Random());
+           r->load(ss);
 
-            return r;
+           /*
+            * The __setstate__ part of the py::pickle() is actually a py::init() with some options.
+            * So the return value can be the object returned by value, by pointer,
+            * or by container (meaning a unique_ptr). SP has a problem with the copy constructor
+            * and pointers have problems knowing who the owner is so lets use unique_ptr.
+            * See: https://pybind11.readthedocs.io/en/stable/advanced/classes.html#custom-constructors
+            */
+           return r;
         }
         ));
 

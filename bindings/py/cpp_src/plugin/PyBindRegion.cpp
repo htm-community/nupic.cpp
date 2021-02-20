@@ -30,6 +30,7 @@ In this case, the C++ engine is actually calling into the Python code.
 #include <pybind11/pytypes.h>
 #include <regex>
 #include <vector>
+#include <sstream>      // std::stringstream
 
 #include <htm/engine/Region.hpp>
 #include <htm/engine/Input.hpp>
@@ -413,17 +414,32 @@ namespace py = pybind11;
 
 
     template<typename T>
-    T PyBindRegion::getParameterT(const std::string & name, Int64 index)
+    T PyBindRegion::getParameterT(const std::string & name, Int64 index) const
     {
         try
         {
             py::args args = py::make_tuple(name, index);
-            return node_.attr("getParameter")(*args).cast<T>();
+            auto accessor = node_.attr("getParameter")(*args);
+            if (accessor.is_none())
+              return static_cast<T>(0);
+            return accessor.cast<T>();
         }
-        catch (const py::error_already_set& e)
+        catch (const py::error_already_set& e) // a problem in python
         {
-            std::cout << e.what() << std::endl;
-            throw Exception(__FILE__, __LINE__, e.what());
+            std::stringstream ss;
+            ss << "parameter '" << name << "' on " << getName() << ", " << e.what() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
+        }
+        catch (std::exception& e) {      // problem in pybind11 perhaps
+            std::stringstream ss;
+            ss << "Exception getting parameter '" << name << "' on " << getName() <<", " << e.what() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
+        }
+        catch (...)
+        {
+            std::stringstream ss;
+            ss << "Exception getting parameter '" << name << "' on " << getName() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
         }
     }
 
@@ -445,47 +461,59 @@ namespace py = pybind11;
         }
         catch (const py::error_already_set& e)
         {
-            std::cout << e.what() << std::endl;
-            throw Exception(__FILE__, __LINE__, e.what());
+            std::stringstream ss;
+            ss << "Exception setting parameter '" << name << "' on " << getName() <<", " << e.what() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
+        }
+        catch (std::exception& e) {      // problem in pybind11 perhaps
+            std::stringstream ss;
+            ss << "Exception setting parameter '" << name << "' on " << getName() <<", " << e.what() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
+        }
+        catch (...)
+        {
+            std::stringstream ss;
+            ss << "Exception setting parameter '" << name << "' on " << getName() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
         }
     }
 
-    bool PyBindRegion::getParameterBool(const std::string& name, Int64 index)
+    bool PyBindRegion::getParameterBool(const std::string& name, Int64 index) const
     {
         return getParameterT<bool>(name, index);
     }
 
-    Byte PyBindRegion::getParameterByte(const std::string& name, Int64 index)
+    Byte PyBindRegion::getParameterByte(const std::string& name, Int64 index) const 
     {
         return getParameterT<Byte>(name, index);
     }
 
-    Int32 PyBindRegion::getParameterInt32(const std::string& name, Int64 index)
+    Int32 PyBindRegion::getParameterInt32(const std::string& name, Int64 index) const
     {
         return getParameterT<Int32>(name, index);
     }
 
-    UInt32 PyBindRegion::getParameterUInt32(const std::string& name, Int64 index)
+    UInt32 PyBindRegion::getParameterUInt32(const std::string& name, Int64 index) const
     {
         return getParameterT<UInt32>(name, index);
     }
 
-    Int64 PyBindRegion::getParameterInt64(const std::string& name, Int64 index)
+    Int64 PyBindRegion::getParameterInt64(const std::string& name, Int64 index) const
     {
         return getParameterT<Int64>(name, index);
     }
 
-    UInt64 PyBindRegion::getParameterUInt64(const std::string& name, Int64 index)
+    UInt64 PyBindRegion::getParameterUInt64(const std::string& name, Int64 index) const
     {
         return getParameterT<UInt64>(name, index);
     }
 
-    Real32 PyBindRegion::getParameterReal32(const std::string& name, Int64 index)
+    Real32 PyBindRegion::getParameterReal32(const std::string& name, Int64 index) const
     {
         return getParameterT<Real32>(name, index);
     }
 
-    Real64 PyBindRegion::getParameterReal64(const std::string& name, Int64 index)
+    Real64 PyBindRegion::getParameterReal64(const std::string& name, Int64 index) const
     {
         return getParameterT<Real64>(name, index);
     }
@@ -532,10 +560,32 @@ namespace py = pybind11;
         setParameterT(name, index, value);
     }
 
-    void PyBindRegion::getParameterArray(const std::string& name, Int64 index, Array & a)
+    void PyBindRegion::getParameterArray(const std::string& name, Int64 index, Array & a) const
     {
-        auto args = py::make_tuple(name, index, create_numpy_view(a));
-        node_.attr("getParameterArray")(*args);
+        try {
+          auto args = py::make_tuple(name, index, create_numpy_view(a));
+          node_.attr("getParameterArray")(*args);
+        } catch (const py::error_already_set& e) {  // problem in Python
+            std::stringstream ss;
+            ss << "Exception getting array parameter '" << name << "' on " << getName() <<", " << e.what() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
+        }
+        catch (py::cast_error& e) {      // problem in pybind11 conversion of arguments
+            std::stringstream ss;
+            ss << "Cast Error getting array parameter '" << name << "' on " << getName() <<", " << e.what() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
+        }
+        catch (std::exception& e) {      // problem in pybind11 perhaps
+            std::stringstream ss;
+            ss << "Exception getting array parameter '" << name << "' on " << getName() <<", " << e.what() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
+        }
+        catch (...) {                    // a problem someplace else
+            std::stringstream ss;
+            ss << "Exception getting array parameter '" << name << "' on " << getName() << std::endl;
+            throw Exception(__FILE__, __LINE__, ss.str());
+        }
+
     }
 
     void PyBindRegion::setParameterArray(const std::string& name, Int64 index, const Array & a)
@@ -544,10 +594,10 @@ namespace py = pybind11;
         node_.attr("setParameterArray")(*args);
     }
 
-    std::string PyBindRegion::getParameterString(const std::string& name, Int64 index)
+    std::string PyBindRegion::getParameterString(const std::string& name, Int64 index) const
     {
         py::args args = py::make_tuple(name, index);
-        return node_.attr("setParameter")(*args).cast<std::string>();
+        return node_.attr("getParameter")(*args).cast<std::string>();
     }
 
     void PyBindRegion::setParameterString(const std::string& name, Int64 index, const std::string& value)
@@ -558,7 +608,7 @@ namespace py = pybind11;
 
 
 
-    size_t PyBindRegion::getParameterArrayCount(const std::string& name, Int64 index)
+    size_t PyBindRegion::getParameterArrayCount(const std::string& name, Int64 index) const
     {
         py::args args = py::make_tuple(name, index);
         return node_.attr("getParameterArrayCount")(*args).cast<size_t>();

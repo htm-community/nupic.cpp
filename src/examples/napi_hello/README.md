@@ -24,12 +24,13 @@ output of the TM can be written to a file so that it can be plotted.
   //                                       |
   //                              .------------------.
   //                              |      TM          |
-  //                              |   (TMRegion)     |
+  //                              |   (TMRegion)     |----> CSV file(or SQLlite*)
   //                              |                  |
   //                              `------------------'
   //
   //////////////////////////////////////////////////////////////////
 ```
+*\*Note: applies to napi_hello_database*
 
 Each "region" is a wrapper around an algorithm.  This wrapper provides a uniform interface that can be plugged into the Network API engine for execution. The htm.core library contains regions for each of the primary algorithms in the library. The user can create their own algorithms and corresponding regions and plug them into the Network API engine by registering them with the Network class.  The following chart shows the 'built-in' C++ regions.  
 <table>
@@ -57,12 +58,16 @@ Each "region" is a wrapper around an algorithm.  This wrapper provides a uniform
 		<td>TemporalMemory (TM)</td>
 	</tr>
 	<tr>
-		<td>VectorFileSensor</td>
+		<td>FileInputRegion</td>
 		<td>for reading from a file</td>
 	</tr>
 	<tr>
-		<td>VectorFileEffector</td>
+		<td>FileOutputRegion</td>
 		<td>for writing to a file</td>
+	</tr>
+	<tr>
+		<td>DatabaseRegion</td>
+		<td>for writing to a SQLite3 database file</td>
 	</tr>
 </tbody>
 </table>

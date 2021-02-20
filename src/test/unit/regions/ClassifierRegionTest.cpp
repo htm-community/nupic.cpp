@@ -100,7 +100,7 @@ TEST(ClassifierRegionTest, asCategoryDecoder) {
   enum classifier_categories { A, B, C };
   Network net;
 
-  std::shared_ptr<Region> encoder = net.addRegion("encoder", "RDSEEncoderRegion", "{size: 400, seed: 42, category: true, activeBits: 40}");
+  std::shared_ptr<Region> encoder = net.addRegion("encoder", "RDSEEncoderRegion", "{size: 600, seed: 42, category: true, activeBits: 40}");
   std::shared_ptr<Region> sp = net.addRegion("sp", "SPRegion", "{columnCount: 1000, globalInhibition: true}");
   std::shared_ptr<Region> classifier = net.addRegion("classifier", "ClassifierRegion", "{learn: true}");
 
@@ -128,7 +128,7 @@ TEST(ClassifierRegionTest, asCategoryDecoder) {
   EXPECT_EQ(static_cast<UInt32>(titles[predicted]), A) << "expected the category of A";
   const Real64 *pdf = reinterpret_cast<const Real64 *>(classifier->getOutputData("pdf").getBuffer());
   VERBOSE << "Encoded A, Classifier predicted A with a probability of " << pdf[predicted] << std::endl;
-  ASSERT_NEAR(pdf[predicted], 0.947, 0.003);
+  ASSERT_NEAR(pdf[predicted], 0.950, 0.003);
 
   encoder->setParameterReal64("sensedValue", static_cast<Real64>(B));
   net.run(1);
@@ -242,6 +242,72 @@ TEST(ClassifierRegionTest, testSerialization) {
 
   // cleanup
   Directory::removeTree("TestOutputDir", true);
+}
+
+TEST(ClassifierRegionTest, getSpecJSON) {
+  std::string expected = R"({"spec": "ClassifierRegion",
+  "parameters": {
+    "learn": {
+      "description": "if true, it performs the learn step",
+      "type": "Bool",
+      "count": 1,
+      "access": "ReadWrite",
+      "defaultValue": "true"
+    }
+  },
+  "inputs": {
+    "bucket": {
+      "description": "The quantized value of the current sample, one from each encoder if more than one, for the learn step",
+      "type": "Real64",
+      "count": 0,
+      "required": 0,
+      "regionLevel": 1,
+      "isDefaultInput": 0
+    },
+    "pattern": {
+      "description": "An SDR output bit pattern for a sample.  Usually the output of the SP or TM. For example: activeCells from TM",
+      "type": "SDR",
+      "count": 0,
+      "required": 0,
+      "regionLevel": 1,
+      "isDefaultInput": 0
+    }
+  },
+  "outputs": {
+    "pdf": {
+      "description": "probability distribution function (pdf) for each category or bucket. Sorted by title.  Warning, buffer length will grow.",
+      "type": "Real64",
+      "count": 0,
+      "regionLevel": 1,
+      "isDefaultOutput": 0
+    },
+    "predicted": {
+      "description": "An index (into pdf and titles) with the highest probability of being the match with the current pattern.",
+      "type": "UInt32",
+      "count": 1,
+      "regionLevel": 1,
+      "isDefaultOutput": 0
+    },
+    "titles": {
+      "description": "Quantized values of used samples which are the Titles corresponding to the pdf indexes. Sorted by title. Warning, buffer length will grow.",
+      "type": "Real64",
+      "count": 0,
+      "regionLevel": 1,
+      "isDefaultOutput": 0
+    }
+  }
+})";
+  Spec *spec = ClassifierRegion::createSpec();
+  std::string json = spec->toString();
+  EXPECT_STREQ(json.c_str(), expected.c_str());
+}
+
+TEST(ClassifierRegionTest, getParameters) {
+  std::string expected = "{\n  \"learn\": true\n}";
+  Network net1;
+  std::shared_ptr<Region> region1 = net1.addRegion("classifier", "ClassifierRegion", "{\"learn\": true}");
+  std::string json = region1->getParameters();
+  EXPECT_STREQ(json.c_str(), expected.c_str());
 }
 
 } // namespace testing

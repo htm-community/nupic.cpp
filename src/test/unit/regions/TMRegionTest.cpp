@@ -257,7 +257,7 @@ TEST(TMRegionTest, testLinking) {
   Array r1OutputArray = region1->getOutputData("dataOut");
   VERBOSE << "    " << r1OutputArray << "\n";
   EXPECT_EQ(r1OutputArray.getCount(), dataWidth);
-  EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32);
+  EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real64);
 
   // check anomaly
   EXPECT_FLOAT_EQ(region3->getParameterReal32("anomaly"), 1.0f);
@@ -323,12 +323,12 @@ TEST(TMRegionTest, testLinking) {
   VERBOSE << "   Input to FileOutputRegion "
           << region4->getInputDimensions("dataIn") << "\n";
   Array r4InputArray = region4->getInputData("dataIn");
-  EXPECT_EQ(r4InputArray.getType(), NTA_BasicType_Real32);
+  EXPECT_EQ(r4InputArray.getType(), NTA_BasicType_Real64);
   VERBOSE << "   " << r4InputArray << "\n";
   EXPECT_EQ(r4InputArray, expected3outa) << r4InputArray;
 
   // cleanup
-  region3->executeCommand({"closeFile"});
+  region4->executeCommand({"closeFile"});
 }
 
 TEST(TMRegionTest, testSerialization) {
@@ -425,6 +425,66 @@ TEST(TMRegionTest, testSerialization) {
     delete net3;
   }
   Directory::removeTree("TestOutputDir", true);
+}
+
+TEST(TMRegionTest, testGetParameters) {
+  Network net;
+  // create an TM region with default parameters 
+  std::shared_ptr<Region> region1 = net.addRegion("region1", "TMRegion", ""); 
+
+  // before initialization
+  std::string expected1 = R"({
+  "numberOfCols": 0,
+  "cellsPerColumn": 32,
+  "activationThreshold": 13,
+  "initialPermanence": 0.210000,
+  "connectedPermanence": 0.500000,
+  "minThreshold": 10,
+  "maxNewSynapseCount": 20,
+  "permanenceIncrement": 0.100000,
+  "permanenceDecrement": 0.100000,
+  "predictedSegmentDecrement": 0.000000,
+  "maxSegmentsPerCell": 255,
+  "maxSynapsesPerSegment": 255,
+  "seed": 42,
+  "inputWidth": 0,
+  "learningMode": true,
+  "activeOutputCount": 0,
+  "anomaly": -1.000000,
+  "orColumnOutputs": false
+})";
+
+  std::string jsonstr = region1->getParameters();
+  VERBOSE << jsonstr << "\n";
+  EXPECT_STREQ(jsonstr.c_str(), expected1.c_str());
+
+  // after initialization
+  std::string expected2 = R"({
+  "numberOfCols": 100,
+  "cellsPerColumn": 32,
+  "activationThreshold": 13,
+  "initialPermanence": 0.210000,
+  "connectedPermanence": 0.500000,
+  "minThreshold": 10,
+  "maxNewSynapseCount": 20,
+  "permanenceIncrement": 0.100000,
+  "permanenceDecrement": 0.100000,
+  "predictedSegmentDecrement": 0.000000,
+  "maxSegmentsPerCell": 255,
+  "maxSynapsesPerSegment": 255,
+  "seed": 42,
+  "inputWidth": 100,
+  "learningMode": true,
+  "activeOutputCount": 0,
+  "anomaly": -1.000000,
+  "orColumnOutputs": false
+})";
+
+  net.link("INPUT", "region1", "", "{dim: 100}", "src", "bottomUpIn"); // declare the input size
+  net.initialize();
+  jsonstr = region1->getParameters();
+  VERBOSE << jsonstr << "\n";
+  EXPECT_STREQ(jsonstr.c_str(), expected2.c_str());
 }
 
 

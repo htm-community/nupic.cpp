@@ -135,7 +135,7 @@ namespace testing
     EXPECT_EQ(region1->getParameterInt32("position"), 0);
     Array a = region1->getOutputData("dataOut");
     VERBOSE << "1st vector=" << a << std::endl;
-    Array expected1(std::vector<Real32>({ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }));
+    Array expected1(std::vector<Real64>({ 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }));
     EXPECT_TRUE(a == expected1);
 
 
@@ -144,7 +144,7 @@ namespace testing
     EXPECT_EQ(region1->getParameterInt32("position"), 5);
     a = region1->getOutputData("dataOut");
     VERBOSE << "5th vector=" << a << std::endl;
-    Array expected5(std::vector<Real32>({ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f }));
+    Array expected5(std::vector<Real64>({ 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f }));
     EXPECT_TRUE(a == expected5);
 
     // cleanup
@@ -192,11 +192,11 @@ namespace testing
     VERBOSE << "  FileInputRegion Output" << std::endl;
     Array r1OutputArray = region1->getOutputData("dataOut");
     EXPECT_EQ(r1OutputArray.getCount(), dataWidth);
-    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real32)
+    EXPECT_TRUE(r1OutputArray.getType() == NTA_BasicType_Real64)
             << "actual type is " << BasicType::getName(r1OutputArray.getType());
 
     Array r3InputArray = region3->getInputData("dataIn");
-    ASSERT_TRUE(r3InputArray.getType() == NTA_BasicType_Real32)
+    ASSERT_TRUE(r3InputArray.getType() == NTA_BasicType_Real64)
       << "actual type is " << BasicType::getName(r3InputArray.getType());
     ASSERT_TRUE(r3InputArray.getCount() == dataWidth);
 

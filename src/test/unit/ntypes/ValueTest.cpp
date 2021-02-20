@@ -150,7 +150,7 @@ TEST(ValueTest, asArray) {
 
 TEST(ValueTest, asMap) {
   ValueMap vm;
-  std::string src = "{scalar: 456, array: [1, 2, 3, 4], string: \"true\"}";
+  std::string src = "{\"scalar\": 456, \"array\": [1, 2, 3, 4], \"string\": \"is a scalar.\"}";
   vm.parse(src);
 
   //std::cout << vm << "\n";
@@ -158,19 +158,17 @@ TEST(ValueTest, asMap) {
   EXPECT_STREQ(result.c_str(), src.c_str());
 
   std::map<std::string,std::string> m;
-  m = vm.asMap<std::string>();
+  m = vm.asMap<std::string>();  // note, the array will be skipped because it is not a string.
   std::stringstream ss;
-  ss << "{";
   bool first = true;
   for (auto itr = m.begin(); itr != m.end(); itr++) {
     if (!first) ss << ", ";
     first = false;
-    ss << itr->first << ": " << itr->second;
+    ss << itr->first << "=" << itr->second;
   }
-  ss << "}";
   result = ss.str();
   std::cout << result << "\n";
-  EXPECT_STREQ(result.c_str(), "{scalar: 456, string: true}");
+  EXPECT_STREQ(result.c_str(), "scalar=456, string=is a scalar.");
 }
 
 
@@ -210,6 +208,26 @@ TEST(ValueTest, inserts) {
   EXPECT_ANY_THROW(vm[3]["hello"] = std::string("world"));
 }
 
+TEST(ValueTest, insertParsedValue) {
+  ValueMap vm;
+  std::string tree_src = "{\"param1\": \"first node\", \"param2\": \"second node\", \"param3\": \"third node\"}";
+  vm.parse(tree_src);
+  // std::cout << "initial tree: " << vm << "\n";
+  EXPECT_STREQ(tree_src.c_str(), vm.to_json().c_str());
+
+  // Replace param2 with a sequence.
+  std::string insert_seq = "[ 1, 2, 3, 4 ]";
+  vm["param2"].parse(insert_seq);
+  EXPECT_STREQ("{\"param1\": \"first node\", \"param2\": [1, 2, 3, 4], \"param3\": \"third node\"}",
+               vm.to_json().c_str());
+
+  // Add a map to the sequence just added.
+  std::string insert_map = "{ a: \"value a\", b: \"value b\"}";
+  vm["param2"][4].parse(insert_map);
+  EXPECT_STREQ("{\"param1\": \"first node\", \"param2\": [1, 2, 3, 4, {\"a\": \"value a\", \"b\": \"value b\"}], "
+               "\"param3\": \"third node\"}",
+      vm.to_json().c_str());
+}
 
 TEST(ValueTest, ValueMapTest) {
   std::vector<UInt32> a = {1, 2, 3, 4};
@@ -236,7 +254,7 @@ TEST(ValueTest, ValueMapTest) {
   Int32 x = vm.getScalarT("scalar2", (Int32)20);
   EXPECT_EQ((Int32)20, x);
 
-  std::string expected = "{scalar: 456, array: [1, 2, 3, 4], string: \"str\"}";
+  std::string expected = "{\"scalar\": 456, \"array\": [1, 2, 3, 4], \"string\": \"str\"}";
   std::string result;
   std::stringstream ss;
   ss << vm;
@@ -302,7 +320,7 @@ string: this is a string
 
 TEST(ValueTest, deletes) {
   ValueMap vm;
-  std::string src = "{scalar: 456, array: [1, 2, 3, 4], string: \"true\"}";
+  std::string src = "{scalar: 456, array: [1, 2, 3, 4], string: \"a string\"}";
   vm.parse(src);
 
   EXPECT_EQ(vm.size(), 3u);
@@ -396,58 +414,58 @@ TEST(ValueTest, from_Array) {
   {
     std::vector<Byte> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"Byte\", data: [1, 2, 3, 4]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"Byte\", \"data\": [1, 2, 3, 4]}");
   }
   {
     std::vector<Int16> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"Int16\", data: [1, 2, 3, 4]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"Int16\", \"data\": [1, 2, 3, 4]}");
   }
   {
     std::vector<UInt16> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"UInt16\", data: [1, 2, 3, 4]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"UInt16\", \"data\": [1, 2, 3, 4]}");
   }
   {
     std::vector<Int32> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"Int32\", data: [1, 2, 3, 4]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"Int32\", \"data\": [1, 2, 3, 4]}");
   }
   {
     std::vector<UInt32> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"UInt32\", data: [1, 2, 3, 4]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"UInt32\", \"data\": [1, 2, 3, 4]}");
   }
   {
     std::vector<Int64> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"Int64\", data: [1, 2, 3, 4]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"Int64\", \"data\": [1, 2, 3, 4]}");
   }
   {
     std::vector<UInt64> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"UInt64\", data: [1, 2, 3, 4]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"UInt64\", \"data\": [1, 2, 3, 4]}");
   }
   {
     std::vector<Real32> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"Real32\", data: [1.000000, 2.000000, 3.000000, 4.000000]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"Real32\", \"data\": [1.000000, 2.000000, 3.000000, 4.000000]}");
   }
   {
     std::vector<Real64> data = {1, 2, 3, 4};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"Real64\", data: [1.000000, 2.000000, 3.000000, 4.000000]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"Real64\", \"data\": [1.000000, 2.000000, 3.000000, 4.000000]}");
   }
   {
     SDR sdr({4});
     sdr.setDense(SDR_dense_t({1, 0, 1, 0}));
     std::string j = vectorToJSON(sdr.getDense());
-    EXPECT_STREQ(j.c_str(), "{type: \"Byte\", data: [1, 0, 1, 0]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"Byte\", \"data\": [1, 0, 1, 0]}");
   }
   {
     std::vector<std::string> data = {"A", "B", "C", "D"};
     std::string j = vectorToJSON(data);
-    EXPECT_STREQ(j.c_str(), "{type: \"String\", data: [\"A\", \"B\", \"C\", \"D\"]}");
+    EXPECT_STREQ(j.c_str(), "{\"type\": \"String\", \"data\": [\"A\", \"B\", \"C\", \"D\"]}");
   }
 }
 

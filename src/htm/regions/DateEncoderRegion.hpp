@@ -51,11 +51,11 @@ public:
 
   static Spec *createSpec();
 
-  virtual Int64 getParameterInt64(const std::string &name, Int64 index = -1) override;
-  virtual Real32 getParameterReal32(const std::string &name, Int64 index = -1) override;
-  virtual UInt32 getParameterUInt32(const std::string &name, Int64 index = -1) override;
-  virtual bool getParameterBool(const std::string &name,   Int64 index = -1) override;
-  virtual std::string getParameterString(const std::string &name, Int64 index) override;
+  virtual Int64 getParameterInt64(const std::string &name, Int64 index = -1) const override;
+  virtual Real32 getParameterReal32(const std::string &name, Int64 index = -1) const override;
+  virtual UInt32 getParameterUInt32(const std::string &name, Int64 index = -1) const override;
+  virtual bool getParameterBool(const std::string &name,   Int64 index = -1) const override;
+  virtual std::string getParameterString(const std::string &name, Int64 index) const override;
   virtual void setParameterReal32(const std::string &name, Int64 index, Real32 value) override;
   virtual void setParameterInt64(const std::string &name, Int64 index, Int64 value) override;
   virtual void setParameterBool(const std::string &name, Int64 index, bool value) override;

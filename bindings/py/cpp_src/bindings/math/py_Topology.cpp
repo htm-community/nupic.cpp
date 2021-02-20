@@ -130,7 +130,7 @@ as a single index.)");
                                          const std::vector<UInt> &dimensions)
         {
             vector<UInt> neighbors;
-            for( auto idx : WrappingNeighborhood( centerIndex, radius, dimensions )) {
+            for( auto idx : Neighborhood( centerIndex, radius, dimensions, /*wrap=*/true )) {
                 neighbors.push_back( idx );
             }
             return neighbors;

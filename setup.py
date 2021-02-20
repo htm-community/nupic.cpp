@@ -402,12 +402,12 @@ if __name__ == "__main__":
         "htm.examples": ["*.csv"],
     },
     #install extras by `pip install htm.core[examples]`
-    extras_require={'scikit-image>0.15.0':'examples',
-                    'sklearn':'examples',
-                    'matplotlib':'examples',
-                    'PIL':'examples',
-                    'requests':'examples',
-                    'scipy':'examples'
+    extras_require={'examples':['scikit-image>0.15.0',
+                    'sklearn',
+                    'matplotlib',
+                    'pillow',
+                    'requests',
+                    'scipy']
                    },
     zip_safe=False,
     cmdclass={

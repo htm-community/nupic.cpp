@@ -142,14 +142,6 @@ class ColumnPoolerRegion(PyRegion):
                     dataType="Bool",
                     count=1,
                     defaultValue="false"),
-                learningTolerance=dict(
-                    description="How much variation in SDR size to accept when learning. "
-                                "Only has an effect if online learning is enabled. "
-                                "Should be at most 1 - inertiaFactor.",
-                    accessMode="ReadWrite",
-                    dataType="Real32",
-                    count=1,
-                    defaultValue="0"),
                 cellCount=dict(
                     description="Number of cells in this layer",
                     accessMode="Create",
@@ -325,8 +317,8 @@ class ColumnPoolerRegion(PyRegion):
                     description="Controls what type of cell output is placed into"
                                 " the default output 'feedForwardOutput'",
                     accessMode="Create",
-                    dataType="Byte",
-                    count=0,
+                    dataType="String",
+                    count=1,
                     constraints="enum: active,predicted,predictedActiveCells",
                     defaultValue="active"),
             ),
@@ -538,5 +530,19 @@ class ColumnPoolerRegion(PyRegion):
         Returns an instance of the underlying column pooler instance
         """
         return self._pooler
+
+    def saveConnectionsToFile(self, filepath):
+        """
+        Binary dumps connections objects into file specified, adding suffix specifying the type
+        """
+        with open(filepath+"_proximal.dump", "wb") as f:
+            f.write(self._pooler.proximalPermanences.save())
+        with open(filepath+"_distal.dump", "wb") as f:
+            f.write(self._pooler.internalDistalPermanences.save())
+
+        for i in range(len(self._pooler.distalPermanences)):
+            with open(filepath+"_distal_"+str(i)+".dump", "wb") as f:
+                f.write(self._pooler.distalPermanences[i].save())
+
 
 

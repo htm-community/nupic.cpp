@@ -23,8 +23,8 @@
 #include <htm/utils/Log.hpp>
 #include <algorithm> // sort
 
-using std::vector;
 using namespace htm;
+using namespace std;
 
 namespace htm {
 
@@ -62,21 +62,12 @@ Topology_t  DefaultTopology(
     const auto centerInput = inputTopologySDR.getSparse()[0];
 
     vector<UInt> columnInputs;
-    if( wrapAround ) {
-      for( UInt input : WrappingNeighborhood(centerInput, (UInt)floor(potentialRadius), inputTopology)) {
+    for( UInt input : Neighborhood(centerInput, (UInt)floor(potentialRadius), inputTopology, wrapAround /*wrapping*/)) {
         for( UInt extra = 0; extra < extraDimensions; ++extra ) {
           columnInputs.push_back( input * extraDimensions + extra );
         }
-      }
     }
-    else {
-      for( UInt input :
-           Neighborhood(centerInput, (UInt32)floor(potentialRadius), inputTopology)) {
-        for( UInt extra = 0; extra < extraDimensions; ++extra ) {
-          columnInputs.push_back( input * extraDimensions + extra );
-        }
-      }
-    }
+ 
 
     const UInt numPotential = (UInt)round(columnInputs.size() * potentialPct);
     auto selectedInputs = rng.sample<UInt>(columnInputs, numPotential);
@@ -136,35 +127,62 @@ UInt indexFromCoordinates(const vector<UInt> &coordinates,
 // NEIGHBORHOOD
 // ============================================================================
 
-Neighborhood::Neighborhood(UInt centerIndex, UInt radius,
-                           const vector<UInt> &dimensions)
+Neighborhood::Neighborhood(const UInt centerIndex, 
+                           const UInt radius,
+                           const vector<UInt> &dimensions, 
+                           const bool wrap,
+                           const bool skipCenter)
     : centerPosition_(coordinatesFromIndex(centerIndex, dimensions)),
-      dimensions_(dimensions), radius_(radius) {}
+      dimensions_(dimensions), radius_(radius), wrap_(wrap), skipCenter_(skipCenter), center_(centerIndex) {
+        if(wrap == false) {
+          NTA_WARN << "Neighborhood uses wrap=false which runs considerably slower with local inhibition!";
+        }
+      }
 
 Neighborhood::Iterator::Iterator(const Neighborhood &neighborhood, bool end)
     : neighborhood_(neighborhood),
       offset_(neighborhood.dimensions_.size(), -(Int)neighborhood.radius_),
       finished_(end) {
-  // Choose the first offset that has positive resulting coordinates.
-  for (size_t i = 0; i < offset_.size(); i++) {
-    offset_[i] = std::max(offset_[i], -(Int)neighborhood_.centerPosition_[i]);
-  }
+        if(!neighborhood.wrap_) {
+          // Choose the first offset that has positive resulting coordinates.
+          for (size_t i = 0; i < offset_.size(); i++) {
+            offset_[i] = std::max(offset_[i], -(Int)neighborhood_.centerPosition_[i]);
+          }
+        }
 }
 
 bool Neighborhood::Iterator::operator!=(const Iterator &other) const {
   return finished_ != other.finished_;
 }
 
-UInt Neighborhood::Iterator::operator*() const {
+UInt Neighborhood::Iterator::operator*() {
   UInt index = 0;
+  
+  NTA_ASSERT(neighborhood_.dimensions_.size() == offset_.size() and offset_.size() == neighborhood_.centerPosition_.size()); 
   for (size_t i = 0; i < neighborhood_.dimensions_.size(); i++) {
-    const Int coordinate = neighborhood_.centerPosition_[i] + offset_[i];
+    Int coordinate = neighborhood_.centerPosition_[i] + offset_[i];
+
+    if(neighborhood_.wrap_) {
+      // With a large radius, it may have wrapped around multiple times, so use
+      // `while`, not `if`.
+      while (coordinate < 0) { //lower bound
+        coordinate += neighborhood_.dimensions_[i];
+      }
+      while (coordinate >= static_cast<Int>(neighborhood_.dimensions_[i])) { //upper b
+        coordinate -= neighborhood_.dimensions_[i];
+      }
+    }
 
     NTA_ASSERT(coordinate >= 0);
     NTA_ASSERT(coordinate < (Int)neighborhood_.dimensions_[i]);
 
     index *= neighborhood_.dimensions_[i];
     index += coordinate;
+  }
+
+  if(neighborhood_.skipCenter_ and index == neighborhood_.center_) { 
+    advance_();
+    return this->operator*();
   }
 
   return index;
@@ -179,98 +197,28 @@ void Neighborhood::Iterator::advance_() {
   // When it overflows, we need to "carry the 1" to the next dimension.
   bool overflowed = true;
 
-  for (Int i = (Int)offset_.size() - 1; i >= 0; i--) {
+  for (Int i = static_cast<Int>(offset_.size()) - 1; i >= 0; i--) {
     offset_[i]++;
 
-    overflowed = offset_[i] > (Int)neighborhood_.radius_ ||
-                 (((Int)neighborhood_.centerPosition_[i] + offset_[i]) >=
-                  (Int)neighborhood_.dimensions_[i]);
-
-    if (overflowed) {
-      // Choose the first offset that has a positive resulting coordinate.
-      offset_[i] = std::max(-(Int)neighborhood_.radius_,
-                            -(Int)neighborhood_.centerPosition_[i]);
+    if(!neighborhood_.wrap_) {
+      overflowed = offset_[i] > (Int)neighborhood_.radius_ ||
+                 (((Int)neighborhood_.centerPosition_[i] + offset_[i]) >= (Int)neighborhood_.dimensions_[i]);
     } else {
-      // There's no overflow. The remaining coordinates don't need to change.
-      break;
-    }
-  }
-
-  // When the final coordinate overflows, we're done.
-  if (overflowed) {
-    finished_ = true;
-  }
-}
-
-Neighborhood::Iterator Neighborhood::begin() const { return {*this, false}; }
-
-Neighborhood::Iterator Neighborhood::end() const { return {*this, true}; }
-
-// ============================================================================
-// WRAPPING NEIGHBORHOOD
-// ============================================================================
-
-WrappingNeighborhood::WrappingNeighborhood(UInt centerIndex, UInt radius,
-                                           const vector<UInt> &dimensions)
-    : centerPosition_(coordinatesFromIndex(centerIndex, dimensions)),
-      dimensions_(dimensions), radius_(radius) {}
-
-WrappingNeighborhood::Iterator::Iterator(
-    const WrappingNeighborhood &neighborhood, bool end)
-    : neighborhood_(neighborhood),
-      offset_(neighborhood.dimensions_.size(), -(Int)neighborhood.radius_),
-      finished_(end) {}
-
-bool WrappingNeighborhood::Iterator::operator!=(const Iterator &other) const {
-  return finished_ != other.finished_;
-}
-
-UInt WrappingNeighborhood::Iterator::operator*() const {
-  UInt index = 0;
-  for (size_t i = 0; i < neighborhood_.dimensions_.size(); i++) {
-    Int coordinate = neighborhood_.centerPosition_[i] + offset_[i];
-
-    // With a large radius, it may have wrapped around multiple times, so use
-    // `while`, not `if`.
-
-    while (coordinate < 0) {
-      coordinate += neighborhood_.dimensions_[i];
-    }
-
-    while (coordinate >= (Int)neighborhood_.dimensions_[i]) {
-      coordinate -= neighborhood_.dimensions_[i];
-    }
-
-    index *= neighborhood_.dimensions_[i];
-    index += coordinate;
-  }
-
-  return index;
-}
-
-const WrappingNeighborhood::Iterator &WrappingNeighborhood::Iterator::
-operator++() {
-  advance_();
-  return *this;
-}
-
-void WrappingNeighborhood::Iterator::advance_() {
-  // When it overflows, we need to "carry the 1" to the next dimension.
-  bool overflowed = true;
-
-  for (Int i = (Int)offset_.size() - 1; i >= 0; i--) {
-    offset_[i]++;
-
     // If the offset has moved by more than the dimension size, i.e. if
     // offset_[i] - (-radius) is greater than the dimension size, then we're
     // about to run into points that we've already seen. This happens when given
     // small dimensions, a large radius, and wrap-around.
     overflowed = offset_[i] > (Int)neighborhood_.radius_ ||
-                 offset_[i] + (Int)neighborhood_.radius_ >=
-                     (Int)neighborhood_.dimensions_[i];
+                 offset_[i] + (Int)neighborhood_.radius_ >= (Int)neighborhood_.dimensions_[i];
+    }
 
     if (overflowed) {
-      offset_[i] = -(Int)neighborhood_.radius_;
+      if(!neighborhood_.wrap_) {
+        // Choose the first offset that has a positive resulting coordinate.
+        offset_[i] = std::max(-(Int)neighborhood_.radius_, -(Int)neighborhood_.centerPosition_[i]);
+      } else {
+        offset_[i] = -(Int)neighborhood_.radius_;
+      }
     } else {
       // There's no overflow. The remaining coordinates don't need to change.
       break;
@@ -283,10 +231,33 @@ void WrappingNeighborhood::Iterator::advance_() {
   }
 }
 
-WrappingNeighborhood::Iterator WrappingNeighborhood::begin() const {
-  return {*this, /*end*/ false};
+unordered_map<CellIdx, vector<CellIdx>> Neighborhood::updateAllNeighbors(
+		const UInt radius,
+                const vector<UInt> dimensions,
+                const bool wrapAround,
+                const bool skip_center) { //TODO  move the cache logic to Neighbor class
+
+  std::unordered_map<CellIdx, vector<CellIdx>> neighborMap;
+  UInt numColumns = 1;
+  for(const auto dim: dimensions) {
+    numColumns*= dim;
+  }
+  neighborMap.reserve(numColumns);
+
+
+  for(UInt column=0; column < numColumns; column++) {
+    vector<CellIdx> neighbors; //of the current column
+    for(const auto neighbor: Neighborhood(column, radius, dimensions, wrapAround, skip_center)) {
+      neighbors.push_back(neighbor);
+    }
+    std::sort(neighbors.begin(), neighbors.end()); //sort for better cache locality
+    neighbors.shrink_to_fit();
+
+    neighborMap[column] = neighbors;
+  }
+  return neighborMap;
 }
 
-WrappingNeighborhood::Iterator WrappingNeighborhood::end() const {
-  return {*this, /*end*/ true};
-}
+
+Neighborhood::Iterator Neighborhood::begin() const { return {*this, false}; }
+Neighborhood::Iterator Neighborhood::end() const { return {*this, true}; }

@@ -169,18 +169,19 @@ public:
 
 
   /* ------- Parameter support in the base class. ---------*/
-  // The default implementation of all of these methods goes through
-  // set/getParameterFromBuffer, which is compatible with NuPIC 1.
-  // RegionImpl subclasses may override for higher performance.
 
-  virtual Int32 getParameterInt32(const std::string &name, Int64 index);
-  virtual UInt32 getParameterUInt32(const std::string &name, Int64 index);
-  virtual Int64 getParameterInt64(const std::string &name, Int64 index);
-  virtual UInt64 getParameterUInt64(const std::string &name, Int64 index);
-  virtual Real32 getParameterReal32(const std::string &name, Int64 index);
-  virtual Real64 getParameterReal64(const std::string &name, Int64 index);
-  virtual bool getParameterBool(const std::string &name, Int64 index);
+  virtual Byte getParameterByte(const std::string& name, Int64 index) const;
+  virtual Int32 getParameterInt32(const std::string &name, Int64 index) const;
+  virtual UInt32 getParameterUInt32(const std::string &name, Int64 index) const;
+  virtual Int64 getParameterInt64(const std::string &name, Int64 index) const;
+  virtual UInt64 getParameterUInt64(const std::string &name, Int64 index) const;
+  virtual Real32 getParameterReal32(const std::string &name, Int64 index) const;
+  virtual Real64 getParameterReal64(const std::string &name, Int64 index) const;
+  virtual bool getParameterBool(const std::string &name, Int64 index) const;
 
+
+  virtual void setParameterByte(const std::string &name, Int64 index,
+                                 Byte value);
   virtual void setParameterInt32(const std::string &name, Int64 index,
                                  Int32 value);
   virtual void setParameterUInt32(const std::string &name, Int64 index,
@@ -196,14 +197,23 @@ public:
   virtual void setParameterBool(const std::string &name, Int64 index,
                                 bool value);
 
-  virtual void getParameterArray(const std::string &name, Int64 index,
-                                 Array &array);
+  virtual void getParameterArray(const std::string &name, Int64 index, Array &array) const;
   virtual void setParameterArray(const std::string &name, Int64 index,
                                  const Array &array);
 
   virtual void setParameterString(const std::string &name, Int64 index,
                                   const std::string &s);
-  virtual std::string getParameterString(const std::string &name, Int64 index);
+  virtual std::string getParameterString(const std::string &name, Int64 index) const;
+
+  /**
+   * Array-valued parameters may have a size determined at runtime.
+   * This method returns the number of elements in the named parameter.
+   * If parameter is not an array type, may throw an exception or return 1.
+   *
+   * Must be implemented only if the node has one or more array
+   * parameters with a dynamically-determined length.
+   */
+  virtual size_t getParameterArrayCount(const std::string &name, Int64 index) const;
 
   /* -------- Methods that must be implemented by subclasses -------- */
 
@@ -277,15 +287,6 @@ public:
   virtual Dimensions askImplForOutputDimensions(const std::string &name);
 
 
-  /**
-   * Array-valued parameters may have a size determined at runtime.
-   * This method returns the number of elements in the named parameter.
-   * If parameter is not an array type, may throw an exception or return 1.
-   *
-   * Must be implemented only if the node has one or more array
-   * parameters with a dynamically-determined length.
-   */
-  virtual size_t getParameterArrayCount(const std::string &name, Int64 index);
 
   /**
    * Set Global dimensions on a region.

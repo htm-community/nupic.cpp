@@ -71,18 +71,23 @@ namespace htm {
  */
 class Random : public Serializable  {
 public:
-  Random(UInt64 seed = 0);
+  Random(const UInt64 seed = 0);
 
 
+  // Serialization
   CerealAdapter;
   template<class Archive>
   void save_ar(Archive & ar) const {
-    ar( cereal::make_nvp("seed", seed_), cereal::make_nvp("steps", steps_));  
+    ar( CEREAL_NVP(seed_),
+        CEREAL_NVP(steps_)
+    );  
   }
   template<class Archive>
   void load_ar(Archive & ar) {
-    ar( seed_, steps_);  
-    gen.seed(static_cast<unsigned int>(seed_)); //reseed
+    ar( CEREAL_NVP(seed_), 
+	CEREAL_NVP(steps_)
+    );  
+    gen.seed(static_cast<UInt32>(seed_)); //reseed
     gen.discard(steps_); //advance n steps
   }
 
@@ -160,9 +165,7 @@ public:
 
 protected:
   friend class RandomTest;
-  friend std::ostream &operator<<(std::ostream &, const Random &);
-  friend std::istream &operator>>(std::istream &, Random &);
-  friend UInt32 GetRandomSeed();
+  friend UInt32 GetRandomSeed(const UInt seed);
 private:
   UInt64 seed_;
   UInt64 steps_ = 0;  //step counter, used in serialization. It is important that steps_ is in sync with number of 
@@ -180,15 +183,10 @@ private:
     typename std::iterator_traits<RandomIt>::difference_type i, n;
     n = last - first;
     for (i = n-1; i > 0; --i) {
-        using std::swap;
-        swap(first[i], first[this->getUInt32(static_cast<UInt32>(i+1))]);
+      std::swap(first[i], first[this->getUInt32(static_cast<UInt32>(i+1))]);
     }
   }
 };
-
-// serialization/deserialization
-std::ostream &operator<<(std::ostream &, const Random &);
-std::istream &operator>>(std::istream &, Random &);
 
 // This function returns seeds from the Random singleton in our
 // "universe" (application, plugin, python module). If, when the
@@ -196,7 +194,7 @@ std::istream &operator>>(std::istream &, Random &);
 // set to this function. The plugin framework can override this
 // behavior by explicitly setting the seeder to the RandomSeeder
 // function provided by the application.
-UInt32 GetRandomSeed();
+UInt32 GetRandomSeed(const UInt seed=0);
 
 } // namespace htm
 

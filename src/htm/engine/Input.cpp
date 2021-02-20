@@ -172,7 +172,7 @@ void Input::initialize() {
     // ask the spec for destination region.
     UInt32 count = destSpec->inputs.getByName(name_).count;
     if (count > 0) {
-      inD.push_back(count);
+      inD.push_back(count); // fixed count in spec
     } else {
       // ask the destination region impl
       inD = region_->askImplForInputDimensions(name_);

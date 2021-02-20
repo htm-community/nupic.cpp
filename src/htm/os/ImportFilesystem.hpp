@@ -31,6 +31,7 @@
 //    Clang 7 has complete <filesystem> support for C++17
 //    Visual Studio 2017 15.7 (v19.14)supports <filesystem> with C++17
 //    MinGW has no support for filesystem.
+// To avoid requiring boost, on GCC and Clang use compile option -std=c++17
 //
 // If >= C++17 then
 //   use std::filesystem, if it exists

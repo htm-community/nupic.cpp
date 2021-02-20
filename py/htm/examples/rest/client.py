@@ -27,10 +27,10 @@
 #        port default: 8050
 #
 
-import requests
 import sys
-import json
 import math
+
+import htm_rest_api
 
 verbose = True
 
@@ -53,20 +53,11 @@ def main(argv):
        {addLink:   {src: "encoder.encoded", dest: "sp.bottomUpIn"}},
        {addLink:   {src: "sp.bottomUpOut", dest: "tm.bottomUpIn"}}
     ]}"""
-    
-  # Send the config string and obtain a token for the created Network object instance.
-  if verbose: print('Post /network; body: '+config)
-  res = requests.post(URL+'/network', data=config)
-  if res.status_code != requests.codes.ok:
-    print('Network configuration failed.')
-    sys.exit(1)
-  if res.text[0:6] == 'ERROR:':
-    print(res.text)
-    sys.exit(2)
- 
-  id = res.text.strip()
-  if verbose: print('Resource ID: '+ id)
 
+  net = htm_rest_api.NetworkRESTBase(config, host = URL, verbose=verbose)
+
+  # Send the config string and obtain a token for the created Network object instance.
+  net.create()
 
   # iterate EPOCHS times
   x = 0.00
@@ -76,31 +67,15 @@ def main(argv):
     s = math.sin(x)
 
     # Send set parameter message to feed "sensedValue" parameter data into RDSE encoder for this iteration.
-    message = URL+"/network/{}/region/encoder/param/sensedValue?data={:f}".format(id, s)
-    if verbose: print('PUT ' + message)
-    res = requests.put(message);
-    if res.status_code != requests.codes.ok or res.text.strip() != "OK":
-      print( 'PUT failed: ' + res.text)
-      sys.exit(3)
+    net.put_region_param('encoder', 'sensedValue', '{:f}'.format(s))
 
     # Execute one iteration of the Network object
-    message = URL+"/network/{}/run".format(id)
-    if verbose: print('GET ' + message)
-    res = requests.get(message);
-    if res.status_code != requests.codes.ok or res.text.strip() != "OK":
-      print( 'Run failed: ' + res.text)
-      sys.exit(4)
+    net.run(100)
 
   # Retreive the final anomaly score from the TM object's 'anomaly' output.
-  message = URL+"/network/{}/region/tm/output/anomaly".format( id)
-  if verbose: print('GET ' + message)
-  res = requests.get(message);
-  if res.status_code != requests.codes.ok or res.text[0:6] == 'ERROR:':
-    print('Run failed.')
-    print(res.text)
-    sys.exit(5)
+  score = net.get_region_output('tm', 'anomaly')[0]
   
-  print('Anomaly Score: ' + res.text )
+  print('Anomaly Score: ' + str(score) )
   #Note: Anomaly score will be 1 until there have been enough iterations to 'learn' the pattern.
 
 

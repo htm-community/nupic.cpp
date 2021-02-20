@@ -23,6 +23,7 @@
 #include <htm/engine/Link.hpp>
 #include <htm/engine/Output.hpp>
 #include <htm/engine/Region.hpp>
+#include <htm/os/Path.hpp>  // for trim( )
 #include <htm/ntypes/Array.hpp>
 #include <htm/ntypes/BasicType.hpp>
 #include <htm/utils/Log.hpp>
@@ -156,6 +157,37 @@ void Link::connectToNetwork(std::shared_ptr<Output> src, std::shared_ptr<Input> 
 
   src_ = src.get();
   dest_ = dest.get();
+  
+  
+  // Process link parameters at this point.
+  std::string params = Path::trim(linkParams_);
+  if (!params.empty()) {
+    // a link parameter was provided.
+    Value vm;
+    vm.parse(params);
+    if (vm.contains("dim")) {
+      // A dimension was provided.  This will set the dimensions on the source.
+      // which will usually propogate to the destination Input.
+      //     dim: [1,2]
+      //     dim: 25 
+      const Value vm1 = vm["dim"];
+      if (vm1.isSequence()) {
+        Dimensions dim(vm1.asVector<UInt>());
+        
+        src_->setDimensions(dim);
+      } else if (vm1.isScalar()) {
+        Dimensions dim(vm1.as<UInt>());
+        src_->setDimensions(dim);
+      } else {
+        NTA_THROW << "Unexepected syntax in dim parameter of the Link. " << params;
+      }
+
+    } else {
+      NTA_THROW << "unknown parameter specified in Link. " << params;
+    }
+  }
+
+  
 }
 
 // The methods below only work on connected links.

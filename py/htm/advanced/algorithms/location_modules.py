@@ -229,7 +229,7 @@ class AbstractLocationModule(ABC):
                 maxNew = np.where(maxNew <= numSynapsesToReachMax, maxNew, numSynapsesToReachMax)
                 
             if maxNew > 0:
-                self.connections.growSynapsesToSample(segment, activeInput.sparse, maxNew, self.initialPermanence, self.rng)
+                self.connections.growSynapses(segment, activeInput.sparse, self.initialPermanence, self.rng, maxNew)
 
     def _learnOnNewSegments(self, newSegmentCells, growthCandidates):
 
@@ -243,7 +243,7 @@ class AbstractLocationModule(ABC):
             
         for cell in  newSegmentCells:
             newSegment = self.connections.createSegment(cell, self.maxSegmentsPerCell)
-            self.connections.growSynapsesToSample(newSegment, growthCandidates.sparse, numNewSynapses, self.initialPermanence, self.rng)
+            self.connections.growSynapses(newSegment, growthCandidates.sparse, self.initialPermanence, self.rng, numNewSynapses)
 
     def getActiveCells(self):
         return self.activeCells

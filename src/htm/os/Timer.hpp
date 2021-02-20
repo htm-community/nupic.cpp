@@ -99,7 +99,7 @@ private:
 
 }; // class Timer
 
-static Real64 SPEED = -1; //uninitialized, for getSpeed()
+extern Real64 SPEED; //for getSpeed()
 
 } // namespace htm
 

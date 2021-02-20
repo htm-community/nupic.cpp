@@ -65,11 +65,11 @@ public:
 
   /// Retrieve i'th vector, apply scaling and copy result into output
   /// output must have size of at least 'count' elements
-  void getScaledVector(const UInt i, Real *out, UInt offset, Size count);
+  void getScaledVector(const UInt i, Real64 *out, UInt offset, Size count);
 
   /// Retrieve the i'th vector and copy into output without scaling
   /// output must have size at least 'count' elements
-  void getRawVector(const UInt i, Real *out, UInt offset, Size count);
+  void getRawVector(const UInt i, Real64 *out, UInt offset, Size count);
 
   /// Return the number of stored vectors
   size_t vectorCount() const { return fileVectors_.size(); }
@@ -88,13 +88,13 @@ public:
   void resetScaling(UInt nElements = 0);
 
   /// Get the scaling and offset values for element e
-  void getScaling(const UInt e, Real &scale, Real &offset);
+  void getScaling(const UInt e, Real64 &scale, Real64 &offset) const;
 
   /// Set the scale value for element e
-  void setScale(const UInt e, const Real scale);
+  void setScale(const UInt e, const Real64 scale);
 
   /// Set the offset value for element e
-  void setOffset(const UInt e, const Real offset);
+  void setOffset(const UInt e, const Real64 offset);
 
   /// Clear the set of vectors and labels, including scale and offset vectors,
   /// release all memory, and set numElements back to zero.
@@ -146,10 +146,10 @@ public:
 	
 
 private:
-  std::vector<Real *> fileVectors_; // list of vectors
+  std::vector<Real64 *> fileVectors_; // list of vectors
   std::vector<bool> own_;           // memory ownership flags
-  std::vector<Real> scaleVector_;   // the scaling vector
-  std::vector<Real> offsetVector_;  // the offset vector
+  std::vector<Real64> scaleVector_;   // the scaling vector
+  std::vector<Real64> offsetVector_;  // the offset vector
 
   std::vector<std::string> elementLabels_; // string denoting the meaning of each element
   std::vector<std::string> vectorLabels_; // a string label for each vector
@@ -158,7 +158,7 @@ private:
   void appendCSVFile(std::istream &inFile, Size expectedElementCount);
 
   /// Read vectors from a binary file.
-  void appendFloat32File(const std::string &filename, Size expectedElements);
+  void appendFloat64File(const std::string &filename, Size expectedElements);
 
   /// Read vectors from a binary IDX file.
   void appendIDXFile(const std::string &filename, int expectedElements);

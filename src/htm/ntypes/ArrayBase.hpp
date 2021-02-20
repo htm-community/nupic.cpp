@@ -42,6 +42,7 @@
 
 #include <htm/ntypes/BasicType.hpp>
 #include <htm/types/Sdr.hpp>
+#include <htm/ntypes/Value.hpp>
 
 namespace htm
 {
@@ -60,7 +61,7 @@ namespace htm
      * Caller frees buffer when no longer needed.
      * For NTA_BasicType_SDR, use ArrayBase(SDR&) so dimensions are set.
      */
-    ArrayBase(NTA_BasicType type, void *buffer, size_t count);
+    ArrayBase(NTA_BasicType type, const void *buffer, size_t count);
 
 
     /**
@@ -240,6 +241,7 @@ namespace htm
     }
 
 
+    void fromValue(const Value &vm);      //handles both YAML and JSON syntax
     // Serialization and Deserialization using YAML parser
     void fromYAML(const std::string& data);      //handles both YAML and JSON syntax
     void fromJSON(const std::string &data) { return fromYAML(data); }

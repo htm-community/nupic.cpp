@@ -235,7 +235,7 @@ class PyRegion(_PyRegionMeta):
 
 
   def getParameterArrayCount(self, name, index):
-    """Default implementation that return the length of the attribute.
+    """Default implementation that returns the length of the attribute.
 
     This default implementation goes hand in hand with
     :meth:`~nupic.bindings.regions.PyRegion.PyRegion.getParameterArray`.
@@ -251,8 +251,8 @@ class PyRegion(_PyRegionMeta):
     """
     if name.startswith('_'):
       raise Exception('Parameter name must not start with an underscore')
-
-    return len(self.parameters[name])
+    
+    return len(getattr(self, name))
 
 
   def getParameterArray(self, name, index, array):

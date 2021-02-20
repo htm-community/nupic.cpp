@@ -50,7 +50,7 @@ const char *Path::pathSep = ":";
 
 
 /**** string handling functions ****/
-std::string trim(const std::string &s) {
+std::string Path::trim(const std::string &s) {
   size_t i,j;
   for(i = 0; i < s.length(); i++)
   if (!std::isspace(s[i])) break;
@@ -58,7 +58,7 @@ std::string trim(const std::string &s) {
     if (!std::isspace(s[j-1])) break;
   return s.substr(i, j-i);
 }
-std::vector<std::string> split(const std::string &str, char delim) {
+std::vector<std::string> Path::split(const std::string &str, char delim) {
   std::vector<std::string> cont;
   std::size_t current, previous = 0;
   current = str.find(delim);
@@ -67,7 +67,7 @@ std::vector<std::string> split(const std::string &str, char delim) {
     previous = current + 1;
     current = str.find(delim, previous);
   }
-  std::string itm = trim(str.substr(previous));
+  std::string itm = Path::trim(str.substr(previous));
   cont.push_back(itm);
   return cont;
 }

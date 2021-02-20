@@ -407,8 +407,8 @@ Argument output An SDR representing the winning columns after
         auto inhibitColumns_func = [](SpatialPooler& self, py::array& overlaps)
         {
             std::vector<htm::Real> overlapsVector(get_it<Real>(overlaps), get_end<Real>(overlaps));
-            std::vector<htm::UInt> activeColumnsVector;
-            self.inhibitColumns_(overlapsVector, activeColumnsVector);
+            // converts from a vector of Real to a vector of UInt
+            std::vector<htm::UInt> activeColumnsVector = self.inhibitColumns_(overlapsVector);
 
             return py::array_t<UInt>( activeColumnsVector.size(), activeColumnsVector.data());
         };

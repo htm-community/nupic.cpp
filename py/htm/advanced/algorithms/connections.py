@@ -95,54 +95,6 @@ class Connections(CPPConnections):
             Output array with the same length as 'segments'
         """
         return np.array([self.cellForSegment(s) for s in segments], dtype=np.uint32)
-
-    def growSynapses(self, segment, growthCandidates, initialPermanence):
-        """
-        For each specified segments, grow synapses to all specified inputs that
-        aren't already connected to the segment.
-        
-        @param segment
-        The segment to modify
-        
-        @param inputs
-        The inputs to connect to
-        
-        @param initialPermanence
-        The permanence for each added synapse
-        """
-        presynamptic_cells = [self.presynapticCellForSynapse(synapse) for synapse in self.synapsesForSegment(segment)]
-        active_cells_without_synapses = growthCandidates[np.isin(growthCandidates, presynamptic_cells, invert=True)]
-        
-        for c in active_cells_without_synapses:
-            self.createSynapse(segment, c, initialPermanence)
-    
-    def growSynapsesToSample(self, segment, growthCandidates, maxNew, initialPermanence, rng):
-        """
-        For each specified segments, grow synapses to a random subset of the
-        inputs that aren't already connected to the segment.
-        *
-        @param segment
-        The segment to modify
-        *
-        @param inputs
-        The inputs to sample
-        *
-        @param sampleSize
-        The number of synapses to attempt to grow per segment
-        *
-        @param initialPermanence
-        The permanence for each added synapse
-        *
-        @param rng
-        Random number generator
-        """
-        presynamptic_cells = [self.presynapticCellForSynapse(synapse) for synapse in self.synapsesForSegment(segment)]
-        active_cells_without_synapses = growthCandidates[np.isin(growthCandidates, presynamptic_cells, invert=True)]
-        if len(active_cells_without_synapses) > maxNew:
-            active_cells_without_synapses = rng.sample(np.asarray(active_cells_without_synapses, dtype="uint32"), maxNew)
-        
-        for c in active_cells_without_synapses:
-            self.createSynapse(segment, c, initialPermanence)
     
     def getSegmentCounts(self, cells):
         """

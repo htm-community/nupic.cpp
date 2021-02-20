@@ -314,8 +314,8 @@ class ApicalTMPairRegion(PyRegion):
                 "implementation": {
                     "description": "Apical implementation",
                     "accessMode": "Create",
-                    "dataType": "Byte",
-                    "count": 0,
+                    "dataType": "String",
+                    "count": 1,
                     "constraints": ("enum: ApicalTiebreak, ApicalTiebreakCPP, ApicalDependent"),
                     "defaultValue": "ApicalTiebreakCPP",
                     "accessMode":"ReadWrite"
@@ -522,3 +522,12 @@ class ApicalTMPairRegion(PyRegion):
         Returns an instance of the underlying temporal memory instance
         """
         return self._tm
+
+    def saveConnectionsToFile(self, filepath):
+        """
+        Binary dumps connections objects into file specified, adding suffix specifying the type
+        """
+        with open(filepath+"_basal.dump", "wb") as f:
+            f.write(self._tm.basalConnections.save())
+        with open(filepath+"_apical.dump", "wb") as f:
+            f.write(self._tm.apicalConnections.save())

@@ -24,10 +24,12 @@
 
 #include <vector>
 #include <functional>
+#include <unordered_map>
 
 #include <htm/types/Types.hpp>
 #include <htm/types/Sdr.hpp>
 #include <htm/utils/Random.hpp>
+#include <htm/algorithms/Connections.hpp> //just for CellIdx, maybe define separately?
 
 namespace htm {
 
@@ -184,6 +186,14 @@ UInt indexFromCoordinates(const std::vector<UInt> &coordinates,
  *
  * @param dimensions
  * The dimensions of the world outside this neighborhood.
+ * 
+ * @param wrap default false; 
+ * If set to true: Like the Neighborhood class, except that the neighborhood isn't
+ * truncated when it's near an edge. It wraps around to the other side. (former
+ * WrappingNeighborhood class).
+ * 
+ * @param skipSelf (default false) skips centerIndex from the list of neighbors. 
+ * Used eg. in SpatialPooler to avoid (an extra) IF in a heated loop. 
  *
  * @returns
  * An object which supports C++ range-based for loops. Each iteration of
@@ -192,14 +202,17 @@ UInt indexFromCoordinates(const std::vector<UInt> &coordinates,
  */
 class Neighborhood {
 public:
-  Neighborhood(UInt centerIndex, UInt radius,
-               const std::vector<UInt> &dimensions);
+  Neighborhood(const UInt centerIndex, 
+               const UInt radius,
+               const std::vector<UInt> &dimensions, 
+               const bool wrap = false, 
+               const bool skipCenter = false);
 
   class Iterator {
   public:
     Iterator(const Neighborhood &neighborhood, bool end);
     bool operator!=(const Iterator &other) const;
-    UInt operator*() const;
+    UInt operator*();
     const Iterator &operator++();
 
   private:
@@ -213,60 +226,21 @@ public:
   Iterator begin() const;
   Iterator end() const;
 
-private:
-  const std::vector<UInt> centerPosition_;
-  const std::vector<UInt> &dimensions_;
-  const UInt radius_;
-};
-
-/**
- * Like the Neighborhood class, except that the neighborhood isn't
- * truncated when it's near an edge. It wraps around to the other side.
- *
- * @param centerIndex
- * The center of this neighborhood. The coordinates are expressed as a
- * single index by using the dimensions as a mixed radix definition. For
- * example, in dimensions 42x10, the point [1, 4] is index 1*10 + 4 = 14.
- *
- * @param radius
- * The radius of this neighborhood about the centerIndex.
- *
- * @param dimensions
- * The dimensions of the world outside this neighborhood.
- *
- * @returns
- * An object which supports C++ range-based for loops. Each iteration of
- * the loop returns a point in the neighborhood. Each point is expressed
- * as a single index.
- */
-class WrappingNeighborhood {
-public:
-  WrappingNeighborhood(UInt centerIndex, UInt radius,
-                       const std::vector<UInt> &dimensions);
-
-  class Iterator {
-  public:
-    Iterator(const WrappingNeighborhood &neighborhood, bool end);
-    bool operator!=(const Iterator &other) const;
-    UInt operator*() const;
-    const Iterator &operator++();
-
-  private:
-    void advance_();
-
-    const WrappingNeighborhood &neighborhood_;
-    std::vector<Int> offset_;
-    bool finished_;
-  };
-
-  Iterator begin() const;
-  Iterator end() const;
+static  std::unordered_map<htm::CellIdx, std::vector<htm::CellIdx>> updateAllNeighbors(
+    const UInt radius,
+    const std::vector<UInt> dimensions,
+    const bool wrapAround=true,
+    const bool skip_center=false);
 
 private:
   const std::vector<UInt> centerPosition_;
   const std::vector<UInt> &dimensions_;
   const UInt radius_;
+  const bool wrap_;
+  const bool skipCenter_;
+  const UInt center_; //the idx of self/center column
 };
+
 
 } // end namespace htm
 

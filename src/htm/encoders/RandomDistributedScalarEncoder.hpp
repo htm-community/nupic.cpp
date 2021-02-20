@@ -65,7 +65,7 @@ struct RDSE_Parameters
 
   /**
    * Member "resolution" Two inputs separated by greater than, or equal to the
-   * resolution are guaranteed to have different representations.
+   * resolution will in general have different representations.
    */
   Real resolution = 0.0f;
 
@@ -156,6 +156,14 @@ public:
   }
 private:
   RDSE_Parameters args_;
+
+  /**
+   * Check that this RDSE is resistant to hash collisions and will consistently
+   * produce good outputs.
+   *
+   * Returns true if the parameters are good.
+   */
+  bool check_parameters();
 };
 
 typedef RandomDistributedScalarEncoder RDSE;

@@ -50,7 +50,7 @@ namespace htm_ext
 		// This would be .py code calling getSpec() to get the Spec structure
 		// on an already instantiated class.
         py_Region.def("getSpec", &Region_t::getSpec);
-
+        py_Region.def("executeCommand", &Region_t::executeCommand);
 
         ///////////////////
         // Test Node

@@ -107,12 +107,15 @@ bool InputSpec::operator==(const InputSpec &o) const {
          count == o.count && description == o.description;
 }
 std::ostream& operator<< (std::ostream& out, const InputSpec& self) {
-   out << "      description: " << self.description << "\n"
-       << "      type: " << BasicType::getName(self.dataType) << "\n"
-       << "      count: " << self.count << "\n"
-       << "      required: " << self.required << "\n"
-       << "      regionLevel: " << self.regionLevel << "\n"
-       << "      isDefaultInput: " << self.isDefaultInput << "\n";
+   out << "{\n";
+   if (!self.description.empty())
+     out << "      \"description\": \"" << self.description << "\",\n";
+   out << "      \"type\": \"" << BasicType::getName(self.dataType) << "\",\n";
+   out << "      \"count\": " << self.count << ",\n";
+   out << "      \"required\": " << self.required << ",\n";
+   out << "      \"regionLevel\": " << self.regionLevel << ",\n";
+   out << "      \"isDefaultInput\": " << self.isDefaultInput << "\n";
+   out << "    }";
    return out;
 }
 
@@ -130,11 +133,14 @@ bool OutputSpec::operator==(const OutputSpec &o) const {
          description == o.description;
 }
 std::ostream& operator<< (std::ostream& out, const OutputSpec& self) {
-   out << "      description: " << self.description << "\n"
-       << "      type: " << BasicType::getName(self.dataType) << "\n"
-       << "      count: " << self.count << "\n"
-       << "      regionLevel: " << self.regionLevel << "\n"
-       << "      isDefaultInput: " << self.isDefaultOutput << "\n";
+  out << "{\n";
+   if (!self.description.empty())
+     out << "      \"description\": \"" << self.description << "\",\n";
+   out << "      \"type\": \"" << BasicType::getName(self.dataType) << "\",\n";
+   out << "      \"count\": " << self.count << ",\n";
+   out << "      \"regionLevel\": " << self.regionLevel << ",\n";
+   out << "      \"isDefaultOutput\": " << self.isDefaultOutput << "\n";
+   out << "    }";
    return out;
 }
 
@@ -142,6 +148,11 @@ CommandSpec::CommandSpec(std::string description)
     : description(std::move(description)) {}
 bool CommandSpec::operator==(const CommandSpec &o) const {
   return description == o.description;
+}
+std::ostream& operator<< (std::ostream& out, const CommandSpec& self) {
+   if (!self.description.empty())
+     out << "      \"description\": \"" << self.description << "\",\n";
+   return out;
 }
 
 ParameterSpec::ParameterSpec(std::string description, NTA_BasicType dataType,
@@ -157,18 +168,20 @@ bool ParameterSpec::operator==(const ParameterSpec &o) const {
          defaultValue == o.defaultValue && accessMode == o.accessMode;
 }
 std::ostream& operator<< (std::ostream& out, const ParameterSpec& self) {
-    out << "      description: " << self.description << "\n"
-        << "      type: " << BasicType::getName(self.dataType) << "\n"
-        << "      count: " << self.count << "\n"
-        << "      access: ";
+    if (!self.description.empty())
+      out << "      \"description\": \"" << self.description << "\",\n";
+    out << "      \"type\": \"" << BasicType::getName(self.dataType) << "\",\n";
+    out << "      \"count\": " << self.count << ",\n";
+    out << "      \"access\": ";
     switch(self.accessMode) {
-    case ParameterSpec::CreateAccess:  out << "CreateAccess\n"; break;
-    case ParameterSpec::ReadOnlyAccess: out << "ReadOnlyAccess\n"; break;
-    case ParameterSpec::ReadWriteAccess: out << "ReadWriteAccess\n"; break;
-    default: out << "UnknownAccess\n"; break;
+    case ParameterSpec::CreateAccess:  out << "\"Create\",\n"; break;
+    case ParameterSpec::ReadOnlyAccess: out << "\"ReadOnly\",\n"; break;
+    case ParameterSpec::ReadWriteAccess: out << "\"ReadWrite\",\n"; break;
+    default: out << "\"UnknownAccess\",\n"; break;
     }
-    out << "      defaultValue: " << self.defaultValue << "\n";
-    out << "      constraints: " << self.constraints << "\n";
+    if (!self.constraints.empty())
+      out << "      \"constraints\": \"" << self.constraints << "\",\n";
+    out << "      \"defaultValue\": \"" << self.defaultValue << "\"";
     return out;
 }
 
@@ -176,37 +189,54 @@ std::string Spec::toString() const {
   // TODO -- minimal information here; fill out with the rest of
   // the parameter spec information
   std::stringstream ss;
-  ss << "Spec: " << this->name  << "\n";
-  ss << "  Description:"  << this->description << "\n";
+  ss << "{\"spec\": \"" << this->name  << "\",\n";
+  if (!this->description.empty())
+    ss << "  \"description\": \""  << this->description << "\",\n";
 
-  ss << "  Parameters:" << "\n";
+  ss << "  \"parameters\": {\n";
   for (size_t i = 0; i < parameters.getCount(); ++i) {
     const std::pair<std::string, ParameterSpec> &item = parameters.getByIndex(i);
-    ss << "    " << item.first << ":\n";
+    if (i!=0)
+       ss<< ",\n";
+    ss << "    \"" << item.first << "\": {\n";
     ss << item.second << "\n";
+    ss << "    }";
+  }
+  ss << "\n  }";
+  
+  if (commands.getCount() > 0) {
+    ss << ",\n  \"commands\": {\n";
+    for (size_t i = 0; i < commands.getCount(); ++i) {
+    	if (i!=0)
+    		ss<< ",\n";
+      ss << "    \"" << commands.getByIndex(i).first << "\": \""
+         << commands.getByIndex(i).second.description << "\"";
+    }
+    ss << "\n    }";
   }
 
-  ss << "  Inputs:" << "\n";
+
+  ss << ",\n  \"inputs\": {\n";
   for (size_t i = 0; i < inputs.getCount(); ++i) {
     const std::pair<std::string, InputSpec> &item = inputs.getByIndex(i);
-    ss << "    " << item.first << ":\n";
-    ss << item.second << "\n";
+    if(i!=0)
+      ss << ",\n";
+    ss << "    \"" << item.first << "\": "  << item.second;
   }
+  ss << "\n  }";
 
-  ss << "Outputs:" << "\n";
+  ss << ",\n  \"outputs\": {\n";
   for (size_t i = 0; i < outputs.getCount(); ++i) {
     const std::pair<std::string, OutputSpec> &item = outputs.getByIndex(i);
-    ss << "    " << item.first << ":\n";
-    ss << item.second << "\n";
+    if(i!=0)
+    	ss << ",\n";
+    ss << "    \"" << item.first << "\": " << item.second;
   }
-
-  if (commands.getCount() > 0) {
-    ss << "  Commands:" << "\n";
-    for (size_t i = 0; i < commands.getCount(); ++i) {
-      ss << "    " << commands.getByIndex(i).first << ": "
-         << commands.getByIndex(i).second.description << "\n";
-    }
-  }
+  if(outputs.getCount()>0)
+  	ss << "\n";
+  ss << "  }\n";
+  ss << "}";
+  
   return ss.str();
 }
 
@@ -222,7 +252,7 @@ std::ostream& operator<< (std::ostream& out, const Spec& self) {
 // Field order does not matter.
 //
 // Expected yaml layout:
-//    name: <the region's name>                                     (string, default "")
+//    spec: <the region's name>                                     (string, default "")
 //    description: "text describing the region."                    (string, default "")
 //    parameters:
 //      <name>:                                         repeat for each parameter
@@ -232,6 +262,9 @@ std::ostream& operator<< (std::ostream& out, const Spec& self) {
 //        constraints: <constraint text>,                           (string, default "" )
 //        defaultValue: <as quoted JSON string>,                    (string, default "0")
 //        access: <one of "Create", "ReadOnly", "ReadWrite">        (enum, default "Create")
+//    commands:
+//      <name>:                                         repeat for each command
+//        description: "description of command",                    (string, default "")
 //    inputs:
 //      <name>:                                         repeat for each input
 //        description: "description of input",                      (string, default "")
@@ -247,9 +280,6 @@ std::ostream& operator<< (std::ostream& out, const Spec& self) {
 //        count: <"0" if variable array width, else fixed width>    (size_t, default "0")
 //        isRegionLevel: <true if inherits region dimensions>,      (bool, default "false")
 //        isDefaultOutput: <if true, assumed output for region>     (bool, default "false")
-//    commands:
-//      <name>:                                         repeat for each command
-//        description: "description of command",                    (string, default "")
 //
 void Spec::parseSpec(const std::string &yaml) {
   Value tree;
@@ -261,7 +291,7 @@ void Spec::parseSpec(const std::string &yaml) {
     std::string the_name;
     std::string itm;
     try {
-      if (category == "name") {
+      if (category == "name" || category == "spec") {
         name = category_pair.second.str();
       } else if (category == "description")
         description = category_pair.second.str();
@@ -343,6 +373,13 @@ void Spec::parseSpec(const std::string &yaml) {
                         << "outputs '" << the_name << "'.";
           }
           outputs.add(the_name, par);
+        }
+      } else if (category == "commands") {
+        for (auto field_par : category_pair.second) {
+          the_name = field_par.first;
+          CommandSpec par;
+          par.description = field_par.second.str();
+          commands.add(the_name, par);
         }
       } else
         NTA_THROW << "Unexpected category: in spec for " << name << "::.";

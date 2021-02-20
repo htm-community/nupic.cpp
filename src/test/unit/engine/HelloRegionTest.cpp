@@ -41,7 +41,7 @@ TEST(HelloRegionTest, demo) {
   std::string path = Path::join("TestOutputDir", "Data.csv");
 
   // enter some arbitrary test data.
-  std::vector<std::vector<Real32>> testdata = {{0, 1.5f, 2.5f},
+  std::vector<std::vector<Real64>> testdata = {{0, 1.5f, 2.5f},
                                                {1, 1.5f, 2.5f},
                                                {2, 1.5f, 2.5f},
                                                {3, 1.5f, 2.5f}};
@@ -84,11 +84,11 @@ TEST(HelloRegionTest, demo) {
 
   // Get output
   const Array& outputArray = region->getOutputData("dataOut");
-  EXPECT_TRUE(outputArray.getType() == NTA_BasicType_Real32);
+  EXPECT_TRUE(outputArray.getType() == NTA_BasicType_Real64);
   EXPECT_EQ(outputArray.getCount(), testdata[0].size());
-  const Real32 *buffer = (const Real32 *)outputArray.getBuffer();
+  const Real64 *buffer = (const Real64 *)outputArray.getBuffer();
   for (size_t i = 0; i < outputArray.getCount(); i++)
-    EXPECT_FLOAT_EQ(buffer[i], testdata[0][i]);
+    EXPECT_DOUBLE_EQ(buffer[i], testdata[0][i]);
   // At this point we have consumed the first buffer from FileInputRegion.
 
   // Serialize
@@ -116,7 +116,7 @@ TEST(HelloRegionTest, demo) {
   if (verbose) std::cout << "outputArray =" << outputArray << std::endl;
   if (verbose) std::cout << "outputArray2=" << outputArray2 << std::endl;
 
-  const Real32 *buffer2 = (const Real32 *)outputArray2.getBuffer();
+  const Real64 *buffer2 = (const Real64 *)outputArray2.getBuffer();
   EXPECT_EQ(data_cols, outputArray.getCount());
   ASSERT_EQ(outputArray2.getCount(), outputArray.getCount());
   for (size_t i = 0; i < outputArray2.getCount(); i++) {

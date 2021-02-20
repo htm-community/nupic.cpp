@@ -137,17 +137,17 @@ public:
 
   /* -----------  Optional RegionImpl Interface methods ------- */
 
-  size_t getParameterArrayCount(const std::string &name, Int64 index) override;
+  size_t getParameterArrayCount(const std::string &name, Int64 index) const override;
 
-  virtual Int32 getParameterInt32(const std::string &name, Int64 index) override;
-  virtual UInt32 getParameterUInt32(const std::string &name, Int64 index) override;
-  virtual Int64 getParameterInt64(const std::string &name, Int64 index) override;
-  virtual UInt64 getParameterUInt64(const std::string &name, Int64 index) override;
-  virtual Real32 getParameterReal32(const std::string &name, Int64 index) override;
-  virtual Real64 getParameterReal64(const std::string &name, Int64 index) override;
-  virtual bool getParameterBool(const std::string &name, Int64 index) override;
-  virtual std::string getParameterString(const std::string &name, Int64 index) override;
-  virtual void getParameterArray(const std::string &name, Int64 index, Array &array) override;
+  virtual Int32 getParameterInt32(const std::string &name, Int64 index) const override;
+  virtual UInt32 getParameterUInt32(const std::string &name, Int64 index) const override;
+  virtual Int64 getParameterInt64(const std::string &name, Int64 index) const override;
+  virtual UInt64 getParameterUInt64(const std::string &name, Int64 index) const override;
+  virtual Real32 getParameterReal32(const std::string &name, Int64 index) const override;
+  virtual Real64 getParameterReal64(const std::string &name, Int64 index) const override;
+  virtual bool getParameterBool(const std::string &name, Int64 index) const override;
+  virtual std::string getParameterString(const std::string &name, Int64 index) const override;
+  virtual void getParameterArray(const std::string &name, Int64 index, Array &array) const override;
 
   virtual void setParameterInt32(const std::string &name, Int64 index, Int32 value) override;
   virtual void setParameterUInt32(const std::string &name, Int64 index, UInt32 value) override;

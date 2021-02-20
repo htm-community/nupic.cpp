@@ -86,6 +86,8 @@ void RandomDistributedScalarEncoder::initialize( const RDSE_Parameters &paramete
   while( args_.seed == 0u ) {
     args_.seed = Random().getUInt32();
   }
+
+  NTA_CHECK(check_parameters()) << "Failed hash collision resistance check, please increase size, sparsity, and or activeBits.";
 }
 
 void RandomDistributedScalarEncoder::encode(Real64 input, SDR &output)
@@ -118,12 +120,28 @@ void RandomDistributedScalarEncoder::encode(Real64 input, SDR &output)
     // deviations in the sparsity or semantic similarity, depending on how
     // they're handled.
 
-    // Exercise for the reader: Calculate the probability of a hash collision
-    // and account for it in the sparsity.
-
     data[bucket] = 1u;
   }
   output.setDense( data );
+}
+
+bool RandomDistributedScalarEncoder::check_parameters() {
+  if( parameters.size >= 1000 && parameters.activeBits >= 10 ) {
+    return true;
+  }
+  const auto maximum_overlap = 0.33f;
+  const auto number_of_trials = 1000u;
+  SDR a({parameters.size});
+  SDR b({parameters.size});
+  a.randomize(parameters.sparsity);
+  for(auto i = 0u; i < number_of_trials; i++) {
+    b.randomize(parameters.sparsity);
+    Real overlap = Real(a.getOverlap(b)) / parameters.activeBits;
+    if( overlap > maximum_overlap ) {
+      return false;
+    }
+  }
+  return true;
 }
 
 std::ostream & htm::operator<<(std::ostream & out, const RandomDistributedScalarEncoder &self)

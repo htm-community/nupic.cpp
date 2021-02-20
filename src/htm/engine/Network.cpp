@@ -130,15 +130,19 @@ void Network::configure(const std::string &yaml) {
       } else if (cmd.first == "addLink") {
         std::string src = cmd.second["src"].str();
         std::string dest = cmd.second["dest"].str();
-        std::vector<std::string> vsrc = split(src, '.');
-        std::vector<std::string> vdest = split(dest, '.');
+        std::string dim = "";
+        std::vector<std::string> vsrc = Path::split(src, '.');
+        std::vector<std::string> vdest = Path::split(dest, '.');
         int propagationDelay = 0;
         if (cmd.second.contains("delay"))
           propagationDelay = cmd.second["delay"].as<int>();
+        if (cmd.second.contains("dim")) {
+          dim = cmd.second.to_json();
+        }
         NTA_CHECK(vsrc.size() == 2) << "Expecting source domain name '.' output name.";
         NTA_CHECK(vdest.size() == 2) << "Expecting destination domain name '.' input name.";
 
-        link(vsrc[0], vdest[0], "", "", vsrc[1], vdest[1], propagationDelay);
+        link(vsrc[0], vdest[0], "", dim, vsrc[1], vdest[1], propagationDelay);
       }
     }
   }
@@ -313,9 +317,13 @@ std::shared_ptr<Link> Network::link(const std::string &srcRegionName,
 
   // Find the regions
   auto itrSrc = regions_.find(srcRegionName);
-  if (itrSrc == regions_.end())
-    NTA_THROW << "Network::link -- source region '" << srcRegionName
-              << "' does not exist";
+  if (itrSrc == regions_.end()) {
+    if (srcRegionName != "INPUT")
+      NTA_THROW << "Network::link -- source region '" << srcRegionName << "' does not exist";
+    // Our special InputRegion does not exist. But we are using it so we need to create it.
+    ValueMap vm;  // Empty parameters.
+    Network::addRegion(srcRegionName, "RawInput", vm);  // Note: will have no Outputs defined.
+  }
   std::shared_ptr<Region> srcRegion = regions_[srcRegionName];
 
   auto itrDest = regions_.find(destRegionName);
@@ -325,6 +333,19 @@ std::shared_ptr<Link> Network::link(const std::string &srcRegionName,
   std::shared_ptr<Region> destRegion = regions_[destRegionName];
 
   // Find the inputs/outputs
+  // get the destination Input object
+  std::string inputName = destInputName;
+  if (inputName == "") {
+    const std::shared_ptr<Spec> &destSpec = destRegion->getSpec();
+    inputName = destSpec->getDefaultInputName();
+  }
+
+  std::shared_ptr<Input> destInput = destRegion->getInput(inputName);
+  if (destInput == nullptr) {
+    NTA_THROW << "Network::link -- input '" << inputName << " does not exist on region " << destRegionName;
+  }
+
+  // get the source Output object
   std::string outputName = srcOutputName;
   if (outputName == "") {
     const std::shared_ptr<Spec>& srcSpec = srcRegion->getSpec();
@@ -332,22 +353,37 @@ std::shared_ptr<Link> Network::link(const std::string &srcRegionName,
   }
 
   std::shared_ptr<Output> srcOutput = srcRegion->getOutput(outputName);
-  if (srcOutput == nullptr)
-    NTA_THROW << "Network::link -- output " << outputName
-              << " does not exist on region " << srcRegionName;
+  if (srcOutput == nullptr) {
+    if (srcRegionName == "INPUT") {
+      // This is our special source region for manually setting inputs using a link
+      // Get the data type from the destination Input object and create an output.
+      NTA_BasicType type = destInput->getDataType();
+      srcOutput = std::make_shared<Output>(srcRegion.get(), outputName, type);
 
-  std::string inputName = destInputName;
-  if (inputName == "") {
-    const std::shared_ptr<Spec>& destSpec = destRegion->getSpec();
-    inputName = destSpec->getDefaultInputName();
+      Dimensions dim;
+      std::string params = Path::trim(linkParams);
+      if (!params.empty()) {
+        Value v;
+        v.parse(linkParams);
+        if (v.isMap() && v.contains("dim")) {
+          Value v1 = v["dim"];
+          if (v1.isSequence())
+            dim = Dimensions(v1.asVector<UInt>());
+          else if (v1.isScalar())
+            dim = Dimensions(v1.as<UInt>());
+        }
+      }
+      if (dim.empty())
+        NTA_THROW << "Link declared with Special \"INPUT\" source requires dimensions in link parameters. Something like "
+                     "{dim: 100} or {dim: [10,20]}";
+
+      srcOutput->setDimensions(dim);
+      srcOutput->initialize();  // allocates the buffer
+      srcRegion->outputs_[outputName] = srcOutput;
+    } else {
+      NTA_THROW << "Network::link -- output " << outputName << " does not exist on region " << srcRegionName;
+    }
   }
-
-  std::shared_ptr<Input> destInput = destRegion->getInput(inputName);
-  if (destInput == nullptr) {
-    NTA_THROW << "Network::link -- input '" << inputName
-              << " does not exist on region " << destRegionName;
-  }
-
 
   // Create the link itself
   auto link = std::make_shared<Link>(linkType, linkParams, srcOutput, destInput, propagationDelay);
@@ -401,6 +437,48 @@ void Network::removeLink(const std::string &srcRegionName,
   destInput->removeLink(link);
 }
 
+
+
+/**
+ * Set the source data for a Link identified with the source as "INPUT" and <sourceName>.
+ */
+void Network::setInputData(const std::string& sourceName, const Array& data) {
+  // The placeholder region "INPUT" with an output of <sourceName> should already exist if the link was defined.
+  std::shared_ptr<Region> region = getRegion("INPUT"); 
+  Array &a = region->getOutput(sourceName)->getData(); // we actually populate an output buffer that will be moved to input.
+  NTA_CHECK(a.getCount() == data.getCount())
+      << "setInputData: Number of elements in buffer ( " << a.getCount() << " ) do not match target dimensions.";
+  if (a.getType() == data.getType()) {
+    a = data;  // assign the buffer without copy
+  }  else {
+    data.convertInto(a);  // copy the data with conversion.
+  }
+}
+
+void Network::setInputData(const std::string &sourceName, const Value& vm) {
+  // The placeholder region "INPUT" with an output of <sourceName> should already exist if the link was defined.
+  std::shared_ptr<Region> region = getRegion("INPUT");
+  Array &a =  region->getOutput(sourceName)->getData(); // populate this output buffer that will be moved to the input.
+  NTA_BasicType type = a.getType();
+
+  NTA_CHECK(vm.contains("data"))
+      << "Unexpected YAML or JSON format. Expecting something like {data: [1,0,1]}";
+
+  NTA_CHECK(vm["data"].isSequence())
+      << "Unexpected YAML or JSON format. Expecting something like {data: [1,0,1]}";
+
+  if (type == NTA_BasicType_SDR) {
+    NTA_CHECK(a.getCount() >= vm.size())
+        << "setInputData: Number of elements in buffer ( " << a.getCount() << " ) do not match target dimensions.";
+  } else {
+    NTA_CHECK(a.getCount() == vm.size())
+        << "setInputData: Number of elements in buffer ( " << a.getCount() << " ) do not match target dimensions.";
+  }
+
+  a.fromValue(vm);
+}
+
+
 void Network::run(int n) {
   if (!initialized_) {
     initialize();
@@ -435,7 +513,7 @@ void Network::run(int n) {
       const std::shared_ptr<Region> r = p.second;
 
       for (const auto &inputTuple : r->getInputs()) {
-        for (const auto pLink : inputTuple.second->getLinks()) {
+        for (const auto &pLink : inputTuple.second->getLinks()) {
           pLink->shiftBufferedData();
         }
       }
@@ -501,6 +579,13 @@ std::shared_ptr<Region> Network::getRegion(const std::string& name) const {
     NTA_THROW << "Network::getRegion; '" << name << "' does not exist";
   return itr->second;
 }
+
+std::string Network::getSpecJSON(const std::string &type) {
+  RegionImplFactory &factory = RegionImplFactory::getInstance();
+  const std::shared_ptr<Spec> spec = factory.getSpec(type);
+  return spec->toString();
+}
+
 
 
 std::vector<std::shared_ptr<Link>> Network::getLinks() const {
@@ -610,7 +695,7 @@ void Network::post_load() {
     r->prepareInputs();
 
     for (const auto &inputTuple : r->getInputs()) {
-      for (const auto pLink : inputTuple.second->getLinks()) {
+      for (const auto &pLink : inputTuple.second->getLinks()) {
         pLink->shiftBufferedData();
       }
     }
@@ -713,6 +798,11 @@ void Network::registerRegion(const std::string name, RegisteredRegionImpl *wrapp
 void Network::unregisterRegion(const std::string name) {
 	RegionImplFactory::unregisterRegion(name);
 }
+
+std::string Network::getRegistrations() {
+  return RegionImplFactory::getRegistrations();
+}
+
 void Network::cleanup() {
     RegionImplFactory::cleanup();
 }

@@ -93,8 +93,8 @@ Dimensions TMRegion::askImplForOutputDimensions(const std::string &name) {
     if (args_.numberOfCols == 0)
       return Dimensions(Dimensions::DONTCARE);  // No info for its size
     region_dim.clear();
-    region_dim.push_back(args_.numberOfCols);
     setDimensions(region_dim);
+    region_dim.push_back(args_.numberOfCols);
   }
   if (args_.numberOfCols == 0)
     args_.numberOfCols = (UInt32)region_dim.getCount();
@@ -223,20 +223,26 @@ void TMRegion::compute() {
 
   // generate the outputs
   // NOTE: - Output dimensions are set to the region dimensions
-  //         plus an additional dimension for 'cellsPerColumn'.
+  //         plus an additional dimension for 'cellsPerColumn' unless args_.orColumnOutputs is set.
   //       - The region dimensions total elements is the 'numberOfCols'.
   //       - The region dimensions are set by dimensions on incoming "bottomUpIn"
   //       - The region dimensions can be overridden with configuration of "dim"
   //         or explicitly by calling region->setDimensions().
   //         or explicitly for each output region->setOutputDimensions(output_name).
   //       - The total number of elements in the outputs must be
-  //         numberOfCols * cellsPerColumn.
+  //         numberOfCols * cellsPerColumn unless args_.orColumnOutputs is set.
   //
   std::shared_ptr<Output> out;
   out = getOutput("bottomUpOut");
-  //call Network::setLogLevel(LogLevel::LogLevel_Verbose);
-  //     to output the NTA_DEBUG statements below
-    SDR active({args_.numberOfCols, args_.cellsPerColumn});
+    //call Network::setLogLevel(LogLevel::LogLevel_Verbose);
+    //     to output the NTA_DEBUG statements below
+    
+    // The dimensions should already be set on output buffers.
+    std::vector<UInt> out_dims = out->getDimensions().asVector(); // column dimensions (eg 10x100), makes copy.
+    if (args_.orColumnOutputs)                    // if we are outputing only columns, we expect one more dimension in active cells.
+      out_dims.push_back(args_.cellsPerColumn);   // add n+1-th dimension for cellsPerColumn (eg. 10x100x8)
+    SDR active(out_dims);                         // create an SDR with the dimensions of active cells.
+
     tm_->getActiveCells(active); //active cells
     if (args_.orColumnOutputs) // output as columns
       out->getData().getSDR() = tm_->cellsToColumns(active);
@@ -268,11 +274,36 @@ void TMRegion::compute() {
 }
 
 
+std::string TMRegion::executeCommand(const std::vector<std::string> &args, Int64 index) {
+
+  UInt32 argCount = (UInt32)args.size();
+  // Get the first argument (command string)
+  NTA_CHECK(argCount > 0) << "TMRegion: No command name";
+  string command = args[0];
+
+  // Process each command
+  if (command == "saveConnectionsToFile") {
+    NTA_CHECK(argCount > 1)
+        << "TMRegion: no path specified for " << command;
+
+
+    // string filename = ReadStringFromBuffer(*buf2);
+    string filePath(args[1]);
+
+    tm_->connections.saveToFile(filePath+".dump");
+
+    return "done";
+  }
+  else
+  NTA_THROW << "TMRegion - Unknown command:" << command;
+}
+
 /********************************************************************/
 
 Spec *TMRegion::createSpec() {
   auto ns = new Spec;
 
+  ns->name = "TMRegion";
   ns->description =
       "TMRegion. Class implementing the temporal memory algorithm as "
       "described in 'BAMI "
@@ -600,7 +631,7 @@ Spec *TMRegion::createSpec() {
 //
 ////////////////////////////////////////////////////////////////////////
 
-UInt32 TMRegion::getParameterUInt32(const std::string &name, Int64 index) {
+UInt32 TMRegion::getParameterUInt32(const std::string &name, Int64 index) const {
 
     if (name == "activationThreshold") {
       if (tm_)
@@ -654,7 +685,7 @@ UInt32 TMRegion::getParameterUInt32(const std::string &name, Int64 index) {
 }
 
 
-Int32 TMRegion::getParameterInt32(const std::string &name, Int64 index) {
+Int32 TMRegion::getParameterInt32(const std::string &name, Int64 index) const {
   if (name == "activationThreshold") {
     if (tm_)
       return tm_->getActivationThreshold();
@@ -667,7 +698,7 @@ Int32 TMRegion::getParameterInt32(const std::string &name, Int64 index) {
 }
 
 
-Real32 TMRegion::getParameterReal32(const std::string &name, Int64 index) {
+Real32 TMRegion::getParameterReal32(const std::string &name, Int64 index) const {
 
     if (name == "anomaly") {
       if (tm_)
@@ -704,7 +735,7 @@ Real32 TMRegion::getParameterReal32(const std::string &name, Int64 index) {
 }
 
 
-bool TMRegion::getParameterBool(const std::string &name, Int64 index) {
+bool TMRegion::getParameterBool(const std::string &name, Int64 index) const {
   if (name == "checkInputs") {
     if (tm_) {
       return tm_->getCheckInputs();
@@ -721,7 +752,7 @@ bool TMRegion::getParameterBool(const std::string &name, Int64 index) {
 }
 
 
-std::string TMRegion::getParameterString(const std::string &name, Int64 index) {
+std::string TMRegion::getParameterString(const std::string &name, Int64 index) const {
   return this->RegionImpl::getParameterString(name, index);
 }
 

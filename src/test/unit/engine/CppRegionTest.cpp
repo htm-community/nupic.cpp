@@ -39,7 +39,6 @@
 #include <algorithm>  // for max()
 #include <sstream>
 
-
 namespace testing {
 
 using namespace htm;
@@ -56,8 +55,8 @@ TEST(CppRegionTest, testCppLinkingFanIn) {
   Real64 *buffer2;
   Real64 *buffer3;
 
-  std::shared_ptr<Region> region1 = net.addRegion("region1", "TestNode", "{count: 64}");
-  std::shared_ptr<Region> region2 = net.addRegion("region2", "TestNode", "{count: 64}");
+  std::shared_ptr<Region> region1 = net.addRegion("region1", "TestNode", "dim: [64]");
+  std::shared_ptr<Region> region2 = net.addRegion("region2", "TestNode", "dim: [64]");
   std::shared_ptr<Region> region3 = net.addRegion("region3", "TestNode", "");
 
   net.link("region1", "region3");
@@ -159,12 +158,12 @@ TEST(CppRegionTest, testCppLinkingSDR) {
 
 
 TEST(CppRegionTest, testYAML) {
-  const char *params = "{count: 42, int32Param: 1234, real64Param: 23.1}";
+  const char *params = "{dim: [42], int32Param: 1234, real64Param: 23.1}";
 
   Network net;
   std::shared_ptr<Region> level1;
 
-  EXPECT_NO_THROW({level1 = net.addRegion("level1", "TestNode", params);});
+  level1 = net.addRegion("level1", "TestNode", params);
 
   net.initialize();
 
@@ -194,8 +193,7 @@ TEST(CppRegionTest, realmain) {
 
   size_t count1 = n.getRegions().size();
   EXPECT_TRUE(count1 == 0u);
-  std::shared_ptr<Region> level1 = n.addRegion("level1", "TestNode", "{count: 2}");
-
+  std::shared_ptr<Region> level1 = n.addRegion("level1", "TestNode", "{dim: [2]}");
 
   size_t count = n.getRegions().size();
   EXPECT_TRUE(count == 1u);
@@ -267,7 +265,7 @@ TEST(CppRegionTest, realmain) {
 TEST(CppRegionTest, RegionSerialization) {
 	Network n;
 
-	std::shared_ptr<Region> r1 = n.addRegion("testnode", "TestNode", "{count: 2}");
+  std::shared_ptr<Region> r1 = n.addRegion("testnode", "TestNode", "{dim: [2]}");
 
 	std::stringstream ss;
 	r1->save(ss);
@@ -277,5 +275,27 @@ TEST(CppRegionTest, RegionSerialization) {
 	EXPECT_EQ(*r1.get(), r2);
 }
 
+TEST(CppRegionTest, ValidateParameters) {
 
-} //ns
+  Value vm;
+  vm.parse("[true,false]");
+  EXPECT_TRUE(vm[0].as<bool>());
+  EXPECT_FALSE(vm[1].as<bool>());
+  EXPECT_STREQ("[true, false]", vm.to_json().c_str());
+
+  bool buf[] = {true, false};
+  Array va(NTA_BasicType_Bool, &buf[0], 2);
+  EXPECT_STREQ("[true, false]", va.toJSON().c_str());
+
+  Network n;
+  std::shared_ptr<Region> r1 = n.addRegion("testnode", "TestNode", "{dim: [2]}");
+  Array a;
+  // The default value for 'boolArrayParam' is an array [false, true, false, true].
+  r1->getParameterArray("boolArrayParam", a);
+  EXPECT_STREQ("[false, true, false, true]", a.toJSON().c_str());
+
+  EXPECT_ANY_THROW(std::shared_ptr<Region> r2 = n.addRegion("testnode", "TestNode", "{invalid_field_name: \"abc\", dim: [2]}"));
+  
+}
+
+} // namespace testing
