@@ -41,6 +41,7 @@ set(algorithm_tests
 	   unit/algorithms/ConnectionsTest.cpp
 	   unit/algorithms/HelloSPTPTest.cpp
 	   unit/algorithms/SDRClassifierTest.cpp
+	   unit/algorithms/OverlapClassifierTest.cpp
 	   unit/algorithms/SpatialPoolerTest.cpp
 	   unit/algorithms/TemporalMemoryTest.cpp
 	   )

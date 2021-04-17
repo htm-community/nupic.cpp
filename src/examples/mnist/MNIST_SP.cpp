@@ -30,6 +30,9 @@
  * You can use the 1st arg to make the training shorter. 
  */
 
+/* Set this to use the OverlapClassifier rather than the SDRClassifier */
+#define USE_OVERLAPCLASSIFIER 1
+
 #include <cstdint> //uint8_t
 #include <iostream>
 #include <fstream>      // std::ofstream
@@ -37,10 +40,12 @@
 
 #include <htm/algorithms/SpatialPooler.hpp>
 #include <htm/algorithms/SDRClassifier.hpp>
+#include <htm/algorithms/OverlapClassifier.hpp>
 #include <htm/utils/SdrMetrics.hpp>
 #include <htm/os/Timer.hpp>
+#include <htm/os/Directory.hpp>
 
-#ifdef MSVC
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable : 4244) // warning C4244: '=': conversion from 'double' to 'unsigned char', possible loss of data
 #endif
@@ -48,7 +53,7 @@
 #include <mnist/mnist_reader.hpp> // MNIST data itself + read methods, namespace mnist::
 #include <mnist/mnist_utils.hpp>  // mnist::binarize_dataset
 
-#ifdef MSVC
+#ifdef _MSC_VER
 #pragma warning(pop)
 #endif
 
@@ -80,7 +85,11 @@ class MNIST {
     SpatialPooler sp;
     SDR input;
     SDR columns;
+#ifdef USE_OVERLAPCLASSIFIER
+    OverlapClassifier clsr;
+#else
     Classifier clsr;
+#endif
     mnist::MNIST_dataset<std::vector, std::vector<uint8_t>, uint8_t> dataset;
 
   public:
@@ -89,7 +98,7 @@ class MNIST {
 
 
 void setup() {
-
+  cout << "        MNIST \n";
   input.initialize({28, 28,1}); 
   columns.initialize({28, 28, 8}); //1D vs 2D no big difference, 2D seems more natural for the problem. Speed-----, Results+++++++++; #columns HIGHEST impact. 
   sp.initialize(
@@ -116,9 +125,22 @@ void setup() {
   sp.connections.save( dump );
   dump.close();
 
-  clsr.initialize( /* alpha */ 0.001f);
+#ifdef USE_OVERLAPCLASSIFIER
+  clsr.initialize(/* theta */ 0);
+#else
+  clsr.initialize(/* alpha */ 0.001f);
+#endif
+  // The dataset is downloaded along with the mnist reader.  It is placed in "build/ThirdParty/mnist_data/mnist-src"
+  std::string filename = "../ThirdParty/mnist_data/mnist-src/"; // if executable is installed in build/Release/bin
+  if (!Path::exists(filename))
+    filename = "../../ThirdParty/mnist_data/mnist-src/";  // where Visual Studio Debug build might find it
+  if (!Path::exists(filename)) {
+    cout << "The programs's Current Working Directory: " << Directory::getCWD() << std::endl;
+    NTA_THROW
+        << "Cannot open the MNIST data set. It is located in the repository at \"build/ThirdParty/mnist_data/mnist-src\".";
+  }
 
-  dataset = mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>(string("../ThirdParty/mnist_data/mnist-src/")); //from CMake
+  dataset = mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>(filename); //from CMake
   mnist::binarize_dataset(dataset);
 }
 
@@ -202,7 +224,8 @@ void test(const bool skipSP=false) {
       sp.compute(input, false, columns);
 
     // Check results
-    if( argmax( clsr.infer( skipSP ? input : columns ) ) == label)
+    PDF pdf = clsr.infer(skipSP ? input : columns);
+    if( argmax( pdf ) == label)
         score += 1;
     n_samples += 1;
     if( verbosity && i % 1000 == 0 ) cout << "." << flush;

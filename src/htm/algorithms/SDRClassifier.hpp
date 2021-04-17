@@ -58,8 +58,9 @@ using PDF = std::vector<Real64>; //Real64 (not Real/float) must be used here,
 
 /**
  * Returns the category with the greatest probablility.
+ * If data is empty, return -1.
  */
-UInt argmax( const PDF & data );
+size_t argmax( const PDF & data );
 
 /**
  * The SDR Classifier takes the form of a single layer classification network.

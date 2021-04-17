@@ -22,13 +22,13 @@ import os
 import subprocess
 import sys
 import tempfile
-import distutils.dir_util
 import json
 
 from setuptools import Command, find_packages, setup
 from setuptools.command.test import test as BaseTestCommand
 # see https://stackoverflow.com/questions/44323474/distutils-core-vs-setuptools-with-c-extension
 from setuptools import Extension
+import distutils.dir_util
 from pathlib import Path
 from sys import version_info
 

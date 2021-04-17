@@ -72,6 +72,8 @@ set(algorithm_files
     htm/algorithms/AnomalyLikelihood.hpp
     htm/algorithms/Connections.cpp
     htm/algorithms/Connections.hpp
+    htm/algorithms/OverlapClassifier.cpp
+    htm/algorithms/OverlapClassifier.hpp
     htm/algorithms/SDRClassifier.cpp
     htm/algorithms/SDRClassifier.hpp
     htm/algorithms/SpatialPooler.cpp

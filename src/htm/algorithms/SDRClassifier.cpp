@@ -25,8 +25,17 @@
 using namespace htm;
 using namespace std;
 
-UInt htm::argmax( const PDF & data )
-  { return UInt( max_element( data.begin(), data.end() ) - data.begin() ); }
+/**
+ * Returns the category with the greatest probablility.
+ * If there are no matches, data will be empty so argmax() will return -1.
+ */
+size_t htm::argmax( const PDF & data )
+{ 
+  if (data.empty()) return -1;
+  return ( max_element( data.begin(), data.end() ) - data.begin() ); 
+}
+
+
 
 
 /******************************************************************************/
