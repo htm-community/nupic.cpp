@@ -84,7 +84,9 @@ jobs:
 
 
 
-  build-wheels: # this is a separate job from build-gh-release as CIBW needs to re-build on its platform/image/python. Existing build breaks it. 
+  build-wheels:
+    # This is a separate job from build-gh-release as CIBW needs to re-build on
+    # its platform/image/python. Existing build breaks it. 
     name: Wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -109,7 +111,7 @@ jobs:
         CIBW_TEST_REQUIRES: pytest
         CIBW_TEST_COMMAND: "pytest {project}/py/tests {project}/bindings/py/tests"
         # Only build on Python >=3.7 and skip 32-bit builds
-        CIBW_BUILD: cp37-* cp38-*
+        CIBW_BUILD: cp37-* cp38-* cp39-*
         CIBW_SKIP: "*-win32 cp27-manylinux* *i686*"
         # build using the manylinux2014 image
         CIBW_MANYLINUX_X86_64_IMAGE: manylinux2014
@@ -180,7 +182,9 @@ jobs:
 
 
 
-  publish-pypi: #this is a separate job, as the upload must run only once, after all wheels have been created
+  publish-pypi:
+    # This is a separate job, as the upload must run only once, after all wheels
+    # have been created.
     needs: [build-wheels]
     runs-on: ubuntu-20.04
     steps:
